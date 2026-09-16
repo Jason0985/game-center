@@ -39,7 +39,7 @@ export class Scoreboard {
     private router: Router,
   ) {
     this.players$ = this.game.players$.pipe(
-      map((players) => players.slice().sort((a, b) => b.score - a.score))
+      map((players) => players.slice().sort((a, b) => b.score - a.score)),
     );
   }
 
