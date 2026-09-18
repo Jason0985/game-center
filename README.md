@@ -1,6 +1,6 @@
-# Game Center Beta
+# Game Center
 
-Game Center Beta ist eine Angular-PWA zum Verwalten von Spielern, Rankings und
+Game Center ist eine Angular-PWA zum Verwalten von Spielern, Rankings und
 verschiedenen Brettspielen. Das Angular-Projekt liegt direkt im Repository-Root.
 
 ## Entwicklung
@@ -26,7 +26,7 @@ npm run deploy
 ```
 
 Der Produktionsbuild wird unter `dist/frontend` erzeugt. `npm run deploy` baut
-die App mit dem GitHub-Pages-Unterpfad `/game-center-beta/` und veröffentlicht
+die App mit dem GitHub-Pages-Unterpfad `/game-center/` und veröffentlicht
 `dist/frontend/browser` auf dem Branch `gh-pages`.
 
 In GitHub unter **Settings > Pages** auswählen:
@@ -35,8 +35,7 @@ In GitHub unter **Settings > Pages** auswählen:
 - **Branch:** `gh-pages`
 - **Folder:** `/ (root)`
 
-Bei einem anderen Repository-Namen müssen `base-href` und `deploy-url` im Script
-`build:pages` angepasst werden.
+Der Produktionsbuild verwendet den Live-Unterpfad `/game-center/`.
 
 ## Aktueller Funktionsumfang
 

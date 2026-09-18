@@ -1,4 +1,4 @@
--- Add friendships to an existing Game Center Beta database.
+-- Add friendships to an existing Game Center database.
 
 create table if not exists public.friendships (
   id uuid primary key default gen_random_uuid(),

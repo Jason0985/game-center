@@ -1,18 +1,18 @@
 {
-  "name": "Game Center Beta",
+  "name": "Game Center",
   "short_name": "Game Center",
   "theme_color": "#000000",
   "background_color": "#fafafa",
   "display": "standalone",
-  "id": "/game-center-beta/",
-  "scope": "/game-center-beta/",
-  "start_url": "/game-center-beta/",
+  "id": "/game-center/",
+  "scope": "/game-center/",
+  "start_url": "/game-center/",
   "apple-mobile-web-app-capable": "yes",
   "apple-mobile-web-app-title": "Game Center",
   "apple-mobile-web-app-status-bar-style": "default",
   "icons": [
     {
-      "src": "game-center-logo-beta.png",
+      "src": "game-center-logo.png",
       "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
