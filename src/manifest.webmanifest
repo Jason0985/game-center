@@ -12,7 +12,7 @@
   "apple-mobile-web-app-status-bar-style": "default",
   "icons": [
     {
-      "src": "game-center-logo.png",
+      "src": "game-center-logo-background.png",
       "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
