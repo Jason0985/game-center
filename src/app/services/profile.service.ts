@@ -7,7 +7,11 @@ import { Profile } from '../features/profile/profile.model';
 })
 export class ProfileService {
   async getProfile(userId: string): Promise<Profile | null> {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
 
     return error ? null : (data as Profile);
   }

@@ -79,12 +79,15 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Benutzername</mat-label>
-        <input matInput formControlName="username" maxlength="30" autocomplete="username" />
+        <input matInput formControlName="username" maxlength="20" autocomplete="username" />
         @if (registerForm.controls.username.hasError('required')) {
           <mat-error>Benutzername ist erforderlich.</mat-error>
         }
         @if (registerForm.controls.username.hasError('minlength')) {
           <mat-error>Mindestens 3 Zeichen erforderlich.</mat-error>
+        }
+        @if (registerForm.controls.username.hasError('pattern')) {
+          <mat-error>Nur Buchstaben, Zahlen und Unterstriche sind erlaubt.</mat-error>
         }
       </mat-form-field>
 

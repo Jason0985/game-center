@@ -1,10 +1,5 @@
 import { Component } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButton } from '@angular/material/button';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
@@ -54,7 +49,8 @@ export class Auth {
       validators: [
         Validators.required,
         Validators.minLength(3),
-        Validators.maxLength(30),
+        Validators.maxLength(20),
+        Validators.pattern(/^[a-zA-Z0-9_]+$/),
       ],
     }),
     displayName: new FormControl('', {
@@ -73,7 +69,7 @@ export class Auth {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   setMode(mode: 'login' | 'register'): void {
@@ -125,7 +121,7 @@ export class Auth {
       values.email,
       values.password,
       values.username,
-      values.displayName
+      values.displayName,
     );
 
     this.loading = false;
@@ -136,8 +132,7 @@ export class Auth {
     }
 
     if (!data.session) {
-      this.successMessage =
-        'Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.';
+      this.successMessage = 'Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.';
       this.setMode('login');
       return;
     }
