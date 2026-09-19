@@ -138,6 +138,19 @@
   min-height: 68px;
   gap: 12px;
   padding: 10px 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+
+.track-row:hover,
+.track-row:focus-visible {
+  background: var(--color-primary-soft);
+}
+
+.track-row:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
 }
 
 .track-row + .track-row {

@@ -45,6 +45,13 @@ export const routes: Routes = [
       import('./features/collection/f1-strategy/f1-strategy').then((module) => module.F1Strategy),
   },
   {
+    path: 'collection/f1-strategy/:trackId',
+    loadComponent: () =>
+      import('./features/collection/f1-strategy/detailed-view/detailed-view').then(
+        (module) => module.DetailedView,
+      ),
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile').then((module) => module.Profile),
   },

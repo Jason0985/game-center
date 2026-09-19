@@ -1,0 +1,125 @@
+@if (track(); as selectedTrack) {
+  <div class="detail-root ui-page-root">
+    <header class="detail-header ui-hero">
+      <a class="back-link" routerLink="/collection/f1-strategy" aria-label="Zu den Strecken zurück">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>
+      </a>
+      <div class="detail-heading">
+        <div
+          class="detail-flag"
+          [style.background-image]="'url(assets/flags/' + selectedTrack.countryCode + '.svg)'"
+          role="img"
+          [attr.aria-label]="selectedTrack.country"
+        ></div>
+        <div>
+          <p class="ui-kicker">F1 26 · Rennstrategie</p>
+          <p class="ui-subtitle">{{ selectedTrack.name }}</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="detail-content">
+      <section class="strategy-section" aria-labelledby="strategy-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Boxenstopp-Plan</p>
+            <h2 id="strategy-title">Mögliche Strategien</h2>
+          </div>
+          <mat-icon aria-hidden="true">flag</mat-icon>
+        </div>
+        <div class="strategy-card ui-surface">
+          <div class="strategy-main">
+            <span class="strategy-label">Empfehlungen für 50%</span>
+            <div class="strategy-options">
+              @for (strategy of selectedTrack.strategy_50; track $index) {
+                <div class="strategy-option">
+                  <div class="strategy-option-heading">
+                    <span>Option {{ $index + 1 }}</span>
+                    <strong>{{ formatStrategy(strategy) }}</strong>
+                  </div>
+                  @for (stop of formatStops(strategy); track $index) {
+                    <span class="strategy-stop">Stopp {{ $index + 1 }}: {{ stop }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+          <div class="fuel-highlight">
+            <mat-icon aria-hidden="true">local_gas_station</mat-icon>
+            <div>
+              <span class="strategy-label">Spritverbrauch</span>
+              <strong>{{ selectedTrack.fuel_50 || 'Keine Angabe' }}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-grid" aria-label="Streckeninformationen">
+        <article class="info-card ui-surface">
+          <span class="info-label">Allgemeine Infos</span>
+          <div class="info-row">
+            <span>50% Rennen</span><strong>{{ selectedTrack.laps_50 }} Runden</strong>
+          </div>
+          <div class="info-row">
+            <span>Gute Q-Zeit</span><strong>{{ selectedTrack.good_quali_time || '—' }}</strong>
+          </div>
+        </article>
+        <article class="info-card ui-surface">
+          <span class="info-label">ERS-Aufladung</span>
+          <div class="info-row">
+            <span>Qualifying</span
+            ><strong
+              >{{ selectedTrack.quali_recharge_mj ?? 'Keine Angabe'
+              }}{{ selectedTrack.quali_recharge_mj !== null ? ' MJ' : '' }}</strong
+            >
+          </div>
+          <div class="info-row">
+            <span>Rennen</span
+            ><strong
+              >{{ selectedTrack.race_recharge ?? 'Keine Angabe'
+              }}{{ selectedTrack.race_recharge !== null ? ' MJ' : '' }}</strong
+            >
+          </div>
+        </article>
+        <article class="info-card ui-surface setup-card">
+          <span class="info-label">Fahrzeug-Setup</span>
+          <div class="info-row">
+            <span>Aero</span><strong>{{ selectedTrack.aero }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Differential</span><strong>{{ selectedTrack.differential }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Bremsen</span><strong>{{ selectedTrack.brakes }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Aufhängung</span><strong>{{ selectedTrack.suspension }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Q-Druck</span><strong>{{ selectedTrack.tires_quali }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Rennen-Druck</span><strong>{{ selectedTrack.tires_race }}</strong>
+          </div>
+          <div class="info-row">
+            <span>Mischungen</span><strong>{{ selectedTrack.compounds }}</strong>
+          </div>
+        </article>
+      </section>
+
+      <aside class="track-note ui-surface">
+        <mat-icon aria-hidden="true">tips_and_updates</mat-icon>
+        <div>
+          <span class="info-label">Hinweis</span>
+          <p>{{ selectedTrack.notes }}</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+} @else {
+  <div class="detail-root ui-page-root missing-track">
+    <mat-icon aria-hidden="true">search_off</mat-icon>
+    <h1>Strecke nicht gefunden</h1>
+    <a routerLink="/collection/f1-strategy">Zur Streckenübersicht</a>
+  </div>
+}

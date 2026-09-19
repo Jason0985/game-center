@@ -26,20 +26,25 @@
         <button
           class="track-action ui-surface"
           type="button"
-          aria-label="Alle Strecken herunterladen"
-          (click)="downloadTracks()"
+          aria-label="Android-App Informationen öffnen"
+          (click)="openDownloadDialog()"
         >
           <mat-icon aria-hidden="true">download</mat-icon>
         </button>
-        <button class="track-action ui-surface" type="button" aria-label="Weitere Optionen">
-          <mat-icon aria-hidden="true">more_vert</mat-icon>
+        <button
+          class="track-action ui-surface"
+          type="button"
+          aria-label="Allgemeine F1 26 Infos öffnen"
+          (click)="openGeneralInfoDialog()"
+        >
+          <mat-icon aria-hidden="true">thermostat</mat-icon>
         </button>
       </div>
     </div>
 
     <section class="track-list ui-surface" aria-label="F1 Strecken">
       @for (track of filteredTracks(); track track.id) {
-        <div class="track-row">
+        <a class="track-row" [routerLink]="['/collection/f1-strategy', track.id]">
           <div class="track-name">
             <span
               class="track-flag"
@@ -50,7 +55,7 @@
             <h2>{{ track.name }}</h2>
           </div>
           <mat-icon class="track-arrow" aria-hidden="true">chevron_right</mat-icon>
-        </div>
+        </a>
       } @empty {
         <div class="empty-state">
           <mat-icon aria-hidden="true">search_off</mat-icon>

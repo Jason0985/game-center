@@ -16,13 +16,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13/HM 16-18/MHH 8,19",
+      "strategy_50": ["MH 11-13", "HM 16-18", "MHH 8,19"],
       "fuel_50": "27.5 laps / -1.9",
       "laps_50": 29,
       "quali_recharge_mj": 6,
       "race_recharge": 6,
       "notes": "lico hell",
-      "creation_date": "2026-06-24"
+      "creation_date": "2026-06-24",
+      "good_quali_time": null
     },
     {
       "id": "china",
@@ -38,13 +39,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C2-C4",
-      "strategy_50": "MH 10-12/HM 16-17",
+      "strategy_50": ["MH 10-12", "HM 16-17"],
       "fuel_50": null,
       "laps_50": 28,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "save all ERS for the back straight",
-      "creation_date": "Theory"
+      "creation_date": "Theory",
+      "good_quali_time": null
     },
     {
       "id": "japan",
@@ -60,13 +62,14 @@
       "tires_quali": "25.5 20.5",
       "tires_race": "25.0 20.5",
       "compounds": "C1-C3",
-      "strategy_50": "MH 10-12/HM 15-17/SMM 7,17",
+      "strategy_50": ["MH 10-12", "HM 15-17", "SMM 7,17"],
       "fuel_50": null,
       "laps_50": 27,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "SM is not worth in leagues. Lico hell",
-      "creation_date": "2026-06-26"
+      "creation_date": "2026-06-26",
+      "good_quali_time": null
     },
     {
       "id": "bahrain",
@@ -82,13 +85,14 @@
       "tires_quali": "23.0 20.5",
       "tires_race": "26.5 20.5",
       "compounds": "C1-C3",
-      "strategy_50": "HM 17-18/MH 11-12/SMM 7,18/HS 19-20",
+      "strategy_50": ["HM 17-18", "MH 11-12", "SMM 7,18", "HS 19-20"],
       "fuel_50": null,
       "laps_50": 29,
       "quali_recharge_mj": null,
       "race_recharge": 7.4,
       "notes": "Satan's home track",
-      "creation_date": "2026-08-01"
+      "creation_date": "2026-08-01",
+      "good_quali_time": null
     },
     {
       "id": "saudi-arabia",
@@ -104,13 +108,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 22.0",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-12/HM 13-14/MHH 6,16",
+      "strategy_50": ["MH 11-12", "HM 13-14", "MHH 6,16"],
       "fuel_50": "22.5 laps / -2.5",
       "laps_50": 25,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "see Silverstone description",
-      "creation_date": "2026-07-13"
+      "creation_date": "2026-07-13",
+      "good_quali_time": null
     },
     {
       "id": "miami",
@@ -126,13 +131,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 12-13/HM 16-17/MHH 7,18",
+      "strategy_50": ["MH 12-13", "HM 16-17", "MHH 7,18"],
       "fuel_50": null,
       "laps_50": 29,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "horrendous Q track, AI are terrible",
-      "creation_date": "2026-07-27"
+      "creation_date": "2026-07-27",
+      "good_quali_time": null
     },
     {
       "id": "canada",
@@ -148,13 +154,14 @@
       "tires_quali": "26.0 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 13-15/HM 20-22/MHH 9, 23",
+      "strategy_50": ["MH 13-15", "HM 20-22", "MHH 9, 23"],
       "fuel_50": null,
       "laps_50": 35,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "Bugged tire allocation",
-      "creation_date": "2026-07-05"
+      "creation_date": "2026-07-05",
+      "good_quali_time": null
     },
     {
       "id": "monaco",
@@ -170,13 +177,14 @@
       "tires_quali": "22.5 20.5",
       "tires_race": "22.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13, SH ??-??",
+      "strategy_50": ["MH 11-13", "SH ??-??"],
       "fuel_50": null,
       "laps_50": 39,
       "quali_recharge_mj": 9,
       "race_recharge": null,
       "notes": "Pit as early as possible or when damage",
-      "creation_date": "Theory"
+      "creation_date": "Theory",
+      "good_quali_time": null
     },
     {
       "id": "spain",
@@ -192,13 +200,14 @@
       "tires_quali": "29.5-20.5",
       "tires_race": "29.5-20.5",
       "compounds": "C2-C4",
-      "strategy_50": "MH 12-14, HM 19-21, MHH 8,20",
+      "strategy_50": ["MH 12-14", "HM 19-21", "MHH 8,20"],
       "fuel_50": null,
       "laps_50": 33,
       "quali_recharge_mj": 5.7,
       "race_recharge": 7,
       "notes": "MASSIVE management on lefts",
-      "creation_date": "2026-06-27"
+      "creation_date": "2026-06-27",
+      "good_quali_time": null
     },
     {
       "id": "austria",
@@ -214,13 +223,14 @@
       "tires_quali": "29.5-20.5",
       "tires_race": "29.5-20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 14-16, HM 20-23, MHH 8,22",
+      "strategy_50": ["MH 14-16", "HM 20-23", "MHH 8,22"],
       "fuel_50": null,
       "laps_50": 36,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "moderately easy onestop",
-      "creation_date": "2026-06-25"
+      "creation_date": "2026-06-25",
+      "good_quali_time": null
     },
     {
       "id": "great-britain",
@@ -236,13 +246,14 @@
       "tires_quali": "29.5-20.5",
       "tires_race": "29.5-20.5",
       "compounds": "C1-C3",
-      "strategy_50": "MH 9-11, HM 15-17",
+      "strategy_50": ["MH 9-11", "HM 15-17"],
       "fuel_50": null,
       "laps_50": 26,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "lico hell. 50% throttle second half of any straight",
-      "creation_date": "2026-06-29"
+      "creation_date": "2026-06-29",
+      "good_quali_time": null
     },
     {
       "id": "belgium",
@@ -258,13 +269,14 @@
       "tires_quali": "29.5-26.5",
       "tires_race": "29.5-26.5",
       "compounds": "C2-C4",
-      "strategy_50": "HM 13-15, MH 7-9",
+      "strategy_50": ["HM 13-15", "MH 7-9"],
       "fuel_50": null,
       "laps_50": 22,
       "quali_recharge_mj": null,
       "race_recharge": 7.6,
       "notes": "lico disaster. See Silverstone",
-      "creation_date": "2026-06-23"
+      "creation_date": "2026-06-23",
+      "good_quali_time": null
     },
     {
       "id": "hungary",
@@ -280,13 +292,14 @@
       "tires_quali": "29.0 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 12-13/MHH 8-9,22-24",
+      "strategy_50": ["MH 12-13", "MHH 8-9,22-24"],
       "fuel_50": null,
       "laps_50": 35,
       "quali_recharge_mj": 9,
       "race_recharge": null,
       "notes": "2stop recommended if youre in a slow train",
-      "creation_date": "2026-07-27"
+      "creation_date": "2026-07-27",
+      "good_quali_time": null
     },
     {
       "id": "netherlands",
@@ -302,13 +315,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C2-C4",
-      "strategy_50": "MHH 8-9, 22-24/MH 14-16",
+      "strategy_50": ["MHH 8-9, 22-24", "MH 14-16"],
       "fuel_50": null,
       "laps_50": 36,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "one stop isnt worth",
-      "creation_date": "2026-07-11"
+      "creation_date": "2026-07-11",
+      "good_quali_time": null
     },
     {
       "id": "italy",
@@ -324,13 +338,14 @@
       "tires_quali": "29.5 26.5",
       "tires_race": "29.5 26.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 10-11/MHH 7,17",
+      "strategy_50": ["MH 10-11", "MHH 7,17"],
       "fuel_50": "Minimum",
       "laps_50": 27,
       "quali_recharge_mj": 5,
       "race_recharge": 6,
       "notes": "disaster for battery. Actual yo-yo racing at its worst",
-      "creation_date": "2026-09-02"
+      "creation_date": "2026-09-02",
+      "good_quali_time": null
     },
     {
       "id": "madrid",
@@ -346,13 +361,14 @@
       "tires_quali": "29.5-20.5",
       "tires_race": "29.5-20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 6-9, HM 21-23, MHH 6, 17",
+      "strategy_50": ["MH 6-9", "HM 21-23", "MHH 6, 17"],
       "fuel_50": "27.6 laps / -1.4",
       "laps_50": 29,
       "quali_recharge_mj": null,
       "race_recharge": 7.4,
       "notes": "kerb cut hell",
-      "creation_date": "2026-08-08"
+      "creation_date": "2026-08-08",
+      "good_quali_time": null
     },
     {
       "id": "azerbaijan",
@@ -368,13 +384,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 8-10, HM 15-18, MHH 6, 16",
+      "strategy_50": ["MH 8-10", "HM 15-18", "MHH 6, 16"],
       "fuel_50": "23.6 laps / -2.4",
       "laps_50": 26,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "save all ERS for straight",
-      "creation_date": "2026-08-12"
+      "creation_date": "2026-08-12",
+      "good_quali_time": null
     },
     {
       "id": "singapore",
@@ -390,13 +407,14 @@
       "tires_quali": "26.0 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13, MHH/MHM for SCs",
+      "strategy_50": ["MH 11-13", "MHH/MHM for SCs"],
       "fuel_50": null,
       "laps_50": 31,
       "quali_recharge_mj": 9,
       "race_recharge": null,
       "notes": "overheating is possible. No lico at all",
-      "creation_date": "2026-07-04"
+      "creation_date": "2026-07-04",
+      "good_quali_time": null
     },
     {
       "id": "united-states",
@@ -412,13 +430,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C1, C3, C4",
-      "strategy_50": "MH 8-11, HM 16-19",
+      "strategy_50": ["MH 8-11", "HM 16-19"],
       "fuel_50": null,
       "laps_50": 28,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "HM > MH. Be careful with traction zones",
-      "creation_date": "2026-06-28"
+      "creation_date": "2026-06-28",
+      "good_quali_time": null
     },
     {
       "id": "mexico",
@@ -434,13 +453,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13, MHH 8-9, 22-24, HM 21-24",
+      "strategy_50": ["MH 11-13", "MHH 8-9, 22-24", "HM 21-24"],
       "fuel_50": null,
       "laps_50": 36,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "Hell on Earth",
-      "creation_date": "2026-08-17"
+      "creation_date": "2026-08-17",
+      "good_quali_time": null
     },
     {
       "id": "sao-paulo",
@@ -456,13 +476,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C2-C4",
-      "strategy_50": "MH 12-15, HM 21-23",
+      "strategy_50": ["MH 12-15", "HM 21-23"],
       "fuel_50": null,
       "laps_50": 36,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "good track for battery, almost goat tier",
-      "creation_date": "2026-07-11"
+      "creation_date": "2026-07-11",
+      "good_quali_time": null
     },
     {
       "id": "las-vegas",
@@ -478,13 +499,14 @@
       "tires_quali": "25.5 20.5",
       "tires_race": "25.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 8-10, HM 15-17",
+      "strategy_50": ["MH 8-10", "HM 15-17"],
       "fuel_50": "Minimum",
       "laps_50": 25,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "lico hell",
-      "creation_date": "2026-07-26"
+      "creation_date": "2026-07-26",
+      "good_quali_time": null
     },
     {
       "id": "qatar",
@@ -500,13 +522,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C1-C3",
-      "strategy_50": "SH 10-12, MH 12-15, SSM 9,17",
+      "strategy_50": ["SH 10-12", "MH 12-15", "SSM 9,17"],
       "fuel_50": "27.8 laps / -1.2",
       "laps_50": 29,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "softs are viable here",
-      "creation_date": "2026-07-09"
+      "creation_date": "2026-07-09",
+      "good_quali_time": null
     },
     {
       "id": "abu-dhabi",
@@ -522,13 +545,14 @@
       "tires_quali": "29.5 20.5",
       "tires_race": "29.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13, HM 16-18, MHH 8, 19",
+      "strategy_50": ["MH 11-13", "HM 16-18", "MHH 8, 19"],
       "fuel_50": "28.1 laps / -0.9",
       "laps_50": 29,
       "quali_recharge_mj": 7,
       "race_recharge": 7,
       "notes": "save for straights",
-      "creation_date": "2026-08-23"
+      "creation_date": "2026-08-23",
+      "good_quali_time": null
     },
     {
       "id": "emilia-romagna",
@@ -544,13 +568,14 @@
       "tires_quali": "28.5 20.5",
       "tires_race": "28.5 20.5",
       "compounds": "C3-C5",
-      "strategy_50": "MH 11-13, HM 19-20 / minimum fuel",
+      "strategy_50": ["MH 11-13", "HM 19-20 / minimum fuel"],
       "fuel_50": "Minimum",
       "laps_50": 32,
       "quali_recharge_mj": null,
       "race_recharge": null,
       "notes": "enough underfuel to supply a small nation",
-      "creation_date": "2026-07-02"
+      "creation_date": "2026-07-02",
+      "good_quali_time": null
     }
   ],
   "tire_temperatures": [
@@ -562,24 +587,6 @@
     { "compound": "C6", "temp_celsius": "65 - 85", "temp_fahrenheit": "149 - 185" },
     { "compound": "Intermediate", "temp_celsius": "55 - 75", "temp_fahrenheit": "131 - 167" },
     { "compound": "Full Wet", "temp_celsius": "55 - 65", "temp_fahrenheit": "131 - 149" }
-  ],
-  "faq": [
-    {
-      "question": "Why are the wing gaps so high?",
-      "answer": "F1 26's cars are more understeery than previous games due to a cut in downforce. This is to regain the lost rotation from the downforce cuts in reality, and because straight mode nullifies the drag penalty we carry"
-    },
-    {
-      "question": "Why are we running <100 brake pressure?",
-      "answer": "Thanks to the new cars being incredibly slippery on the brakes, it is now preferred to run 97-99% brake pressure for stability."
-    },
-    {
-      "question": "How do I save battery?",
-      "answer": "By lifting off the throttle at the end of long straights, or lifting and coasting. It is suggested to lift off the throttle before heavy braking zones in order to regain as much battery as possible"
-    },
-    {
-      "question": "What is the recharge limit and why do I hit it so often?",
-      "answer": "In 2026, the FIA publishes Power Unit Information per circuit. The power-hungry circuits have lower recharge limits (Monza at 5MJ), while circuits with short straights and many corners (Hungary and Monaco at 9MJ) have higher recharge limits. Lifting and coasting everywhere is no longer the fastest way around a track thanks to the lower recharge."
-    }
   ],
   "engine_temperatures": [
     { "temp_celsius": 65, "temp_fahrenheit": 149, "power_percent": 96.0 },
