@@ -40,6 +40,11 @@ export const routes: Routes = [
       import('./features/collection/flip-7/flip-7').then((module) => module.Flip7),
   },
   {
+    path: 'collection/f1-strategy',
+    loadComponent: () =>
+      import('./features/collection/f1-strategy/f1-strategy').then((module) => module.F1Strategy),
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile').then((module) => module.Profile),
   },

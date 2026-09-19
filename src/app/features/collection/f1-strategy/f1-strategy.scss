@@ -1,0 +1,203 @@
+.f1-strategy-header,
+.track-content {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+}
+
+.track-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.track-search {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 46px;
+  flex: 1;
+  gap: 10px;
+  box-sizing: border-box;
+  padding: 0 14px;
+}
+
+.track-search mat-icon {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.track-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.track-search input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.track-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.track-action {
+  display: grid;
+  flex: 0 0 46px;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-small);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.track-action:hover,
+.track-action:focus-visible {
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-light);
+}
+
+.track-action:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.f1-strategy-header {
+  position: relative;
+  margin-bottom: 24px;
+  padding-top: 4px;
+  text-align: center;
+}
+
+.f1-strategy-heading {
+  padding: 0 42px;
+}
+
+.ui-kicker {
+  margin: 0 0 8px;
+  color: var(--color-primary-light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.back-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.back-link:hover,
+.back-link:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+
+.back-link:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.back-link mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.track-list {
+  overflow: hidden;
+}
+
+.track-row {
+  display: flex;
+  align-items: center;
+  min-height: 68px;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.track-row + .track-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.track-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.track-flag {
+  display: inline-block;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 21px;
+  border-radius: 3px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.track-name h2 {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.track-arrow {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 420px) {
+  .track-toolbar {
+    gap: 6px;
+  }
+
+  .track-search {
+    padding-inline: 10px;
+  }
+
+  .track-action {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .track-row {
+    padding-inline: 10px;
+  }
+
+  .track-name h2 {
+    font-size: 14px;
+  }
+}

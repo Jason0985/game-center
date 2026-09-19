@@ -34,6 +34,13 @@ export class Collection {
       icon: 'sports_tennis',
       path: '/collection/paddle-table',
     },
+    {
+      title: 'F1 Strategie',
+      category: 'Rennstrategie',
+      description: 'Strecken und Strategien für deine F1-Rennen.',
+      icon: 'sports_motorsports',
+      path: '/collection/f1-strategy',
+    },
   ];
 
   readonly filteredItems = computed(() => {

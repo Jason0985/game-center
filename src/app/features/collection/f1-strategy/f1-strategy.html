@@ -1,0 +1,62 @@
+<div class="f1-strategy-root ui-page-root">
+  <header class="f1-strategy-header ui-hero">
+    <a class="back-link" routerLink="/collection" aria-label="Zur Sammlung zurück">
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    </a>
+    <div class="f1-strategy-heading">
+      <p class="ui-kicker">Rennstrategie</p>
+      <h1 class="ui-title">F1 <span class="ui-accent">Strecken</span></h1>
+      <p class="ui-subtitle">Wähle eine Strecke, um deine Strategie zu planen.</p>
+    </div>
+  </header>
+
+  <main class="track-content">
+    <div class="track-toolbar">
+      <label class="track-search ui-surface">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Strecke suchen"
+          [value]="searchTerm()"
+          (input)="updateSearch($event)"
+          aria-label="Strecke suchen"
+        />
+      </label>
+      <div class="track-actions">
+        <button
+          class="track-action ui-surface"
+          type="button"
+          aria-label="Alle Strecken herunterladen"
+          (click)="downloadTracks()"
+        >
+          <mat-icon aria-hidden="true">download</mat-icon>
+        </button>
+        <button class="track-action ui-surface" type="button" aria-label="Weitere Optionen">
+          <mat-icon aria-hidden="true">more_vert</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <section class="track-list ui-surface" aria-label="F1 Strecken">
+      @for (track of filteredTracks(); track track.id) {
+        <div class="track-row">
+          <div class="track-name">
+            <span
+              class="track-flag"
+              [style.background-image]="'url(assets/flags/' + track.countryCode + '.svg)'"
+              role="img"
+              [attr.aria-label]="track.country"
+            ></span>
+            <h2>{{ track.name }}</h2>
+          </div>
+          <mat-icon class="track-arrow" aria-hidden="true">chevron_right</mat-icon>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <mat-icon aria-hidden="true">search_off</mat-icon>
+          <span>Keine Strecke gefunden.</span>
+        </div>
+      }
+    </section>
+  </main>
+</div>
