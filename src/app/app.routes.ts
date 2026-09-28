@@ -35,9 +35,9 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'collection/flip-7',
+    path: 'multiplayer',
     loadComponent: () =>
-      import('./features/collection/flip-7/flip-7').then((module) => module.Flip7),
+      import('./features/multiplayer/multiplayer').then((module) => module.Multiplayer),
   },
   {
     path: 'collection/f1-strategy',
