@@ -21,4 +21,10 @@ describe('F1Strategy', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('filters tracks by country', () => {
+    component.searchTerm.set('kanada');
+
+    expect(component.filteredTracks().map((track) => track.country)).toEqual(['Kanada']);
+  });
 });

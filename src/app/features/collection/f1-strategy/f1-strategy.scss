@@ -166,14 +166,22 @@
 
 .track-flag {
   display: inline-block;
-  flex: 0 0 28px;
-  width: 28px;
-  height: 21px;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 34px;
   border-radius: 3px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.track-name-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .track-name h2 {
@@ -183,6 +191,15 @@
   white-space: nowrap;
   font-size: 15px;
   font-weight: 500;
+}
+
+.track-name-text span {
+  overflow: hidden;
+  color: var(--color-text-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 300;
 }
 
 .track-arrow {

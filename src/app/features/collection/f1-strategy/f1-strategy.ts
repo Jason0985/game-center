@@ -35,7 +35,11 @@ export class F1Strategy {
       return this.tracks;
     }
 
-    return this.tracks.filter((track) => track.name.toLowerCase().includes(searchTerm));
+    return this.tracks.filter(
+      (track) =>
+        track.name.toLowerCase().includes(searchTerm) ||
+        track.country.toLowerCase().includes(searchTerm),
+    );
   });
 
   updateSearch(event: Event): void {

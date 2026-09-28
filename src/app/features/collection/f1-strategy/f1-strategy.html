@@ -16,10 +16,10 @@
         <mat-icon aria-hidden="true">search</mat-icon>
         <input
           type="search"
-          placeholder="Strecke suchen"
+          placeholder="Strecke oder Land suchen"
           [value]="searchTerm()"
           (input)="updateSearch($event)"
-          aria-label="Strecke suchen"
+          aria-label="Strecke oder Land suchen"
         />
       </label>
       <div class="track-actions">
@@ -52,7 +52,10 @@
               role="img"
               [attr.aria-label]="track.country"
             ></span>
-            <h2>{{ track.name }}</h2>
+            <div class="track-name-text">
+              <h2>{{ track.name }}</h2>
+              <span>{{ track.country }}</span>
+            </div>
           </div>
           <mat-icon class="track-arrow" aria-hidden="true">chevron_right</mat-icon>
         </a>
