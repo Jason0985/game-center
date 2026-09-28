@@ -21,6 +21,13 @@ export class Collection {
 
   readonly items: CollectionItem[] = [
     {
+      title: 'Ranking',
+      category: 'Punktespiel',
+      description: 'Spieler hinzufügen und eine neue Ranglistenrunde starten.',
+      icon: 'leaderboard',
+      path: '/ranking',
+    },
+    {
       title: 'Paddle Tabelle',
       category: 'Paddle Übersicht',
       description: 'Übersicht über Gewinne und Verluste',

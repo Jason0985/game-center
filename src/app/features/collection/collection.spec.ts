@@ -21,4 +21,11 @@ describe('Collection', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('includes a link to Ranking', () => {
+    expect(component.items[0]).toMatchObject({
+      title: 'Ranking',
+      path: '/ranking',
+    });
+  });
 });
