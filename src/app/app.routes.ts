@@ -35,6 +35,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'collection/arrival-planner',
+    loadComponent: () =>
+      import('./features/collection/arrival-planner/arrival-planner').then(
+        (module) => module.ArrivalPlanner,
+      ),
+  },
+  {
     path: 'multiplayer',
     loadComponent: () =>
       import('./features/multiplayer/multiplayer').then((module) => module.Multiplayer),

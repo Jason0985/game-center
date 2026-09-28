@@ -35,6 +35,13 @@ export class Collection {
       path: '/collection/paddle-table',
     },
     {
+      title: 'Ankunftsplaner',
+      category: 'Tagesplanung',
+      description: 'Berechne Aufsteh- und Abfahrtszeit für deinen Termin.',
+      icon: 'alarm',
+      path: '/collection/arrival-planner',
+    },
+    {
       title: 'F1 Strategie',
       category: 'Rennstrategie',
       description: 'Strecken und Strategien für deine F1-Rennen.',
