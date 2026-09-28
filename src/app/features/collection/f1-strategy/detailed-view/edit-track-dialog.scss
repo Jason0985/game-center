@@ -1,0 +1,110 @@
+.edit-track-dialog {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  color: var(--color-text);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 0;
+}
+
+.country-flag {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 34px;
+  border-radius: 4px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.dialog-kicker {
+  margin: 0 0 4px;
+  color: var(--color-primary-light);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+[mat-dialog-title] {
+  margin: 0;
+  font-size: 21px;
+}
+
+mat-dialog-content {
+  display: grid;
+  gap: 16px;
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: min(68vh, 680px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 18px;
+}
+
+.form-field {
+  display: grid;
+  gap: 7px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-small);
+  padding: 11px 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.form-field input:focus-visible,
+.form-field textarea:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 1px;
+}
+
+.login-notice,
+.save-error {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.save-error {
+  color: #ff9b91;
+}
+
+[mat-dialog-actions] {
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+@media (max-width: 520px) {
+  .edit-track-dialog {
+    max-width: 100%;
+  }
+
+  [mat-dialog-actions] {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  [mat-dialog-actions] button {
+    width: 100%;
+  }
+}

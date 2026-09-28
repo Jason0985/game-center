@@ -1,6 +1,8 @@
 :host {
   display: block;
-  min-width: min(100%, 450px);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 450px;
 }
 
 .value-dialog-title {
@@ -45,8 +47,11 @@
 }
 
 mat-dialog-content {
-  max-height: none;
-  overflow: visible;
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: min(68vh, 680px);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .value-dialog-intro {
@@ -66,6 +71,6 @@ mat-dialog-content {
 
 @media (max-width: 420px) {
   :host {
-    min-width: 0;
+    max-width: 100%;
   }
 }

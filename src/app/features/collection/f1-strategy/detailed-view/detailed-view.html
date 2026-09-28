@@ -11,10 +11,11 @@
           role="img"
           [attr.aria-label]="selectedTrack.country"
         ></div>
-        <div>
-          <p class="ui-kicker">F1 26 · Rennstrategie</p>
-          <p class="ui-subtitle">{{ selectedTrack.name }}</p>
-        </div>
+        <h1 class="country-name">{{ selectedTrack.country }}</h1>
+      </div>
+      <div class="detail-legend" aria-label="Bearbeitete Werte">
+        <span>Bearbeitete Werte</span>
+        <i class="detail-legend-dot" aria-hidden="true"></i>
       </div>
     </header>
 
@@ -25,7 +26,15 @@
             <p class="section-kicker">Boxenstopp-Plan</p>
             <h2 id="strategy-title">Mögliche Strategien</h2>
           </div>
-          <mat-icon aria-hidden="true">flag</mat-icon>
+          <button
+            class="edit-button"
+            type="button"
+            aria-label="Streckenwerte bearbeiten"
+            title="Streckenwerte bearbeiten"
+            (click)="openEditDialog(selectedTrack)"
+          >
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </button>
         </div>
         <div class="strategy-card ui-surface">
           <div class="strategy-main">
@@ -48,7 +57,9 @@
             <mat-icon aria-hidden="true">local_gas_station</mat-icon>
             <div>
               <span class="strategy-label">Spritverbrauch</span>
-              <strong>{{ selectedTrack.fuel_50 || 'Keine Angabe' }}</strong>
+              <strong [class.user-overridden]="isOverridden('fuel_50')">
+                {{ selectedTrack.fuel_50 || 'Keine Angabe' }}
+              </strong>
             </div>
           </div>
         </div>
@@ -61,24 +72,10 @@
             <span>50% Rennen</span><strong>{{ selectedTrack.laps_50 }} Runden</strong>
           </div>
           <div class="info-row">
-            <span>Gute Q-Zeit</span><strong>{{ selectedTrack.good_quali_time || '—' }}</strong>
-          </div>
-        </article>
-        <article class="info-card ui-surface">
-          <span class="info-label">ERS-Aufladung</span>
-          <div class="info-row">
-            <span>Qualifying</span
-            ><strong
-              >{{ selectedTrack.quali_recharge_mj ?? 'Keine Angabe'
-              }}{{ selectedTrack.quali_recharge_mj !== null ? ' MJ' : '' }}</strong
-            >
-          </div>
-          <div class="info-row">
-            <span>Rennen</span
-            ><strong
-              >{{ selectedTrack.race_recharge ?? 'Keine Angabe'
-              }}{{ selectedTrack.race_recharge !== null ? ' MJ' : '' }}</strong
-            >
+            <span>Gute Q-Zeit</span>
+            <strong [class.user-overridden]="isOverridden('good_quali_time')">
+              {{ selectedTrack.good_quali_time || '—' }}
+            </strong>
           </div>
         </article>
         <article class="info-card ui-surface setup-card">
@@ -111,7 +108,9 @@
         <mat-icon aria-hidden="true">tips_and_updates</mat-icon>
         <div>
           <span class="info-label">Hinweis</span>
-          <p>{{ selectedTrack.notes }}</p>
+          <p [class.user-overridden]="isOverridden('notes')">
+            {{ selectedTrack.notes || 'Keine Notiz hinterlegt.' }}
+          </p>
         </div>
       </aside>
     </main>

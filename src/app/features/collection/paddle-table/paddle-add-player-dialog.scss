@@ -1,6 +1,8 @@
 :host {
   display: block;
-  min-width: min(100%, 320px);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
 }
 
 .dialog-form {

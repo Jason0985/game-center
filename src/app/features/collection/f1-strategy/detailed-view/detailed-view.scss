@@ -7,8 +7,9 @@
 .detail-header {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   margin-bottom: 28px;
   padding-top: 4px;
 }
@@ -40,6 +41,7 @@
 
 .detail-heading {
   display: flex;
+  flex: 1 1 260px;
   align-items: center;
   min-width: 0;
   gap: 14px;
@@ -57,17 +59,31 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
-.detail-heading .ui-kicker,
-.detail-heading .ui-title,
-.detail-heading .ui-subtitle {
+.country-name {
+  min-width: 0;
   margin: 0;
+  color: var(--color-text);
+  font-size: 23px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
-.detail-heading .ui-kicker {
-  margin-bottom: 5px;
+.detail-legend {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
-.detail-heading .ui-subtitle {
-  margin-top: 4px;
+
+.detail-legend-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success-light);
 }
 
 .race-meta {
@@ -108,8 +124,26 @@
   margin: 3px 0 0;
   font-size: 21px;
 }
-.section-heading > mat-icon {
+.edit-button {
+  display: grid;
+  flex: 0 0 40px;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--color-primary-soft);
   color: var(--color-primary-light);
+  cursor: pointer;
+}
+.edit-button:hover,
+.edit-button:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+.edit-button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 .strategy-card {
   display: grid;
@@ -174,7 +208,7 @@
 }
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -195,6 +229,9 @@
   color: var(--color-text);
   font-size: 13px;
   text-align: right;
+}
+.user-overridden {
+  color: var(--color-success-light) !important;
 }
 .track-note {
   display: flex;
@@ -231,16 +268,16 @@
 }
 
 @media (max-width: 680px) {
-  .detail-header {
-    display: block;
-  }
   .detail-heading {
+    flex-basis: 100%;
     padding-right: 0;
   }
-  .race-meta {
-    width: fit-content;
-    margin: 16px 0 0 52px;
-    text-align: left;
+  .detail-legend {
+    margin-left: auto;
+    padding-right: 2px;
+  }
+  .country-name {
+    font-size: 20px;
   }
   .strategy-card,
   .info-grid {
