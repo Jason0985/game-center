@@ -2,17 +2,36 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 440px;
+  min-width: 0;
+  margin-inline: auto;
+  overflow-x: hidden;
   color: var(--color-text);
 }
 
 .dialog-header {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  min-width: 0;
   padding: 8px 8px 0;
+  margin-left: 20px;
+  margin-top: 5px;
+  align-items: center;
+}
+
+.dialog-header [mat-dialog-title] {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .country-flag {
+  box-sizing: border-box;
   flex: 0 0 48px;
   width: 48px;
   height: 34px;
@@ -23,7 +42,13 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
+.dialog-header > div {
+  width: 100%;
+  min-width: 0;
+}
+
 .dialog-kicker {
+  overflow-wrap: anywhere;
   margin: 0 0 4px;
   color: var(--color-primary-light);
   font-size: 11px;
@@ -31,24 +56,21 @@
   text-transform: uppercase;
 }
 
-[mat-dialog-title] {
-  margin: 0;
-  font-size: 21px;
-}
-
 mat-dialog-content {
   display: grid;
   gap: 16px;
+  width: 100%;
   box-sizing: border-box;
   max-width: 100%;
   max-height: min(68vh, 680px);
   overflow-x: hidden;
   overflow-y: auto;
-  padding-top: 18px;
+  padding: 18px 8px 0;
 }
 
 .form-field {
   display: grid;
+  min-width: 0;
   gap: 7px;
   color: var(--color-text-muted);
   font-size: 13px;
@@ -87,6 +109,13 @@ mat-dialog-content {
 
 .save-error {
   color: #ff9b91;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
 }
 
 [mat-dialog-actions] {

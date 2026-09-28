@@ -68,35 +68,6 @@
   overflow-wrap: anywhere;
 }
 
-.detail-legend {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.detail-legend-dot {
-  flex: 0 0 8px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-success-light);
-}
-
-.race-meta {
-  flex: 0 0 auto;
-  margin-left: auto;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-small);
-  background: var(--color-surface);
-  text-align: right;
-}
-
-.meta-label,
 .strategy-label,
 .info-label,
 .section-kicker {
@@ -108,21 +79,26 @@
   text-transform: uppercase;
 }
 
-.race-meta strong {
-  display: block;
-  margin-top: 3px;
-  color: var(--color-primary-light);
-  font-size: 16px;
-}
 .section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
+}
+.section-heading > div {
+  min-width: 0;
 }
 .section-heading h2 {
   margin: 3px 0 0;
   font-size: 21px;
+}
+.edit-controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
 }
 .edit-button {
   display: grid;
@@ -230,9 +206,6 @@
   font-size: 13px;
   text-align: right;
 }
-.user-overridden {
-  color: var(--color-success-light) !important;
-}
 .track-note {
   display: flex;
   gap: 12px;
@@ -270,11 +243,6 @@
 @media (max-width: 680px) {
   .detail-heading {
     flex-basis: 100%;
-    padding-right: 0;
-  }
-  .detail-legend {
-    margin-left: auto;
-    padding-right: 2px;
   }
   .country-name {
     font-size: 20px;

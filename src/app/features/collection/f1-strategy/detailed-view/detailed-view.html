@@ -13,28 +13,30 @@
         ></div>
         <h1 class="country-name">{{ selectedTrack.country }}</h1>
       </div>
-      <div class="detail-legend" aria-label="Bearbeitete Werte">
-        <span>Bearbeitete Werte</span>
-        <i class="detail-legend-dot" aria-hidden="true"></i>
-      </div>
     </header>
 
     <main class="detail-content">
       <section class="strategy-section" aria-labelledby="strategy-title">
         <div class="section-heading">
           <div>
-            <p class="section-kicker">Boxenstopp-Plan</p>
+            <span class="section-kicker">Boxenstopp-Plan</span>
             <h2 id="strategy-title">Mögliche Strategien</h2>
           </div>
-          <button
-            class="edit-button"
-            type="button"
-            aria-label="Streckenwerte bearbeiten"
-            title="Streckenwerte bearbeiten"
-            (click)="openEditDialog(selectedTrack)"
-          >
-            <mat-icon aria-hidden="true">edit</mat-icon>
-          </button>
+          <div class="edit-controls">
+            <button
+              class="edit-button"
+              type="button"
+              aria-label="Streckenwerte bearbeiten"
+              title="Streckenwerte bearbeiten"
+              (click)="openEditDialog(selectedTrack)"
+            >
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </button>
+            <div class="detail-legend" aria-label="Bearbeitete Werte">
+              <span>Bearbeitete Werte</span>
+              <i class="detail-legend-dot" aria-hidden="true"></i>
+            </div>
+          </div>
         </div>
         <div class="strategy-card ui-surface">
           <div class="strategy-main">

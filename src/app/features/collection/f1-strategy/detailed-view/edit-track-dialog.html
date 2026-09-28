@@ -1,14 +1,16 @@
 <div class="edit-track-dialog">
   <header class="dialog-header">
-    <div
-      class="country-flag"
-      [style.background-image]="'url(assets/flags/' + data.countryCode + '.svg)'"
-      role="img"
-      [attr.aria-label]="data.country"
-    ></div>
     <div>
       <p class="dialog-kicker">Persönliche Streckenwerte</p>
-      <h2 mat-dialog-title>{{ data.country }}</h2>
+      <div class="track-info">
+        <div
+          class="country-flag"
+          [style.background-image]="'url(assets/flags/' + data.countryCode + '.svg)'"
+          role="img"
+          [attr.aria-label]="data.country"
+        ></div>
+        <span mat-dialog-title>{{ data.country }}</span>
+      </div>
     </div>
   </header>
 

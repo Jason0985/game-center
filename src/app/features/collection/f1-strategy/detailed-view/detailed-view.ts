@@ -88,7 +88,7 @@ export class DetailedView {
       notes: this.baseTrack?.notes ?? '',
     };
     const dialogRef = this.dialog.open(EditTrackDialog, {
-      width: 'min(92vw, 520px)',
+      width: 'min(92vw, 440px)',
       data: {
         trackId: track.id,
         country: track.country,

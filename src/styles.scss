@@ -259,6 +259,37 @@ mat-card.ui-player-card {
   font-size: 15px;
 }
 
+.detail-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.section-heading .section-kicker {
+  margin: 0 0 3px;
+}
+
+.detail-legend-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success-light);
+}
+
+.user-overridden {
+  color: var(--color-success-light) !important;
+}
+
+@media (max-width: 520px) {
+  .detail-legend span {
+    max-width: 78px;
+    text-align: right;
+  }
+}
+
 .ui-surface {
   overflow: hidden;
   border-radius: var(--radius-large);
