@@ -2,6 +2,7 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
+import { AppErrorService } from '../../services/app-error.service';
 import { MultiplayerLobby, MultiplayerLobbyService } from './multiplayer-lobby.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { MultiplayerLobby, MultiplayerLobbyService } from './multiplayer-lobby.s
 export class Multiplayer {
   readonly session = inject(SessionService);
   private readonly lobbyService = inject(MultiplayerLobbyService);
+  private readonly appErrors = inject(AppErrorService);
   readonly lobbies = signal<MultiplayerLobby[]>([]);
   readonly loading = signal(true);
   readonly busy = signal(false);
@@ -46,8 +48,8 @@ export class Multiplayer {
     try {
       const lobby = await this.lobbyService.createLobby(userId);
       this.lobbies.update((lobbies) => [lobby, ...lobbies.filter((item) => item.id !== lobby.id)]);
-    } catch {
-      this.errorMessage.set('Die Lobby konnte nicht eröffnet werden. Bitte versuche es erneut.');
+    } catch (error) {
+      this.fail(error, 'Die Lobby konnte nicht eröffnet werden. Bitte versuche es erneut.');
     } finally {
       this.busy.set(false);
     }
@@ -62,8 +64,8 @@ export class Multiplayer {
     try {
       await this.lobbyService.chooseGame(lobby.id);
       await this.refreshLobbies();
-    } catch {
-      this.errorMessage.set('Flip 7 konnte nicht für diese Lobby ausgewählt werden.');
+    } catch (error) {
+      this.fail(error, 'Flip 7 konnte nicht für diese Lobby ausgewählt werden.');
     } finally {
       this.busy.set(false);
     }
@@ -83,10 +85,8 @@ export class Multiplayer {
         await this.lobbyService.joinLobby(lobby.id, userId);
       }
       await this.refreshLobbies();
-    } catch {
-      this.errorMessage.set(
-        'Die Lobby konnte nicht aktualisiert werden. Bitte versuche es erneut.',
-      );
+    } catch (error) {
+      this.fail(error, 'Die Lobby konnte nicht aktualisiert werden. Bitte versuche es erneut.');
     } finally {
       this.busy.set(false);
     }
@@ -101,8 +101,8 @@ export class Multiplayer {
     try {
       await this.lobbyService.closeLobby(lobby.id);
       this.lobbies.update((lobbies) => lobbies.filter((item) => item.id !== lobby.id));
-    } catch {
-      this.errorMessage.set('Die Lobby konnte nicht geschlossen werden.');
+    } catch (error) {
+      this.fail(error, 'Die Lobby konnte nicht geschlossen werden.');
     } finally {
       this.busy.set(false);
     }
@@ -116,6 +116,13 @@ export class Multiplayer {
     return lobby.memberIds.includes(this.session.user()?.id ?? '');
   }
 
+  // Fehler auf der Seite anzeigen und zusätzlich als Pop-up/Benachrichtigung melden
+  private fail(error: unknown, message: string): void {
+    console.error(message, error);
+    this.errorMessage.set(message);
+    this.appErrors.report(message, { title: 'Multiplayer' });
+  }
+
   private startAction(): void {
     this.busy.set(true);
     this.errorMessage.set('');
@@ -124,8 +131,8 @@ export class Multiplayer {
   private async refreshLobbies(): Promise<void> {
     try {
       this.lobbies.set(await this.lobbyService.listOpenLobbies());
-    } catch {
-      this.errorMessage.set('Die offenen Lobbys konnten nicht geladen werden.');
+    } catch (error) {
+      this.fail(error, 'Die offenen Lobbys konnten nicht geladen werden.');
     } finally {
       this.loading.set(false);
     }

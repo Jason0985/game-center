@@ -6,6 +6,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { NotificationsService } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
+import { ToastService } from '../../services/toast.service';
+import { AppErrorService } from '../../services/app-error.service';
+import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-dialog';
+import { firstValueFrom } from 'rxjs';
 import { NotificationItem } from './notification.model';
 import { notificationTypeConfig } from './notification-types';
 import { SystemNotificationDialog } from './system-notification-dialog';
@@ -21,6 +25,8 @@ const MARK_SEEN_DELAY_MS = 2000;
 export class Notifications {
   private readonly notificationsService = inject(NotificationsService);
   private readonly dialog = inject(MatDialog);
+  private readonly toastService = inject(ToastService);
+  private readonly appErrors = inject(AppErrorService);
   readonly session = inject(SessionService);
   readonly typeConfig = notificationTypeConfig;
   readonly notifications = this.notificationsService.notifications;
@@ -28,20 +34,19 @@ export class Notifications {
   readonly swipeOffsets = signal<Record<string, number>>({});
   readonly swipeDirections = signal<Record<string, 'left' | 'right'>>({});
   readonly respondingIds = signal<Set<string>>(new Set());
-  readonly statusMessage = signal('');
   private activeSwipeId: string | null = null;
   private touchStartX: number | null = null;
   private readonly swipeThreshold = 84;
   private markSeenTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
-    // Neue Benachrichtigungen auf dieser Seite nach kurzer Zeit als gesehen markieren
+    // Neue Benachrichtigungen auf dieser Seite nach kurzer Zeit als gelesen markieren
     effect(() => {
       if (this.loading() || !this.notificationsService.unreadCount()) return;
 
       clearTimeout(this.markSeenTimer);
       this.markSeenTimer = setTimeout(
-        () => this.notificationsService.markAllSeen(),
+        () => void this.notificationsService.markRead(),
         MARK_SEEN_DELAY_MS,
       );
     });
@@ -49,34 +54,53 @@ export class Notifications {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.markSeenTimer));
   }
 
-  removeNotification(notificationId: string): void {
-    void this.notificationsService.dismiss(notificationId);
+  async removeNotification(notificationId: string): Promise<void> {
     this.clearSwipeState(notificationId);
+    const result = await this.notificationsService.dismiss(notificationId);
+    if (!result.ok) {
+      this.appErrors.report(result.message);
+    }
   }
 
   async respondToFriendRequest(notification: NotificationItem, accept: boolean): Promise<void> {
     if (this.respondingIds().has(notification.id)) return;
+    if (!accept && !(await this.confirmDecline(notification))) return;
 
     this.respondingIds.update((ids) => new Set(ids).add(notification.id));
-    const done = await this.notificationsService.respondToFriendRequest(notification, accept);
+    const result = await this.notificationsService.respondToFriendRequest(notification, accept);
     this.respondingIds.update((ids) => {
       const next = new Set(ids);
       next.delete(notification.id);
       return next;
     });
 
-    this.statusMessage.set(
-      done
-        ? accept
-          ? `${notification.sender_name} ist jetzt dein Freund.`
-          : 'Anfrage abgelehnt.'
-        : 'Das hat nicht geklappt. Bitte versuche es erneut.',
+    if (!result.ok) {
+      this.appErrors.report(result.message);
+    } else if (accept) {
+      this.toastService.success('Anfrage angenommen', `${notification.sender_name} ist jetzt dein Freund.`);
+    } else {
+      this.toastService.success('Anfrage abgelehnt');
+    }
+  }
+
+  private confirmDecline(notification: NotificationItem): Promise<boolean | undefined> {
+    return firstValueFrom(
+      this.dialog
+        .open<ConfirmationDialog, ConfirmationDialogData, boolean>(ConfirmationDialog, {
+          data: {
+            title: 'Anfrage ablehnen?',
+            message: `${notification.sender_name} erfährt davon nichts und kann dir später erneut eine Anfrage schicken.`,
+            confirmLabel: 'Ablehnen',
+            icon: 'person_off',
+          },
+        })
+        .afterClosed(),
     );
   }
 
   // Spieleinladungen haben noch kein Backend und werden nur entfernt
   respondToGameInvite(notificationId: string): void {
-    this.removeNotification(notificationId);
+    void this.removeNotification(notificationId);
   }
 
   openSystemNotificationDialog(): void {
@@ -85,7 +109,7 @@ export class Notifications {
       .afterClosed()
       .subscribe((recipients) => {
         if (recipients !== undefined) {
-          this.statusMessage.set(`Systembenachrichtigung an ${recipients} Nutzer gesendet.`);
+          this.toastService.success('Gesendet', `Systembenachrichtigung an ${recipients} Nutzer.`);
           void this.notificationsService.reload();
         }
       });
@@ -126,7 +150,7 @@ export class Notifications {
         ...offsets,
         [notificationId]: direction === 'left' ? -window.innerWidth : window.innerWidth,
       }));
-      window.setTimeout(() => this.removeNotification(notificationId), 220);
+      window.setTimeout(() => void this.removeNotification(notificationId), 220);
     } else {
       this.resetSwipeOffset(notificationId);
     }

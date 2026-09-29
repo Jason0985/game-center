@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
 import { ProfileService } from '../../services/profile.service';
+import { AppErrorService } from '../../services/app-error.service';
 import { Profile } from './profile.model';
 
 export interface FriendAddDialogData {
@@ -24,11 +25,13 @@ export class FriendAddDialog {
   private readonly dialogRef = inject(MatDialogRef<FriendAddDialog>);
   private readonly friendsService = inject(FriendsService);
   private readonly profileService = inject(ProfileService);
+  private readonly appErrors = inject(AppErrorService);
   private readonly data = inject<FriendAddDialogData>(MAT_DIALOG_DATA);
 
   readonly search = signal('');
   readonly results = signal<Profile[]>([]);
   readonly loading = signal(false);
+  readonly errorMessage = signal('');
   private readonly states = signal(
     new Map<string, RelationState>(
       this.data.relations.map((relation) => [
@@ -84,9 +87,13 @@ export class FriendAddDialog {
       return;
     }
 
-    const added = await this.friendsService.addFriend(this.data.userId, friendId);
-    if (added) {
+    this.errorMessage.set('');
+    const result = await this.friendsService.addFriend(this.data.userId, friendId);
+    if (result.ok) {
       this.states.update((states) => new Map(states).set(friendId, 'pending'));
+    } else {
+      this.errorMessage.set(result.message);
+      this.appErrors.report(result.message, { toast: false });
     }
   }
 

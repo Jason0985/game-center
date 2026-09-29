@@ -5,6 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ProfileService } from '../../services/profile.service';
+import { AppErrorService } from '../../services/app-error.service';
+import { describeSupabaseError } from '../../services/supabase-errors';
 import { Profile } from './profile.model';
 
 export interface ProfileEditDialogData {
@@ -27,6 +29,7 @@ export interface ProfileEditDialogData {
 export class ProfileEditDialog {
   private readonly dialogRef = inject(MatDialogRef<ProfileEditDialog, Profile>);
   private readonly profileService = inject(ProfileService);
+  private readonly appErrors = inject(AppErrorService);
   private readonly data = inject<ProfileEditDialogData>(MAT_DIALOG_DATA);
 
   readonly saving = signal(false);
@@ -65,11 +68,10 @@ export class ProfileEditDialog {
     this.saving.set(false);
 
     if (error || !data) {
-      this.errorMessage.set(
-        error?.code === '23514'
-          ? 'Dieser Anzeigename ist nicht erlaubt.'
-          : 'Speichern fehlgeschlagen. Bitte versuche es erneut.',
-      );
+      const message =
+        error?.code === '23514' ? 'Dieser Anzeigename ist nicht erlaubt.' : describeSupabaseError(error);
+      this.errorMessage.set(message);
+      this.appErrors.report(message, { title: 'Anzeigename nicht gespeichert', toast: false });
       return;
     }
 

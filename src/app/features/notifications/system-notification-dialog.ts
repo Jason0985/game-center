@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { NotificationsService } from '../../services/notifications.service';
+import { AppErrorService } from '../../services/app-error.service';
 import { SystemNotificationType } from './notification.model';
 import { SYSTEM_NOTIFICATION_OPTIONS, notificationTypeConfig } from './notification-types';
 
@@ -25,6 +26,7 @@ import { SYSTEM_NOTIFICATION_OPTIONS, notificationTypeConfig } from './notificat
 export class SystemNotificationDialog {
   private readonly dialogRef = inject(MatDialogRef<SystemNotificationDialog, number>);
   private readonly notificationsService = inject(NotificationsService);
+  private readonly appErrors = inject(AppErrorService);
 
   readonly options = SYSTEM_NOTIFICATION_OPTIONS.map((option) => ({
     ...option,
@@ -70,6 +72,7 @@ export class SystemNotificationDialog {
 
     if ('error' in result) {
       this.errorMessage.set(result.error);
+      this.appErrors.report(result.error, { title: 'Systembenachrichtigung nicht gesendet', toast: false });
       return;
     }
 

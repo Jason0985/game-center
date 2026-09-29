@@ -254,6 +254,14 @@
   gap: 16px;
 }
 
+.user-row .friend-remove-button {
+  color: var(--color-text-subtle);
+}
+
+.user-row .friend-remove-button:hover:not(:disabled) {
+  color: var(--color-danger-light);
+}
+
 .version-tag {
   align-self: center;
   padding: 7px 13px;

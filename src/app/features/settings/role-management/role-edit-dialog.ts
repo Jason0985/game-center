@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { ProfileService } from '../../../services/profile.service';
+import { AppErrorService } from '../../../services/app-error.service';
 import { Profile, ProfileRole } from '../../profile/profile.model';
 import { PROFILE_ROLES } from '../../profile/profile-roles';
 
@@ -29,6 +30,7 @@ export function openRoleEditDialog(dialog: MatDialog, profile: Profile) {
 export class RoleEditDialog {
   private readonly dialogRef = inject(MatDialogRef<RoleEditDialog, Profile>);
   private readonly profileService = inject(ProfileService);
+  private readonly appErrors = inject(AppErrorService);
   readonly profile = inject<RoleEditDialogData>(MAT_DIALOG_DATA).profile;
 
   readonly roles = PROFILE_ROLES;
@@ -54,7 +56,9 @@ export class RoleEditDialog {
 
     if (error || !data) {
       // Die DB liefert verständliche deutsche Meldungen (z. B. eigene Rolle)
-      this.errorMessage.set(error?.message ?? 'Speichern fehlgeschlagen.');
+      const message = error?.message ?? 'Speichern fehlgeschlagen.';
+      this.errorMessage.set(message);
+      this.appErrors.report(message, { title: 'Rolle nicht geändert', toast: false });
       return;
     }
 

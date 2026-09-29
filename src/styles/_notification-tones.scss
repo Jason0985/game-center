@@ -1,4 +1,4 @@
-// Farbtöne der Benachrichtigungstypen, siehe notification-types.ts (tone).
+// Farbtöne der Benachrichtigungstypen (notification-types.ts) und Toasts (toast.service.ts).
 // Setzt --tone (Akzent) und --tone-soft (Hintergrund) auf [data-tone]-Elementen.
 
 [data-tone] {
@@ -23,4 +23,8 @@
 
 [data-tone='alert'] {
   --tone: var(--color-warning);
+}
+
+[data-tone='error'] {
+  --tone: var(--color-danger-light);
 }

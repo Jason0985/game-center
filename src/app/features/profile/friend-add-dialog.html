@@ -47,6 +47,10 @@
       }
     }
   </div>
+
+  @if (errorMessage()) {
+    <p class="dialog-error" role="alert">{{ errorMessage() }}</p>
+  }
 </div>
 
 <div mat-dialog-actions align="end">

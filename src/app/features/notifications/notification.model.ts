@@ -3,7 +3,9 @@ export type NotificationType =
   | 'friend_accepted'
   | 'game_invite'
   | 'system_info'
-  | 'system_alert';
+  | 'system_alert'
+  // Nur lokal auf dem Gerät (Fehler beim Benutzen der App), nie in der DB
+  | 'app_error';
 
 export type SystemNotificationType = Extract<NotificationType, 'system_info' | 'system_alert'>;
 
@@ -17,4 +19,5 @@ export interface NotificationItem {
   message: string;
   related_id: string | null;
   created_at: string;
+  read_at: string | null;
 }

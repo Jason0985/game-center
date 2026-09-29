@@ -7,6 +7,9 @@ import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
+import { ToastService } from '../../services/toast.service';
+import { AppErrorService } from '../../services/app-error.service';
+import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-dialog';
 import { Profile as UserProfile } from './profile.model';
 import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog';
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
@@ -21,6 +24,8 @@ export class Profile {
   private readonly authService = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
   private readonly dialog = inject(MatDialog);
+  private readonly toastService = inject(ToastService);
+  private readonly appErrors = inject(AppErrorService);
   readonly session = inject(SessionService);
   private readonly relations = signal<FriendRelation[]>([]);
   readonly friendsLoading = signal(true);
@@ -29,19 +34,16 @@ export class Profile {
   readonly friends = computed(() =>
     this.relations()
       .filter((relation) => relation.status === 'accepted')
-      .map((relation) => relation.profile)
-      .sort((a, b) =>
-        (a.display_name || a.username).localeCompare(b.display_name || b.username, 'de'),
-      ),
+      .sort((a, b) => this.nameOf(a).localeCompare(this.nameOf(b), 'de')),
   );
 
   readonly filteredFriends = computed(() => {
     const filter = this.friendFilter().trim().toLowerCase();
     return filter
       ? this.friends().filter(
-          (friend) =>
-            friend.username.toLowerCase().includes(filter) ||
-            (friend.display_name ?? '').toLowerCase().includes(filter),
+          ({ profile }) =>
+            profile.username.toLowerCase().includes(filter) ||
+            (profile.display_name ?? '').toLowerCase().includes(filter),
         )
       : this.friends();
   });
@@ -93,11 +95,49 @@ export class Profile {
       .subscribe(() => void this.loadRelations(userId));
   }
 
+  removeFriend(friend: FriendRelation): void {
+    const name = this.nameOf(friend);
+
+    this.dialog
+      .open<ConfirmationDialog, ConfirmationDialogData, boolean>(ConfirmationDialog, {
+        data: {
+          title: 'Freund entfernen?',
+          message: `Möchtest du ${name} wirklich aus deinen Freunden entfernen? Ihr könnt euch später erneut eine Anfrage schicken.`,
+          confirmLabel: 'Entfernen',
+          icon: 'person_remove',
+        },
+      })
+      .afterClosed()
+      .subscribe(async (confirmed) => {
+        if (!confirmed) return;
+
+        const result = await this.friendsService.removeFriendship(friend.friendshipId);
+        if (!result.ok) {
+          this.appErrors.report(result.message);
+          return;
+        }
+
+        this.relations.update((relations) =>
+          relations.filter((relation) => relation.friendshipId !== friend.friendshipId),
+        );
+        this.toastService.success('Freund entfernt', `${name} ist nicht mehr in deiner Freundesliste.`);
+      });
+  }
+
+  private nameOf(relation: FriendRelation): string {
+    return relation.profile.display_name || relation.profile.username;
+  }
+
   private async loadRelations(userId: string): Promise<void> {
     const relations = await this.friendsService.getRelations(userId);
     if (this.session.user()?.id !== userId) return; // inzwischen ausgeloggt/gewechselt
 
-    this.relations.set(relations);
     this.friendsLoading.set(false);
+    if (!relations) {
+      this.appErrors.report('Deine Freunde konnten nicht geladen werden.');
+      return;
+    }
+
+    this.relations.set(relations);
   }
 }

@@ -1,4 +1,4 @@
-@use './notification-tones';
+@use '../../../styles/notification-tones';
 
 .notifications-header,
 .notification-list,
@@ -63,15 +63,6 @@
   width: 18px;
   height: 18px;
   font-size: 18px;
-}
-
-.notifications-status {
-  width: min(100%, var(--content-width));
-  box-sizing: border-box;
-  margin: -8px 0 16px;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  text-align: center;
 }
 
 .notification-list {

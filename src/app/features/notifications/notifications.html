@@ -19,10 +19,6 @@
     }
   </header>
 
-  @if (statusMessage()) {
-    <p class="notifications-status" role="status">{{ statusMessage() }}</p>
-  }
-
   @if (!session.isLoggedIn()) {
     <section class="notifications-empty ui-surface">
       <mat-icon aria-hidden="true">lock</mat-icon>

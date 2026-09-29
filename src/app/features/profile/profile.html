@@ -141,12 +141,22 @@
         } @else if (!filteredFriends().length) {
           <p class="user-list-message">Keine Freunde gefunden.</p>
         } @else {
-          @for (friend of filteredFriends(); track friend.id) {
+          @for (friend of filteredFriends(); track friend.friendshipId) {
             <div class="user-row">
               <div class="user-row-details">
-                <strong>{{ friend.display_name || friend.username }}</strong>
-                <span>&#64;{{ friend.username }}</span>
+                <strong>{{ friend.profile.display_name || friend.profile.username }}</strong>
+                <span>&#64;{{ friend.profile.username }}</span>
               </div>
+              <button
+                mat-icon-button
+                type="button"
+                class="friend-remove-button"
+                [attr.aria-label]="'@' + friend.profile.username + ' aus Freunden entfernen'"
+                matTooltip="Freund entfernen"
+                (click)="removeFriend(friend)"
+              >
+                <mat-icon aria-hidden="true">person_remove</mat-icon>
+              </button>
             </div>
           }
         }
