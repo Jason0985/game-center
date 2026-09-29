@@ -67,17 +67,17 @@
 .team-card {
   min-width: 0;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-10);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--color-white-045);
 }
 
 .team-card--winners {
-  border-color: rgba(159, 240, 187, 0.28);
+  border-color: var(--color-success-light-28);
 }
 
 .team-card--losers {
-  border-color: rgba(255, 138, 128, 0.28);
+  border-color: var(--color-danger-light-28);
 }
 
 .team-card-heading {
@@ -94,7 +94,7 @@
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-08);
 }
 
 .team-indicator mat-icon {
@@ -105,7 +105,7 @@
 
 .team-card--winners .team-indicator,
 .team-card--winners .team-label {
-  color: #9ff0bb;
+  color: var(--color-success-light);
 }
 
 .team-card--losers .team-indicator,
@@ -136,7 +136,7 @@
 }
 
 .team-card--winners .team-field {
-  --mdc-outlined-text-field-focus-outline-color: #9ff0bb;
+  --mdc-outlined-text-field-focus-outline-color: var(--color-success-light);
 }
 
 .team-card--losers .team-field {
@@ -146,9 +146,9 @@
 .rounds-control {
   margin-top: 22px;
   padding: 12px 14px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-10);
   border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--color-white-035);
 }
 
 .rounds-label {
@@ -198,7 +198,7 @@
 .versus {
   align-self: center;
   padding: 7px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-white-12);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-text-subtle);

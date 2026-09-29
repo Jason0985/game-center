@@ -56,7 +56,7 @@
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 1px var(--color-white-16);
 }
 
 .country-name {
@@ -140,9 +140,9 @@
   display: grid;
   gap: 16px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-10);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--color-white-035);
 }
 .strategy-option-heading {
   display: flex;
@@ -197,7 +197,7 @@
   gap: 12px;
   padding-top: 12px;
   margin-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--color-white-08);
   color: var(--color-text-muted);
   font-size: 13px;
 }

@@ -164,9 +164,9 @@
   min-height: 58px;
   gap: 10px;
   padding: 8px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-10);
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-white-04);
   color: var(--color-text);
   text-align: left;
   cursor: pointer;
@@ -229,7 +229,7 @@
 
 .lobby-error {
   margin: 0;
-  color: #ff8d8d;
+  color: var(--color-danger-alert);
   font-size: 13px;
 }
 

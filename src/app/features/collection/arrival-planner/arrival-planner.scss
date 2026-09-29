@@ -121,7 +121,7 @@
 }
 
 .plan-row-primary {
-  border-color: rgba(255, 154, 170, 0.48);
+  border-color: var(--color-primary-light-48);
   background: linear-gradient(115deg, var(--color-primary-soft), var(--color-surface));
 }
 

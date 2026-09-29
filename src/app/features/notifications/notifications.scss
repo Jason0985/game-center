@@ -76,7 +76,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-08);
   color: var(--color-primary-light);
 }
 
@@ -135,7 +135,7 @@
   gap: 8px;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--color-white-08);
 }
 
 .notification-actions button {
@@ -200,7 +200,7 @@
   justify-content: center;
   gap: 4px;
   background: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-white);
   opacity: 0.55;
   transition:
     opacity var(--transition-fast),
@@ -236,7 +236,7 @@
   bottom: 8px;
   z-index: 1;
   width: 1px;
-  border-left: 1px dashed rgba(255, 255, 255, 0.58);
+  border-left: 1px dashed var(--color-white-58);
   opacity: 0.85;
 }
 

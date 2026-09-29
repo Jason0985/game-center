@@ -48,11 +48,16 @@ export class MultiplayerLobbyService {
     }
 
     const members = (memberData ?? []) as LobbyMember[];
+    const membersByLobby = new Map<string, string[]>();
+    for (const member of members) {
+      const lobbyMembers = membersByLobby.get(member.lobby_id) ?? [];
+      lobbyMembers.push(member.user_id);
+      membersByLobby.set(member.lobby_id, lobbyMembers);
+    }
+
     return lobbies.map((lobby) => ({
       ...lobby,
-      memberIds: members
-        .filter((member) => member.lobby_id === lobby.id)
-        .map((member) => member.user_id),
+      memberIds: membersByLobby.get(lobby.id) ?? [],
     }));
   }
 
