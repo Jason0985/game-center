@@ -1,0 +1,251 @@
+.multiplayer-header,
+.multiplayer-content {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+}
+
+.multiplayer-header {
+  margin-bottom: 24px;
+}
+
+.multiplayer-kicker {
+  margin: 0 0 5px;
+  color: var(--color-primary-light);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.multiplayer-header .ui-title {
+  margin-top: 0;
+}
+
+.multiplayer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lobby-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.lobby-toolbar h2,
+.lobby-message h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.lobby-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  gap: 7px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lobby-button:disabled,
+.game-choice:disabled,
+.lobby-secondary-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.lobby-button mat-icon {
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
+}
+
+.lobby-button:focus-visible,
+.game-choice:focus-visible,
+.lobby-secondary-action:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.lobby-message {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 22px;
+  text-align: center;
+}
+
+.lobby-message > mat-icon {
+  color: var(--color-primary-light);
+}
+
+.lobby-message p {
+  max-width: 360px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lobby-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lobby-card {
+  min-width: 0;
+  padding: 16px;
+}
+
+.lobby-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lobby-code-label {
+  margin: 0 0 3px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+}
+
+.lobby-card-heading h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.lobby-member-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.lobby-member-count mat-icon,
+.lobby-selected-game mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.lobby-game-picker {
+  margin-top: 16px;
+}
+
+.lobby-game-picker > p,
+.lobby-waiting {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.game-choice {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--color-white-10);
+  border-radius: var(--radius-small);
+  background: var(--color-white-04);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.game-choice > mat-icon:first-child {
+  color: var(--color-primary-light);
+}
+
+.game-choice > span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-choice strong {
+  font-size: 13px;
+}
+
+.game-choice small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.game-choice-arrow {
+  color: var(--color-text-subtle);
+}
+
+.lobby-selected-game {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0 0;
+  color: var(--color-primary-light);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lobby-waiting {
+  margin: 14px 0 0;
+}
+
+.lobby-secondary-action {
+  min-height: 36px;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lobby-secondary-action:hover {
+  color: var(--color-text);
+}
+
+.lobby-error {
+  margin: 0;
+  color: var(--color-danger-alert);
+  font-size: 13px;
+}
+
+@media (max-width: 420px) {
+  .lobby-toolbar {
+    align-items: flex-start;
+  }
+
+  .lobby-toolbar h2 {
+    font-size: 16px;
+  }
+
+  .lobby-button {
+    min-height: 40px;
+    gap: 5px;
+    padding-inline: 9px;
+    font-size: 12px;
+  }
+}

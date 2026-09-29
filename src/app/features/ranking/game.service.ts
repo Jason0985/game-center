@@ -3,6 +3,8 @@ import { BehaviorSubject } from 'rxjs';
 import { Player } from '../../player.model';
 import { supabase } from '../../supabase.client';
 import { SessionService } from '../../services/session.service';
+import { AppErrorService } from '../../services/app-error.service';
+import { describeSupabaseError } from '../../services/supabase-errors';
 
 export type GamePhase = 'setup' | 'playing' | 'finished';
 
@@ -11,6 +13,7 @@ const STORAGE_KEY = 'boardgame:players';
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly session = inject(SessionService);
+  private readonly appErrors = inject(AppErrorService);
 
   private playersSubject = new BehaviorSubject<Player[]>([]);
   players$ = this.playersSubject.asObservable();
@@ -58,6 +61,7 @@ export class GameService {
 
     if (error) {
       console.error('Ranking-Spiel konnte nicht geladen werden.', error);
+      this.appErrors.report(describeSupabaseError(error), { title: 'Spielstand nicht geladen' });
     }
 
     this.playersSubject.next((data?.players as Player[]) ?? []);
@@ -107,6 +111,7 @@ export class GameService {
 
     if (error) {
       console.error('Ranking-Spiel konnte nicht gespeichert werden.', error);
+      this.appErrors.report(describeSupabaseError(error), { title: 'Spielstand nicht gespeichert' });
     }
   }
 

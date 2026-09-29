@@ -1,0 +1,124 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 60vh;
+  padding-top: 4px;
+}
+
+.overview-message {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.role-group {
+  --role-color: var(--color-primary-light);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.role-group[data-role='admin'] {
+  --role-color: var(--color-rank-badge);
+}
+
+.role-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--role-color) 40%, transparent);
+}
+
+.role-group-heading mat-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--role-color);
+  font-size: 20px;
+}
+
+.role-group-heading h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+}
+
+.role-group-count {
+  min-width: 22px;
+  padding: 2px 8px;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--role-color) 18%, transparent);
+  color: var(--role-color);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.role-group-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.role-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-white-08);
+}
+
+.role-member:last-child {
+  border-bottom: 0;
+}
+
+.role-member-details {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-member-details strong,
+.role-member-details span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-member-details strong {
+  font-size: 14px;
+}
+
+.role-member-details span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.role-member button {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+}
+
+.role-member-self {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white-08);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}

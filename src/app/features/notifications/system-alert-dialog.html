@@ -1,0 +1,25 @@
+<div class="alert" [attr.data-tone]="config.tone">
+  <span class="alert-icon" aria-hidden="true">
+    <mat-icon>{{ config.icon }}</mat-icon>
+  </span>
+  <p class="alert-kicker">{{ config.label }}</p>
+  <h2 mat-dialog-title>{{ data.alert.title }}</h2>
+  <div mat-dialog-content>
+    <p class="alert-message">{{ data.alert.message }}</p>
+    @if (data.moreCount > 0) {
+      <p class="alert-more">
+        und {{ data.moreCount }} weitere wichtige
+        {{ data.moreCount === 1 ? 'Nachricht' : 'Nachrichten' }}
+      </p>
+    }
+  </div>
+</div>
+
+<div mat-dialog-actions align="end">
+  @if (data.moreCount > 0) {
+    <button mat-button type="button" (click)="close('all')">Alle ansehen</button>
+  }
+  <button mat-flat-button color="primary" type="button" (click)="close('acknowledged')">
+    Verstanden
+  </button>
+</div>

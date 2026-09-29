@@ -1,0 +1,36 @@
+<div class="toast-stack" aria-live="polite">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div
+      class="toast"
+      [attr.data-tone]="toast.tone"
+      [class.toast--link]="toast.link"
+      [attr.role]="toast.tone === 'error' ? 'alert' : 'status'"
+    >
+      <button
+        type="button"
+        class="toast-body"
+        [disabled]="!toast.link"
+        [attr.aria-label]="toast.link ? toast.title + ' – öffnen' : null"
+        (click)="open(toast)"
+      >
+        <span class="toast-icon" aria-hidden="true">
+          <mat-icon>{{ toast.icon }}</mat-icon>
+        </span>
+        <span class="toast-copy">
+          <strong>{{ toast.title }}</strong>
+          @if (toast.message) {
+            <span>{{ toast.message }}</span>
+          }
+        </span>
+      </button>
+      <button
+        type="button"
+        class="toast-close"
+        aria-label="Hinweis schließen"
+        (click)="toastService.dismiss(toast.id)"
+      >
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+  }
+</div>

@@ -1,11 +1,20 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { NotificationsService } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
+import { ToastService } from '../../services/toast.service';
+import { AppErrorService } from '../../services/app-error.service';
+import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-dialog';
+import { firstValueFrom } from 'rxjs';
 import { NotificationItem } from './notification.model';
+import { notificationTypeConfig } from './notification-types';
+import { SystemNotificationDialog } from './system-notification-dialog';
+
+const MARK_SEEN_DELAY_MS = 2000;
 
 @Component({
   selector: 'app-notifications',
@@ -15,41 +24,108 @@ import { NotificationItem } from './notification.model';
 })
 export class Notifications {
   private readonly notificationsService = inject(NotificationsService);
+  private readonly dialog = inject(MatDialog);
+  private readonly toastService = inject(ToastService);
+  private readonly appErrors = inject(AppErrorService);
   readonly session = inject(SessionService);
-  readonly notifications = signal<NotificationItem[]>([]);
-  readonly loading = signal(true);
+  readonly typeConfig = notificationTypeConfig;
+  readonly notifications = this.notificationsService.notifications;
+  readonly loading = this.notificationsService.loading;
   readonly swipeOffsets = signal<Record<string, number>>({});
   readonly swipeDirections = signal<Record<string, 'left' | 'right'>>({});
-  private loadedUserId: string | null = null;
+  readonly respondingIds = signal<Set<string>>(new Set());
   private activeSwipeId: string | null = null;
   private touchStartX: number | null = null;
   private readonly swipeThreshold = 84;
+  private markSeenTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
+    // Neue Benachrichtigungen auf dieser Seite nach kurzer Zeit als gelesen markieren
     effect(() => {
-      const userId = this.session.user()?.id;
-      if (this.session.initialized() && userId && userId !== this.loadedUserId) {
-        this.loadedUserId = userId;
-        void this.loadNotifications(userId);
-      }
+      if (this.loading() || !this.notificationsService.unreadCount()) return;
+
+      clearTimeout(this.markSeenTimer);
+      this.markSeenTimer = setTimeout(
+        () => void this.notificationsService.markRead(),
+        MARK_SEEN_DELAY_MS,
+      );
     });
+
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.markSeenTimer));
   }
 
-  private async loadNotifications(userId: string): Promise<void> {
-    this.notifications.set(await this.notificationsService.getNotifications(userId));
-    this.loading.set(false);
-  }
-
-  removeNotification(notificationId: string): void {
-    this.notifications.update((items) => items.filter((item) => item.id !== notificationId));
+  async removeNotification(notificationId: string): Promise<void> {
     this.clearSwipeState(notificationId);
+    const result = await this.notificationsService.dismiss(notificationId);
+    if (!result.ok) {
+      this.appErrors.report(result.message);
+    }
   }
 
-  handleNotification(notificationId: string, _action: 'accepted' | 'rejected'): void {
-    this.removeNotification(notificationId);
+  async respondToFriendRequest(notification: NotificationItem, accept: boolean): Promise<void> {
+    if (this.respondingIds().has(notification.id)) return;
+    if (!accept && !(await this.confirmDecline(notification))) return;
+
+    this.respondingIds.update((ids) => new Set(ids).add(notification.id));
+    const result = await this.notificationsService.respondToFriendRequest(notification, accept);
+    this.respondingIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(notification.id);
+      return next;
+    });
+
+    if (!result.ok) {
+      this.appErrors.report(result.message);
+    } else if (accept) {
+      this.toastService.success('Anfrage angenommen', `${notification.sender_name} ist jetzt dein Freund.`);
+    } else {
+      this.toastService.success('Anfrage abgelehnt');
+    }
   }
 
-  startSwipe(event: TouchEvent, notificationId: string): void {
+  private confirmDecline(notification: NotificationItem): Promise<boolean | undefined> {
+    return firstValueFrom(
+      this.dialog
+        .open<ConfirmationDialog, ConfirmationDialogData, boolean>(ConfirmationDialog, {
+          data: {
+            title: 'Anfrage ablehnen?',
+            message: `${notification.sender_name} erfährt davon nichts und kann dir später erneut eine Anfrage schicken.`,
+            confirmLabel: 'Ablehnen',
+            icon: 'person_off',
+          },
+        })
+        .afterClosed(),
+    );
+  }
+
+  // Spieleinladungen haben noch kein Backend und werden nur entfernt
+  respondToGameInvite(notificationId: string): void {
+    void this.removeNotification(notificationId);
+  }
+
+  openSystemNotificationDialog(): void {
+    this.dialog
+      .open<SystemNotificationDialog, void, number>(SystemNotificationDialog, { width: '400px' })
+      .afterClosed()
+      .subscribe((recipients) => {
+        if (recipients !== undefined) {
+          this.toastService.success('Gesendet', `Systembenachrichtigung an ${recipients} Nutzer.`);
+          void this.notificationsService.reload();
+        }
+      });
+  }
+
+  // Anfragen müssen beantwortet werden und lassen sich nicht wegwischen.
+  // Wichtig: Touch-Handler dürfen nie false zurückgeben, sonst ruft Angular
+  // preventDefault() auf und Buttons in der Karte bekommen auf Touch-Geräten keinen Klick.
+  isSwipeable(notification: NotificationItem): boolean {
+    return this.typeConfig(notification.type).actions !== 'friend-request';
+  }
+
+  startSwipe(event: TouchEvent, notification: NotificationItem): void {
+    if (!this.isSwipeable(notification)) return;
+
+    const notificationId = notification.id;
     this.activeSwipeId = notificationId;
     this.touchStartX = event.changedTouches[0]?.clientX ?? null;
     this.swipeDirections.update((directions) => {
@@ -59,7 +135,8 @@ export class Notifications {
     });
   }
 
-  moveSwipe(event: TouchEvent, notificationId: string): void {
+  moveSwipe(event: TouchEvent, notification: NotificationItem): void {
+    const notificationId = notification.id;
     if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
       return;
     }
@@ -70,7 +147,8 @@ export class Notifications {
     this.swipeOffsets.update((offsets) => ({ ...offsets, [notificationId]: limitedOffset }));
   }
 
-  finishSwipe(event: TouchEvent, notificationId: string): void {
+  finishSwipe(event: TouchEvent, notification: NotificationItem): void {
+    const notificationId = notification.id;
     if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
       return;
     }
@@ -84,7 +162,7 @@ export class Notifications {
         ...offsets,
         [notificationId]: direction === 'left' ? -window.innerWidth : window.innerWidth,
       }));
-      window.setTimeout(() => this.removeNotification(notificationId), 220);
+      window.setTimeout(() => void this.removeNotification(notificationId), 220);
     } else {
       this.resetSwipeOffset(notificationId);
     }

@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>Freunde hinzufügen</h2>
+
+<div mat-dialog-content class="dialog-content">
+  <label class="user-search">
+    <mat-icon aria-hidden="true">search</mat-icon>
+    <input
+      type="search"
+      placeholder="Benutzernamen suchen"
+      [value]="search()"
+      (input)="onSearch($event)"
+      aria-label="Benutzer nach Benutzernamen suchen"
+      autofocus
+    />
+  </label>
+
+  <div class="user-list" aria-live="polite">
+    @if (loading()) {
+      <p class="user-list-message">Suche läuft ...</p>
+    } @else if (search().length < 2) {
+      <p class="user-list-message">Mindestens 2 Zeichen eingeben.</p>
+    } @else if (!results().length) {
+      <p class="user-list-message">Keine Benutzer gefunden.</p>
+    } @else {
+      @for (result of results(); track result.id) {
+        <div class="user-row">
+          <div class="user-row-details">
+            <strong>{{ result.display_name || result.username }}</strong>
+            <span>&#64;{{ result.username }}</span>
+          </div>
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="stateOf(result.id) !== 'none'"
+            [attr.aria-label]="tooltipOf(result.id)"
+            [matTooltip]="tooltipOf(result.id)"
+            (click)="add(result.id)"
+          >
+            <mat-icon aria-hidden="true">
+              @switch (stateOf(result.id)) {
+                @case ('friend') { how_to_reg }
+                @case ('pending') { schedule }
+                @default { person_add }
+              }
+            </mat-icon>
+          </button>
+        </div>
+      }
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <p class="dialog-error" role="alert">{{ errorMessage() }}</p>
+  }
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Fertig</button>
+</div>

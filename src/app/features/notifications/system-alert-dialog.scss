@@ -1,0 +1,63 @@
+@use '../../../styles/notification-tones';
+
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 360px;
+}
+
+.alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  text-align: center;
+}
+
+.alert-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+
+.alert-icon mat-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+}
+
+.alert-kicker {
+  margin: 12px 0 0;
+  color: var(--tone);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.alert [mat-dialog-title] {
+  padding-top: 4px;
+}
+
+.alert-message {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.alert-more {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+[mat-dialog-actions] {
+  gap: 8px;
+}

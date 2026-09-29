@@ -1,3 +1,5 @@
+@use '../../../styles/notification-tones';
+
 .notifications-header,
 .notification-list,
 .notifications-empty {
@@ -52,6 +54,17 @@
   margin: 0 0 8px;
 }
 
+.system-notification-button {
+  margin-top: 14px;
+  border-radius: var(--radius-pill);
+}
+
+.system-notification-button mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
 .notification-list {
   display: flex;
   flex-direction: column;
@@ -76,12 +89,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-small);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-primary-light);
-}
-
-.notification-type-icon--game {
-  background: var(--color-primary-soft);
+  background: var(--tone-soft);
+  color: var(--tone);
 }
 
 .notification-type-icon mat-icon {
@@ -95,25 +104,33 @@
   flex: 1;
 }
 
-.notification-title-line {
+.notification-meta {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 2px;
 }
 
-.notification-title-line h2 {
+.notification-meta span {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+}
+
+.notification-meta .notification-category {
+  color: var(--tone);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.notification-copy h2 {
   overflow: hidden;
   margin: 0;
   font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.notification-title-line span {
-  flex: 0 0 auto;
-  color: var(--color-text-subtle);
-  font-size: 10px;
 }
 
 .notification-copy p {
@@ -135,7 +152,7 @@
   gap: 8px;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--color-white-08);
 }
 
 .notification-actions button {
@@ -200,7 +217,7 @@
   justify-content: center;
   gap: 4px;
   background: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-white);
   opacity: 0.55;
   transition:
     opacity var(--transition-fast),
@@ -236,7 +253,7 @@
   bottom: 8px;
   z-index: 1;
   width: 1px;
-  border-left: 1px dashed rgba(255, 255, 255, 0.58);
+  border-left: 1px dashed var(--color-white-58);
   opacity: 0.85;
 }
 
@@ -253,6 +270,16 @@
   position: relative;
   z-index: 2;
   transition: transform 220ms ease;
+}
+
+// Systembenachrichtigungen heben sich farbig von persönlichen ab
+.notification-card[data-category='system'] {
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  background-color: color-mix(in srgb, var(--tone) 12%, var(--color-surface));
+}
+
+.notification-card[data-category='system'] .notification-copy p {
+  color: var(--color-text);
 }
 
 .notification-card--dragging {

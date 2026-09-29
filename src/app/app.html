@@ -10,10 +10,16 @@
         mat-icon-button
         class="header-icon-button notification-button"
         routerLink="/notifications"
-        aria-label="Benachrichtigungen"
+        [attr.aria-label]="
+          notifications.unreadCount()
+            ? 'Benachrichtigungen, ' + notifications.unreadCount() + ' neu'
+            : 'Benachrichtigungen'
+        "
       >
         <mat-icon aria-hidden="true">notifications</mat-icon>
-        <span class="notification-dot"></span>
+        @if (notifications.unreadCount(); as count) {
+          <span class="notification-badge" aria-hidden="true">{{ count > 9 ? '9+' : count }}</span>
+        }
       </button>
       <button
         mat-icon-button
@@ -25,6 +31,8 @@
       </button>
     </div>
   </header>
+
+  <app-toast-host />
 
   <main>
     <router-outlet></router-outlet>
@@ -41,9 +49,14 @@
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
     </a>
-    <a class="bottom-nav-link" routerLink="/ranking" routerLinkActive="active" aria-label="Ranking">
-      <mat-icon aria-hidden="true">leaderboard</mat-icon>
-      <span>Ranking</span>
+    <a
+      class="bottom-nav-link"
+      routerLink="/multiplayer"
+      routerLinkActive="active"
+      aria-label="Multiplayer"
+    >
+      <mat-icon aria-hidden="true">groups</mat-icon>
+      <span>Multiplayer</span>
     </a>
     <a
       class="bottom-nav-link"

@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Flip7 } from './flip-7';
+import { DownloadDialog } from './download-dialog';
 
-describe('Flip7', () => {
-  let component: Flip7;
-  let fixture: ComponentFixture<Flip7>;
+describe('DownloadDialog', () => {
+  let component: DownloadDialog;
+  let fixture: ComponentFixture<DownloadDialog>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Flip7],
+      imports: [DownloadDialog],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Flip7);
+    fixture = TestBed.createComponent(DownloadDialog);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

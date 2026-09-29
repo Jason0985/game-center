@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>Anzeigename ändern</h2>
+
+<form mat-dialog-content class="dialog-form" (submit)="$event.preventDefault(); save()">
+  <mat-form-field appearance="outline">
+    <mat-label>Anzeigename</mat-label>
+    <input matInput [formControl]="control" maxlength="50" autocomplete="name" autofocus />
+    @if (control.hasError('required')) {
+      <mat-error>Bitte gib einen Anzeigenamen ein.</mat-error>
+    }
+  </mat-form-field>
+
+  @if (errorMessage()) {
+    <p class="dialog-error" role="alert">{{ errorMessage() }}</p>
+  }
+</form>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="control.invalid || saving()"
+    (click)="save()"
+  >
+    {{ saving() ? 'Speichern ...' : 'Speichern' }}
+  </button>
+</div>

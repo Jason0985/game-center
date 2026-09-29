@@ -1,0 +1,51 @@
+<div class="edit-track-dialog">
+  <header class="dialog-header">
+    <div>
+      <p class="dialog-kicker">Persönliche Streckenwerte</p>
+      <div class="track-info">
+        <div
+          class="country-flag"
+          [style.background-image]="'url(assets/flags/' + data.countryCode + '.svg)'"
+          role="img"
+          [attr.aria-label]="data.country"
+        ></div>
+        <span mat-dialog-title>{{ data.country }}</span>
+      </div>
+    </div>
+  </header>
+
+  <mat-dialog-content>
+    @if (!data.userId) {
+      <p class="login-notice">Zum Speichern musst du angemeldet sein.</p>
+    }
+    <label class="form-field">
+      <span>Spritverbrauch</span>
+      <input [(ngModel)]="fuelUsage" type="text" placeholder="z. B. 27.5 Runden / -1.9" />
+    </label>
+    <label class="form-field">
+      <span>Gute Quali-Zeit</span>
+      <input [(ngModel)]="goodQualifyingTime" type="text" placeholder="z. B. 1:18.250" />
+    </label>
+    <label class="form-field">
+      <span>Notes</span>
+      <textarea [(ngModel)]="notes" rows="4" placeholder="Notizen zur Strecke"></textarea>
+    </label>
+    @if (saveError) {
+      <p class="save-error" role="alert">{{ saveError }}</p>
+    }
+  </mat-dialog-content>
+
+  <div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close type="button">Abbrechen</button>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="!data.userId || saving"
+      (click)="save()"
+    >
+      <mat-icon aria-hidden="true">save</mat-icon>
+      Speichern
+    </button>
+  </div>
+</div>

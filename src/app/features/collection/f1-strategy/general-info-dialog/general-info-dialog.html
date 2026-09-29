@@ -1,0 +1,85 @@
+<div class="general-info-dialog">
+  <header class="dialog-header">
+    <div class="dialog-icon" aria-hidden="true">
+      <mat-icon>thermostat</mat-icon>
+    </div>
+    <div>
+      <p class="dialog-kicker">F1 26 · Datenblatt</p>
+      <h2 mat-dialog-title>Allgemeine Spielinfos</h2>
+    </div>
+  </header>
+
+  <mat-dialog-content>
+    <p class="dialog-intro">
+      Temperaturbereiche und Motorleistung aus den F1-26-Spieldaten. Alle Werte sind in Celsius.
+    </p>
+
+    <section class="temperature-section" aria-labelledby="tire-temperature-title">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">Reifen</span>
+          <h3 id="tire-temperature-title">Zieltemperaturen</h3>
+        </div>
+        <mat-icon aria-hidden="true">tire_repair</mat-icon>
+      </div>
+
+      <div class="temperature-scale" aria-hidden="true">
+        <span>50 °C</span>
+        <span>100 °C</span>
+        <span>150 °C</span>
+        <span>180 °C</span>
+      </div>
+      <div class="tire-chart">
+        @for (tire of tireTemperatures; track tire.compound) {
+          <div class="tire-row">
+            <span class="compound-name">{{ tire.compound }}</span>
+            <div class="range-track">
+              <span
+                class="range-bar"
+                [style.left.%]="tireRange(tire.temp_celsius).left"
+                [style.width.%]="tireRange(tire.temp_celsius).width"
+              ></span>
+            </div>
+            <strong>{{ tire.temp_celsius }} °C</strong>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="temperature-section" aria-labelledby="engine-temperature-title">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">Motor</span>
+          <h3 id="engine-temperature-title">Temperatur und Leistung</h3>
+        </div>
+        <mat-icon aria-hidden="true">speed</mat-icon>
+      </div>
+
+      <div class="engine-chart" role="img" aria-label="Motorleistung nach Temperatur in Celsius">
+        @for (point of engineTemperatures; track point.temp_celsius) {
+          <div class="engine-point">
+            <div class="engine-bar-track">
+              <span
+                class="engine-bar"
+                [class]="engineTemperatureClass(point.temp_celsius)"
+                [style.height.%]="point.power_percent"
+              ></span>
+            </div>
+            <strong>{{ point.temp_celsius }} °C</strong>
+            <span>{{ point.power_percent }}%</span>
+          </div>
+        }
+      </div>
+      <div class="legend" aria-label="Temperaturbereiche">
+        <span><i class="legend-swatch temperature-cool"></i>Kühl</span>
+        <span><i class="legend-swatch temperature-optimal"></i>Optimal</span>
+        <span><i class="legend-swatch temperature-warm"></i>Warm</span>
+        <span><i class="legend-swatch temperature-hot"></i>Heiß</span>
+      </div>
+    </section>
+  </mat-dialog-content>
+
+  <div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close type="button">Schließen</button>
+  </div>
+</div>

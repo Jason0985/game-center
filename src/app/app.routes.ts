@@ -35,9 +35,28 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'collection/flip-7',
+    path: 'collection/arrival-planner',
     loadComponent: () =>
-      import('./features/collection/flip-7/flip-7').then((module) => module.Flip7),
+      import('./features/collection/arrival-planner/arrival-planner').then(
+        (module) => module.ArrivalPlanner,
+      ),
+  },
+  {
+    path: 'multiplayer',
+    loadComponent: () =>
+      import('./features/multiplayer/multiplayer').then((module) => module.Multiplayer),
+  },
+  {
+    path: 'collection/f1-strategy',
+    loadComponent: () =>
+      import('./features/collection/f1-strategy/f1-strategy').then((module) => module.F1Strategy),
+  },
+  {
+    path: 'collection/f1-strategy/:trackId',
+    loadComponent: () =>
+      import('./features/collection/f1-strategy/detailed-view/detailed-view').then(
+        (module) => module.DetailedView,
+      ),
   },
   {
     path: 'profile',

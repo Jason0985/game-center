@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Rollenübersicht</h2>
+
+<div mat-dialog-content class="dialog-content">
+  @if (loading()) {
+    <p class="overview-message">Nutzer werden geladen ...</p>
+  } @else {
+    @for (group of groups(); track group.config.role) {
+      <section class="role-group" [attr.data-role]="group.config.role">
+        <header class="role-group-heading">
+          <mat-icon aria-hidden="true">{{ group.config.icon }}</mat-icon>
+          <h3>{{ group.config.label }}</h3>
+          <span class="role-group-count">{{ group.members.length }}</span>
+        </header>
+
+        @if (!group.members.length) {
+          <p class="overview-message">Niemand hat diese Rolle.</p>
+        } @else {
+          <ul class="role-group-list">
+            @for (member of group.members; track member.id) {
+              <li class="role-member">
+                <div class="role-member-details">
+                  <strong>{{ member.display_name || member.username }}</strong>
+                  <span>&#64;{{ member.username }}</span>
+                </div>
+                @if (member.id === session.user()?.id) {
+                  <span class="role-member-self">Du</span>
+                } @else {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [attr.aria-label]="'Rolle von ' + member.username + ' bearbeiten'"
+                    matTooltip="Rolle bearbeiten"
+                    (click)="edit(member)"
+                  >
+                    <mat-icon aria-hidden="true">edit</mat-icon>
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Schließen</button>
+</div>

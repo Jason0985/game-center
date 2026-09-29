@@ -41,7 +41,7 @@ main {
   padding: 3px;
   box-sizing: border-box;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-08);
   object-fit: contain;
 }
 
@@ -108,15 +108,23 @@ main {
   outline-offset: 2px;
 }
 
-.notification-dot {
+.notification-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
-  border: 0;
-  border-radius: 50%;
-  background: #ff304f;
+  top: 2px;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-notification);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .bottom-nav {
@@ -134,7 +142,7 @@ main {
 
   border-radius: 28px;
 
-  background-color: rgba(47, 47, 47, 0.72);
+  background-color: var(--color-navigation-surface);
   backdrop-filter: blur(3px) saturate(180%);
   -webkit-backdrop-filter: blur(3px) saturate(180%);
 }
@@ -148,7 +156,7 @@ main {
   width: calc((100% - 8px) / 4);
 
   border-radius: 26px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 107, 129, 0.2));
+  background: linear-gradient(135deg, var(--color-navigation-highlight), var(--color-primary-20));
 
   content: '';
   pointer-events: none;
@@ -181,7 +189,7 @@ main {
   gap: 2px;
   min-height: 42px;
   border-radius: 300px;
-  color: #a5a5a5;
+  color: var(--color-neutral-muted);
   font-size: 10px;
   font-weight: 600;
   text-decoration: none;

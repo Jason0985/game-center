@@ -17,6 +17,17 @@
           <p class="ui-subtitle">Verwalte deine persönlichen Einstellungen.</p>
         }
       </div>
+      @if (session.isLoggedIn()) {
+        <button
+          type="button"
+          class="profile-edit-button"
+          aria-label="Anzeigename ändern"
+          matTooltip="Anzeigename ändern"
+          (click)="editDisplayName()"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+        </button>
+      }
     </div>
   </header>
 
@@ -56,7 +67,7 @@
           <span>Spiele aktiv</span>
         </div>
         <div class="profile-stat">
-          <strong>-</strong>
+          <strong>{{ friendsLoading() ? '-' : friends().length }}</strong>
           <span>Freunde</span>
         </div>
       </div>
@@ -91,55 +102,60 @@
       </div>
     </section>
 
-    <section class="profile-card friends-card ui-surface">
+    <section class="profile-card friends-card ui-surface" aria-labelledby="friends-title">
       <div class="profile-card-heading">
-        <mat-icon aria-hidden="true">group_add</mat-icon>
+        <mat-icon aria-hidden="true">group</mat-icon>
         <div>
-          <h2>Freunde finden</h2>
-          <p>Suche nach dem Benutzernamen und füge neue Freunde hinzu.</p>
+          <h2 id="friends-title">Freunde</h2>
+          <p>Deine Freunde auf einen Blick.</p>
         </div>
       </div>
 
-      <label class="friend-search">
-        <mat-icon aria-hidden="true">search</mat-icon>
-        <input
-          type="search"
-          placeholder="Benutzernamen suchen"
-          [value]="friendSearch()"
-          (input)="searchFriends($event)"
-          aria-label="Freunde nach Benutzernamen suchen"
-        />
-      </label>
+      <div class="user-toolbar">
+        <label class="user-search">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <input
+            type="search"
+            placeholder="Freunde durchsuchen"
+            [value]="friendFilter()"
+            (input)="friendFilter.set($any($event.target).value)"
+            aria-label="Freunde durchsuchen"
+          />
+        </label>
+        <button
+          type="button"
+          class="user-toolbar-button"
+          aria-label="Freunde hinzufügen"
+          matTooltip="Freunde hinzufügen"
+          (click)="openAddFriends()"
+        >
+          <mat-icon aria-hidden="true">person_add</mat-icon>
+        </button>
+      </div>
 
-      <div class="friend-results" aria-live="polite">
-        @if (friendSearchLoading()) {
-          <p class="friend-result-message">Suche läuft ...</p>
-        } @else if (friendSearch().length < 2) {
-          <p class="friend-result-message">Mindestens 2 Zeichen eingeben.</p>
-        } @else if (!friendResults().length) {
-          <p class="friend-result-message">Keine Benutzer gefunden.</p>
+      <div class="user-list" aria-live="polite">
+        @if (friendsLoading()) {
+          <p class="user-list-message">Freunde werden geladen ...</p>
+        } @else if (!friends().length) {
+          <p class="user-list-message">Noch keine Freunde. Füge über das Icon oben neue hinzu.</p>
+        } @else if (!filteredFriends().length) {
+          <p class="user-list-message">Keine Freunde gefunden.</p>
         } @else {
-          @for (friend of friendResults(); track friend.id) {
-            <div class="friend-result">
-              <div class="friend-result-details">
-                <strong>{{ friend.display_name || friend.username }}</strong>
-                <span>&#64;{{ friend.username }}</span>
+          @for (friend of filteredFriends(); track friend.friendshipId) {
+            <div class="user-row">
+              <div class="user-row-details">
+                <strong>{{ friend.profile.display_name || friend.profile.username }}</strong>
+                <span>&#64;{{ friend.profile.username }}</span>
               </div>
               <button
                 mat-icon-button
                 type="button"
-                [disabled]="addedFriendIds().has(friend.id)"
-                [attr.aria-label]="
-                  addedFriendIds().has(friend.id) ? 'Anfrage gesendet' : 'Freund hinzufügen'
-                "
-                [matTooltip]="
-                  addedFriendIds().has(friend.id) ? 'Anfrage gesendet' : 'Freund hinzufügen'
-                "
-                (click)="addFriend(friend.id)"
+                class="friend-remove-button"
+                [attr.aria-label]="'@' + friend.profile.username + ' aus Freunden entfernen'"
+                matTooltip="Freund entfernen"
+                (click)="removeFriend(friend)"
               >
-                <mat-icon aria-hidden="true">
-                  {{ addedFriendIds().has(friend.id) ? 'check' : 'person_add' }}
-                </mat-icon>
+                <mat-icon aria-hidden="true">person_remove</mat-icon>
               </button>
             </div>
           }

@@ -21,11 +21,11 @@ export class Collection {
 
   readonly items: CollectionItem[] = [
     {
-      title: 'Flip 7',
-      category: 'Kartenspiel',
-      description: 'Risiko eingehen, Karten aufdecken und Punkte sammeln.',
-      icon: 'casino',
-      path: '/collection/flip-7',
+      title: 'Ranking',
+      category: 'Punktespiel',
+      description: 'Spieler hinzufügen und eine neue Ranglistenrunde starten.',
+      icon: 'leaderboard',
+      path: '/ranking',
     },
     {
       title: 'Paddle Tabelle',
@@ -33,6 +33,20 @@ export class Collection {
       description: 'Übersicht über Gewinne und Verluste',
       icon: 'sports_tennis',
       path: '/collection/paddle-table',
+    },
+    {
+      title: 'Ankunftsplaner',
+      category: 'Tagesplanung',
+      description: 'Berechne Aufsteh- und Abfahrtszeit für deinen Termin.',
+      icon: 'alarm',
+      path: '/collection/arrival-planner',
+    },
+    {
+      title: 'F1 Strategie',
+      category: 'Rennstrategie',
+      description: 'Strecken und Strategien für deine F1-Rennen.',
+      icon: 'sports_motorsports',
+      path: '/collection/f1-strategy',
     },
   ];
 

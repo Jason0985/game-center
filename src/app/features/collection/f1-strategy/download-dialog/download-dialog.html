@@ -1,0 +1,60 @@
+<div class="download-dialog">
+  <header class="dialog-header">
+    <div class="dialog-icon" aria-hidden="true">
+      <mat-icon>phone_android</mat-icon>
+    </div>
+    <div>
+      <p class="dialog-kicker">F1 Strategy Companion</p>
+      <h2 mat-dialog-title>Deine eigenen Renndaten</h2>
+    </div>
+  </header>
+
+  <mat-dialog-content>
+    <p class="dialog-intro">
+      Die Companion-App ist für Android gedacht und verbindet sich mit den UDP-Daten deines Spiels.
+    </p>
+
+    <div class="info-list">
+      <article class="info-item">
+        <mat-icon aria-hidden="true">wifi</mat-icon>
+        <div>
+          <strong>UDP-Daten aus dem Spiel</strong>
+          <p>Die App liest deine Renndaten direkt aus F1 26 über das lokale Netzwerk aus.</p>
+        </div>
+      </article>
+      <article class="info-item">
+        <mat-icon aria-hidden="true">route</mat-icon>
+        <div>
+          <strong>Pro Strecke gespeichert</strong>
+          <p>
+            Jede gefahrene Strecke bekommt deine eigenen Werte, zum Beispiel Spritverbrauch und
+            Boxenstopps.
+          </p>
+        </div>
+      </article>
+      <article class="info-item">
+        <mat-icon aria-hidden="true">insights</mat-icon>
+        <div>
+          <strong>Beim nächsten Mal vergleichen</strong>
+          <p>
+            Auf dieser Seite kannst du später deine letzten und durchschnittlichen Renndaten
+            ansehen.
+          </p>
+        </div>
+      </article>
+    </div>
+
+    <p class="android-hint">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>Hinweis: Die geplante App wird zunächst nur für Android verfügbar sein.</span>
+    </p>
+  </mat-dialog-content>
+
+  <div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close type="button">Schließen</button>
+    <button mat-flat-button color="primary" type="button" disabled>
+      <mat-icon aria-hidden="true">download</mat-icon>
+      APK herunterladen
+    </button>
+  </div>
+</div>

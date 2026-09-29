@@ -1,0 +1,52 @@
+<h2 mat-dialog-title class="settings-title">
+  <span class="settings-icon" aria-hidden="true"><mat-icon>tune</mat-icon></span>
+  <span>
+    <span class="settings-kicker">Ankunftsplaner</span>
+    <span class="settings-heading">Deine Zeiten</span>
+  </span>
+</h2>
+
+<mat-dialog-content>
+  <p class="settings-intro">
+    Lege fest, wie viel Zeit du für Fahrt, Verkehr und Vorbereitung brauchst.
+  </p>
+
+  <mat-form-field appearance="outline" class="settings-field">
+    <mat-label>Allgemeine Fahrzeit</mat-label>
+    <input matInput type="number" min="0" max="300" step="1" [(ngModel)]="settings.travelMinutes" />
+    <span matSuffix>Min.</span>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="settings-field">
+    <mat-label>Verkehrspuffer</mat-label>
+    <input
+      matInput
+      type="number"
+      min="0"
+      max="300"
+      step="1"
+      [(ngModel)]="settings.trafficBufferMinutes"
+    />
+    <span matSuffix>Min.</span>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="settings-field">
+    <mat-label>Fertig machen vor Abfahrt</mat-label>
+    <input
+      matInput
+      type="number"
+      min="0"
+      max="300"
+      step="1"
+      [(ngModel)]="settings.preparationMinutes"
+    />
+    <span matSuffix>Min.</span>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+  <button mat-flat-button color="primary" type="button" [disabled]="!isValid" (click)="save()">
+    Speichern
+  </button>
+</mat-dialog-actions>

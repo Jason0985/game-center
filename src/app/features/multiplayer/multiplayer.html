@@ -1,0 +1,108 @@
+<div class="multiplayer-root ui-page-root">
+  <header class="multiplayer-header ui-hero">
+    <p class="multiplayer-kicker">Gemeinsam spielen</p>
+    <h1 class="ui-title">Offene <span class="ui-accent">Lobbys</span></h1>
+    <p class="ui-subtitle">Eröffne einen Raum und wähle das Spiel für deine Runde.</p>
+  </header>
+
+  <main class="multiplayer-content">
+    @if (!session.initialized()) {
+      <div class="lobby-message ui-surface" role="status">Verbindung wird hergestellt ...</div>
+    } @else if (!session.isLoggedIn()) {
+      <section class="lobby-message ui-surface">
+        <mat-icon aria-hidden="true">account_circle</mat-icon>
+        <h2>Anmeldung erforderlich</h2>
+        <p>Melde dich an, um Lobbys zu eröffnen oder ihnen beizutreten.</p>
+        <a class="lobby-button" routerLink="/profile/auth">
+          <mat-icon aria-hidden="true">login</mat-icon>
+          Anmelden
+        </a>
+      </section>
+    } @else {
+      <div class="lobby-toolbar">
+        <div>
+          <p class="multiplayer-kicker">Multiplayer</p>
+          <h2>Verfügbare Räume</h2>
+        </div>
+        <!-- <button class="lobby-button" type="button" [disabled]="busy()" (click)="createLobby()">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Lobby eröffnen
+        </button> -->
+      </div>
+
+      @if (errorMessage()) {
+        <p class="lobby-error" role="alert">{{ errorMessage() }}</p>
+      }
+
+      @if (loading() && lobbies().length === 0) {
+        <div class="lobby-message ui-surface" role="status">Lobbys werden geladen ...</div>
+      } @else if (lobbies().length === 0) {
+        <div class="lobby-message ui-surface">
+          <mat-icon aria-hidden="true">sports_esports</mat-icon>
+          <h2>Noch keine offenen Lobbys</h2>
+          <p>Eröffne den ersten Raum für deine Spielrunde.</p>
+        </div>
+      } @else {
+        <section class="lobby-list" aria-label="Offene Lobbys">
+          @for (lobby of lobbies(); track lobby.id) {
+            <article class="lobby-card ui-surface">
+              <div class="lobby-card-heading">
+                <div>
+                  <p class="lobby-code-label">Lobby-Code</p>
+                  <h3>{{ lobby.code }}</h3>
+                </div>
+                <span class="lobby-member-count">
+                  <mat-icon aria-hidden="true">groups</mat-icon>
+                  {{ lobby.memberIds.length }}
+                </span>
+              </div>
+
+              @if (lobby.game_key === 'flip-7') {
+                <p class="lobby-selected-game">
+                  <mat-icon aria-hidden="true">casino</mat-icon>
+                  Flip 7 ausgewählt
+                </p>
+              } @else if (isHost(lobby)) {
+                <div class="lobby-game-picker">
+                  <p>Wähle ein Spiel für deine Lobby</p>
+                  <button
+                    class="game-choice"
+                    type="button"
+                    [disabled]="busy()"
+                    (click)="chooseFlip7(lobby)"
+                  >
+                    <mat-icon aria-hidden="true">casino</mat-icon>
+                    <span><strong>Flip 7</strong><small>Kartenspiel</small></span>
+                    <mat-icon class="game-choice-arrow" aria-hidden="true">chevron_right</mat-icon>
+                  </button>
+                </div>
+              } @else {
+                <p class="lobby-waiting">Wartet auf die Spielauswahl des Gastgebers.</p>
+              }
+
+              @if (isHost(lobby)) {
+                <button
+                  class="lobby-secondary-action"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="closeLobby(lobby)"
+                >
+                  Lobby schließen
+                </button>
+              } @else {
+                <button
+                  class="lobby-secondary-action"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="toggleMembership(lobby)"
+                >
+                  {{ isMember(lobby) ? 'Lobby verlassen' : 'Lobby beitreten' }}
+                </button>
+              }
+            </article>
+          }
+        </section>
+      }
+    }
+  </main>
+</div>

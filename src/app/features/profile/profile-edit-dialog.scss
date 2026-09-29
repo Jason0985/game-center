@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 340px;
+}
+
+.dialog-form {
+  padding-top: 4px;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.dialog-error {
+  margin: 4px 0 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+[mat-dialog-actions] {
+  gap: 8px;
+}

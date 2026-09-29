@@ -70,8 +70,8 @@
 
 @media (hover: hover) {
   .game-card:hover {
-    background-color: #353535;
-    box-shadow: 0 20px 48px rgba(13, 5, 19, 0.28);
+    background-color: var(--color-neutral-card);
+    box-shadow: 0 20px 48px var(--color-shadow-card);
     transform: translateY(-2px);
   }
 }

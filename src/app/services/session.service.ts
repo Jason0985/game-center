@@ -24,6 +24,7 @@ export class SessionService {
     () => this.currentProfile()?.display_name ?? this.currentProfile()?.username ?? '',
   );
   readonly username = computed(() => this.currentProfile()?.username ?? '');
+  readonly isAdmin = computed(() => this.currentProfile()?.role === 'admin');
 
   constructor() {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -34,6 +35,11 @@ export class SessionService {
     supabase.auth.onAuthStateChange((_event, session) => {
       this.setUser(session?.user ?? null);
     });
+  }
+
+  // Nach dem Bearbeiten das aktualisierte Profil übernehmen
+  setProfile(profile: Profile): void {
+    this.currentProfile.set(profile);
   }
 
   // User setzen und passendes Profil aus der Tabelle nachladen

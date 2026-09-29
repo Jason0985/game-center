@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>Systembenachrichtigung</h2>
+
+<form
+  mat-dialog-content
+  class="dialog-form"
+  [formGroup]="form"
+  (submit)="$event.preventDefault(); send()"
+>
+  <p class="dialog-hint">Geht an alle Nutzer und kann nur weggeklickt werden.</p>
+
+  <div class="type-picker" role="radiogroup" aria-label="Art der Benachrichtigung">
+    @for (option of options; track option.type) {
+      <button
+        type="button"
+        role="radio"
+        class="type-option"
+        [attr.data-tone]="option.config.tone"
+        [class.type-option--selected]="form.controls.type.value === option.type"
+        [attr.aria-checked]="form.controls.type.value === option.type"
+        (click)="form.controls.type.setValue(option.type)"
+      >
+        <mat-icon aria-hidden="true">{{ option.config.icon }}</mat-icon>
+        {{ option.label }}
+      </button>
+    }
+  </div>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Titel</mat-label>
+    <input matInput formControlName="title" maxlength="100" autocomplete="off" />
+    <mat-hint align="end">{{ form.controls.title.value.length }}/100</mat-hint>
+    @if (form.controls.title.hasError('required')) {
+      <mat-error>Bitte gib einen Titel ein.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Nachricht</mat-label>
+    <textarea matInput formControlName="message" maxlength="500" rows="4"></textarea>
+    <mat-hint align="end">{{ form.controls.message.value.length }}/500</mat-hint>
+    @if (form.controls.message.hasError('required')) {
+      <mat-error>Bitte gib eine Nachricht ein.</mat-error>
+    }
+  </mat-form-field>
+
+  @if (errorMessage()) {
+    <p class="dialog-error" role="alert">{{ errorMessage() }}</p>
+  }
+</form>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Abbrechen</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="form.invalid || sending()"
+    (click)="send()"
+  >
+    {{ sending() ? 'Senden ...' : 'An alle senden' }}
+  </button>
+</div>

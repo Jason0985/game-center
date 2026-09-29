@@ -59,7 +59,7 @@ export class Auth {
     }),
     password: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(6)],
+      validators: [Validators.required, Validators.minLength(8)],
     }),
     passwordConfirmation: new FormControl('', {
       nonNullable: true,

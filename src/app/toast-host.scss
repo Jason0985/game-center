@@ -1,0 +1,129 @@
+@use '../styles/notification-tones';
+
+.toast-stack {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  z-index: 900; // unter Dialogen (cdk-overlay), über dem Inhalt
+  display: flex;
+  width: min(calc(100% - 32px), 400px);
+  flex-direction: column;
+  gap: 8px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  border-radius: var(--radius-medium);
+  background-color: color-mix(in srgb, var(--tone) 14%, var(--color-neutral-raised));
+  box-shadow: var(--shadow-surface);
+  pointer-events: auto;
+  animation: toast-in 220ms ease-out;
+}
+
+.toast-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+}
+
+.toast--link .toast-body {
+  cursor: pointer;
+}
+
+.toast-body:disabled {
+  cursor: default;
+}
+
+.toast-icon {
+  display: grid;
+  flex: 0 0 34px;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-small);
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+
+.toast-icon mat-icon {
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
+}
+
+.toast-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toast-copy strong,
+.toast-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast-copy strong {
+  font-size: 13px;
+}
+
+.toast-copy span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.toast-close {
+  display: grid;
+  flex: 0 0 40px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+}
+
+.toast-close mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.toast-body:focus,
+.toast-close:focus {
+  outline: none;
+}
+
+.toast-body:focus-visible,
+.toast-close:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: -2px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
