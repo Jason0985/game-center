@@ -3,6 +3,15 @@
     <a class="back-link" routerLink="/collection" aria-label="Zur Sammlung zurück">
       <mat-icon aria-hidden="true">chevron_left</mat-icon>
     </a>
+    <button
+      class="settings-button"
+      type="button"
+      aria-label="Fahr- und Vorbereitungszeiten einstellen"
+      matTooltip="Fahr- und Vorbereitungszeiten einstellen"
+      (click)="openSettingsDialog()"
+    >
+      <mat-icon aria-hidden="true">tune</mat-icon>
+    </button>
     <div class="planner-heading">
       <p class="ui-kicker">Tagesplanung</p>
       <h1 class="ui-title">Ankunfts<span class="ui-accent">planer</span></h1>
@@ -31,20 +40,11 @@
 
     <div class="planner-toolbar">
       <p>Dein Zeitplan</p>
-      <button
-        class="settings-button ui-surface"
-        type="button"
-        aria-label="Fahr- und Vorbereitungszeiten einstellen"
-        matTooltip="Fahr- und Vorbereitungszeiten einstellen"
-        (click)="openSettingsDialog()"
-      >
-        <mat-icon aria-hidden="true">tune</mat-icon>
-      </button>
     </div>
 
     @if (plan(); as times) {
-      <section class="plan-list" aria-label="Berechneter Zeitplan">
-        <article class="plan-row plan-row-primary ui-surface">
+      <section class="plan-list ui-surface" aria-label="Berechneter Zeitplan">
+        <article class="plan-row plan-row-primary">
           <div class="plan-icon"><mat-icon aria-hidden="true">alarm</mat-icon></div>
           <div class="plan-copy">
             <h2>Wecker stellen</h2>
@@ -58,7 +58,7 @@
           </div>
         </article>
 
-        <article class="plan-row ui-surface">
+        <article class="plan-row">
           <div class="plan-icon"><mat-icon aria-hidden="true">directions_car</mat-icon></div>
           <div class="plan-copy">
             <h2>Losfahren</h2>
@@ -72,7 +72,7 @@
           </div>
         </article>
 
-        <article class="plan-row ui-surface">
+        <article class="plan-row">
           <div class="plan-icon"><mat-icon aria-hidden="true">location_on</mat-icon></div>
           <div class="plan-copy">
             <h2>Ankunft ohne Puffer</h2>
