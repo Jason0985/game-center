@@ -5,9 +5,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ConfirmationDialog } from '../../../confirmation-dialog';
 import { GameService } from '../game.service';
 import { Player as PlayerModel } from '../../../player.model';
@@ -26,6 +27,8 @@ import { map } from 'rxjs/operators';
     MatDialogModule,
     MatIconModule,
     MatCardModule,
+    MatTooltipModule,
+    RouterLink,
   ],
   templateUrl: './scoreboard.html',
   styleUrls: ['./scoreboard.scss'],

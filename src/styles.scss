@@ -1,5 +1,7 @@
 @use '@angular/material' as mat;
 @use './styles/tokens';
+@use './styles/user-list';
+@use './styles/notification-tones';
 
 html {
   height: 100dvh;
@@ -8,11 +10,77 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$rose-palette,
-        tertiary: mat.$red-palette,
+        theme-type: dark,
+        primary: mat.$magenta-palette,
+        tertiary: mat.$violet-palette,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: 'Inter',
+        brand-family: 'Inter',
+        bold-weight: 600,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
       density: 0,
+    )
+  );
+
+  // Material-Systemfarben auf die eigenen Tokens abbilden
+  @include mat.theme-overrides(
+    (
+      primary: var(--color-primary-light),
+      on-primary: #2b0716,
+      primary-container: var(--color-primary-soft),
+      on-primary-container: var(--color-primary-light),
+      surface: var(--color-surface),
+      surface-container-lowest: var(--color-background),
+      surface-container-low: var(--color-surface),
+      surface-container: var(--color-surface),
+      surface-container-high: var(--color-surface-raised),
+      surface-container-highest: var(--color-neutral-input),
+      on-surface: var(--color-text),
+      on-surface-variant: var(--color-text-muted),
+      outline: var(--color-border-strong),
+      outline-variant: var(--color-border),
+      error: var(--color-danger-light),
+    )
+  );
+
+  // Buttons: kompakte Radien, gefüllt in Markenfarbe mit weißer Schrift
+  @include mat.button-overrides(
+    (
+      filled-container-color: var(--color-primary),
+      filled-label-text-color: var(--color-primary-text),
+      filled-container-shape: 10px,
+      filled-label-text-weight: 600,
+      outlined-container-shape: 10px,
+      outlined-outline-color: var(--color-border-strong),
+      outlined-label-text-color: var(--color-text),
+      outlined-label-text-weight: 600,
+      text-container-shape: 10px,
+      text-label-text-color: var(--color-text),
+      text-label-text-weight: 500,
+      protected-container-shape: 10px,
+      tonal-container-shape: 10px,
+    )
+  );
+
+  @include mat.dialog-overrides(
+    (
+      container-color: var(--color-dialog-surface),
+      container-shape: var(--radius-large),
+      subhead-size: 18px,
+      subhead-weight: 600,
+      subhead-line-height: 26px,
+      subhead-tracking: -0.01em,
+      subhead-color: var(--color-text),
+    )
+  );
+
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: 10px,
+      outlined-outline-color: var(--color-border-strong),
     )
   );
 }
@@ -31,6 +99,21 @@ body {
   background-color: var(--color-background);
   color: var(--color-text);
   font: var(--mat-sys-body-medium);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-primary-28);
 }
 
 app-root {
@@ -58,20 +141,19 @@ app-root {
 .ui-avatar {
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: linear-gradient(145deg, var(--color-primary), var(--color-secondary));
-  box-shadow: 0 10px 24px var(--color-secondary-shadow);
-  color: var(--color-text);
+  border: 1px solid var(--color-primary-light-22);
+  border-radius: var(--radius-large);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
 }
 
 .ui-avatar mat-icon {
-  width: 40px;
-  height: 40px;
-  font-size: 40px;
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
 }
 
 .ui-player-card {
@@ -209,15 +291,18 @@ mat-card.ui-player-card {
 }
 
 .ui-title {
-  margin: 18px 0 10px;
+  margin: 18px 0 8px;
+  font-size: clamp(26px, 7vw, 32px);
   font-weight: 700;
-  line-height: 0.98;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
 .ui-subtitle {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .detail-legend {
@@ -244,33 +329,35 @@ mat-card.ui-player-card {
   color: var(--color-success-light) !important;
 }
 
-@media (max-width: 520px) {
-  .detail-legend span {
-    max-width: 78px;
-    text-align: right;
-  }
+// Legende bleibt einzeilig, seit der Bearbeiten-Button oben rechts im Kopf sitzt
+.detail-legend span {
+  white-space: nowrap;
 }
 
 .ui-surface {
   overflow: hidden;
+  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-large);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-surface);
-  backdrop-filter: blur(16px) saturate(125%);
 }
 
 .cdk-overlay-backdrop {
   background-color: var(--color-overlay-dim);
-  backdrop-filter: blur(7px) saturate(110%);
-  -webkit-backdrop-filter: blur(7px) saturate(110%);
 }
 
 .mat-mdc-dialog-container .mdc-dialog__surface {
   box-sizing: border-box;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
   background: var(--color-dialog-surface);
-  box-shadow: 0 24px 70px var(--color-overlay-heavy);
+  box-shadow: var(--shadow-overlay);
   color: var(--color-text);
+}
+
+.mat-mdc-tooltip {
+  --mat-tooltip-container-color: var(--color-surface-raised);
+  --mat-tooltip-supporting-text-color: var(--color-text);
 }
 
 .mat-mdc-dialog-content {
@@ -306,21 +393,71 @@ mat-card.ui-surface {
 
 .ui-badge {
   display: inline-block;
-  padding: 7px 13px;
+  padding: 4px 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  background: var(--color-white-10);
+  background: var(--color-white-05);
   color: var(--color-text-muted);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 500;
 }
 
+// Früher farbig hervorgehobenes Titelwort; bewusst ruhig gehalten
 .ui-accent {
-  background: var(--gradient-accent);
-  background-clip: text;
-  color: transparent;
+  color: inherit;
 }
+
+/* Skeleton: Platzhalter für Bereiche ohne echte Daten (Wireframe-Optik).
+   Bewusst statisch, damit es nicht nach Laden aussieht. */
+
+.ui-skeleton {
+  display: block;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-skeleton-shine), var(--color-skeleton) 70%);
+}
+
+.ui-skeleton--title {
+  height: 14px;
+}
+
+.ui-skeleton--value {
+  height: 22px;
+  border-radius: var(--radius-small);
+}
+
+.ui-skeleton--block {
+  border-radius: var(--radius-small);
+}
+
+.ui-skeleton--circle {
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+// Kennzeichnet einen ganzen Bereich als Platzhalter
+.ui-placeholder {
+  position: relative;
+  border-style: dashed !important;
+  border-color: var(--color-border) !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.ui-placeholder-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.ui-placeholder-note mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
 
 .ui-muted {
   color: var(--color-text-muted);
@@ -330,17 +467,72 @@ mat-card.ui-surface {
   color: var(--color-text-subtle);
 }
 
-.ui-button {
-  min-height: 48px;
-  border-radius: var(--radius-pill);
+/* Quadratische Kopf-Buttons: Zurück oben links, Seitenaktionen oben rechts.
+   Der Seitenkopf braucht dafür position: relative (.ui-header-nav). */
+
+.ui-header-nav {
+  position: relative;
+  padding-top: 50px;
+}
+
+.ui-header-button {
+  position: absolute;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    transform var(--transition-fast),
-    filter var(--transition-fast);
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.ui-header-button--start {
+  left: 0;
+}
+
+.ui-header-button--end {
+  right: 0;
+}
+
+.ui-header-button:hover,
+.ui-header-button:focus-visible {
+  background: var(--color-white-08);
+  color: var(--color-text);
+}
+
+.ui-header-button:focus {
+  outline: none;
+}
+
+.ui-header-button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.ui-header-button mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.ui-button {
+  min-height: 44px;
+  border-radius: 10px;
+  transition: filter var(--transition-fast);
 }
 
 .ui-button:hover {
   filter: brightness(1.08);
-  transform: translateY(-1px);
 }
 
 button.mat-mdc-button-base:not(.mat-mdc-fab):not(.mat-mdc-mini-fab):not(.mat-mdc-icon-button) {
@@ -417,14 +609,11 @@ button.mat-mdc-button-base:not(.mat-mdc-fab):not(.mat-mdc-mini-fab):not(.mat-mdc
 
 .round-button {
   color: var(--color-primary-text) !important;
-  --mdc-filled-button-label-text-color: var(--color-primary-text);
 }
 
 .danger-button {
+  border-color: var(--color-danger-45) !important;
   color: var(--color-danger-light) !important;
-  border: none !important;
-  --mdc-outlined-button-label-text-color: var(--color-danger-light);
-  --mdc-outlined-button-outline-color: var(--color-danger);
 }
 
 .bottom-nav-link {

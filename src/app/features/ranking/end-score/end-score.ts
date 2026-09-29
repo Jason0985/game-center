@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterLink } from '@angular/router';
 import { GameService } from '../game.service';
 import { Player } from '../../../player.model';
 import { Observable } from 'rxjs';
@@ -12,7 +13,14 @@ import { map } from 'rxjs/operators';
 @Component({
   selector: 'app-end-score',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   templateUrl: './end-score.html',
   styleUrls: ['./end-score.scss'],
 })

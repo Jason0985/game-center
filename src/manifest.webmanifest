@@ -1,8 +1,8 @@
 {
   "name": "Game Center",
   "short_name": "Game Center",
-  "theme_color": "#000000",
-  "background_color": "#fafafa",
+  "theme_color": "#0f1115",
+  "background_color": "#0f1115",
   "display": "standalone",
   "id": "/game-center/",
   "scope": "/game-center/",

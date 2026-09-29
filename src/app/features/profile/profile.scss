@@ -1,11 +1,8 @@
-@use '../../../styles/user-list';
-
 .profile-header {
   position: relative;
   box-sizing: border-box;
   padding: 18px;
-  border: 1px solid var(--color-white-10);
-  border-top: 2px solid var(--color-primary);
+  border: 1px solid var(--color-border-subtle);
   margin-bottom: 26px;
   text-align: left;
 }
@@ -41,10 +38,10 @@
 
 .profile-kicker {
   margin: 0 0 4px;
-  color: var(--color-primary-light);
+  color: var(--color-text-subtle);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -176,14 +173,47 @@
 }
 
 .profile-stat strong {
-  color: var(--color-primary-light);
+  color: var(--color-text);
   font-size: 22px;
+  font-weight: 600;
   line-height: 1;
 }
 
 .profile-stat span {
   color: var(--color-text-muted);
-  font-size: 10px;
+  font-size: 11px;
+}
+
+.profile-stat--planned {
+  border: 1px dashed var(--color-border);
+  background: transparent;
+}
+
+.profile-stat-skeleton {
+  width: 36px;
+}
+
+.profile-planned {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.profile-card-heading .profile-planned mat-icon {
+  color: inherit;
+}
+
+.activity-skeleton-icon {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+}
+
+.ui-placeholder .activity-row {
+  border-top-style: dashed;
+}
+
+.ui-placeholder .activity-copy {
+  gap: 8px;
 }
 
 .activity-list {
@@ -281,11 +311,10 @@
   min-height: 44px;
   box-sizing: border-box;
   margin: 4px 0 22px;
-  border-radius: var(--radius-pill);
-  background: var(--color-danger) !important;
-  color: var(--color-white) !important;
-  --mdc-filled-button-container-color: var(--color-danger);
-  --mdc-filled-button-label-text-color: var(--color-white);
+  border-radius: 10px;
+  border: 1px solid var(--color-danger-45) !important;
+  background: transparent !important;
+  color: var(--color-danger-light) !important;
 }
 
 .profile-logout-button mat-icon {

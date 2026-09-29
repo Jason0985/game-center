@@ -43,7 +43,7 @@
   color: var(--color-text-subtle);
 }
 .collection-search mat-icon {
-  color: var(--color-primary-light);
+  color: var(--color-text-subtle);
 }
 
 .game-list {
@@ -108,9 +108,9 @@
 
 .game-category {
   margin: 0 0 2px;
-  color: var(--color-primary-light);
+  color: var(--color-text-subtle);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

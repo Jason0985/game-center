@@ -58,12 +58,12 @@
       </div>
 
       <div class="profile-stat-grid">
-        <div class="profile-stat">
-          <strong>-</strong>
+        <div class="profile-stat profile-stat--planned" title="In Planung">
+          <span class="ui-skeleton ui-skeleton--value profile-stat-skeleton" aria-hidden="true"></span>
           <span>Spieleabende</span>
         </div>
-        <div class="profile-stat">
-          <strong>-</strong>
+        <div class="profile-stat profile-stat--planned" title="In Planung">
+          <span class="ui-skeleton ui-skeleton--value profile-stat-skeleton" aria-hidden="true"></span>
           <span>Spiele aktiv</span>
         </div>
         <div class="profile-stat">
@@ -73,32 +73,31 @@
       </div>
     </section>
 
-    <section class="profile-card activity-card ui-surface" aria-labelledby="activity-title">
+    <section
+      class="profile-card activity-card ui-surface ui-placeholder"
+      aria-labelledby="activity-title"
+    >
       <div class="profile-card-heading">
         <mat-icon aria-hidden="true">history</mat-icon>
         <div>
           <h2 id="activity-title">Letzte Aktivitäten</h2>
           <p>Ein kleiner Rückblick auf deine letzten Runden.</p>
         </div>
+        <span class="ui-placeholder-note profile-planned">
+          <mat-icon aria-hidden="true">schedule</mat-icon>In Planung
+        </span>
       </div>
 
-      <div class="activity-list">
-        <div class="activity-row">
-          <span class="activity-icon" aria-hidden="true"><mat-icon>sports_tennis</mat-icon></span>
-          <div class="activity-copy">
-            <strong>Paddle Tabelle aktualisiert</strong>
-            <span>Gestern · - Spieler</span>
+      <div class="activity-list" aria-hidden="true">
+        @for (width of [62, 48]; track $index) {
+          <div class="activity-row">
+            <span class="ui-skeleton ui-skeleton--block activity-skeleton-icon"></span>
+            <div class="activity-copy">
+              <span class="ui-skeleton ui-skeleton--title" [style.width.%]="width"></span>
+              <span class="ui-skeleton" [style.width.%]="width - 20"></span>
+            </div>
           </div>
-          <mat-icon class="activity-arrow" aria-hidden="true">chevron_right</mat-icon>
-        </div>
-        <div class="activity-row">
-          <span class="activity-icon" aria-hidden="true"><mat-icon>casino</mat-icon></span>
-          <div class="activity-copy">
-            <strong>Flip 7 gespielt</strong>
-            <span>Vor - Tagen · Neue Runde</span>
-          </div>
-          <mat-icon class="activity-arrow" aria-hidden="true">chevron_right</mat-icon>
-        </div>
+        }
       </div>
     </section>
 

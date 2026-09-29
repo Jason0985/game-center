@@ -1,5 +1,13 @@
 <div class="end-score-root">
-  <header class="end-header">
+  <header class="end-header ui-header-nav">
+    <a
+      class="ui-header-button ui-header-button--start"
+      routerLink="/collection"
+      matTooltip="Zur Sammlung"
+      aria-label="Zur Sammlung zurück"
+    >
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    </a>
     <h1 class="ui-title">End<span class="ui-accent">punktestand</span></h1>
     <div class="ui-badge">Rundenanzahl {{ (roundCount$ | async) ?? 0 }}</div>
   </header>

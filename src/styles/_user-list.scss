@@ -1,4 +1,4 @@
-// Gemeinsame Styles für Nutzerlisten mit Suche (Freunde, Freunde hinzufügen, Rollenmanagement)
+// Global geladen (styles.scss): Nutzerlisten mit Suche (Freunde, Freunde hinzufügen, Rollenmanagement)
 
 .user-search {
   display: flex;
@@ -13,7 +13,7 @@
 }
 
 .user-search mat-icon {
-  color: var(--color-primary-light);
+  color: var(--color-text-subtle);
 }
 
 .user-search input {
@@ -67,7 +67,7 @@
 }
 
 .user-row:hover {
-  border-color: var(--color-primary-light-22);
+  border-color: var(--color-border);
   background: var(--color-white-08);
 }
 
