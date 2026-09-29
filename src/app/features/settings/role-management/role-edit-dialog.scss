@@ -1,0 +1,104 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 380px;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.role-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-user strong {
+  font-size: 15px;
+}
+
+.role-user span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-option {
+  --role-color: var(--color-primary-light);
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.role-option[data-role='admin'] {
+  --role-color: var(--color-rank-badge);
+}
+
+.role-option > mat-icon {
+  flex: 0 0 auto;
+  color: var(--role-color);
+}
+
+.role-option-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-option-copy strong {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.role-option-copy span {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.role-option--selected {
+  border-color: var(--role-color);
+  background: color-mix(in srgb, var(--role-color) 12%, transparent);
+}
+
+.role-option:focus {
+  outline: none;
+}
+
+.role-option:focus-visible {
+  outline: 2px solid var(--role-color);
+  outline-offset: 2px;
+}
+
+.dialog-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+[mat-dialog-actions] {
+  gap: 8px;
+}

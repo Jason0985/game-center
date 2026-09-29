@@ -108,15 +108,23 @@ main {
   outline-offset: 2px;
 }
 
-.notification-dot {
+.notification-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
-  border: 0;
-  border-radius: 50%;
+  top: 2px;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
   background: var(--color-notification);
+  color: var(--color-white);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .bottom-nav {

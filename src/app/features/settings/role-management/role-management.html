@@ -1,0 +1,56 @@
+<p class="role-management-intro">Suche Nutzer und passe ihre Rollen an.</p>
+
+<div class="user-toolbar">
+  <label class="user-search">
+    <mat-icon aria-hidden="true">search</mat-icon>
+    <input
+      type="search"
+      placeholder="Benutzernamen suchen"
+      [value]="search()"
+      (input)="onSearch($event)"
+      aria-label="Nutzer für Rollenverwaltung suchen"
+    />
+  </label>
+  <button
+    type="button"
+    class="user-toolbar-button"
+    aria-label="Rollenübersicht öffnen"
+    matTooltip="Rollenübersicht"
+    (click)="openOverview()"
+  >
+    <mat-icon aria-hidden="true">groups</mat-icon>
+  </button>
+</div>
+
+<div class="user-list" aria-live="polite">
+  @if (loading()) {
+    <p class="user-list-message">Suche läuft ...</p>
+  } @else if (search().length < 2) {
+    <p class="user-list-message">Mindestens 2 Zeichen eingeben.</p>
+  } @else if (!results().length) {
+    <p class="user-list-message">Keine Nutzer gefunden.</p>
+  } @else {
+    @for (result of results(); track result.id) {
+      @let role = roleConfig(result.role);
+      <div class="user-row">
+        <div class="user-row-details">
+          <strong>{{ result.display_name || result.username }}</strong>
+          <span>&#64;{{ result.username }}</span>
+        </div>
+        <span class="role-chip" [attr.data-role]="role.role">
+          <mat-icon aria-hidden="true">{{ role.icon }}</mat-icon>
+          {{ role.label }}
+        </span>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="'Rolle von ' + result.username + ' bearbeiten'"
+          matTooltip="Rolle bearbeiten"
+          (click)="edit(result)"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+        </button>
+      </div>
+    }
+  }
+</div>

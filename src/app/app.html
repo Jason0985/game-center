@@ -10,10 +10,16 @@
         mat-icon-button
         class="header-icon-button notification-button"
         routerLink="/notifications"
-        aria-label="Benachrichtigungen"
+        [attr.aria-label]="
+          notifications.unreadCount()
+            ? 'Benachrichtigungen, ' + notifications.unreadCount() + ' neu'
+            : 'Benachrichtigungen'
+        "
       >
         <mat-icon aria-hidden="true">notifications</mat-icon>
-        <span class="notification-dot"></span>
+        @if (notifications.unreadCount(); as count) {
+          <span class="notification-badge" aria-hidden="true">{{ count > 9 ? '9+' : count }}</span>
+        }
       </button>
       <button
         mat-icon-button

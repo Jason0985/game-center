@@ -1,0 +1,26 @@
+// Farbtöne der Benachrichtigungstypen, siehe notification-types.ts (tone).
+// Setzt --tone (Akzent) und --tone-soft (Hintergrund) auf [data-tone]-Elementen.
+
+[data-tone] {
+  --tone-soft: color-mix(in srgb, var(--tone) 16%, transparent);
+}
+
+[data-tone='social'] {
+  --tone: var(--color-primary-light);
+}
+
+[data-tone='success'] {
+  --tone: var(--color-success-light);
+}
+
+[data-tone='game'] {
+  --tone: var(--color-rank-badge);
+}
+
+[data-tone='info'] {
+  --tone: var(--color-chart-cyan);
+}
+
+[data-tone='alert'] {
+  --tone: var(--color-warning);
+}

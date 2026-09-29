@@ -1,0 +1,19 @@
+@use '../../../styles/user-list';
+
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 380px;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.user-list {
+  height: 240px;
+}

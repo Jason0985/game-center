@@ -89,6 +89,16 @@
     </div>
   </section>
 
+  @if (session.isAdmin()) {
+    <section class="settings-group ui-surface" aria-labelledby="roles-title">
+      <div class="settings-group-heading">
+        <mat-icon aria-hidden="true">admin_panel_settings</mat-icon>
+        <h2 id="roles-title">Rollenmanagement</h2>
+      </div>
+      <app-role-management />
+    </section>
+  }
+
   <section class="settings-about ui-surface" aria-labelledby="about-title">
     <div class="settings-group-heading">
       <mat-icon aria-hidden="true">info_outline</mat-icon>
@@ -96,7 +106,7 @@
     </div>
     <div class="settings-about-line">
       <span>Version</span>
-      <strong>3.0</strong>
+      <strong>4.0</strong>
     </div>
     <div class="settings-about-line">
       <span>Game Center</span>

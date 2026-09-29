@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import {
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { SupabaseService } from './supabase.service';
+import { NotificationsService } from './services/notifications.service';
 
 @Component({
   selector: 'app-root',
@@ -14,5 +14,5 @@ import { SupabaseService } from './supabase.service';
   styleUrl: './app.scss',
 })
 export class App {
-  // constructor(private supabaseService: SupabaseService) {}
+  readonly notifications = inject(NotificationsService);
 }

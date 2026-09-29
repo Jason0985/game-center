@@ -1,3 +1,5 @@
+@use './notification-tones';
+
 .notifications-header,
 .notification-list,
 .notifications-empty {
@@ -52,6 +54,26 @@
   margin: 0 0 8px;
 }
 
+.system-notification-button {
+  margin-top: 14px;
+  border-radius: var(--radius-pill);
+}
+
+.system-notification-button mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.notifications-status {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+  margin: -8px 0 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
 .notification-list {
   display: flex;
   flex-direction: column;
@@ -76,12 +98,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-small);
-  background: var(--color-white-08);
-  color: var(--color-primary-light);
-}
-
-.notification-type-icon--game {
-  background: var(--color-primary-soft);
+  background: var(--tone-soft);
+  color: var(--tone);
 }
 
 .notification-type-icon mat-icon {
@@ -95,25 +113,33 @@
   flex: 1;
 }
 
-.notification-title-line {
+.notification-meta {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 2px;
 }
 
-.notification-title-line h2 {
+.notification-meta span {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+}
+
+.notification-meta .notification-category {
+  color: var(--tone);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.notification-copy h2 {
   overflow: hidden;
   margin: 0;
   font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.notification-title-line span {
-  flex: 0 0 auto;
-  color: var(--color-text-subtle);
-  font-size: 10px;
 }
 
 .notification-copy p {
@@ -253,6 +279,16 @@
   position: relative;
   z-index: 2;
   transition: transform 220ms ease;
+}
+
+// Systembenachrichtigungen heben sich farbig von persönlichen ab
+.notification-card[data-category='system'] {
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  background-color: color-mix(in srgb, var(--tone) 12%, var(--color-surface));
+}
+
+.notification-card[data-category='system'] .notification-copy p {
+  color: var(--color-text);
 }
 
 .notification-card--dragging {

@@ -1,11 +1,16 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { NotificationsService } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
 import { NotificationItem } from './notification.model';
+import { notificationTypeConfig } from './notification-types';
+import { SystemNotificationDialog } from './system-notification-dialog';
+
+const MARK_SEEN_DELAY_MS = 2000;
 
 @Component({
   selector: 'app-notifications',
@@ -15,38 +20,75 @@ import { NotificationItem } from './notification.model';
 })
 export class Notifications {
   private readonly notificationsService = inject(NotificationsService);
+  private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
-  readonly notifications = signal<NotificationItem[]>([]);
-  readonly loading = signal(true);
+  readonly typeConfig = notificationTypeConfig;
+  readonly notifications = this.notificationsService.notifications;
+  readonly loading = this.notificationsService.loading;
   readonly swipeOffsets = signal<Record<string, number>>({});
   readonly swipeDirections = signal<Record<string, 'left' | 'right'>>({});
-  private loadedUserId: string | null = null;
+  readonly respondingIds = signal<Set<string>>(new Set());
+  readonly statusMessage = signal('');
   private activeSwipeId: string | null = null;
   private touchStartX: number | null = null;
   private readonly swipeThreshold = 84;
+  private markSeenTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
+    // Neue Benachrichtigungen auf dieser Seite nach kurzer Zeit als gesehen markieren
     effect(() => {
-      const userId = this.session.user()?.id;
-      if (this.session.initialized() && userId && userId !== this.loadedUserId) {
-        this.loadedUserId = userId;
-        void this.loadNotifications(userId);
-      }
-    });
-  }
+      if (this.loading() || !this.notificationsService.unreadCount()) return;
 
-  private async loadNotifications(userId: string): Promise<void> {
-    this.notifications.set(await this.notificationsService.getNotifications(userId));
-    this.loading.set(false);
+      clearTimeout(this.markSeenTimer);
+      this.markSeenTimer = setTimeout(
+        () => this.notificationsService.markAllSeen(),
+        MARK_SEEN_DELAY_MS,
+      );
+    });
+
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.markSeenTimer));
   }
 
   removeNotification(notificationId: string): void {
-    this.notifications.update((items) => items.filter((item) => item.id !== notificationId));
+    void this.notificationsService.dismiss(notificationId);
     this.clearSwipeState(notificationId);
   }
 
-  handleNotification(notificationId: string, _action: 'accepted' | 'rejected'): void {
+  async respondToFriendRequest(notification: NotificationItem, accept: boolean): Promise<void> {
+    if (this.respondingIds().has(notification.id)) return;
+
+    this.respondingIds.update((ids) => new Set(ids).add(notification.id));
+    const done = await this.notificationsService.respondToFriendRequest(notification, accept);
+    this.respondingIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(notification.id);
+      return next;
+    });
+
+    this.statusMessage.set(
+      done
+        ? accept
+          ? `${notification.sender_name} ist jetzt dein Freund.`
+          : 'Anfrage abgelehnt.'
+        : 'Das hat nicht geklappt. Bitte versuche es erneut.',
+    );
+  }
+
+  // Spieleinladungen haben noch kein Backend und werden nur entfernt
+  respondToGameInvite(notificationId: string): void {
     this.removeNotification(notificationId);
+  }
+
+  openSystemNotificationDialog(): void {
+    this.dialog
+      .open<SystemNotificationDialog, void, number>(SystemNotificationDialog, { width: '400px' })
+      .afterClosed()
+      .subscribe((recipients) => {
+        if (recipients !== undefined) {
+          this.statusMessage.set(`Systembenachrichtigung an ${recipients} Nutzer gesendet.`);
+          void this.notificationsService.reload();
+        }
+      });
   }
 
   startSwipe(event: TouchEvent, notificationId: string): void {

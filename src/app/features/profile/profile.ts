@@ -1,13 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
-import { FriendsService } from '../../services/friends.service';
-import { ProfileService } from '../../services/profile.service';
+import { FriendRelation, FriendsService } from '../../services/friends.service';
 import { Profile as UserProfile } from './profile.model';
+import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog';
+import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
 
 @Component({
   selector: 'app-profile',
@@ -18,54 +20,84 @@ import { Profile as UserProfile } from './profile.model';
 export class Profile {
   private readonly authService = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
-  private readonly profileService = inject(ProfileService);
+  private readonly dialog = inject(MatDialog);
   readonly session = inject(SessionService);
-  readonly friendSearch = signal('');
-  readonly friendResults = signal<UserProfile[]>([]);
-  readonly friendSearchLoading = signal(false);
-  readonly addedFriendIds = signal<Set<string>>(new Set());
-  private searchTimeout: ReturnType<typeof setTimeout> | undefined;
+  private readonly relations = signal<FriendRelation[]>([]);
+  readonly friendsLoading = signal(true);
+  readonly friendFilter = signal('');
+
+  readonly friends = computed(() =>
+    this.relations()
+      .filter((relation) => relation.status === 'accepted')
+      .map((relation) => relation.profile)
+      .sort((a, b) =>
+        (a.display_name || a.username).localeCompare(b.display_name || b.username, 'de'),
+      ),
+  );
+
+  readonly filteredFriends = computed(() => {
+    const filter = this.friendFilter().trim().toLowerCase();
+    return filter
+      ? this.friends().filter(
+          (friend) =>
+            friend.username.toLowerCase().includes(filter) ||
+            (friend.display_name ?? '').toLowerCase().includes(filter),
+        )
+      : this.friends();
+  });
+
+  constructor() {
+    effect(() => {
+      const userId = this.session.user()?.id;
+      if (userId) {
+        void this.loadRelations(userId);
+      }
+    });
+  }
 
   async logout(): Promise<void> {
     await this.authService.logout();
   }
 
-  searchFriends(event: Event): void {
-    const searchTerm = (event.target as HTMLInputElement).value.trim();
-    this.friendSearch.set(searchTerm);
-    this.friendResults.set([]);
-
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
-
-    if (searchTerm.length < 2 || !this.session.user()?.id) {
-      this.friendSearchLoading.set(false);
+  editDisplayName(): void {
+    const userId = this.session.user()?.id;
+    const profile = this.session.profile();
+    if (!userId || !profile) {
       return;
     }
 
-    this.friendSearchLoading.set(true);
-    this.searchTimeout = setTimeout(async () => {
-      const userId = this.session.user()?.id;
-      if (!userId) {
-        this.friendSearchLoading.set(false);
-        return;
-      }
-
-      this.friendResults.set(await this.profileService.searchProfiles(searchTerm, userId));
-      this.friendSearchLoading.set(false);
-    }, 250);
+    this.dialog
+      .open<ProfileEditDialog, ProfileEditDialogData, UserProfile>(ProfileEditDialog, {
+        data: { userId, displayName: profile.display_name ?? '' },
+      })
+      .afterClosed()
+      .subscribe((updated) => {
+        if (updated) {
+          this.session.setProfile(updated);
+        }
+      });
   }
 
-  async addFriend(friendId: string): Promise<void> {
+  openAddFriends(): void {
     const userId = this.session.user()?.id;
-    if (!userId || this.addedFriendIds().has(friendId)) {
+    if (!userId) {
       return;
     }
 
-    const added = await this.friendsService.addFriend(userId, friendId);
-    if (added) {
-      this.addedFriendIds.update((ids) => new Set(ids).add(friendId));
-    }
+    this.dialog
+      .open<FriendAddDialog, FriendAddDialogData>(FriendAddDialog, {
+        data: { userId, relations: this.relations() },
+        width: '380px',
+      })
+      .afterClosed()
+      .subscribe(() => void this.loadRelations(userId));
+  }
+
+  private async loadRelations(userId: string): Promise<void> {
+    const relations = await this.friendsService.getRelations(userId);
+    if (this.session.user()?.id !== userId) return; // inzwischen ausgeloggt/gewechselt
+
+    this.relations.set(relations);
+    this.friendsLoading.set(false);
   }
 }

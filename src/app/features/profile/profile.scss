@@ -1,3 +1,5 @@
+@use '../../../styles/user-list';
+
 .profile-header {
   position: relative;
   box-sizing: border-box;
@@ -55,6 +57,47 @@
 
 .profile-identity .ui-title {
   margin: 0;
+}
+
+.profile-edit-button {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.profile-edit-button mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.profile-edit-button:hover {
+  color: var(--color-primary-light);
+}
+
+.profile-edit-button:active {
+  background: var(--color-primary-soft);
+}
+
+.profile-edit-button:focus {
+  outline: none;
+}
+
+.profile-edit-button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 
 .profile-username {
@@ -209,130 +252,6 @@
 
 .friends-card {
   gap: 16px;
-}
-
-.friend-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 46px;
-  box-sizing: border-box;
-  padding: 0 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-small);
-  background: var(--color-white-04);
-}
-
-.friend-search mat-icon {
-  color: var(--color-primary-light);
-}
-
-.friend-search input {
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 14px;
-}
-
-.friend-search input::placeholder {
-  color: var(--color-text-subtle);
-}
-
-.friend-results {
-  width: 100%;
-  box-sizing: border-box;
-  height: 180px;
-  overflow-y: auto;
-  padding: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-small);
-  background: var(--color-white-035);
-}
-
-.friend-result-message {
-  display: grid;
-  height: 100%;
-  place-items: center;
-  margin: 0;
-  color: var(--color-text-subtle);
-  font-size: 12px;
-  text-align: center;
-}
-
-.friend-result {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-  gap: 12px;
-  padding: 6px 8px 6px 10px;
-  border-radius: var(--radius-small);
-  border-bottom: 1px solid var(--color-white-08);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.friend-result:hover {
-  border-color: var(--color-primary-light-22);
-  background: var(--color-white-08);
-}
-
-.friend-result:last-child {
-  border-bottom: 0;
-}
-
-.friend-result-details {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.friend-result-details strong,
-.friend-result-details span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.friend-result-details strong {
-  font-size: 14px;
-}
-
-.friend-result-details span {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.friend-result button {
-  display: grid;
-  flex: 0 0 44px;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent !important;
-  color: var(--color-primary-light);
-  --mdc-icon-button-icon-size: 24px;
-  --mdc-icon-button-state-layer-size: 44px;
-}
-
-.friend-result button:hover:not(:disabled) {
-  background: transparent !important;
-  color: var(--color-primary);
-}
-
-.friend-result button:disabled {
-  color: var(--color-text-subtle);
-  opacity: 0.7;
 }
 
 .version-tag {

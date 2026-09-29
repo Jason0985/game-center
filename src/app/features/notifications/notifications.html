@@ -6,7 +6,22 @@
     <p class="notifications-kicker">Game Center</p>
     <h1 class="ui-title">Benachrichtigungen</h1>
     <p class="ui-subtitle">Einladungen, Anfragen und Neuigkeiten an einem Ort.</p>
+    @if (session.isAdmin()) {
+      <button
+        mat-stroked-button
+        type="button"
+        class="system-notification-button"
+        (click)="openSystemNotificationDialog()"
+      >
+        <mat-icon aria-hidden="true">campaign</mat-icon>
+        Systembenachrichtigung senden
+      </button>
+    }
   </header>
+
+  @if (statusMessage()) {
+    <p class="notifications-status" role="status">{{ statusMessage() }}</p>
+  }
 
   @if (!session.isLoggedIn()) {
     <section class="notifications-empty ui-surface">
@@ -29,74 +44,102 @@
   } @else {
     <section class="notification-list" aria-label="Deine Benachrichtigungen">
       @for (notification of notifications(); track notification.id) {
+        @let config = typeConfig(notification.type);
+        @let swipeable = config.actions !== 'friend-request';
         <div
           class="notification-swipe-shell"
           [class.notification-swipe-shell--ready]="isSwipeReady(notification.id)"
         >
-          <div class="swipe-delete-action swipe-delete-action--left" aria-hidden="true">
-            <mat-icon>delete</mat-icon>
-            <span>Löschen</span>
-          </div>
-          <div class="swipe-delete-action swipe-delete-action--right" aria-hidden="true">
-            <mat-icon>delete</mat-icon>
-            <span>Löschen</span>
-          </div>
-          <span class="swipe-threshold swipe-threshold--left" aria-hidden="true"></span>
-          <span class="swipe-threshold swipe-threshold--right" aria-hidden="true"></span>
+          @if (swipeable) {
+            <div class="swipe-delete-action swipe-delete-action--left" aria-hidden="true">
+              <mat-icon>delete</mat-icon>
+              <span>Löschen</span>
+            </div>
+            <div class="swipe-delete-action swipe-delete-action--right" aria-hidden="true">
+              <mat-icon>delete</mat-icon>
+              <span>Löschen</span>
+            </div>
+            <span class="swipe-threshold swipe-threshold--left" aria-hidden="true"></span>
+            <span class="swipe-threshold swipe-threshold--right" aria-hidden="true"></span>
+          }
           <article
             class="notification-card ui-surface"
+            [attr.data-tone]="config.tone"
+            [attr.data-category]="config.category"
             [class.notification-card--dragging]="!isSwipeRemoving(notification.id)"
             [class.notification-card--removing]="isSwipeRemoving(notification.id)"
             [style.transform]="'translateX(' + getSwipeOffset(notification.id) + 'px)'"
-            (touchstart)="startSwipe($event, notification.id)"
-            (touchmove)="moveSwipe($event, notification.id)"
-            (touchend)="finishSwipe($event, notification.id)"
+            (touchstart)="swipeable && startSwipe($event, notification.id)"
+            (touchmove)="swipeable && moveSwipe($event, notification.id)"
+            (touchend)="swipeable && finishSwipe($event, notification.id)"
           >
             <div class="notification-card-topline">
-              <span
-                class="notification-type-icon"
-                [class.notification-type-icon--game]="notification.type === 'game_invite'"
-                aria-hidden="true"
-              >
-                <mat-icon>{{
-                  notification.type === 'game_invite' ? 'sports_tennis' : 'person_add'
-                }}</mat-icon>
+              <span class="notification-type-icon" aria-hidden="true">
+                <mat-icon>{{ config.icon }}</mat-icon>
               </span>
               <div class="notification-copy">
-                <div class="notification-title-line">
-                  <h2>{{ notification.title }}</h2>
+                <div class="notification-meta">
+                  <span class="notification-category">{{ config.label }}</span>
                   <span>{{ formatTime(notification.created_at) }}</span>
                 </div>
+                <h2>{{ notification.title }}</h2>
                 <p>{{ notification.message }}</p>
               </div>
-              <button
-                mat-icon-button
-                type="button"
-                aria-label="Benachrichtigung entfernen"
-                matTooltip="Entfernen"
-                (click)="removeNotification(notification.id)"
-              >
-                <mat-icon aria-hidden="true">close</mat-icon>
-              </button>
+              @if (swipeable) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Benachrichtigung entfernen"
+                  matTooltip="Entfernen"
+                  (click)="removeNotification(notification.id)"
+                >
+                  <mat-icon aria-hidden="true">close</mat-icon>
+                </button>
+              }
             </div>
 
-            <div class="notification-actions">
-              <button
-                mat-stroked-button
-                type="button"
-                (click)="handleNotification(notification.id, 'rejected')"
-              >
-                Ablehnen
-              </button>
-              <button
-                mat-flat-button
-                color="primary"
-                type="button"
-                (click)="handleNotification(notification.id, 'accepted')"
-              >
-                {{ notification.type === 'game_invite' ? 'Teilnehmen' : 'Annehmen' }}
-              </button>
-            </div>
+            @switch (config.actions) {
+              @case ('friend-request') {
+                <div class="notification-actions">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="respondingIds().has(notification.id)"
+                    (click)="respondToFriendRequest(notification, false)"
+                  >
+                    Ablehnen
+                  </button>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="respondingIds().has(notification.id)"
+                    (click)="respondToFriendRequest(notification, true)"
+                  >
+                    Annehmen
+                  </button>
+                </div>
+              }
+              @case ('game-invite') {
+                <div class="notification-actions">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="respondToGameInvite(notification.id)"
+                  >
+                    Ablehnen
+                  </button>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    (click)="respondToGameInvite(notification.id)"
+                  >
+                    Teilnehmen
+                  </button>
+                </div>
+              }
+            }
           </article>
         </div>
       }

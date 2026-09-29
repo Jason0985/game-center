@@ -1,4 +1,11 @@
-export type NotificationType = 'game_invite' | 'friend_request';
+export type NotificationType =
+  | 'friend_request'
+  | 'friend_accepted'
+  | 'game_invite'
+  | 'system_info'
+  | 'system_alert';
+
+export type SystemNotificationType = Extract<NotificationType, 'system_info' | 'system_alert'>;
 
 export interface NotificationItem {
   id: string;
