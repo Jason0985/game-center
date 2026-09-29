@@ -115,7 +115,17 @@ export class Notifications {
       });
   }
 
-  startSwipe(event: TouchEvent, notificationId: string): void {
+  // Anfragen müssen beantwortet werden und lassen sich nicht wegwischen.
+  // Wichtig: Touch-Handler dürfen nie false zurückgeben, sonst ruft Angular
+  // preventDefault() auf und Buttons in der Karte bekommen auf Touch-Geräten keinen Klick.
+  isSwipeable(notification: NotificationItem): boolean {
+    return this.typeConfig(notification.type).actions !== 'friend-request';
+  }
+
+  startSwipe(event: TouchEvent, notification: NotificationItem): void {
+    if (!this.isSwipeable(notification)) return;
+
+    const notificationId = notification.id;
     this.activeSwipeId = notificationId;
     this.touchStartX = event.changedTouches[0]?.clientX ?? null;
     this.swipeDirections.update((directions) => {
@@ -125,7 +135,8 @@ export class Notifications {
     });
   }
 
-  moveSwipe(event: TouchEvent, notificationId: string): void {
+  moveSwipe(event: TouchEvent, notification: NotificationItem): void {
+    const notificationId = notification.id;
     if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
       return;
     }
@@ -136,7 +147,8 @@ export class Notifications {
     this.swipeOffsets.update((offsets) => ({ ...offsets, [notificationId]: limitedOffset }));
   }
 
-  finishSwipe(event: TouchEvent, notificationId: string): void {
+  finishSwipe(event: TouchEvent, notification: NotificationItem): void {
+    const notificationId = notification.id;
     if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
       return;
     }

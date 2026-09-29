@@ -41,7 +41,7 @@
     <section class="notification-list" aria-label="Deine Benachrichtigungen">
       @for (notification of notifications(); track notification.id) {
         @let config = typeConfig(notification.type);
-        @let swipeable = config.actions !== 'friend-request';
+        @let swipeable = isSwipeable(notification);
         <div
           class="notification-swipe-shell"
           [class.notification-swipe-shell--ready]="isSwipeReady(notification.id)"
@@ -65,9 +65,9 @@
             [class.notification-card--dragging]="!isSwipeRemoving(notification.id)"
             [class.notification-card--removing]="isSwipeRemoving(notification.id)"
             [style.transform]="'translateX(' + getSwipeOffset(notification.id) + 'px)'"
-            (touchstart)="swipeable && startSwipe($event, notification.id)"
-            (touchmove)="swipeable && moveSwipe($event, notification.id)"
-            (touchend)="swipeable && finishSwipe($event, notification.id)"
+            (touchstart)="startSwipe($event, notification)"
+            (touchmove)="moveSwipe($event, notification)"
+            (touchend)="finishSwipe($event, notification)"
           >
             <div class="notification-card-topline">
               <span class="notification-type-icon" aria-hidden="true">

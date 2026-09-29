@@ -68,7 +68,7 @@ describe('Notifications actions', () => {
       buttons().find((button) => button.textContent?.trim() === label)!.click();
       await fixture.whenStable();
     };
-    return { respondToFriendRequest, toast, appErrors, dialog, buttons, click };
+    return { fixture, respondToFriendRequest, toast, appErrors, dialog, buttons, click };
   }
 
   it('accepts a friend request and confirms it', async () => {
@@ -100,6 +100,19 @@ describe('Notifications actions', () => {
     await click('Ablehnen');
 
     expect(respondToFriendRequest).not.toHaveBeenCalled();
+  });
+
+  it('does not swallow taps on the answer buttons on touch devices', async () => {
+    const { fixture } = await render([notification({})]);
+    const card = fixture.nativeElement.querySelector('article') as HTMLElement;
+
+    // Ein verhindertes touchstart/touchend unterdrückt auf Touch-Geräten den Klick
+    for (const type of ['touchstart', 'touchend']) {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.assign(event, { touches: [], changedTouches: [{ clientX: 10 }] });
+      card.dispatchEvent(event);
+      expect(event.defaultPrevented, type).toBe(false);
+    }
   });
 
   it('offers no actions on system notifications', async () => {
