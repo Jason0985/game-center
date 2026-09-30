@@ -1,0 +1,276 @@
+// Handy: Liste + eigene Hand unten angeheftet; Tablet: Kacheln in 2 Spalten;
+// Laptop (>= 1024 px): Spielfeld links, Stapel/Log/Hand rechts angeheftet
+:host {
+  display: block;
+}
+
+.board {
+  display: grid;
+  gap: 10px;
+}
+
+.status {
+  padding: 10px 14px;
+}
+
+.status-row,
+.player-head,
+.me-head,
+.piles,
+.piles > span,
+.player-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-row {
+  font-size: 13px;
+}
+
+.piles {
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+.piles mat-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+  font-size: 16px;
+}
+
+.status-muted,
+.no-cards {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.live {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.events {
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.host-bar {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.others {
+  display: grid;
+  gap: 8px;
+}
+
+.player {
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.player--turn,
+.me--turn {
+  border-color: var(--color-primary-light-48);
+  background: var(--color-primary-soft);
+}
+
+// Deckend, weil die Kacheln unter der angehefteten Hand durchscrollen
+.me--turn {
+  background:
+    linear-gradient(var(--color-primary-soft), var(--color-primary-soft)), var(--color-surface);
+}
+
+.player-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player--out .player-name {
+  color: var(--color-text-muted);
+}
+
+.dealer {
+  width: 16px;
+  height: 16px;
+  color: var(--color-warning);
+  font-size: 16px;
+}
+
+.badge {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white-08);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge[data-state='busted'] {
+  color: var(--color-danger-light);
+}
+
+.badge[data-state='frozen'] {
+  color: var(--color-chart-cyan);
+}
+
+.badge[data-state='flip7'] {
+  color: var(--color-success-light);
+}
+
+.player-stats {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.round-points {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+// Handy: eine Zeile, seitlich scrollbar
+.player-cards,
+.me-cards {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.me-cards {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.table {
+  display: none;
+}
+
+.side {
+  display: contents;
+}
+
+.me {
+  position: sticky;
+  bottom: var(--bottom-nav-space);
+  z-index: 2;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-navigation);
+}
+
+.me-points {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.me-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.me-actions .ui-button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.chooser-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+// Bis zu 8 Ziele: nebeneinander, damit die angeheftete Hand nicht zu hoch wird
+.chooser {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.me-actions .chooser-button {
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+}
+
+@media (min-width: 600px) {
+  .others {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .player-cards {
+    flex-wrap: wrap;
+  }
+
+  .me-body {
+    display: grid;
+    grid-template-columns: 1fr minmax(180px, 34%);
+    align-items: center;
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .board {
+    grid-template-columns: 1fr 360px;
+    // Höhe der rechten Spalte geht in die zweite Zeile, nicht zwischen Status und Kacheln
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+
+  .others {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .side {
+    position: sticky;
+    top: 16px;
+    display: grid;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    gap: 10px;
+  }
+
+  .events--short {
+    display: none;
+  }
+
+  .table {
+    display: flex;
+    gap: 14px;
+    padding: 12px 14px;
+  }
+
+  .pile {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .me {
+    position: static;
+    box-shadow: var(--shadow-surface);
+  }
+
+  .me-body {
+    display: block;
+  }
+}

@@ -153,26 +153,43 @@
   font-size: 18px;
 }
 
-.lobby-game-placeholder {
+.lobby-game {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.lobby-game mat-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary-light);
+  font-size: 18px;
+}
+
+// Aktionen einer Lobby-Karte unten rechts
+.lobby-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .lobby-secondary-action {
   display: inline-flex;
   align-items: center;
   min-height: 36px;
-  margin-top: 14px;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--color-text-muted);
   font: inherit;
   font-size: 12px;
-  cursor: pointer;
-}
-
-.lobby-secondary-action {
   text-decoration: none;
+  cursor: pointer;
 }
 
 .lobby-secondary-action:hover:not(:disabled) {
@@ -218,14 +235,8 @@
 
 .lobby-join-form {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  flex-direction: column;
   margin-top: 14px;
-}
-
-.lobby-code-field {
-  min-width: 0;
-  flex: 1;
 }
 
 .lobby-code-field input {

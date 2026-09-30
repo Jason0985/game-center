@@ -73,15 +73,18 @@
                 </span>
               </div>
 
-              <p class="lobby-game-placeholder ui-placeholder-note">
+              <p class="lobby-game">
                 <mat-icon aria-hidden="true">casino</mat-icon>
-                Spielauswahl folgt
+                {{ gameLabel(lobby.game_key, lobby.game_settings) }}
               </p>
 
               @if (myLobbyId() === lobby.id) {
-                <a class="lobby-secondary-action" [routerLink]="['/multiplayer', lobby.id]">
-                  Zur Lobby
-                </a>
+                <div class="lobby-card-actions">
+                  <a class="lobby-button" [routerLink]="['/multiplayer', lobby.id]">
+                    <mat-icon aria-hidden="true">meeting_room</mat-icon>
+                    Zur Lobby
+                  </a>
+                </div>
               } @else if (!myLobbyId()) {
                 @if (joiningLobbyId() === lobby.id) {
                   <form class="lobby-join-form" (submit)="joinLobby($event, lobby)">
@@ -100,27 +103,40 @@
                         autofocus
                       />
                     </label>
+                    <div class="lobby-card-actions">
+                      <button
+                        class="lobby-secondary-action"
+                        type="button"
+                        (click)="openJoin(lobby)"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        class="lobby-button"
+                        type="submit"
+                        [disabled]="busy() || joinCode().length < 6"
+                      >
+                        <mat-icon aria-hidden="true">login</mat-icon>
+                        Beitreten
+                      </button>
+                    </div>
+                  </form>
+                } @else {
+                  <div class="lobby-card-actions">
                     <button
                       class="lobby-button"
-                      type="submit"
-                      [disabled]="busy() || joinCode().length < 6"
+                      type="button"
+                      [disabled]="busy() || isFull(lobby)"
+                      (click)="openJoin(lobby)"
                     >
-                      <mat-icon aria-hidden="true">login</mat-icon>
-                      Beitreten
+                      @if (isFull(lobby)) {
+                        Lobby ist voll
+                      } @else {
+                        <mat-icon aria-hidden="true">login</mat-icon>
+                        Beitreten
+                      }
                     </button>
-                  </form>
-                  <button class="lobby-secondary-action" type="button" (click)="openJoin(lobby)">
-                    Abbrechen
-                  </button>
-                } @else {
-                  <button
-                    class="lobby-secondary-action"
-                    type="button"
-                    [disabled]="busy() || isFull(lobby)"
-                    (click)="openJoin(lobby)"
-                  >
-                    {{ isFull(lobby) ? 'Lobby ist voll' : 'Beitreten' }}
-                  </button>
+                  </div>
                 }
               }
             </article>

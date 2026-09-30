@@ -1,0 +1,24 @@
+:host {
+  display: block;
+}
+
+.game-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 640px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.game-message p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+}
+
+.game-message mat-icon {
+  color: var(--color-text-subtle);
+}

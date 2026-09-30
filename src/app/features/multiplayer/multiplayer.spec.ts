@@ -26,6 +26,8 @@ describe('Multiplayer', () => {
     host_user_id: 'host-user',
     hostName: 'Host',
     status: 'open',
+    game_key: 'flip-7',
+    game_settings: { targetScore: 200 },
     created_at: '2026-09-30T12:00:00Z',
     memberCount: 1,
   };
@@ -112,8 +114,29 @@ describe('Multiplayer', () => {
       (button as HTMLButtonElement).textContent?.trim(),
     );
     expect(labels.some((label) => label?.includes('Lobby eröffnen'))).toBe(false);
-    expect(labels).not.toContain('Beitreten');
+    expect(labels.some((label) => label?.includes('Beitreten'))).toBe(false);
     expect(fixture.nativeElement.textContent).toContain('Du bist in einer Lobby');
+  });
+
+  it('shows the game and a primary join button at the bottom of each card', async () => {
+    await render();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.lobby-card') as HTMLElement;
+    expect(card.textContent).toContain('Flip 7 · bis 200 Punkte');
+    const join = card.querySelector('.lobby-card-actions .lobby-button') as HTMLButtonElement;
+    expect(join.textContent?.trim()).toContain('Beitreten');
+    expect(join.disabled).toBe(false);
+  });
+
+  it('disables the join button of a full lobby', async () => {
+    lobbyService.listOpenLobbies.mockResolvedValue([{ ...lobby, memberCount: 8 }]);
+    await render();
+    fixture.detectChanges();
+
+    const join = fixture.nativeElement.querySelector('.lobby-card-actions .lobby-button');
+    expect(join.textContent.trim()).toBe('Lobby ist voll');
+    expect(join.disabled).toBe(true);
   });
 
   it('hides "Lobby eröffnen" until the own lobby is known', async () => {

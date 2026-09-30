@@ -1,0 +1,136 @@
+:host {
+  display: block;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.game-tile {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-white-04);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+}
+
+button.game-tile {
+  cursor: pointer;
+}
+
+.game-tile--selected {
+  border-color: var(--color-primary-light-48);
+  background: var(--color-primary-soft);
+}
+
+.game-icon {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.game-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-copy small,
+.hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.game-check {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.label {
+  margin: 14px 0 6px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.value {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 6px 0 0;
+}
+
+// Segmentierte Auswahl ohne Material, damit sie auf dem Handy in eine Zeile passt
+.segments {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+}
+
+.segments button {
+  min-height: 40px;
+  padding: 0 4px;
+  border: 0;
+  border-left: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segments button:first-child {
+  border-left: 0;
+}
+
+.segments button[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.segments button:disabled,
+.game-tile:disabled {
+  cursor: default;
+}
+
+.segments button:focus-visible,
+.game-tile:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.rules {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.rules summary {
+  color: var(--color-primary-light);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rules ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}

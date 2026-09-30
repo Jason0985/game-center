@@ -1,0 +1,55 @@
+@if (game(); as g) {
+  @switch (g.status) {
+    @case ('playing') {
+      <app-flip7-board
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        [canSkip]="canSkip()"
+        (hit)="hit(g)"
+        (stay)="stay(g)"
+        (choose)="choose(g, $event)"
+        (skip)="skip(g)"
+        (endGame)="endGame(g)"
+      />
+    }
+    @case ('round_over') {
+      <app-flip7-round-summary
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        [secondsLeft]="secondsLeft()"
+        (next)="nextRound(g.id, g.round_no)"
+        (endGame)="endGame(g)"
+      />
+    }
+    @case ('finished') {
+      <app-flip7-final
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        (backToLobby)="backToLobby()"
+        (continueOpen)="continueOpen(g)"
+      />
+    }
+  }
+} @else {
+  <section class="game-message ui-surface" role="status">
+    <mat-icon aria-hidden="true">{{ loading() ? 'hourglass_empty' : 'info' }}</mat-icon>
+    <p>{{ loading() ? 'Spiel wird geladen ...' : 'Zu dieser Lobby läuft kein Spiel.' }}</p>
+    @if (!loading() && isHost()) {
+      <button
+        mat-stroked-button
+        type="button"
+        class="ui-button"
+        [disabled]="busy()"
+        (click)="backToLobby()"
+      >
+        Zurück zur Warte-Lobby
+      </button>
+    }
+  </section>
+}

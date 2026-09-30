@@ -89,12 +89,13 @@ html {
   );
 }
 
+// clip statt hidden: hidden macht body zum Scroll-Container, dann greift position: sticky nie
 html,
 body {
   margin: 0;
   min-width: 100%;
   min-height: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {

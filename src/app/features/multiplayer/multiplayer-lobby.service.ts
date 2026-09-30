@@ -5,26 +5,22 @@ import { ActionResult, describeSupabaseError } from '../../services/supabase-err
 import {
   displayNameOf,
   LobbyDetail,
+  LobbyGameSettings,
   LobbyMember,
   LobbyProfile,
   LobbyStatus,
   LobbySummary,
 } from './lobby.model';
+import { watchTables } from './realtime-watch';
 
 export type LobbyResult<T> = { ok: true; value: T } | { ok: false; message: string };
-
-// Mehrere Realtime-Events kurz hintereinander (z. B. Lobby schließen löscht alle
-// Mitglieder) lösen nur ein Neuladen aus
-const CHANGE_DEBOUNCE_MS = 100;
-
-// Kanalnamen pro Ansicht eindeutig halten: supabase.channel() gibt sonst den noch
-// nicht ganz entfernten alten Kanal zurück, und das neue Abo bleibt stumm
-let channelCounter = 0;
 
 interface LobbySummaryRow {
   id: string;
   host_user_id: string;
   status: LobbyStatus;
+  game_key: string | null;
+  game_settings: LobbyGameSettings | null;
   created_at: string;
   multiplayer_lobby_members: { count: number }[];
 }
@@ -37,8 +33,11 @@ interface LobbyDetailRow extends Omit<LobbyDetail, 'code' | 'members'> {
   multiplayer_lobby_codes: { code: string } | { code: string }[] | null;
 }
 
-// Fachliche Fehler aus den Lobby-Funktionen (P0001) sind schon deutsche Meldungen
-function lobbyFailure(context: string, error: PostgrestError): { ok: false; message: string } {
+// Fachliche Fehler aus den Lobby- und Spielfunktionen (P0001) sind schon deutsche Meldungen
+export function lobbyFailure(
+  context: string,
+  error: PostgrestError,
+): { ok: false; message: string } {
   console.error(context, error);
   return {
     ok: false,
@@ -53,7 +52,10 @@ export class MultiplayerLobbyService {
   async listOpenLobbies(): Promise<LobbySummary[] | null> {
     const { data, error } = await supabase
       .from('multiplayer_lobbies')
-      .select('id, host_user_id, status, created_at, multiplayer_lobby_members(count)')
+      .select(
+        'id, host_user_id, status, game_key, game_settings, created_at,' +
+          ' multiplayer_lobby_members(count)',
+      )
       .eq('status', 'open')
       .order('created_at', { ascending: false });
 
@@ -62,7 +64,7 @@ export class MultiplayerLobbyService {
       return null;
     }
 
-    const rows = (data ?? []) as LobbySummaryRow[];
+    const rows = (data ?? []) as unknown as LobbySummaryRow[];
     const profiles = await this.loadProfiles(rows.map((row) => row.host_user_id));
     if (!profiles) {
       return null;
@@ -73,6 +75,8 @@ export class MultiplayerLobbyService {
       host_user_id: row.host_user_id,
       hostName: displayNameOf(profiles.get(row.host_user_id)),
       status: row.status,
+      game_key: row.game_key,
+      game_settings: row.game_settings,
       created_at: row.created_at,
       memberCount: row.multiplayer_lobby_members[0]?.count ?? 0,
     }));
@@ -99,7 +103,7 @@ export class MultiplayerLobbyService {
     const { data, error } = await supabase
       .from('multiplayer_lobbies')
       .select(
-        'id, host_user_id, status, game_key, created_at, started_at,' +
+        'id, host_user_id, status, game_key, game_settings, created_at, started_at,' +
           ' multiplayer_lobby_members(user_id, ready, joined_at), multiplayer_lobby_codes(code)',
       )
       .eq('id', lobbyId)
@@ -193,32 +197,31 @@ export class MultiplayerLobbyService {
     return error ? lobbyFailure('Lobby konnte nicht gestartet werden.', error) : { ok: true };
   }
 
+  // Nur der Host einer offenen Lobby; Bereit-Status bleibt erhalten
+  async setGame(
+    lobbyId: string,
+    gameKey: string,
+    settings: LobbyGameSettings,
+  ): Promise<ActionResult> {
+    const { error } = await supabase.rpc('set_lobby_game', {
+      p_lobby_id: lobbyId,
+      p_game_key: gameKey,
+      p_settings: settings,
+    });
+    return error ? lobbyFailure('Spiel konnte nicht eingestellt werden.', error) : { ok: true };
+  }
+
   // Ungefiltert, weil DELETE-Events sich nicht filtern lassen. Gibt die Abmeldung zurück.
   subscribeToChanges(name: string, onChange: () => void): () => void {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const notify = () => {
-      clearTimeout(timer);
-      timer = setTimeout(onChange, CHANGE_DEBOUNCE_MS);
-    };
-
-    const channel = supabase
-      .channel(`${name}-${++channelCounter}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'multiplayer_lobbies' }, notify)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'multiplayer_lobby_members' },
-        notify,
-      )
-      .subscribe();
-
-    return () => {
-      clearTimeout(timer);
-      void supabase.removeChannel(channel);
-    };
+    return watchTables(
+      name,
+      [{ table: 'multiplayer_lobbies' }, { table: 'multiplayer_lobby_members' }],
+      onChange,
+    );
   }
 
   // null = Laden fehlgeschlagen
-  private async loadProfiles(ids: string[]): Promise<Map<string, LobbyProfile> | null> {
+  async loadProfiles(ids: string[]): Promise<Map<string, LobbyProfile> | null> {
     const uniqueIds = [...new Set(ids)];
     if (!uniqueIds.length) {
       return new Map();

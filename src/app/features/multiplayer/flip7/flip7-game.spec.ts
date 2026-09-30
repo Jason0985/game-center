@@ -1,0 +1,259 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+import { AppErrorService } from '../../../services/app-error.service';
+import { Flip7GameView } from './flip7-game';
+import { Flip7Service } from './flip7.service';
+import { Flip7Game, Flip7Player } from './flip7.model';
+
+function player(seat: number, overrides: Partial<Flip7Player> = {}): Flip7Player {
+  return {
+    user_id: ['host', 'guest', 'third'][seat],
+    seat,
+    state: 'active',
+    cards: [],
+    total_score: 0,
+    round_score: null,
+    name: ['Host', 'Gast', 'Dritte'][seat],
+    ...overrides,
+  };
+}
+
+function makeGame(overrides: Partial<Flip7Game> = {}): Flip7Game {
+  return {
+    id: 'game-1',
+    target_score: 200,
+    status: 'playing',
+    seat_count: 3,
+    round_no: 1,
+    dealer_seat: 2,
+    phase: 'turn',
+    turn_seat: 0,
+    pending_card: null,
+    pending_seat: null,
+    draw_count: 80,
+    discard_count: 0,
+    last_events: [],
+    waiting_since: '2026-09-30T12:00:00Z',
+    players: [
+      player(0, { cards: ['3'] }),
+      player(1, { cards: ['5'] }),
+      player(2, { cards: ['7'] }),
+    ],
+    ...overrides,
+  };
+}
+
+describe('Flip7GameView', () => {
+  let fixture: ComponentFixture<Flip7GameView>;
+  let component: Flip7GameView;
+  let flip7: Record<string, ReturnType<typeof vi.fn>>;
+  let dialog: { open: ReturnType<typeof vi.fn> };
+
+  async function render(userId: string, game: Flip7Game | null): Promise<void> {
+    flip7['load'].mockResolvedValue({ ok: true, value: game });
+    fixture = TestBed.createComponent(Flip7GameView);
+    component = fixture.componentInstance;
+    fixture.componentRef.setInput('lobbyId', 'lobby-1');
+    fixture.componentRef.setInput('hostUserId', 'host');
+    fixture.componentRef.setInput('userId', userId);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(component.loading()).toBe(false));
+    fixture.detectChanges();
+  }
+
+  const el = (): HTMLElement => fixture.nativeElement;
+  const buttons = (): HTMLButtonElement[] => [...el().querySelectorAll('button')];
+  const button = (label: string) =>
+    buttons().find((candidate) => candidate.textContent?.includes(label));
+
+  beforeEach(async () => {
+    flip7 = {
+      load: vi.fn(),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+      hit: vi.fn().mockResolvedValue({ ok: true }),
+      stay: vi.fn().mockResolvedValue({ ok: true }),
+      chooseTarget: vi.fn().mockResolvedValue({ ok: true }),
+      skip: vi.fn().mockResolvedValue({ ok: true }),
+      nextRound: vi.fn().mockResolvedValue({ ok: true }),
+      endGame: vi.fn().mockResolvedValue({ ok: true }),
+      continueOpen: vi.fn().mockResolvedValue({ ok: true }),
+      returnToLobby: vi.fn().mockResolvedValue({ ok: true }),
+    };
+    dialog = { open: vi.fn(() => ({ afterClosed: () => of(true) })) };
+
+    await TestBed.configureTestingModule({
+      imports: [Flip7GameView],
+      providers: [
+        { provide: Flip7Service, useValue: flip7 },
+        { provide: MatDialog, useValue: dialog },
+        { provide: AppErrorService, useValue: { report: vi.fn() } },
+      ],
+    }).compileComponents();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('switches between board, round summary and final overview', async () => {
+    await render('guest', makeGame());
+    expect(el().querySelector('app-flip7-board')).not.toBeNull();
+    fixture.destroy();
+
+    await render('guest', makeGame({ status: 'round_over', phase: null, turn_seat: null }));
+    expect(el().querySelector('app-flip7-round-summary')).not.toBeNull();
+    expect(el().textContent).toContain('Runde 1 beendet');
+    fixture.destroy();
+
+    await render('guest', makeGame({ status: 'finished', phase: null }));
+    expect(el().querySelector('app-flip7-final')).not.toBeNull();
+  });
+
+  it('enables Hit and Stay only on the own turn', async () => {
+    await render('host', makeGame());
+    expect(el().textContent).toContain('Du bist am Zug.');
+    expect(button('Karte ziehen')!.disabled).toBe(false);
+
+    button('Karte ziehen')!.click();
+    // Mit dem angezeigten Stand, damit die Datenbank veraltete Züge ignorieren kann
+    await vi.waitFor(() =>
+      expect(flip7['hit']).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'game-1', waiting_since: '2026-09-30T12:00:00Z' }),
+      ),
+    );
+    fixture.destroy();
+
+    await render('guest', makeGame());
+    expect(el().textContent).toContain('Host ist am Zug.');
+    expect(button('Karte ziehen')!.disabled).toBe(true);
+    expect(button('Stehen bleiben')!.disabled).toBe(true);
+  });
+
+  it('keeps the buttons disabled until the new state is loaded', async () => {
+    await render('host', makeGame());
+    let finishLoad!: (value: unknown) => void;
+    flip7['load'].mockReturnValue(new Promise((resolve) => (finishLoad = resolve)));
+
+    button('Karte ziehen')!.click();
+    await vi.waitFor(() => expect(flip7['hit']).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(button('Karte ziehen')!.disabled).toBe(true);
+    button('Karte ziehen')!.click();
+
+    finishLoad({ ok: true, value: makeGame({ waiting_since: '2026-09-30T12:00:05Z' }) });
+    await vi.waitFor(() => expect(component.busy()).toBe(false));
+    fixture.detectChanges();
+    expect(button('Karte ziehen')!.disabled).toBe(false);
+    expect(flip7['hit']).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the target chooser only to the player who must choose', async () => {
+    const pending = makeGame({ pending_card: 'FREEZE', pending_seat: 1 });
+    await render('guest', pending);
+    expect(el().textContent).toContain('Wen willst du einfrieren?');
+    const targets = [...el().querySelectorAll('.chooser-button')].map((b) => b.textContent?.trim());
+    expect(targets.length).toBe(3);
+    expect(targets.some((label) => label?.includes('Gast (du)'))).toBe(true);
+
+    button('Host')!.click();
+    await vi.waitFor(() =>
+      expect(flip7['chooseTarget']).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'game-1', waiting_since: '2026-09-30T12:00:00Z' }),
+        0,
+      ),
+    );
+    fixture.destroy();
+
+    await render('host', pending);
+    expect(el().textContent).not.toContain('Wen willst du einfrieren?');
+    expect(el().textContent).toContain('Gast wählt ein Ziel für Einfrieren.');
+  });
+
+  it('shows host controls only to the host', async () => {
+    vi.useFakeTimers();
+    await render('host', makeGame({ turn_seat: 1 }));
+    expect(button('Spiel beenden')).toBeDefined();
+    expect(button('Überspringen')).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(31_000);
+    fixture.detectChanges();
+    button('Überspringen')!.click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(dialog.open).toHaveBeenCalled();
+    expect(flip7['skip']).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'game-1', waiting_since: '2026-09-30T12:00:00Z' }),
+    );
+    fixture.destroy();
+    vi.useRealTimers();
+
+    await render('guest', makeGame({ turn_seat: 1 }));
+    expect(button('Spiel beenden')).toBeUndefined();
+    expect(button('Überspringen')).toBeUndefined();
+  });
+
+  it('lets only the host decide on the final overview', async () => {
+    const finished = makeGame({ status: 'finished', phase: null });
+    await render('guest', finished);
+    expect(el().textContent).toContain('Der Host entscheidet, wie es weitergeht.');
+    expect(button('Zurück zur Warte-Lobby')).toBeUndefined();
+    expect(button('Weiterspielen')).toBeUndefined();
+    fixture.destroy();
+
+    await render('host', finished);
+    const returned = vi.fn();
+    component.returned.subscribe(returned);
+    button('Weiterspielen')!.click();
+    await vi.waitFor(() => expect(flip7['continueOpen']).toHaveBeenCalledWith('game-1'));
+    await vi.waitFor(() => expect(component.busy()).toBe(false));
+    button('Zurück zur Warte-Lobby')!.click();
+    await vi.waitFor(() => expect(flip7['returnToLobby']).toHaveBeenCalledWith('lobby-1'));
+    await vi.waitFor(() => expect(returned).toHaveBeenCalled());
+  });
+
+  it('shows a shared win on a tie', async () => {
+    await render(
+      'guest',
+      makeGame({
+        status: 'finished',
+        players: [
+          player(0, { total_score: 210 }),
+          player(1, { total_score: 210 }),
+          player(2, { state: 'left', total_score: 300 }),
+        ],
+      }),
+    );
+    expect(el().textContent).toContain('Gleichstand – geteilter Sieg');
+    expect(el().textContent).toContain('verlassen');
+  });
+
+  it('starts the next round exactly once after the summary', async () => {
+    vi.useFakeTimers();
+    await render('guest', makeGame({ status: 'round_over', phase: null, round_no: 3 }));
+    expect(el().textContent).toContain('Nächste Runde in 10 s');
+
+    await vi.advanceTimersByTimeAsync(5_000);
+    fixture.detectChanges();
+    // render() lässt beim Warten schon etwas Zeit vergehen
+    expect(el().textContent).toMatch(/Nächste Runde in [56] s/);
+    expect(flip7['nextRound']).not.toHaveBeenCalled();
+
+    expect(button('Jetzt weiter')).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(flip7['nextRound']).toHaveBeenCalledTimes(1);
+    expect(flip7['nextRound']).toHaveBeenCalledWith('game-1', 3);
+    // Hängt der automatische Start, dürfen nach dem Countdown alle weiterschalten
+    await vi.advanceTimersByTimeAsync(1_000);
+    fixture.detectChanges();
+    expect(el().textContent).toContain('Nächste Runde startet');
+    expect(button('Jetzt weiter')).toBeDefined();
+    expect(button('Spiel beenden')).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    fixture.detectChanges();
+    expect(flip7['nextRound']).toHaveBeenCalledTimes(1);
+  });
+});

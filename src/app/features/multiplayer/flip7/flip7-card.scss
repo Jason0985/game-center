@@ -1,0 +1,102 @@
+:host {
+  --card-w: 40px;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: var(--card-w);
+  line-height: 1;
+}
+
+:host([data-size='xs']) {
+  --card-w: 26px;
+}
+
+:host([data-size='sm']) {
+  --card-w: 32px;
+}
+
+:host([data-size='lg']) {
+  --card-w: 52px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: calc(var(--card-w) * 0.14);
+  background: var(--color-surface-raised);
+  // Mit der Textfarbe gemischt, damit auch Gelb im hellen Schema lesbar bleibt
+  color: color-mix(in srgb, var(--accent) 78%, var(--color-text));
+  box-shadow: 0 1px 2px var(--color-shadow-surface);
+  font-weight: 800;
+  user-select: none;
+}
+
+// Zahl mittig, klein in der Ecke
+.card--number {
+  border-bottom: 3px solid var(--accent);
+}
+
+.card-value {
+  font-size: calc(var(--card-w) * 0.44);
+}
+
+.card-corner {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: calc(var(--card-w) * 0.2);
+}
+
+.card--modifier,
+.card--action {
+  border-color: var(--accent);
+}
+
+.card--modifier .card-value {
+  font-size: calc(var(--card-w) * 0.34);
+}
+
+.card mat-icon {
+  width: calc(var(--card-w) * 0.5);
+  height: calc(var(--card-w) * 0.5);
+  font-size: calc(var(--card-w) * 0.5);
+}
+
+.card-name {
+  display: none;
+  max-width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+:host([data-size='lg']) .card-name {
+  display: block;
+}
+
+// Doppelte Zahl beim Rausfliegen
+.card--dup {
+  border: 2px solid var(--color-danger-light);
+  background: var(--color-danger-12);
+}
+
+.card--back {
+  border-color: var(--color-primary-light-48);
+  background:
+    repeating-linear-gradient(45deg, var(--color-white-10) 0 4px, transparent 4px 9px),
+    var(--color-primary);
+}
+
+:host([data-size='xs']) .card-corner {
+  display: none;
+}

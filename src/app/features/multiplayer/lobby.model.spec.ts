@@ -1,4 +1,4 @@
-import { canStartLobby, LobbyMember, requiredReadyCount } from './lobby.model';
+import { canStartLobby, gameLabel, LobbyMember, requiredReadyCount } from './lobby.model';
 
 function members(total: number, ready: number): LobbyMember[] {
   return Array.from({ length: total }, (_, index) => ({
@@ -28,5 +28,17 @@ describe('lobby start rule', () => {
     expect(requiredReadyCount(1)).toBe(1);
     expect(requiredReadyCount(3)).toBe(2);
     expect(requiredReadyCount(8)).toBe(4);
+  });
+});
+
+describe('gameLabel', () => {
+  it('names the game and its target score', () => {
+    expect(gameLabel('flip-7', { targetScore: 200 })).toBe('Flip 7 · bis 200 Punkte');
+    expect(gameLabel('flip-7', { targetScore: null })).toBe('Flip 7 · Offen');
+  });
+
+  it('handles lobbies without a game', () => {
+    expect(gameLabel(null, null)).toBe('Noch kein Spiel gewählt');
+    expect(gameLabel('unknown', { targetScore: 200 })).toBe('Noch kein Spiel gewählt');
   });
 });

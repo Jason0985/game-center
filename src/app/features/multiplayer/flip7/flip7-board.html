@@ -1,0 +1,171 @@
+@let g = game();
+<div class="board">
+  <header class="status ui-surface">
+    <div class="status-row">
+      <strong>Runde {{ g.round_no }}</strong>
+      <span class="status-muted">{{ g.target_score ? 'Ziel ' + g.target_score : 'Offen' }}</span>
+      <span class="piles">
+        <span matTooltip="Nachziehstapel" [attr.aria-label]="g.draw_count + ' Karten im Stapel'">
+          <mat-icon aria-hidden="true">layers</mat-icon>{{ g.draw_count }}
+        </span>
+        <span matTooltip="Ablagestapel" [attr.aria-label]="g.discard_count + ' Karten abgelegt'">
+          <mat-icon aria-hidden="true">delete_sweep</mat-icon>{{ g.discard_count }}
+        </span>
+      </span>
+    </div>
+    <p class="live" aria-live="polite">{{ statusText() }}</p>
+    @if (events().length) {
+      <ul class="events events--short">
+        @for (event of events().slice(-2); track $index) {
+          <li>{{ event }}</li>
+        }
+      </ul>
+    }
+    @if (isHost()) {
+      <div class="host-bar">
+        @if (canSkip()) {
+          <button mat-button type="button" [disabled]="busy()" (click)="skip.emit()">
+            <mat-icon aria-hidden="true">skip_next</mat-icon>
+            Überspringen
+          </button>
+        }
+        <button mat-button type="button" [disabled]="busy()" (click)="endGame.emit()">
+          <mat-icon aria-hidden="true">stop_circle</mat-icon>
+          Spiel beenden
+        </button>
+      </div>
+    }
+  </header>
+
+  <section class="others" aria-label="Mitspieler">
+    @for (player of others(); track player.user_id) {
+      <article
+        class="player ui-surface"
+        [class.player--turn]="player.seat === activeSeat()"
+        [class.player--out]="player.state !== 'active'"
+      >
+        <div class="player-head">
+          <strong class="player-name">{{ player.name }}</strong>
+          @if (player.seat === g.dealer_seat) {
+            <mat-icon class="dealer" aria-label="Geber" matTooltip="Geber">style</mat-icon>
+          }
+          @if (player.state !== 'active') {
+            <span class="badge" [attr.data-state]="player.state">
+              {{ stateLabels[player.state] }}
+            </span>
+          }
+          <span class="player-stats">
+            <span matTooltip="Gesamtpunkte">Σ {{ player.total_score }}</span>
+            <span class="round-points" matTooltip="Punkte dieser Runde"
+              >+{{ preview(player) }}</span
+            >
+            <span matTooltip="Verschiedene Zahlen">{{ distinct(player) }}/7</span>
+          </span>
+        </div>
+        <div class="player-cards">
+          @for (item of hands().get(player.seat); track item.key) {
+            <app-flip7-card
+              class="ui-pop-in"
+              [card]="item.card"
+              [size]="otherCardSize()"
+              [highlight]="item.dup ? 'dup' : null"
+            />
+          } @empty {
+            <span class="no-cards">Noch keine Karten</span>
+          }
+        </div>
+      </article>
+    }
+  </section>
+
+  <aside class="side">
+    <div class="table ui-surface">
+      <div class="pile">
+        <app-flip7-card [card]="null" size="lg" />
+        <span>{{ g.draw_count }} im Stapel</span>
+      </div>
+      <ol class="events events--log" aria-label="Letzte Ereignisse">
+        @for (event of events().slice(-4); track $index) {
+          <li>{{ event }}</li>
+        } @empty {
+          <li class="status-muted">Noch nichts passiert.</li>
+        }
+      </ol>
+    </div>
+
+    @if (me(); as me) {
+      <section
+        class="me ui-surface"
+        [class.me--turn]="myTurn() || choosing()"
+        aria-label="Deine Karten"
+      >
+        <div class="me-head">
+          <span class="me-points">{{ preview(me) }}</span>
+          <span class="status-muted">Punkte diese Runde</span>
+          <span class="player-stats">
+            <span>Σ {{ me.total_score }}</span>
+            <span>{{ distinct(me) }}/7</span>
+          </span>
+        </div>
+        <div class="me-body">
+          <div class="me-cards">
+            @for (item of hands().get(me.seat); track item.key) {
+              <app-flip7-card
+                class="ui-pop-in"
+                [card]="item.card"
+                [size]="myCardSize()"
+                [highlight]="item.dup ? 'dup' : null"
+              />
+            } @empty {
+              <span class="no-cards">Noch keine Karten</span>
+            }
+          </div>
+
+          <div class="me-actions">
+            @if (choosing()) {
+              <p class="chooser-title">{{ chooserTitle() }}</p>
+              <div class="chooser">
+                @for (target of candidates(); track target.seat) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    class="ui-button chooser-button"
+                    [disabled]="busy()"
+                    (click)="choose.emit(target.seat)"
+                  >
+                    {{ target.name }}{{ target.seat === me.seat ? ' (du)' : '' }} ·
+                    {{ preview(target) }} P.
+                  </button>
+                }
+              </div>
+            } @else if (me.state === 'active') {
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="ui-button"
+                [disabled]="busy() || !myTurn()"
+                (click)="hit.emit()"
+              >
+                <mat-icon aria-hidden="true">style</mat-icon>
+                Karte ziehen
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                class="ui-button"
+                [disabled]="busy() || !myTurn()"
+                (click)="stay.emit()"
+              >
+                <mat-icon aria-hidden="true">pan_tool</mat-icon>
+                Stehen bleiben
+              </button>
+            } @else {
+              <p class="status-muted">{{ waitingText() }}</p>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  </aside>
+</div>

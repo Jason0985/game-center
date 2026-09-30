@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AppErrorService } from '../../services/app-error.service';
 import { MultiplayerLobbyService } from './multiplayer-lobby.service';
-import { LOBBY_MAX_MEMBERS, LobbySummary } from './lobby.model';
+import { gameLabel, LOBBY_MAX_MEMBERS, LobbySummary } from './lobby.model';
 
 @Component({
   selector: 'app-multiplayer',
@@ -18,6 +18,7 @@ export class Multiplayer {
   private readonly appErrors = inject(AppErrorService);
   private readonly router = inject(Router);
   readonly maxMembers = LOBBY_MAX_MEMBERS;
+  readonly gameLabel = gameLabel;
   readonly lobbies = signal<LobbySummary[]>([]);
   // Lobby, in der man selbst gerade ist (dann kein Eröffnen/Beitreten)
   readonly myLobbyId = signal<string | null>(null);
@@ -44,7 +45,10 @@ export class Multiplayer {
 
       void this.refresh(userId);
       onCleanup(
-        this.lobbyService.subscribeToChanges('multiplayer-lobbies', () => void this.refresh(userId)),
+        this.lobbyService.subscribeToChanges(
+          'multiplayer-lobbies',
+          () => void this.refresh(userId),
+        ),
       );
     });
   }

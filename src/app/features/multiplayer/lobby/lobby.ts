@@ -13,6 +13,7 @@ import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmatio
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import {
   canStartLobby,
+  gameName,
   LOBBY_MAX_MEMBERS,
   LOBBY_MIN_MEMBERS,
   LobbyDetail,
@@ -20,10 +21,19 @@ import {
   requiredReadyCount,
 } from '../lobby.model';
 import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
+import { LobbyGameSetup } from './lobby-game-settings';
+import { Flip7GameView } from '../flip7/flip7-game';
 
 @Component({
   selector: 'app-lobby',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, RouterLink],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    RouterLink,
+    LobbyGameSetup,
+    Flip7GameView,
+  ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',
 })
@@ -53,12 +63,15 @@ export class Lobby {
   });
   readonly started = computed(() => this.lobby()?.status === 'started');
   readonly hostName = computed(
-    () => this.members().find((member) => member.user_id === this.lobby()?.host_user_id)?.name ?? '',
+    () =>
+      this.members().find((member) => member.user_id === this.lobby()?.host_user_id)?.name ?? '',
   );
   readonly me = computed(() => this.members().find((member) => member.user_id === this.userId()));
   readonly readyCount = computed(() => this.members().filter((member) => member.ready).length);
   readonly requiredReady = computed(() => requiredReadyCount(this.members().length));
-  readonly canStart = computed(() => canStartLobby(this.members()));
+  // Starten braucht zusätzlich ein gewähltes Spiel
+  readonly canStart = computed(() => canStartLobby(this.members()) && !!this.lobby()?.game_key);
+  readonly gameName = computed(() => gameName(this.lobby()?.game_key) ?? 'Spiel');
 
   // Nach eigenem Verlassen/Schließen (oder Weg-Navigieren) keine Meldungen und Umleitungen mehr
   private leaving = false;
@@ -105,6 +118,11 @@ export class Lobby {
     await this.run(() => this.lobbyService.start(this.lobbyId));
   }
 
+  // Nach Änderungen aus Spiel oder Spielauswahl sofort neu laden, nicht erst per Realtime
+  reload(): void {
+    void this.load();
+  }
+
   openInvite(): void {
     const userId = this.userId();
     if (!userId) return;
@@ -132,18 +150,26 @@ export class Lobby {
     }
   }
 
-  // Schließen (Host) wirft alle raus und wird deshalb bestätigt, Verlassen nicht
+  // Bestätigt werden: Schließen (Host, wirft alle raus) und Verlassen eines laufenden
+  // Spiels (endgültig, Rückkehr erst in der Warte-Lobby). Verlassen der Warte-Lobby nicht.
   async leave(): Promise<void> {
     if (this.busy()) return;
-    if (
-      this.isHost() &&
-      !(await this.confirm({
-        title: 'Lobby schließen?',
-        message: 'Alle Spieler werden entfernt.',
-        confirmLabel: 'Schließen',
-        icon: 'logout',
-      }))
-    ) {
+    const confirmation: ConfirmationDialogData | null = this.isHost()
+      ? {
+          title: 'Lobby schließen?',
+          message: 'Alle Spieler werden entfernt.',
+          confirmLabel: 'Schließen',
+          icon: 'logout',
+        }
+      : this.started()
+        ? {
+            title: 'Spiel verlassen?',
+            message: 'Du verlässt das laufende Spiel endgültig.',
+            confirmLabel: 'Verlassen',
+            icon: 'logout',
+          }
+        : null;
+    if (confirmation && !(await this.confirm(confirmation))) {
       return;
     }
 
