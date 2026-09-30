@@ -4,7 +4,7 @@ import { describeSupabaseError } from '../../../services/supabase-errors';
 import { supabase } from '../../../supabase.client';
 import { ExtractedResult } from './race-results.model';
 
-// Längste Bildkante; größer bringt Claude nichts und macht den Upload nur langsamer
+// Längste Bildkante; größer bringt dem Modell nichts und macht den Upload nur langsamer
 const MAX_IMAGE_EDGE = 2000;
 
 export type ExtractResult = { ok: true; result: ExtractedResult } | { ok: false; message: string };
