@@ -65,7 +65,7 @@ describe('LobbyInviteDialog', () => {
     expect(buttonLabels()).toEqual([
       'Anna: Einladen',
       'Ben: Bereits in der Lobby',
-      'Carl: Noch nicht freigeschaltet',
+      'Carl: Einladen',
     ]);
   });
 
@@ -73,7 +73,7 @@ describe('LobbyInviteDialog', () => {
     component.search.set('CA');
     fixture.detectChanges();
 
-    expect(buttonLabels()).toEqual(['Carl: Noch nicht freigeschaltet']);
+    expect(buttonLabels()).toEqual(['Carl: Einladen']);
 
     component.search.set('xyz');
     fixture.detectChanges();

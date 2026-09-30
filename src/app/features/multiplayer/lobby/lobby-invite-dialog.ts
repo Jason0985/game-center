@@ -15,12 +15,11 @@ export interface LobbyInviteDialogData {
   memberIds: string[];
 }
 
-// member: schon in der Lobby, unavailable: Multiplayer (noch) nicht freigeschaltet
-type InviteState = 'member' | 'unavailable' | 'invited' | 'none';
+// member: schon in der Lobby
+type InviteState = 'member' | 'invited' | 'none';
 
 const INVITE_STATES: Record<InviteState, { icon: string; label: string }> = {
   member: { icon: 'how_to_reg', label: 'Bereits in der Lobby' },
-  unavailable: { icon: 'block', label: 'Noch nicht freigeschaltet' },
   invited: { icon: 'schedule', label: 'Eingeladen' },
   none: { icon: 'person_add', label: 'Einladen' },
 };
@@ -71,11 +70,9 @@ export class LobbyInviteDialog {
       .map(({ profile, name }) => {
         const state: InviteState = this.memberIds.has(profile.id)
           ? 'member'
-          : !profile.roles.includes('admin')
-            ? 'unavailable'
-            : invited.has(profile.id)
-              ? 'invited'
-              : 'none';
+          : invited.has(profile.id)
+            ? 'invited'
+            : 'none';
         return { profile, name, state, ...INVITE_STATES[state], pending: pending.has(profile.id) };
       });
   });

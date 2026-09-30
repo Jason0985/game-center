@@ -44,13 +44,13 @@ export const routes: Routes = [
   },
   {
     path: 'multiplayer',
-    canActivate: [roleGuard('admin')],
+    canActivate: [roleGuard()],
     loadComponent: () =>
       import('./features/multiplayer/multiplayer').then((module) => module.Multiplayer),
   },
   {
     path: 'multiplayer/:lobbyId',
-    canActivate: [roleGuard('admin')],
+    canActivate: [roleGuard()],
     loadComponent: () =>
       import('./features/multiplayer/lobby/lobby').then((module) => module.Lobby),
   },

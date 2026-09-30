@@ -5,7 +5,8 @@ import { filter, firstValueFrom } from 'rxjs';
 import { ProfileRole } from './features/profile/profile.model';
 import { SessionService } from './services/session.service';
 
-// Seiten nur für bestimmte Rollen (Admins dürfen immer); alle anderen landen in der Sammlung
+// Seiten nur für bestimmte Rollen (Admins dürfen immer), ohne Rollen für alle Eingeloggten;
+// alle anderen landen in der Sammlung
 export function roleGuard(...roles: ProfileRole[]): CanActivateFn {
   return async () => {
     const session = inject(SessionService);
@@ -14,6 +15,9 @@ export function roleGuard(...roles: ProfileRole[]): CanActivateFn {
     // warten bis Login und Profil (mit Rollen) geladen sind
     await firstValueFrom(toObservable(session.initialized).pipe(filter(Boolean)));
 
-    return session.hasAnyRole(roles) || router.parseUrl('/collection');
+    return (
+      (roles.length ? session.hasAnyRole(roles) : session.isLoggedIn()) ||
+      router.parseUrl('/collection')
+    );
   };
 }

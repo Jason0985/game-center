@@ -49,8 +49,8 @@
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
     </a>
-    <!-- Multiplayer vorerst nur für Admins (wie roleGuard und can_use_multiplayer) -->
-    @if (session.isAdmin()) {
+    <!-- Multiplayer nur eingeloggt (wie roleGuard() und can_use_multiplayer) -->
+    @if (session.isLoggedIn()) {
       <a
         class="bottom-nav-link"
         routerLink="/multiplayer"
