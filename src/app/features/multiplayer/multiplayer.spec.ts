@@ -1,36 +1,51 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 import { SessionService } from '../../services/session.service';
+import { AppErrorService } from '../../services/app-error.service';
 import { Multiplayer } from './multiplayer';
-import { MultiplayerLobby, MultiplayerLobbyService } from './multiplayer-lobby.service';
+import { MultiplayerLobbyService } from './multiplayer-lobby.service';
+import { LobbySummary } from './lobby.model';
 
 describe('Multiplayer', () => {
   let component: Multiplayer;
   let fixture: ComponentFixture<Multiplayer>;
+  let router: Router;
+  let appErrors: { report: ReturnType<typeof vi.fn> };
   let lobbyService: {
     listOpenLobbies: ReturnType<typeof vi.fn>;
+    findMyLobbyId: ReturnType<typeof vi.fn>;
     subscribeToChanges: ReturnType<typeof vi.fn>;
-    removeChannel: ReturnType<typeof vi.fn>;
     createLobby: ReturnType<typeof vi.fn>;
-    chooseGame: ReturnType<typeof vi.fn>;
     joinLobby: ReturnType<typeof vi.fn>;
-    leaveLobby: ReturnType<typeof vi.fn>;
-    closeLobby: ReturnType<typeof vi.fn>;
   };
+
+  const lobby: LobbySummary = {
+    id: 'lobby-1',
+    host_user_id: 'host-user',
+    hostName: 'Host',
+    status: 'open',
+    created_at: '2026-09-30T12:00:00Z',
+    memberCount: 1,
+  };
+
+  async function render(myLobbyId: string | null = null): Promise<void> {
+    lobbyService.findMyLobbyId.mockResolvedValue(myLobbyId);
+    fixture = TestBed.createComponent(Multiplayer);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  }
 
   beforeEach(async () => {
     lobbyService = {
-      listOpenLobbies: vi.fn().mockResolvedValue([]),
-      subscribeToChanges: vi.fn().mockReturnValue(null),
-      removeChannel: vi.fn(),
+      listOpenLobbies: vi.fn().mockResolvedValue([lobby]),
+      findMyLobbyId: vi.fn().mockResolvedValue(null),
+      subscribeToChanges: vi.fn().mockReturnValue(() => {}),
       createLobby: vi.fn(),
-      chooseGame: vi.fn(),
       joinLobby: vi.fn(),
-      leaveLobby: vi.fn(),
-      closeLobby: vi.fn(),
     };
+    appErrors = { report: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [Multiplayer],
@@ -40,36 +55,72 @@ describe('Multiplayer', () => {
           provide: SessionService,
           useValue: {
             initialized: signal(true),
-            user: signal({ id: 'host-user' }),
+            user: signal({ id: 'guest-user' }),
             isLoggedIn: signal(true),
           },
         },
         { provide: MultiplayerLobbyService, useValue: lobbyService },
+        { provide: AppErrorService, useValue: appErrors },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Multiplayer);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
+    router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
-  it('creates a lobby and allows its host to choose Flip 7', async () => {
-    const lobby: MultiplayerLobby = {
-      id: 'lobby-1',
-      code: 'ABC123',
-      host_user_id: 'host-user',
-      game_key: null,
-      status: 'open',
-      created_at: '2026-09-28T12:00:00Z',
-      memberIds: ['host-user'],
-    };
-    lobbyService.createLobby.mockResolvedValue(lobby);
-    lobbyService.chooseGame.mockResolvedValue(undefined);
+  it('creates a lobby and opens it', async () => {
+    await render();
+    lobbyService.createLobby.mockResolvedValue({ ok: true, value: 'lobby-2' });
 
     await component.createLobby();
-    await component.chooseFlip7(lobby);
 
-    expect(lobbyService.createLobby).toHaveBeenCalledWith('host-user');
-    expect(lobbyService.chooseGame).toHaveBeenCalledWith('lobby-1');
+    expect(lobbyService.createLobby).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-2']);
+  });
+
+  it('joins a lobby with the entered code', async () => {
+    await render();
+    lobbyService.joinLobby.mockResolvedValue({ ok: true });
+
+    component.openJoin(lobby);
+    component.joinCode.set('ABC234');
+    await component.joinLobby(new Event('submit'), lobby);
+
+    expect(lobbyService.joinLobby).toHaveBeenCalledWith('lobby-1', 'ABC234');
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-1']);
+  });
+
+  it('shows the message of a failed join', async () => {
+    await render();
+    lobbyService.joinLobby.mockResolvedValue({
+      ok: false,
+      message: 'Code ist falsch oder die Lobby ist nicht mehr offen.',
+    });
+
+    component.joinCode.set('AAAAAA');
+    await component.joinLobby(new Event('submit'), lobby);
+
+    expect(component.errorMessage()).toBe('Code ist falsch oder die Lobby ist nicht mehr offen.');
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('hides create and join while already in a lobby', async () => {
+    await render('lobby-1');
+    fixture.detectChanges();
+
+    const labels = [...fixture.nativeElement.querySelectorAll('button')].map((button) =>
+      (button as HTMLButtonElement).textContent?.trim(),
+    );
+    expect(labels.some((label) => label?.includes('Lobby eröffnen'))).toBe(false);
+    expect(labels).not.toContain('Beitreten');
+    expect(fixture.nativeElement.textContent).toContain('Du bist in einer Lobby');
+  });
+
+  it('hides "Lobby eröffnen" until the own lobby is known', async () => {
+    lobbyService.findMyLobbyId.mockReturnValue(new Promise(() => {}));
+    fixture = TestBed.createComponent(Multiplayer);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Lobby eröffnen');
   });
 });

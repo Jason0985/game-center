@@ -1,0 +1,240 @@
+.lobby-header,
+.lobby-section,
+.lobby-actions {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+}
+
+.lobby-header {
+  margin-bottom: 22px;
+}
+
+.lobby-header .ui-title {
+  overflow-wrap: anywhere;
+}
+
+.lobby-kicker {
+  margin: 0 0 4px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lobby-section {
+  margin-bottom: 12px;
+  padding: 16px;
+}
+
+.lobby-section h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.lobby-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lobby-empty,
+.lobby-started {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lobby-empty p,
+.lobby-started p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.lobby-empty mat-icon {
+  color: var(--color-text-subtle);
+}
+
+.lobby-back-link {
+  color: var(--color-primary-light);
+  font-weight: 600;
+}
+
+.lobby-started {
+  border-color: var(--color-success-45);
+  background: var(--color-success-12);
+}
+
+.lobby-started mat-icon {
+  color: var(--color-success-light);
+}
+
+// Code nur für den Host
+.lobby-code-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-color: var(--color-primary-light-28);
+}
+
+.lobby-code-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.lobby-code {
+  display: block;
+  margin: 2px 0 6px;
+  color: var(--color-primary-light);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: clamp(24px, 8vw, 30px);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.lobby-code-box button {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+// Platzhalter für die spätere Spielauswahl
+.lobby-game {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lobby-game-skeleton {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.lobby-game-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lobby-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lobby-count {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lobby-member-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lobby-member {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.lobby-member:last-child {
+  border-bottom: 0;
+}
+
+.ready-dot {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+  transition: background-color var(--transition-fast);
+}
+
+.ready-dot--ready {
+  background: var(--color-success-light);
+  box-shadow: 0 0 0 3px var(--color-success-12);
+}
+
+.lobby-member-details {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lobby-member-details strong,
+.lobby-member-details span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-member-details strong {
+  font-size: 14px;
+}
+
+.lobby-member-details > span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.lobby-member-you {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.lobby-host-icon {
+  flex: 0 0 auto;
+  margin-right: 10px;
+  color: var(--color-warning);
+}
+
+.lobby-kick-button {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+}
+
+.lobby-kick-button:hover:not(:disabled) {
+  color: var(--color-danger-light);
+}
+
+.lobby-ready-hint {
+  margin-top: 10px;
+}
+
+.lobby-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.lobby-action {
+  width: 100%;
+}
+
+// Buttons ohne Partner in der Zeile über die ganze Breite
+.lobby-action--wide {
+  grid-column: 1 / -1;
+}
+
+.lobby-leave {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 380px) {
+  .lobby-actions {
+    grid-template-columns: 1fr;
+  }
+}

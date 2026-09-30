@@ -51,7 +51,7 @@
   border: 0;
   border-radius: var(--radius-small);
   background: var(--color-primary);
-  color: var(--color-text);
+  color: var(--color-primary-text);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -60,9 +60,8 @@
 }
 
 .lobby-button:disabled,
-.game-choice:disabled,
 .lobby-secondary-action:disabled {
-  cursor: wait;
+  cursor: default;
   opacity: 0.65;
 }
 
@@ -73,8 +72,8 @@
 }
 
 .lobby-button:focus-visible,
-.game-choice:focus-visible,
-.lobby-secondary-action:focus-visible {
+.lobby-secondary-action:focus-visible,
+.my-lobby-banner:focus-visible {
   outline: 2px solid var(--color-primary-light);
   outline-offset: 2px;
 }
@@ -119,7 +118,12 @@
   gap: 12px;
 }
 
-.lobby-code-label {
+.lobby-card-title {
+  min-width: 0;
+}
+
+.lobby-label {
+  display: block;
   margin: 0 0 3px;
   color: var(--color-text-subtle);
   font-size: 11px;
@@ -127,91 +131,35 @@
 
 .lobby-card-heading h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 800;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lobby-member-count {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 4px;
   color: var(--color-text-muted);
   font-size: 13px;
 }
 
-.lobby-member-count mat-icon,
-.lobby-selected-game mat-icon {
+.lobby-member-count mat-icon {
   width: 18px;
   height: 18px;
   font-size: 18px;
 }
 
-.lobby-game-picker {
-  margin-top: 16px;
-}
-
-.lobby-game-picker > p,
-.lobby-waiting {
-  margin: 0 0 8px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.game-choice {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 58px;
-  gap: 10px;
-  padding: 8px 11px;
-  border: 1px solid var(--color-white-10);
-  border-radius: var(--radius-small);
-  background: var(--color-white-04);
-  color: var(--color-text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.game-choice > mat-icon:first-child {
-  color: var(--color-primary-light);
-}
-
-.game-choice > span {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.game-choice strong {
-  font-size: 13px;
-}
-
-.game-choice small {
-  color: var(--color-text-muted);
-  font-size: 11px;
-}
-
-.game-choice-arrow {
-  color: var(--color-text-subtle);
-}
-
-.lobby-selected-game {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 14px 0 0;
-  color: var(--color-primary-light);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.lobby-waiting {
-  margin: 14px 0 0;
+.lobby-game-placeholder {
+  margin: 12px 0 0;
 }
 
 .lobby-secondary-action {
+  display: inline-flex;
+  align-items: center;
   min-height: 36px;
   margin-top: 14px;
   padding: 0;
@@ -223,8 +171,86 @@
   cursor: pointer;
 }
 
-.lobby-secondary-action:hover {
+.lobby-secondary-action {
+  text-decoration: none;
+}
+
+.lobby-secondary-action:hover:not(:disabled) {
   color: var(--color-text);
+}
+
+// Hinweis oben, wenn man schon in einer Lobby ist
+.my-lobby-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-color: var(--color-primary-light-28);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.my-lobby-banner > mat-icon:first-child {
+  color: var(--color-primary-light);
+}
+
+.my-lobby-banner > span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.my-lobby-banner strong {
+  font-size: 14px;
+}
+
+.my-lobby-banner small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.my-lobby-arrow {
+  color: var(--color-text-subtle);
+}
+
+.lobby-join-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.lobby-code-field {
+  min-width: 0;
+  flex: 1;
+}
+
+.lobby-code-field input {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  outline: 0;
+  background: var(--color-white-04);
+  color: var(--color-text);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.lobby-code-field input::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.lobby-code-field input:focus-visible {
+  border-color: var(--color-primary-light);
 }
 
 .lobby-error {

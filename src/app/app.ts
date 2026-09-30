@@ -10,6 +10,7 @@ import { NotificationPopupsService } from './services/notification-popups.servic
 import { AppErrorService } from './services/app-error.service';
 import { ToastHost } from './toast-host';
 import { ThemeService } from './services/theme.service';
+import { SessionService } from './services/session.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +20,7 @@ import { ThemeService } from './services/theme.service';
 })
 export class App {
   readonly notifications = inject(NotificationsService);
+  readonly session = inject(SessionService);
 
   constructor() {
     // Pop-ups für Benachrichtigungen und Fehler app-weit aktivieren

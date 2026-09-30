@@ -2,7 +2,7 @@
   <header class="multiplayer-header ui-hero">
     <p class="multiplayer-kicker">Gemeinsam spielen</p>
     <h1 class="ui-title">Offene <span class="ui-accent">Lobbys</span></h1>
-    <p class="ui-subtitle">Eröffne einen Raum und wähle das Spiel für deine Runde.</p>
+    <p class="ui-subtitle">Eröffne einen Raum oder tritt mit dem Code des Hosts bei.</p>
   </header>
 
   <main class="multiplayer-content">
@@ -19,15 +19,28 @@
         </a>
       </section>
     } @else {
+      @if (myLobbyId(); as lobbyId) {
+        <a class="my-lobby-banner ui-surface" [routerLink]="['/multiplayer', lobbyId]">
+          <mat-icon aria-hidden="true">meeting_room</mat-icon>
+          <span>
+            <strong>Du bist in einer Lobby</strong>
+            <small>Zurück zur Lobby</small>
+          </span>
+          <mat-icon class="my-lobby-arrow" aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      }
+
       <div class="lobby-toolbar">
         <div>
           <p class="multiplayer-kicker">Multiplayer</p>
           <h2>Verfügbare Räume</h2>
         </div>
-        <!-- <button class="lobby-button" type="button" [disabled]="busy()" (click)="createLobby()">
-          <mat-icon aria-hidden="true">add</mat-icon>
-          Lobby eröffnen
-        </button> -->
+        @if (!loading() && !myLobbyId()) {
+          <button class="lobby-button" type="button" [disabled]="busy()" (click)="createLobby()">
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Lobby eröffnen
+          </button>
+        }
       </div>
 
       @if (errorMessage()) {
@@ -47,57 +60,68 @@
           @for (lobby of lobbies(); track lobby.id) {
             <article class="lobby-card ui-surface">
               <div class="lobby-card-heading">
-                <div>
-                  <p class="lobby-code-label">Lobby-Code</p>
-                  <h3>{{ lobby.code }}</h3>
+                <div class="lobby-card-title">
+                  <p class="lobby-label">Host</p>
+                  <h3>{{ lobby.hostName }}</h3>
                 </div>
-                <span class="lobby-member-count">
+                <span
+                  class="lobby-member-count"
+                  [attr.aria-label]="lobby.memberCount + ' von ' + maxMembers + ' Spielern'"
+                >
                   <mat-icon aria-hidden="true">groups</mat-icon>
-                  {{ lobby.memberIds.length }}
+                  {{ lobby.memberCount }}/{{ maxMembers }}
                 </span>
               </div>
 
-              @if (lobby.game_key === 'flip-7') {
-                <p class="lobby-selected-game">
-                  <mat-icon aria-hidden="true">casino</mat-icon>
-                  Flip 7 ausgewählt
-                </p>
-              } @else if (isHost(lobby)) {
-                <div class="lobby-game-picker">
-                  <p>Wähle ein Spiel für deine Lobby</p>
-                  <button
-                    class="game-choice"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="chooseFlip7(lobby)"
-                  >
-                    <mat-icon aria-hidden="true">casino</mat-icon>
-                    <span><strong>Flip 7</strong><small>Kartenspiel</small></span>
-                    <mat-icon class="game-choice-arrow" aria-hidden="true">chevron_right</mat-icon>
-                  </button>
-                </div>
-              } @else {
-                <p class="lobby-waiting">Wartet auf die Spielauswahl des Gastgebers.</p>
-              }
+              <p class="lobby-game-placeholder ui-placeholder-note">
+                <mat-icon aria-hidden="true">casino</mat-icon>
+                Spielauswahl folgt
+              </p>
 
-              @if (isHost(lobby)) {
-                <button
-                  class="lobby-secondary-action"
-                  type="button"
-                  [disabled]="busy()"
-                  (click)="closeLobby(lobby)"
-                >
-                  Lobby schließen
-                </button>
-              } @else {
-                <button
-                  class="lobby-secondary-action"
-                  type="button"
-                  [disabled]="busy()"
-                  (click)="toggleMembership(lobby)"
-                >
-                  {{ isMember(lobby) ? 'Lobby verlassen' : 'Lobby beitreten' }}
-                </button>
+              @if (myLobbyId() === lobby.id) {
+                <a class="lobby-secondary-action" [routerLink]="['/multiplayer', lobby.id]">
+                  Zur Lobby
+                </a>
+              } @else if (!myLobbyId()) {
+                @if (joiningLobbyId() === lobby.id) {
+                  <form class="lobby-join-form" (submit)="joinLobby($event, lobby)">
+                    <label class="lobby-code-field">
+                      <span class="lobby-label">Lobby-Code</span>
+                      <input
+                        type="text"
+                        maxlength="6"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        spellcheck="false"
+                        placeholder="ABC234"
+                        [value]="joinCode()"
+                        (input)="onCodeInput($event)"
+                        aria-label="Lobby-Code eingeben"
+                        autofocus
+                      />
+                    </label>
+                    <button
+                      class="lobby-button"
+                      type="submit"
+                      [disabled]="busy() || joinCode().length < 6"
+                    >
+                      <mat-icon aria-hidden="true">login</mat-icon>
+                      Beitreten
+                    </button>
+                  </form>
+                  <button class="lobby-secondary-action" type="button" (click)="openJoin(lobby)">
+                    Abbrechen
+                  </button>
+                } @else {
+                  <button
+                    class="lobby-secondary-action"
+                    type="button"
+                    [disabled]="busy() || isFull(lobby)"
+                    (click)="openJoin(lobby)"
+                  >
+                    {{ isFull(lobby) ? 'Lobby ist voll' : 'Beitreten' }}
+                  </button>
+                }
               }
             </article>
           }

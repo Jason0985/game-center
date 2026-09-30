@@ -154,6 +154,11 @@ main {
   transition: transform var(--transition-normal);
 }
 
+// Ohne Multiplayer-Link (nur Admins) gibt es nur drei Navigationspunkte
+.bottom-nav:not(:has(.bottom-nav-link:nth-child(4)))::before {
+  width: calc((100% - 8px) / 3);
+}
+
 // Seiten ohne eigenen Navigationspunkt (z. B. Ranking): keine Markierung
 .bottom-nav:not(:has(.bottom-nav-link.active))::before {
   opacity: 0;

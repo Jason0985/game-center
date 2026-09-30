@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NotificationsService } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
 import { ToastService } from '../../services/toast.service';
@@ -13,6 +13,7 @@ import { firstValueFrom } from 'rxjs';
 import { NotificationItem } from './notification.model';
 import { notificationTypeConfig } from './notification-types';
 import { SystemNotificationDialog } from './system-notification-dialog';
+import { MultiplayerLobbyService } from '../multiplayer/multiplayer-lobby.service';
 
 const MARK_SEEN_DELAY_MS = 2000;
 
@@ -27,6 +28,8 @@ export class Notifications {
   private readonly dialog = inject(MatDialog);
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly lobbyService = inject(MultiplayerLobbyService);
+  private readonly router = inject(Router);
   readonly session = inject(SessionService);
   readonly typeConfig = notificationTypeConfig;
   readonly notifications = this.notificationsService.notifications;
@@ -66,13 +69,9 @@ export class Notifications {
     if (this.respondingIds().has(notification.id)) return;
     if (!accept && !(await this.confirmDecline(notification))) return;
 
-    this.respondingIds.update((ids) => new Set(ids).add(notification.id));
-    const result = await this.notificationsService.respondToFriendRequest(notification, accept);
-    this.respondingIds.update((ids) => {
-      const next = new Set(ids);
-      next.delete(notification.id);
-      return next;
-    });
+    const result = await this.whileResponding(notification.id, () =>
+      this.notificationsService.respondToFriendRequest(notification, accept),
+    );
 
     if (!result.ok) {
       this.appErrors.report(result.message);
@@ -98,9 +97,42 @@ export class Notifications {
     );
   }
 
-  // Spieleinladungen haben noch kein Backend und werden nur entfernt
-  respondToGameInvite(notificationId: string): void {
-    void this.removeNotification(notificationId);
+  // Annehmen tritt der Lobby bei (ohne Code), Ablehnen entfernt nur die Einladung
+  async respondToGameInvite(notification: NotificationItem, accept: boolean): Promise<void> {
+    if (this.respondingIds().has(notification.id)) return;
+    if (!accept) {
+      await this.removeNotification(notification.id);
+      return;
+    }
+
+    const result = await this.whileResponding(notification.id, () =>
+      this.lobbyService.acceptInvite(notification.id),
+    );
+
+    // Auch nach Fehlern neu laden: Realtime meldet gelöschte Einladungen nicht,
+    // eine veraltete Einladung bliebe sonst stehen
+    void this.notificationsService.reload();
+    if (!result.ok) {
+      this.appErrors.report(result.message);
+    } else if (result.value) {
+      void this.router.navigate(['/multiplayer', result.value]);
+    } else {
+      this.toastService.show({ tone: 'info', icon: 'info', title: 'Die Lobby gibt es nicht mehr.' });
+    }
+  }
+
+  // Buttons der Anfrage/Einladung sperren, solange die Antwort läuft
+  private async whileResponding<T>(notificationId: string, action: () => Promise<T>): Promise<T> {
+    this.respondingIds.update((ids) => new Set(ids).add(notificationId));
+    try {
+      return await action();
+    } finally {
+      this.respondingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(notificationId);
+        return next;
+      });
+    }
   }
 
   openSystemNotificationDialog(): void {

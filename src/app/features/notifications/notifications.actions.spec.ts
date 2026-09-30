@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { Notifications } from './notifications';
@@ -10,6 +10,7 @@ import { NotificationsService } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
 import { ToastService } from '../../services/toast.service';
 import { AppErrorService } from '../../services/app-error.service';
+import { MultiplayerLobbyService } from '../multiplayer/multiplayer-lobby.service';
 
 function notification(overrides: Partial<NotificationItem>): NotificationItem {
   return {
@@ -30,12 +31,19 @@ function notification(overrides: Partial<NotificationItem>): NotificationItem {
 describe('Notifications actions', () => {
   async function render(
     items: NotificationItem[],
-    { respondResult = { ok: true } as object, confirmDecline = true } = {},
+    {
+      respondResult = { ok: true } as object,
+      confirmDecline = true,
+      acceptInviteResult = { ok: true, value: 'lobby-1' } as object,
+    } = {},
   ) {
     const respondToFriendRequest = vi.fn().mockResolvedValue(respondResult);
     const toast = { success: vi.fn(), error: vi.fn() };
     const appErrors = { report: vi.fn() };
     const dialog = { open: vi.fn().mockReturnValue({ afterClosed: () => of(confirmDecline) }) };
+    const lobbyService = { acceptInvite: vi.fn().mockResolvedValue(acceptInviteResult) };
+    const dismiss = vi.fn().mockResolvedValue({ ok: true });
+    const reload = vi.fn();
 
     await TestBed.configureTestingModule({
       imports: [Notifications],
@@ -49,6 +57,8 @@ describe('Notifications actions', () => {
             unreadCount: computed(() => 0),
             respondToFriendRequest,
             markRead: vi.fn(),
+            reload,
+            dismiss,
           },
         },
         {
@@ -58,9 +68,12 @@ describe('Notifications actions', () => {
         { provide: ToastService, useValue: toast },
         { provide: AppErrorService, useValue: appErrors },
         { provide: MatDialog, useValue: dialog },
+        { provide: MultiplayerLobbyService, useValue: lobbyService },
       ],
     }).compileComponents();
 
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(Notifications);
     await fixture.whenStable();
     const buttons = (): HTMLButtonElement[] => [...fixture.nativeElement.querySelectorAll('button')];
@@ -68,7 +81,19 @@ describe('Notifications actions', () => {
       buttons().find((button) => button.textContent?.trim() === label)!.click();
       await fixture.whenStable();
     };
-    return { fixture, respondToFriendRequest, toast, appErrors, dialog, buttons, click };
+    return {
+      fixture,
+      respondToFriendRequest,
+      toast,
+      appErrors,
+      dialog,
+      buttons,
+      click,
+      lobbyService,
+      dismiss,
+      reload,
+      router,
+    };
   }
 
   it('accepts a friend request and confirms it', async () => {
@@ -123,5 +148,38 @@ describe('Notifications actions', () => {
     const labels = buttons().map((button) => button.textContent?.trim());
     expect(labels).not.toContain('Annehmen');
     expect(labels).not.toContain('Ablehnen');
+  });
+
+  it('joins the lobby when a game invite is accepted', async () => {
+    const invite = notification({ id: 'n2', type: 'game_invite', related_id: 'lobby-1' });
+    const { lobbyService, router, click } = await render([invite]);
+
+    await click('Teilnehmen');
+
+    expect(lobbyService.acceptInvite).toHaveBeenCalledWith('n2');
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-1']);
+  });
+
+  it('only removes a declined game invite', async () => {
+    const invite = notification({ id: 'n2', type: 'game_invite', related_id: 'lobby-1' });
+    const { lobbyService, dismiss, click } = await render([invite]);
+
+    await click('Ablehnen');
+
+    expect(lobbyService.acceptInvite).not.toHaveBeenCalled();
+    expect(dismiss).toHaveBeenCalledWith('n2');
+  });
+
+  it('reloads the list when a stale game invite cannot be accepted', async () => {
+    const invite = notification({ id: 'n2', type: 'game_invite', related_id: 'lobby-1' });
+    const { appErrors, reload, router, click } = await render([invite], {
+      acceptInviteResult: { ok: false, message: 'Diese Einladung gibt es nicht mehr.' },
+    });
+
+    await click('Teilnehmen');
+
+    expect(appErrors.report).toHaveBeenCalledWith('Diese Einladung gibt es nicht mehr.');
+    expect(reload).toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 });

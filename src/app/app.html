@@ -49,15 +49,18 @@
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
     </a>
-    <a
-      class="bottom-nav-link"
-      routerLink="/multiplayer"
-      routerLinkActive="active"
-      aria-label="Multiplayer"
-    >
-      <mat-icon aria-hidden="true">groups</mat-icon>
-      <span>Multiplayer</span>
-    </a>
+    <!-- Multiplayer vorerst nur für Admins (wie roleGuard und can_use_multiplayer) -->
+    @if (session.isAdmin()) {
+      <a
+        class="bottom-nav-link"
+        routerLink="/multiplayer"
+        routerLinkActive="active"
+        aria-label="Multiplayer"
+      >
+        <mat-icon aria-hidden="true">groups</mat-icon>
+        <span>Multiplayer</span>
+      </a>
+    }
     <a
       class="bottom-nav-link"
       routerLink="/collection"

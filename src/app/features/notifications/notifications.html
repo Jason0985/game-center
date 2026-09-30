@@ -121,7 +121,8 @@
                   <button
                     mat-stroked-button
                     type="button"
-                    (click)="respondToGameInvite(notification.id)"
+                    [disabled]="respondingIds().has(notification.id)"
+                    (click)="respondToGameInvite(notification, false)"
                   >
                     Ablehnen
                   </button>
@@ -129,7 +130,8 @@
                     mat-flat-button
                     color="primary"
                     type="button"
-                    (click)="respondToGameInvite(notification.id)"
+                    [disabled]="respondingIds().has(notification.id)"
+                    (click)="respondToGameInvite(notification, true)"
                   >
                     Teilnehmen
                   </button>
