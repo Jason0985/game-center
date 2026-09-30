@@ -31,6 +31,10 @@
   --role-color: var(--color-rank-badge);
 }
 
+.role-group[data-role='race_results'] {
+  --role-color: var(--color-success-light);
+}
+
 .role-group-heading {
   display: flex;
   align-items: center;

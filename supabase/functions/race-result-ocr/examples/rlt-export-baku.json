@@ -1,0 +1,515 @@
+{
+  "metadata": {
+    "formatVersion": 1,
+    "exportType": "Session",
+    "exportedAt": "2026-09-30T09:07:38Z",
+    "sourceApplication": "Racing League Tools",
+    "leagueName": "GFSL"
+  },
+  "season": {
+    "seasonName": "Season 4",
+    "championshipName": "F1 2026",
+    "totalRounds": 11,
+    "completedRounds": 9,
+    "isMulticlass": false
+  },
+  "event": {
+    "round": 9,
+    "championshipPosition": 9,
+    "eventDate": "2026-09-25",
+    "eventDateTime": "2026-09-25T20:00:00Z",
+    "racesCount": 1,
+    "qualificationsCount": 1,
+    "track": {
+      "trackName": "Baku",
+      "country": "Azerbaijan",
+      "turnsCount": 20
+    }
+  },
+  "session": {
+    "sessionInfo": {
+      "sessionId": "0c884165-94b2-46fc-be35-d875b8827c6b",
+      "sessionType": "Race",
+      "raceType": "Main",
+      "sessionPosition": 1,
+      "sessionCaption": "Race",
+      "completedStatus": "Completed",
+      "totalLaps": 26,
+      "driversCount": 14,
+      "weatherType": "Clear",
+      "airTemperature": 0,
+      "trackTemperature": 0,
+      "safetyCarCount": 0,
+      "virtualSafetyCarCount": 0
+    },
+    "fastestLap": {
+      "lapTime": "1:41.960",
+      "lapTimeMs": 101960,
+      "driverName": "[HLR] Spezi"
+    },
+    "raceDetails": {
+      "raceType": "Main",
+      "isMajorRace": true
+    },
+    "drivers": [
+      {
+        "driverName": "GFO_Giannisch_GR",
+        "driverInfo": {
+          "nationality": "Greece",
+          "raceNumber": "34",
+          "displayName": "GFO_Giannisch_GR",
+          "platform": "Ps"
+        },
+        "position": 1,
+        "classificationPosition": 1,
+        "gridPosition": 4,
+        "positionChange": 3,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "30",
+        "teamPoints": "30",
+        "totalTime": "48:55.048",
+        "totalTimeMs": 2935048,
+        "gap": "0",
+        "gapMs": 0,
+        "fastestLapTime": "1:42.403",
+        "fastestLapTimeMs": 102403,
+        "team": {
+          "name": "Cadillac",
+          "uniqueId": "cadillac.2026",
+          "fullName": "Cadillac Formula One Team",
+          "abbreviation": "CAD",
+          "primaryColor": "#FF001E5F",
+          "secondaryColor": "#FFFFFFFF",
+          "country": "United States Of America"
+        }
+      },
+      {
+        "driverName": "[HLR] Spezi",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "68",
+          "displayName": "[HLR] Spezi",
+          "platform": "Pc"
+        },
+        "position": 2,
+        "classificationPosition": 2,
+        "gridPosition": 1,
+        "positionChange": -1,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "25",
+        "teamPoints": "25",
+        "totalTime": "49:03.049",
+        "totalTimeMs": 2943049,
+        "gap": "+8.001",
+        "gapMs": 8001,
+        "interval": "+8.001",
+        "intervalMs": 8001,
+        "fastestLapTime": "1:41.960",
+        "fastestLapTimeMs": 101960,
+        "team": {
+          "name": "Cadillac",
+          "uniqueId": "cadillac.2026",
+          "fullName": "Cadillac Formula One Team",
+          "abbreviation": "CAD",
+          "primaryColor": "#FF001E5F",
+          "secondaryColor": "#FFFFFFFF",
+          "country": "United States Of America"
+        }
+      },
+      {
+        "driverName": "Agent47_ln1",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "46",
+          "displayName": "Agent47_ln1",
+          "platform": "Ps"
+        },
+        "position": 3,
+        "classificationPosition": 3,
+        "gridPosition": 5,
+        "positionChange": 2,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "22",
+        "teamPoints": "22",
+        "totalTime": "49:04.629",
+        "totalTimeMs": 2944629,
+        "gap": "+9.581",
+        "gapMs": 9581,
+        "interval": "+1.580",
+        "intervalMs": 1580,
+        "fastestLapTime": "1:42.270",
+        "fastestLapTimeMs": 102270,
+        "team": {
+          "name": "Red Bull",
+          "uniqueId": "red.bull.2026",
+          "fullName": "Oracle Red Bull Racing",
+          "abbreviation": "RB",
+          "primaryColor": "#FF3671C6",
+          "secondaryColor": "#FFE00008",
+          "country": "Austria"
+        }
+      },
+      {
+        "driverName": "[VLS] Samuel",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "32",
+          "displayName": "[VLS] Samuel",
+          "platform": "Pc"
+        },
+        "position": 4,
+        "classificationPosition": 4,
+        "gridPosition": 6,
+        "positionChange": 2,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "19",
+        "teamPoints": "19",
+        "totalTime": "49:05.330",
+        "totalTimeMs": 2945330,
+        "gap": "+10.282",
+        "gapMs": 10282,
+        "interval": "+0.701",
+        "intervalMs": 701,
+        "fastestLapTime": "1:43.431",
+        "fastestLapTimeMs": 103431,
+        "team": {
+          "name": "Williams",
+          "uniqueId": "williams.2026",
+          "fullName": "Williams Racing",
+          "abbreviation": "WIL",
+          "primaryColor": "#FF64C4FF",
+          "secondaryColor": "#FF0D66D9",
+          "country": "United Kingdom"
+        }
+      },
+      {
+        "driverName": "HLR_Nico09",
+        "driverInfo": {
+          "nationality": "Austria",
+          "raceNumber": "49",
+          "displayName": "HLR_Nico09",
+          "platform": "Ps",
+          "icons": [
+            "cup",
+            "cup"
+          ]
+        },
+        "position": 5,
+        "classificationPosition": 5,
+        "gridPosition": 2,
+        "positionChange": -3,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "17",
+        "teamPoints": "17",
+        "totalTime": "49:16.065",
+        "totalTimeMs": 2956065,
+        "gap": "+21.017",
+        "gapMs": 21017,
+        "interval": "+10.735",
+        "intervalMs": 10735,
+        "fastestLapTime": "1:42.063",
+        "fastestLapTimeMs": 102063,
+        "team": {
+          "name": "Red Bull",
+          "uniqueId": "red.bull.2026",
+          "fullName": "Oracle Red Bull Racing",
+          "abbreviation": "RB",
+          "primaryColor": "#FF3671C6",
+          "secondaryColor": "#FFE00008",
+          "country": "Austria"
+        }
+      },
+      {
+        "driverName": "IDL_Enki_GFSL",
+        "driverInfo": {
+          "nationality": "Switzerland",
+          "raceNumber": "92",
+          "displayName": "IDL_Enki_GFSL",
+          "platform": "Ps"
+        },
+        "position": 6,
+        "classificationPosition": 6,
+        "gridPosition": 8,
+        "positionChange": 2,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "15",
+        "teamPoints": "15",
+        "totalTime": "49:16.116",
+        "totalTimeMs": 2956116,
+        "gap": "+21.068",
+        "gapMs": 21068,
+        "interval": "+0.051",
+        "intervalMs": 51,
+        "fastestLapTime": "1:43.888",
+        "fastestLapTimeMs": 103888,
+        "team": {
+          "name": "Ferrari",
+          "uniqueId": "ferrari.2026",
+          "fullName": "Scuderia Ferrari",
+          "abbreviation": "FER",
+          "primaryColor": "#FFE80020",
+          "secondaryColor": "#FFFFF200",
+          "country": "Italy"
+        }
+      },
+      {
+        "driverName": "Fetzi",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "88",
+          "displayName": "Fetzi",
+          "platform": "Ps"
+        },
+        "position": 7,
+        "classificationPosition": 7,
+        "gridPosition": 11,
+        "positionChange": 4,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "13",
+        "teamPoints": "13",
+        "totalTime": "49:37.075",
+        "totalTimeMs": 2977075,
+        "gap": "+42.027",
+        "gapMs": 42027,
+        "interval": "+20.959",
+        "intervalMs": 20959,
+        "fastestLapTime": "1:44.293",
+        "fastestLapTimeMs": 104293,
+        "team": {
+          "name": "Haas",
+          "uniqueId": "haas.2026",
+          "fullName": "Haas F1 Team",
+          "abbreviation": "HAS",
+          "primaryColor": "#FFB6BABD",
+          "secondaryColor": "#FF333333",
+          "country": "United States Of America"
+        }
+      },
+      {
+        "driverName": "Unrundsocken",
+        "driverInfo": {
+          "nationality": "Barbados",
+          "raceNumber": "82",
+          "displayName": "Unrundsocken",
+          "platform": "Ps"
+        },
+        "position": 8,
+        "classificationPosition": 8,
+        "gridPosition": 3,
+        "positionChange": -5,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "11",
+        "teamPoints": "11",
+        "totalTime": "49:42.841",
+        "totalTimeMs": 2982841,
+        "gap": "+47.793",
+        "gapMs": 47793,
+        "interval": "+5.766",
+        "intervalMs": 5766,
+        "fastestLapTime": "1:42.274",
+        "fastestLapTimeMs": 102274,
+        "team": {
+          "name": "McLaren",
+          "uniqueId": "mclaren.2026",
+          "fullName": "McLaren Formula 1 Team",
+          "abbreviation": "MCL",
+          "primaryColor": "#FFFF8000",
+          "secondaryColor": "#FF333333",
+          "country": "United Kingdom"
+        }
+      },
+      {
+        "driverName": "trauriger_Comic",
+        "driverInfo": {
+          "nationality": "Germany",
+          "displayName": "trauriger_Comic",
+          "platform": "Ps"
+        },
+        "position": 9,
+        "classificationPosition": 9,
+        "gridPosition": 7,
+        "positionChange": -2,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "9",
+        "teamPoints": "9",
+        "totalTime": "50:05.183",
+        "totalTimeMs": 3005183,
+        "gap": "+1:10.135",
+        "gapMs": 70135,
+        "interval": "+22.342",
+        "intervalMs": 22342,
+        "fastestLapTime": "1:42.717",
+        "fastestLapTimeMs": 102717,
+        "team": {
+          "name": "Williams",
+          "uniqueId": "williams.2026",
+          "fullName": "Williams Racing",
+          "abbreviation": "WIL",
+          "primaryColor": "#FF64C4FF",
+          "secondaryColor": "#FF0D66D9",
+          "country": "United Kingdom"
+        }
+      },
+      {
+        "driverName": "GFSL_Grajo",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "29",
+          "displayName": "GFSL_Grajo",
+          "platform": "Ps",
+          "icons": [
+            "cup"
+          ]
+        },
+        "position": 10,
+        "classificationPosition": 10,
+        "gridPosition": 14,
+        "positionChange": 4,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "7",
+        "teamPoints": "7",
+        "totalTime": "50:06.882",
+        "totalTimeMs": 3006882,
+        "gap": "+1:11.834",
+        "gapMs": 71834,
+        "interval": "+1.699",
+        "intervalMs": 1699,
+        "fastestLapTime": "1:43.785",
+        "fastestLapTimeMs": 103785,
+        "team": {
+          "name": "Mercedes",
+          "uniqueId": "mercedes.2026",
+          "fullName": "Mercedes-AMG Petronas F1 Team",
+          "abbreviation": "MER",
+          "primaryColor": "#FF27F4D2",
+          "secondaryColor": "#FFA3A3A3",
+          "country": "Germany"
+        }
+      },
+      {
+        "driverName": "GFSL_Treesixty",
+        "driverInfo": {
+          "nationality": "United States Of America",
+          "raceNumber": "9",
+          "displayName": "GFSL_Treesixty",
+          "platform": "Ps"
+        },
+        "position": 11,
+        "classificationPosition": 11,
+        "gridPosition": 10,
+        "positionChange": -1,
+        "status": "Finished",
+        "lapsCompleted": 26,
+        "driverPoints": "5",
+        "teamPoints": "5",
+        "totalTime": "50:14.562",
+        "totalTimeMs": 3014562,
+        "gap": "+1:19.514",
+        "gapMs": 79514,
+        "interval": "+7.680",
+        "intervalMs": 7680,
+        "fastestLapTime": "1:43.462",
+        "fastestLapTimeMs": 103462,
+        "team": {
+          "name": "Mercedes",
+          "uniqueId": "mercedes.2026",
+          "fullName": "Mercedes-AMG Petronas F1 Team",
+          "abbreviation": "MER",
+          "primaryColor": "#FF27F4D2",
+          "secondaryColor": "#FFA3A3A3",
+          "country": "Germany"
+        }
+      },
+      {
+        "driverName": "KaiserPinguin197",
+        "driverInfo": {
+          "nationality": "Switzerland",
+          "raceNumber": "56",
+          "displayName": "KaiserPinguin197"
+        },
+        "position": 12,
+        "classificationPosition": -1,
+        "gridPosition": 13,
+        "status": "DNF",
+        "lapsCompleted": 0,
+        "driverPoints": "0",
+        "teamPoints": "0",
+        "gap": "+26 Laps",
+        "gapMs": 26000000000,
+        "team": {
+          "name": "Aston Martin",
+          "uniqueId": "aston.martin.2026",
+          "fullName": "Aston Martin Aramco F1 Team",
+          "abbreviation": "AMR",
+          "primaryColor": "#FF229971",
+          "secondaryColor": "#FFCCF738",
+          "country": "United Kingdom"
+        }
+      },
+      {
+        "driverName": "IBaldi",
+        "driverInfo": {
+          "nationality": "Italy",
+          "raceNumber": "40",
+          "displayName": "IBaldi",
+          "platform": "Ps"
+        },
+        "position": 13,
+        "classificationPosition": -1,
+        "gridPosition": 12,
+        "status": "DNF",
+        "lapsCompleted": 0,
+        "driverPoints": "0",
+        "teamPoints": "0",
+        "gap": "+26 Laps",
+        "gapMs": 26000000000,
+        "team": {
+          "name": "Ferrari",
+          "uniqueId": "ferrari.2026",
+          "fullName": "Scuderia Ferrari",
+          "abbreviation": "FER",
+          "primaryColor": "#FFE80020",
+          "secondaryColor": "#FFFFF200",
+          "country": "Italy"
+        }
+      },
+      {
+        "driverName": "[GRL] Sisiabi",
+        "driverInfo": {
+          "nationality": "Germany",
+          "raceNumber": "47",
+          "displayName": "[GRL] Sisiabi",
+          "platform": "Pc"
+        },
+        "position": 14,
+        "classificationPosition": -1,
+        "gridPosition": 9,
+        "status": "DNF",
+        "lapsCompleted": 0,
+        "driverPoints": "0",
+        "teamPoints": "0",
+        "gap": "+26 Laps",
+        "gapMs": 26000000000,
+        "team": {
+          "name": "Haas",
+          "uniqueId": "haas.2026",
+          "fullName": "Haas F1 Team",
+          "abbreviation": "HAS",
+          "primaryColor": "#FFB6BABD",
+          "secondaryColor": "#FF333333",
+          "country": "United States Of America"
+        }
+      }
+    ]
+  }
+}

@@ -51,9 +51,9 @@ export class ProfileService {
   }
 
   // Nur für Admins; Berechtigung und Schutzregeln prüft die Datenbank
-  async setRole(userId: string, role: ProfileRole) {
+  async setRoles(userId: string, roles: ProfileRole[]) {
     return supabase
-      .rpc('set_user_role', { p_user_id: userId, p_role: role })
+      .rpc('set_user_roles', { p_user_id: userId, p_roles: roles })
       .single<Profile>();
   }
 

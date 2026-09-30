@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProfileService } from '../../../services/profile.service';
 import { SessionService } from '../../../services/session.service';
 import { Profile } from '../../profile/profile.model';
-import { profileRoleConfig } from '../../profile/profile-roles';
+import { profileRoleConfigs } from '../../profile/profile-roles';
 import { openRoleEditDialog } from './role-edit-dialog';
 import { RoleOverviewDialog } from './role-overview-dialog';
 
@@ -22,7 +22,7 @@ export class RoleManagement {
   private readonly session = inject(SessionService);
   private readonly dialog = inject(MatDialog);
 
-  readonly roleConfig = profileRoleConfig;
+  readonly roleConfigs = profileRoleConfigs;
   readonly search = signal('');
   readonly results = signal<Profile[]>([]);
   readonly loading = signal(false);

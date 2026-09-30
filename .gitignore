@@ -58,6 +58,11 @@ Thumbs.db
 .supabase/
 supabase/.temp/
 supabase/.branches/
+/supabase/db-example/
+
+#functions
+/functions/race-result-ocr/
+/supabase/functions/race-result-ocr/index.ts
 
 # Build and test artifacts
 /dist/

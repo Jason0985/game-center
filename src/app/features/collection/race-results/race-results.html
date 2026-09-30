@@ -1,0 +1,277 @@
+<div class="results-root ui-page-root">
+  <header class="ui-hero ui-header-nav">
+    <a
+      class="ui-header-button ui-header-button--start"
+      routerLink="/collection"
+      matTooltip="Zur Sammlung"
+      aria-label="Zur Sammlung zurück"
+    >
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    </a>
+    <h1 class="ui-title">Renn<span class="ui-accent">ergebnisse</span></h1>
+    <p class="ui-subtitle">
+      Screenshot hochladen, prüfen und als Import-Datei für Racing League Tools herunterladen.
+    </p>
+  </header>
+
+  <main class="results-content">
+    <section class="results-card ui-surface" aria-labelledby="screenshots-title">
+      <div class="card-heading">
+        <h2 id="screenshots-title">1. Screenshots</h2>
+        <span class="ui-subtle">{{ screenshots().length }} / {{ maxScreenshots }}</span>
+      </div>
+
+      <div class="screenshot-grid">
+        @for (screenshot of screenshots(); track screenshot.id) {
+          <figure class="screenshot">
+            <img [src]="screenshot.previewUrl" [alt]="screenshot.file.name" />
+            <button
+              mat-icon-button
+              type="button"
+              class="screenshot-remove"
+              aria-label="Screenshot entfernen"
+              (click)="removeScreenshot(screenshot.id)"
+            >
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          </figure>
+        }
+        @if (screenshots().length < maxScreenshots) {
+          <label class="screenshot-add">
+            <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
+            <span>Bild wählen</span>
+            <input type="file" accept="image/*" multiple (change)="addScreenshots($event)" />
+          </label>
+        }
+      </div>
+
+      <button
+        mat-flat-button
+        type="button"
+        class="full-width"
+        [disabled]="!screenshots().length || extracting()"
+        (click)="extract()"
+      >
+        <mat-icon aria-hidden="true">{{
+          extracting() ? 'hourglass_top' : 'auto_awesome'
+        }}</mat-icon>
+        {{ extracting() ? 'Wird ausgelesen …' : 'Ergebnisse auslesen' }}
+      </button>
+    </section>
+
+    <section class="results-card ui-surface" aria-labelledby="session-title">
+      <div class="card-heading">
+        <h2 id="session-title">2. Session</h2>
+      </div>
+
+      <div class="form-grid">
+        <label class="field field--wide">
+          <span>Strecke</span>
+          <input
+            list="race-results-tracks"
+            [value]="meta().trackName"
+            (input)="updateMetaText('trackName', $event)"
+            placeholder="z. B. Baku"
+          />
+        </label>
+        <label class="field">
+          <span>Session</span>
+          <select (change)="updateMeta('sessionType', $any($event.target).value)">
+            <option value="Race" [selected]="meta().sessionType === 'Race'">Rennen</option>
+            <option value="Qualification" [selected]="meta().sessionType === 'Qualification'">
+              Qualifying
+            </option>
+            <option value="Practice" [selected]="meta().sessionType === 'Practice'">
+              Training
+            </option>
+          </select>
+        </label>
+        @if (meta().sessionType === 'Race') {
+          <label class="field">
+            <span>Renntyp</span>
+            <select (change)="updateMeta('raceType', $any($event.target).value)">
+              <option value="Main" [selected]="meta().raceType === 'Main'">Hauptrennen</option>
+              <option value="Sprint" [selected]="meta().raceType === 'Sprint'">Sprint</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Runden</span>
+            <input
+              type="number"
+              min="1"
+              [value]="meta().totalLaps ?? ''"
+              (input)="updateMetaNumber('totalLaps', $event)"
+            />
+          </label>
+        }
+        <label class="field">
+          <span>Start</span>
+          <input
+            type="datetime-local"
+            [value]="meta().sessionStart"
+            (input)="updateMetaText('sessionStart', $event)"
+          />
+        </label>
+        <label class="field">
+          <span>Runde (Event)</span>
+          <input
+            type="number"
+            min="1"
+            [value]="meta().round ?? ''"
+            (input)="updateMetaNumber('round', $event)"
+          />
+        </label>
+        <label class="field">
+          <span>Liga</span>
+          <input [value]="meta().leagueName" (input)="updateMetaText('leagueName', $event)" />
+        </label>
+        <label class="field">
+          <span>Saison</span>
+          <input [value]="meta().seasonName" (input)="updateMetaText('seasonName', $event)" />
+        </label>
+        <label class="field">
+          <span>Meisterschaft</span>
+          <input
+            [value]="meta().championshipName"
+            (input)="updateMetaText('championshipName', $event)"
+          />
+        </label>
+      </div>
+    </section>
+
+    <section class="results-card ui-surface" aria-labelledby="rows-title">
+      <div class="card-heading">
+        <h2 id="rows-title">3. Ergebnis prüfen</h2>
+        @if (rows().length > 1) {
+          <button mat-button type="button" (click)="sortByPosition()">
+            <mat-icon aria-hidden="true">sort</mat-icon>
+            Sortieren
+          </button>
+        }
+      </div>
+
+      @for (row of rows(); track row.id) {
+        <article class="result-row">
+          <div class="result-row-main">
+            <input
+              class="position-input"
+              type="number"
+              min="1"
+              aria-label="Position"
+              [value]="row.position ?? ''"
+              (input)="updateRowNumber(row.id, 'position', $event)"
+            />
+            <input
+              class="driver-input"
+              aria-label="Fahrer"
+              placeholder="Fahrername"
+              [value]="row.driverName"
+              (input)="updateRowText(row.id, 'driverName', $event)"
+            />
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Zeile entfernen"
+              matTooltip="Zeile entfernen"
+              (click)="removeRow(row.id)"
+            >
+              <mat-icon aria-hidden="true">delete_outline</mat-icon>
+            </button>
+          </div>
+          <div class="result-row-details">
+            <label class="field field--wide">
+              <span>Team</span>
+              <input
+                list="race-results-teams"
+                [value]="row.teamName"
+                (input)="updateRowText(row.id, 'teamName', $event)"
+              />
+            </label>
+            <label class="field">
+              <span>Zeit / Abstand</span>
+              <input
+                placeholder="+5.123"
+                [value]="row.time"
+                (input)="updateRowText(row.id, 'time', $event)"
+              />
+            </label>
+            <label class="field">
+              <span>Beste Runde</span>
+              <input
+                placeholder="1:38.198"
+                [value]="row.bestLap"
+                (input)="updateRowText(row.id, 'bestLap', $event)"
+              />
+            </label>
+            @if (meta().sessionType === 'Race') {
+              <label class="field">
+                <span>Status</span>
+                <select (change)="updateRowText(row.id, 'status', $event)">
+                  @for (status of statuses; track status) {
+                    <option [value]="status" [selected]="row.status === status">
+                      {{ status }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                <span>Start</span>
+                <input
+                  type="number"
+                  min="1"
+                  [value]="row.gridPosition ?? ''"
+                  (input)="updateRowNumber(row.id, 'gridPosition', $event)"
+                />
+              </label>
+            }
+            <label class="field">
+              <span>Punkte</span>
+              <input
+                type="number"
+                min="0"
+                [value]="row.points ?? ''"
+                (input)="updateRowNumber(row.id, 'points', $event)"
+              />
+            </label>
+          </div>
+        </article>
+      } @empty {
+        <p class="empty-state ui-muted">
+          Noch keine Ergebnisse. Lies Screenshots aus oder füge Fahrer von Hand hinzu.
+        </p>
+      }
+
+      <button mat-stroked-button type="button" class="full-width" (click)="addRow()">
+        <mat-icon aria-hidden="true">person_add</mat-icon>
+        Fahrer hinzufügen
+      </button>
+    </section>
+
+    <section class="export-bar" aria-label="Export">
+      @if (missingForExport().length) {
+        <p class="ui-muted">Es fehlen noch: {{ missingForExport().join(', ') }}</p>
+      }
+      <button
+        mat-flat-button
+        type="button"
+        class="full-width"
+        [disabled]="missingForExport().length > 0"
+        (click)="downloadJson()"
+      >
+        <mat-icon aria-hidden="true">download</mat-icon>
+        JSON für RLT herunterladen
+      </button>
+    </section>
+  </main>
+
+  <datalist id="race-results-tracks">
+    @for (track of knownTracks; track track.name) {
+      <option [value]="track.name"></option>
+    }
+  </datalist>
+  <datalist id="race-results-teams">
+    @for (team of knownTeams; track team.uniqueId) {
+      <option [value]="team.name"></option>
+    }
+  </datalist>
+</div>
