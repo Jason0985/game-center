@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './admin-guard';
 import { rankingResumeGuard } from './features/ranking/ranking-resume-guard';
 
 export const routes: Routes = [
@@ -56,6 +57,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/collection/f1-strategy/detailed-view/detailed-view').then(
         (module) => module.DetailedView,
+      ),
+  },
+  {
+    path: 'collection/race-results',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/collection/race-results/race-results').then(
+        (module) => module.RaceResults,
       ),
   },
   {
