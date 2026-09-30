@@ -132,6 +132,13 @@
   white-space: nowrap;
 }
 
+.game-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .game-arrow {
   flex: 0 0 auto;
   margin-left: auto;

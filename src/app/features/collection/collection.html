@@ -30,6 +30,16 @@
             <p class="game-category">{{ item.category }}</p>
             <h2>{{ item.title }}</h2>
             <p class="game-description">{{ item.description }}</p>
+            @if (item.roleTags.length) {
+              <div class="game-roles" aria-label="Sichtbar für">
+                @for (tag of item.roleTags; track tag.role) {
+                  <span class="role-chip" [attr.data-role]="tag.role">
+                    <mat-icon aria-hidden="true">{{ tag.icon }}</mat-icon>
+                    {{ tag.label }}
+                  </span>
+                }
+              </div>
+            }
           </div>
           <mat-icon class="game-arrow" aria-hidden="true">chevron_right</mat-icon>
         </article>

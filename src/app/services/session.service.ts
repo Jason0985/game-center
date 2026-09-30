@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../supabase.client';
 import { ProfileService } from './profile.service';
-import { Profile } from '../features/profile/profile.model';
+import { Profile, ProfileRole } from '../features/profile/profile.model';
 
 @Injectable({
   providedIn: 'root',
@@ -24,7 +24,8 @@ export class SessionService {
     () => this.currentProfile()?.display_name ?? this.currentProfile()?.username ?? '',
   );
   readonly username = computed(() => this.currentProfile()?.username ?? '');
-  readonly isAdmin = computed(() => this.currentProfile()?.role === 'admin');
+  readonly roles = computed(() => this.currentProfile()?.roles ?? []);
+  readonly isAdmin = computed(() => this.roles().includes('admin'));
 
   constructor() {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -35,6 +36,11 @@ export class SessionService {
     supabase.auth.onAuthStateChange((_event, session) => {
       this.setUser(session?.user ?? null);
     });
+  }
+
+  // Admins haben jede Rolle
+  hasAnyRole(roles: ProfileRole[]): boolean {
+    return this.isAdmin() || roles.some((role) => this.roles().includes(role));
   }
 
   // Nach dem Bearbeiten das aktualisierte Profil übernehmen

@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
+import { ProfileRole } from '../profile/profile.model';
+import { profileRoleConfig } from '../profile/profile-roles';
 
 interface CollectionItem {
   title: string;
@@ -9,8 +11,8 @@ interface CollectionItem {
   description: string;
   icon: string;
   path: string;
-  // Nur für Admins sichtbar (Route ist zusätzlich per adminGuard geschützt)
-  adminOnly?: boolean;
+  // Nur für diese Rollen (und Admins) sichtbar, die Route ist zusätzlich per roleGuard geschützt
+  roles?: ProfileRole[];
 }
 
 @Component({
@@ -59,13 +61,16 @@ export class Collection {
         'Ergebnis-Screenshots auslesen und als JSON für Racing League Tools exportieren.',
       icon: 'emoji_events',
       path: '/collection/race-results',
-      adminOnly: true,
+      roles: ['race_results'],
     },
   ];
 
   readonly filteredItems = computed(() => {
     const searchTerm = this.searchTerm().trim().toLowerCase();
-    const items = this.items.filter((item) => !item.adminOnly || this.session.isAdmin());
+    const items = this.items
+      .filter((item) => !item.roles || this.session.hasAnyRole(item.roles))
+      // Tags zeigen, wegen welcher Rolle die Karte sichtbar ist
+      .map((item) => ({ ...item, roleTags: (item.roles ?? []).map(profileRoleConfig) }));
 
     if (!searchTerm) {
       return items;

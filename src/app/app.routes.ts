@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from './admin-guard';
+import { roleGuard } from './role-guard';
 import { rankingResumeGuard } from './features/ranking/ranking-resume-guard';
 
 export const routes: Routes = [
@@ -61,7 +61,7 @@ export const routes: Routes = [
   },
   {
     path: 'collection/race-results',
-    canActivate: [adminGuard],
+    canActivate: [roleGuard('race_results')],
     loadComponent: () =>
       import('./features/collection/race-results/race-results').then(
         (module) => module.RaceResults,

@@ -56,6 +56,15 @@
   --role-color: var(--color-rank-badge);
 }
 
+.role-option[data-role='race_results'] {
+  --role-color: var(--color-success-light);
+}
+
+// Basisrolle: immer aktiv, nicht abwählbar
+.role-option--fixed {
+  cursor: default;
+}
+
 .role-option > mat-icon {
   flex: 0 0 auto;
   color: var(--role-color);
