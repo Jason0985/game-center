@@ -15,10 +15,22 @@
     </div>
     <div class="setting-row">
       <div class="setting-copy">
-        <strong>Farbschema</strong>
-        <span>Die dunkle Oberfläche ist aktiv.</span>
+        <strong id="theme-label">Farbschema</strong>
       </div>
-      <span class="setting-value">Dunkel</span>
+      <div class="theme-switch" role="group" aria-labelledby="theme-label">
+        @for (option of themeOptions; track option.id) {
+          <button
+            type="button"
+            class="theme-option"
+            [class.active]="themes.theme() === option.id"
+            [attr.aria-pressed]="themes.theme() === option.id"
+            (click)="themes.setTheme(option.id)"
+          >
+            <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+            <span>{{ option.label }}</span>
+          </button>
+        }
+      </div>
     </div>
     <div class="setting-row">
       <div class="setting-copy">

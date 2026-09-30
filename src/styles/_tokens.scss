@@ -1,4 +1,6 @@
-// Design-Tokens: neutrale, leicht kühle Dunkeltöne mit Magenta aus dem Logo als
+// Design-Tokens des dunklen Standard-Schemas. Grau und Hell überschreiben sie in
+// _theme-graphite.scss und _theme-light.scss (data-theme auf <html>).
+// Neutrale, leicht kühle Dunkeltöne mit Magenta aus dem Logo als
 // einziger Markenfarbe. Kontraste geprüft (Text >= 4.5:1 auf Surface und Raised).
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -20,6 +22,8 @@
   --color-primary-light: #f27ba5;
   --color-primary-soft: rgba(242, 123, 165, 0.12);
   --color-primary-text: #ffffff;
+  // Text auf Flächen in --color-primary-light (Material on-primary)
+  --color-on-primary-light: #2b0716;
 
   --color-secondary: #8b7cf0;
   --color-success-light: #5fcf9b;

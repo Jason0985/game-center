@@ -2,15 +2,19 @@
 @use './styles/tokens';
 @use './styles/user-list';
 @use './styles/notification-tones';
+@use './styles/theme-graphite';
+@use './styles/theme-light';
 
 html {
+  color-scheme: dark;
   height: 100dvh;
   width: 100%;
 
   @include mat.theme(
     (
       color: (
-        theme-type: dark,
+        // Hell/Dunkel folgt color-scheme, das die Farbschemata auf <html> setzen
+        theme-type: color-scheme,
         primary: mat.$magenta-palette,
         tertiary: mat.$violet-palette,
       ),
@@ -29,7 +33,7 @@ html {
   @include mat.theme-overrides(
     (
       primary: var(--color-primary-light),
-      on-primary: #2b0716,
+      on-primary: var(--color-on-primary-light),
       primary-container: var(--color-primary-soft),
       on-primary-container: var(--color-primary-light),
       surface: var(--color-surface),
@@ -94,7 +98,6 @@ body {
 }
 
 body {
-  color-scheme: dark;
   min-height: 100%;
   background-color: var(--color-background);
   color: var(--color-text);

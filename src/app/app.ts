@@ -9,6 +9,7 @@ import { NotificationsService } from './services/notifications.service';
 import { NotificationPopupsService } from './services/notification-popups.service';
 import { AppErrorService } from './services/app-error.service';
 import { ToastHost } from './toast-host';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -23,5 +24,7 @@ export class App {
     // Pop-ups für Benachrichtigungen und Fehler app-weit aktivieren
     inject(NotificationPopupsService);
     inject(AppErrorService);
+    // Gespeichertes Farbschema anwenden
+    inject(ThemeService);
   }
 }

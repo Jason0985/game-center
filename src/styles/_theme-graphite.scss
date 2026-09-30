@@ -1,0 +1,35 @@
+// Dunkelgraues Farbschema: überschreibt die Tokens aus _tokens.scss, sobald
+// <html data-theme="graphite"> gesetzt ist. Weicher als das fast schwarze Dunkel,
+// Marken- und Statusfarben bleiben gleich, nur Flächen und Linien heller.
+html[data-theme='graphite'] {
+  color-scheme: dark;
+
+  --color-background: #1c1e22;
+  --color-surface: #25282d;
+  --color-surface-raised: #2e3238;
+  --color-border: rgba(255, 255, 255, 0.13);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.22);
+
+  --color-text: #eef0f3;
+  --color-text-muted: #b1b6c0;
+  --color-text-subtle: #969ca7;
+
+  --color-neutral-muted: #979da8;
+  --color-neutral-line: #3a3e45;
+  --color-neutral-card: #282b31;
+  --color-neutral-raised: #2e3238;
+  --color-neutral-input: #32363d;
+  --color-neutral-plum-muted: #9c97a3;
+  --color-navigation-surface: rgba(37, 40, 45, 0.94);
+  --color-navigation-highlight: rgba(255, 255, 255, 0.08);
+
+  --color-overlay-dim: rgba(10, 11, 13, 0.55);
+  --color-dialog-surface: #2a2d33;
+  --color-shadow-navigation: rgba(0, 0, 0, 0.32);
+  --color-shadow-card: rgba(0, 0, 0, 0.24);
+  --color-shadow-surface: rgba(0, 0, 0, 0.2);
+
+  --color-skeleton: rgba(255, 255, 255, 0.08);
+  --color-skeleton-shine: rgba(255, 255, 255, 0.12);
+}
