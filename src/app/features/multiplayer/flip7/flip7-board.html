@@ -174,6 +174,7 @@
       </div>
       <div class="laptop-actions">
         <ng-container *ngTemplateOutlet="actionsTpl" />
+        <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
       </div>
     }
   </div>
@@ -215,8 +216,22 @@
         <ng-container *ngTemplateOutlet="actionsTpl" />
       }
     }
+    <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
   </section>
 }
+
+<!-- Eingefroren: Frost legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
+<ng-template #iceTpl let-m>
+  @if (m.player.state === 'frozen') {
+    <div class="ice" aria-hidden="true">
+      <span class="ice-text">
+        <span class="material-symbols-rounded fill">ac_unit</span>
+        Du wurdest eingefroren
+      </span>
+      <span class="ice-sub">{{ m.points }} Punkte gesichert</span>
+    </div>
+  }
+</ng-template>
 
 <ng-template #slotsTpl let-m>
   <div class="slots" role="group" [attr.aria-label]="'Deine Zahlen, ' + m.slots.length + ' von 7'">

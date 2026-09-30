@@ -303,6 +303,7 @@ export class Flip7Board {
       celebrate: this.live() && this.eventSeats().flip7.has(me.seat),
       scBreak: this.eventSeats().secondChance.has(me.seat),
       bonus: this.game().status === 'round_over' && me.state === 'flip7',
+      points: flip7Score(me.cards, me.state),
     };
   });
 
