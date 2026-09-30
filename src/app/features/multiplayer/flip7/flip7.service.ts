@@ -13,7 +13,8 @@ type Flip7Turn = Pick<Flip7Game, 'id' | 'waiting_since'>;
 // Genau die Felder von Flip7Game; wird bei jeder Aktion von jedem Client geladen
 const GAME_COLUMNS =
   'id, target_score, status, seat_count, round_no, dealer_seat, phase, turn_seat,' +
-  ' pending_card, pending_seat, draw_count, discard_count, last_events, waiting_since,' +
+  ' pending_card, pending_seat, flip3_seat, flip3_left, draw_count, discard_count, discard_top,' +
+  ' last_events, round_log, waiting_since,' +
   ' flip7_players(user_id, seat, state, cards, total_score, round_score)';
 
 type GameRow = Omit<Flip7Game, 'players'> & {

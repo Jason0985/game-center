@@ -31,6 +31,9 @@ export interface Flip7Event {
   seat?: number;
   card?: Flip7Card;
   target?: number;
+  // Nur im round_log: Rundennummer und Zeitpunkt (Serverzeit)
+  r?: number;
+  at?: string;
 }
 
 export interface Flip7Player {
@@ -55,9 +58,17 @@ export interface Flip7Game {
   turn_seat: number | null;
   pending_card: Flip7ActionCard | null;
   pending_seat: number | null;
+  // Wer gerade Flip 3 abarbeitet und wie viele Karten noch fehlen
+  flip3_seat: number | null;
+  flip3_left: number | null;
   draw_count: number;
   discard_count: number;
+  // Die obersten zwei Ablagekarten (oberste zuletzt); gilt nur bei discard_count > 0
+  discard_top: Flip7Card[];
+  // Nur die letzte Aktion (für Animationen)
   last_events: Flip7Event[];
+  // Alle Ereignisse der laufenden Runde mit Zeit (Verlauf)
+  round_log: Flip7Event[];
   waiting_since: string | null;
   // Nach Sitzplatz sortiert
   players: Flip7Player[];
@@ -84,12 +95,12 @@ export const isActionCard = (card: Flip7Card): card is Flip7ActionCard =>
   card === 'FREEZE' || card === 'FLIP3' || card === 'SC';
 
 export const ACTION_NAMES: Record<Flip7ActionCard, string> = {
-  FREEZE: 'Einfrieren',
-  FLIP3: 'Drei ziehen',
-  SC: 'Zweite Chance',
+  FREEZE: 'Freeze',
+  FLIP3: 'Flip 3',
+  SC: 'Second Chance',
 };
 
-// Kurzer Name, z. B. für Ereignisse: "7", "+4", "×2", "Einfrieren"
+// Kurzer Name, z. B. für Ereignisse: "7", "+4", "×2", "Freeze"
 export function cardName(card: Flip7Card): string {
   if (card === 'x2') return '×2';
   return isActionCard(card) ? ACTION_NAMES[card] : card;
@@ -97,9 +108,43 @@ export function cardName(card: Flip7Card): string {
 
 export function cardAriaLabel(card: Flip7Card): string {
   if (isNumberCard(card)) return `Zahl ${card}`;
-  if (card === 'x2') return 'Mal 2';
-  if (isModifierCard(card)) return `Plus ${card.slice(1)}`;
-  return `Aktion ${ACTION_NAMES[card]}`;
+  if (isModifierCard(card)) return `Modifikator ${cardName(card)}`;
+  return `Aktionskarte ${ACTION_NAMES[card]}`;
+}
+
+// Kartenfarben: Zahlen reihum nach Wert, Aktionskarten fest (in allen Farbschemas gleich)
+export const NUMBER_COLORS = [
+  '#38c6de',
+  '#5b8cff',
+  '#4cc38a',
+  '#f2c94c',
+  '#ff9150',
+  '#a78bfa',
+  '#f472b6',
+] as const;
+export const ACTION_COLORS: Record<Flip7ActionCard, { bg: string; fg: string }> = {
+  FREEZE: { bg: '#7dd3fc', fg: '#0b2533' },
+  FLIP3: { bg: '#ff9150', fg: '#2a1204' },
+  SC: { bg: '#c8386d', fg: '#ffffff' },
+};
+// Feste Farbe pro Sitz, weiße Initiale jeweils >= 4.5:1
+export const AVATAR_COLORS = [
+  '#3b6aa0',
+  '#6d45a8',
+  '#23705f',
+  '#8f4c1f',
+  '#4351a8',
+  '#4c6379',
+  '#655a1f',
+  '#8a3a5c',
+] as const;
+
+// Modifikatoren als Kurztext, z. B. "×2 +6"; "" ohne Modifikatoren
+export function modifierText(cards: readonly Flip7Card[]): string {
+  const bonus = cards
+    .filter((card) => card.startsWith('+'))
+    .reduce((sum, card) => sum + Number(card.slice(1)), 0);
+  return [cards.includes('x2') ? '×2' : '', bonus ? `+${bonus}` : ''].filter(Boolean).join(' ');
 }
 
 export function distinctNumbers(cards: readonly Flip7Card[]): number {
@@ -121,8 +166,8 @@ export function flip7Score(cards: readonly Flip7Card[], state: Flip7PlayerState)
   );
 }
 
-// Spiegel von _flip7_candidates: Einfrieren/Drei ziehen jeder Aktive inkl. Ziehendem,
-// Zweite Chance nur andere Aktive ohne eigene. Reihenfolge ab dem Ziehenden.
+// Spiegel von _flip7_candidates: Freeze/Flip 3 jeder Aktive inkl. Ziehendem,
+// Second Chance nur andere Aktive ohne eigene. Reihenfolge ab dem Ziehenden.
 export function targetCandidates(
   game: Pick<Flip7Game, 'players' | 'seat_count'>,
   card: Flip7ActionCard,
@@ -165,57 +210,235 @@ export function winners(game: Pick<Flip7Game, 'players'>): Flip7Player[] {
   return remaining.filter((player) => player.total_score === best);
 }
 
-const ACTION_ORDER: Flip7ActionCard[] = ['FREEZE', 'FLIP3', 'SC'];
-
-function displayOrder(card: Flip7Card): number {
-  if (isNumberCard(card)) return Number(card);
-  if (card === 'x2') return 100;
-  if (isModifierCard(card)) return 100 + Number(card.slice(1));
-  return 200 + ACTION_ORDER.indexOf(card);
+// Wer gerade etwas tun muss (Ziehen oder Ziel wählen); null außerhalb eines Zugs
+export function activeSeatOf(
+  game: Pick<Flip7Game, 'status' | 'pending_card' | 'pending_seat' | 'phase' | 'turn_seat'>,
+): number | null {
+  if (game.status !== 'playing') return null;
+  return game.pending_card ? game.pending_seat : game.phase === 'turn' ? game.turn_seat : null;
 }
 
-// Zahlen aufsteigend, dann Modifikatoren, dann Aktionen
-export function sortedForDisplay(cards: readonly Flip7Card[]): Flip7Card[] {
-  return [...cards].sort((a, b) => displayOrder(a) - displayOrder(b));
-}
+type EventContext = Pick<Flip7Game, 'players' | 'flip3_seat' | 'flip3_left'>;
 
-export function describeEvent(event: Flip7Event, nameOf: (seat: number) => string): string {
-  const name = event.seat === undefined ? '' : nameOf(event.seat);
-  const target = event.target === undefined ? '' : nameOf(event.target);
+// Text für Ereignis-Chip und Verlauf, in Du-Form, wenn es um mich geht
+export function describeEvent(
+  event: Flip7Event,
+  game: EventContext,
+  mySeat: number | null,
+): string {
+  const player = (seat?: number) => game.players.find((candidate) => candidate.seat === seat);
+  const name = (seat?: number) => player(seat)?.name ?? 'Jemand';
+  const me = event.seat !== undefined && event.seat === mySeat;
+  const verb = (du: string, er: string) => `${me ? 'Du' : name(event.seat)} ${me ? du : er}`;
+  // Ziel im Akkusativ ("friert dich ein") bzw. Dativ ("gibt dir")
+  const targetMe = event.target !== undefined && event.target === mySeat;
+  const self = event.seat === event.target;
   const card = event.card ? cardName(event.card) : '';
 
   switch (event.t) {
     case 'draw':
-      return `${name} zieht ${card}.`;
+      return `${verb('ziehst', 'zieht')} ${event.card && isNumberCard(event.card) ? 'eine ' : ''}${card}`;
     case 'bust':
-      return `${name} hat die ${card} doppelt – raus!`;
+      return `${verb('hast', 'hat')} Bust – doppelte ${card}`;
     case 'second_chance':
-      return `${name} rettet sich mit der Zweiten Chance.`;
+      return `${verb('rettest dich', 'rettet sich')} mit Second Chance`;
     case 'sc_given':
-      return `${name} schenkt ${target} eine Zweite Chance.`;
+      return `${verb('gibst', 'gibt')} ${targetMe ? 'dir' : name(event.target)} Second Chance`;
     case 'sc_discarded':
-      return `Niemand kann die Zweite Chance von ${name} nehmen – abgelegt.`;
+      return me
+        ? 'Deine Second Chance wird abgelegt'
+        : `Second Chance von ${name(event.seat)} wird abgelegt`;
     case 'freeze':
-      return event.seat === event.target
-        ? `${name} friert sich selbst ein.`
-        : `${name} friert ${target} ein.`;
-    case 'flip3':
-      return event.seat === event.target
-        ? `${name} zieht selbst drei Karten.`
-        : `${name} lässt ${target} drei Karten ziehen.`;
+      return self
+        ? `${verb('frierst dich', 'friert sich')} selbst ein`
+        : `${verb('frierst', 'friert')} ${targetMe ? 'dich' : name(event.target)} ein`;
+    case 'flip3': {
+      const left = game.flip3_seat === event.target ? (game.flip3_left ?? 0) : 0;
+      const rest = left ? ` – noch ${left} ${left === 1 ? 'Karte' : 'Karten'}` : '';
+      return self
+        ? `${verb('nimmst', 'nimmt')} Flip 3 selbst${rest}`
+        : `${verb('gibst', 'gibt')} ${targetMe ? 'dir' : name(event.target)} Flip 3${rest}`;
+    }
     case 'set_aside':
-      return `${name} legt ${card} zur Seite.`;
+      return `${verb('legst', 'legt')} ${card} zur Seite`;
     case 'flip7':
-      return `${name} hat Flip 7!`;
-    case 'stay':
-      return `${name} bleibt stehen.`;
+      return `${verb('schaffst', 'schafft')} Flip 7! +${FLIP7_BONUS}`;
+    case 'stay': {
+      const stayed = player(event.seat);
+      const points = stayed ? ` (+${flip7Score(stayed.cards, stayed.state)})` : '';
+      return `${verb('bleibst', 'bleibt')} stehen${points}`;
+    }
     case 'reshuffle':
-      return 'Der Ablagestapel wird neu gemischt.';
+      return 'Die Ablage wird neu gemischt';
     case 'left':
-      return `${name} hat das Spiel verlassen.`;
+      return `${name(event.seat)} hat das Spiel verlassen`;
     case 'skip':
-      return `${name} wurde übersprungen.`;
+      return me ? 'Du wurdest übersprungen' : `${name(event.seat)} wurde übersprungen`;
   }
+}
+
+export interface Flip7Icon {
+  icon: string;
+  color: string;
+}
+
+const MUTED = 'var(--color-text-muted)';
+export const ACTION_ICONS: Record<Flip7ActionCard, Flip7Icon> = {
+  FREEZE: { icon: 'ac_unit', color: '#7dd3fc' },
+  FLIP3: { icon: 'filter_3', color: '#ff9150' },
+  SC: { icon: 'favorite', color: '#c8386d' },
+};
+
+function cardIcon(card?: Flip7Card): Flip7Icon {
+  if (!card || isNumberCard(card)) return { icon: 'style', color: 'var(--color-primary-light)' };
+  return isModifierCard(card) ? { icon: 'add', color: 'var(--f7-stay)' } : ACTION_ICONS[card];
+}
+
+// Symbol und Farbe für Ereignis-Chip und Verlauf
+export function eventIcon(event: Flip7Event): Flip7Icon {
+  switch (event.t) {
+    case 'draw':
+    case 'set_aside':
+      return cardIcon(event.card);
+    case 'bust':
+      return { icon: 'close', color: 'var(--f7-dup)' };
+    case 'second_chance':
+    case 'sc_given':
+    case 'sc_discarded':
+      return ACTION_ICONS.SC;
+    case 'freeze':
+      return ACTION_ICONS.FREEZE;
+    case 'flip3':
+      return ACTION_ICONS.FLIP3;
+    case 'flip7':
+      return { icon: 'auto_awesome', color: 'var(--f7-gold)' };
+    case 'stay':
+      return { icon: 'pan_tool', color: 'var(--f7-stay)' };
+    case 'reshuffle':
+      return { icon: 'shuffle', color: MUTED };
+    case 'left':
+      return { icon: 'logout', color: MUTED };
+    case 'skip':
+      return { icon: 'skip_next', color: MUTED };
+  }
+}
+
+// Spieltisch: vier Layouts (Handy, iPad hoch, iPad quer, Laptop). Maße in Design-Pixeln
+// der Tischplatte; die Anzeige rechnet sie in Prozent der Platte um.
+export type Flip7Layout = 'phone' | 'hoch' | 'quer' | 'laptop';
+
+export interface Flip7Table {
+  w: number;
+  h: number;
+  // Ellipse, auf der die Plätze sitzen; Bogen von `from` nach `to` (Grad, im Uhrzeigersinn)
+  cx: number;
+  cy: number;
+  a: number;
+  b: number;
+  from: number;
+  to: number;
+  // Kartenfächer liegen zwischen Platz und Ellipsenmitte
+  fan: readonly [number, number];
+}
+
+export const FLIP7_TABLES: Record<Flip7Layout, Flip7Table> = {
+  phone: {
+    w: 378,
+    h: 560,
+    cx: 189,
+    cy: 509.4,
+    a: 151,
+    b: 443.4,
+    from: 158,
+    to: 22,
+    fan: [0.61, 0.69],
+  },
+  hoch: {
+    w: 788,
+    h: 800,
+    cx: 394,
+    cy: 794.5,
+    a: 338.6,
+    b: 747.3,
+    from: 172,
+    to: 8,
+    fan: [0.62, 0.71],
+  },
+  quer: {
+    w: 1140,
+    h: 520,
+    cx: 570,
+    cy: 260,
+    a: 504.6,
+    b: 236,
+    from: 212,
+    to: -32,
+    fan: [0.59, 0.58],
+  },
+  // Ganzer Tischrand, ich sitze unten (270°)
+  laptop: {
+    w: 1220,
+    h: 720,
+    cx: 610,
+    cy: 360,
+    a: 610,
+    b: 360,
+    from: 270,
+    to: -90,
+    fan: [0.65, 0.62],
+  },
+};
+
+export interface Flip7SeatSpot {
+  x: number;
+  y: number;
+  fanX: number;
+  fanY: number;
+}
+
+// Plätze der Mitspieler (ab dem Platz nach mir, erster links von mir), gleichmäßig nach
+// Bogenlänge verteilt: Auf einem Oval lägen sie nach Winkel oben gedrängt.
+export function seatSpots(layout: Flip7Layout, count: number): Flip7SeatSpot[] {
+  const table = FLIP7_TABLES[layout];
+  const steps = 360;
+  const points: [number, number][] = [];
+  const lengths = [0];
+  for (let i = 0; i <= steps; i++) {
+    const t = ((table.from + ((table.to - table.from) * i) / steps) * Math.PI) / 180;
+    points.push([table.cx + table.a * Math.cos(t), table.cy - table.b * Math.sin(t)]);
+    if (i) {
+      const [x0, y0] = points[i - 1];
+      lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - x0, points[i][1] - y0));
+    }
+  }
+
+  // Anteile am Bogen: Handy/iPad je Platz ein gleich langes Stück, Platz in dessen Mitte.
+  // Laptop: gleichmäßig um den Tisch, neben mir aber mindestens m frei (Platz für meine Karten).
+  let shares = Array.from({ length: count }, (_, i) => (i + 0.5) / count);
+  if (layout === 'laptop') {
+    const m = count + 1 >= 7 ? 0.2 : 0.17;
+    shares = Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
+    if (count > 1 && shares[0] < m) {
+      shares = shares.map((_, i) => m + ((1 - 2 * m) * i) / (count - 1));
+    }
+  }
+
+  return shares.map((share) => {
+    const target = share * lengths[steps];
+    const i = Math.max(
+      1,
+      lengths.findIndex((length) => length >= target),
+    );
+    const ratio = (target - lengths[i - 1]) / (lengths[i] - lengths[i - 1] || 1);
+    const x = points[i - 1][0] + (points[i][0] - points[i - 1][0]) * ratio;
+    const y = points[i - 1][1] + (points[i][1] - points[i - 1][1]) * ratio;
+    return {
+      x,
+      y,
+      fanX: table.cx + table.fan[0] * (x - table.cx),
+      fanY: table.cy + table.fan[1] * (y - table.cy),
+    };
+  });
 }
 
 export const PLAYER_STATE_LABELS: Record<Flip7PlayerState, string> = {

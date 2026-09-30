@@ -13,7 +13,6 @@ import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmatio
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import {
   canStartLobby,
-  gameName,
   LOBBY_MAX_MEMBERS,
   LOBBY_MIN_MEMBERS,
   LobbyDetail,
@@ -71,7 +70,6 @@ export class Lobby {
   readonly requiredReady = computed(() => requiredReadyCount(this.members().length));
   // Starten braucht zusätzlich ein gewähltes Spiel
   readonly canStart = computed(() => canStartLobby(this.members()) && !!this.lobby()?.game_key);
-  readonly gameName = computed(() => gameName(this.lobby()?.game_key) ?? 'Spiel');
 
   // Nach eigenem Verlassen/Schließen (oder Weg-Navigieren) keine Meldungen und Umleitungen mehr
   private leaving = false;
@@ -150,9 +148,9 @@ export class Lobby {
     }
   }
 
-  // Bestätigt werden: Schließen (Host, wirft alle raus) und Verlassen eines laufenden
+  // Bestätigt werden: Schließen (Host, wirft alle raus) und Verlassen eines gestarteten
   // Spiels (endgültig, Rückkehr erst in der Warte-Lobby). Verlassen der Warte-Lobby nicht.
-  async leave(): Promise<void> {
+  async leave(gameOver = false): Promise<void> {
     if (this.busy()) return;
     const confirmation: ConfirmationDialogData | null = this.isHost()
       ? {
@@ -163,8 +161,10 @@ export class Lobby {
         }
       : this.started()
         ? {
-            title: 'Spiel verlassen?',
-            message: 'Du verlässt das laufende Spiel endgültig.',
+            title: gameOver ? 'Lobby verlassen?' : 'Spiel verlassen?',
+            message: gameOver
+              ? 'Spielt der Host weiter, bist du nicht mehr dabei.'
+              : 'Du verlässt das laufende Spiel endgültig.',
             confirmLabel: 'Verlassen',
             icon: 'logout',
           }

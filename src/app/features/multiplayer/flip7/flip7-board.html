@@ -1,171 +1,333 @@
 @let g = game();
-<div class="board">
-  <header class="status ui-surface">
-    <div class="status-row">
-      <strong>Runde {{ g.round_no }}</strong>
-      <span class="status-muted">{{ g.target_score ? 'Ziel ' + g.target_score : 'Offen' }}</span>
-      <span class="piles">
-        <span matTooltip="Nachziehstapel" [attr.aria-label]="g.draw_count + ' Karten im Stapel'">
-          <mat-icon aria-hidden="true">layers</mat-icon>{{ g.draw_count }}
-        </span>
-        <span matTooltip="Ablagestapel" [attr.aria-label]="g.discard_count + ' Karten abgelegt'">
-          <mat-icon aria-hidden="true">delete_sweep</mat-icon>{{ g.discard_count }}
-        </span>
-      </span>
+@let t = table();
+@let c = pointerCenter();
+<div class="table-area">
+  <div class="table" [style.aspect-ratio]="t.w + ' / ' + t.h">
+    <span class="watermark" aria-hidden="true">7</span>
+
+    <svg
+      class="pointer"
+      [class.pointer--off]="!pointer()"
+      [attr.viewBox]="'0 0 ' + t.w + ' ' + t.h"
+      aria-hidden="true"
+    >
+      <circle class="pointer-ring" [attr.cx]="c.x" [attr.cy]="c.y" [attr.r]="c.r" />
+      @if (pointer(); as p) {
+        <g
+          class="pointer-arm"
+          [style.transform]="'rotate(' + p.angle + 'deg)'"
+          [style.transform-origin]="c.x + 'px ' + c.y + 'px'"
+        >
+          <line [attr.x1]="p.x1" [attr.x2]="p.x2" [attr.y1]="c.y" [attr.y2]="c.y" />
+          <polygon [attr.points]="p.head" />
+        </g>
+      }
+    </svg>
+
+    <div class="center">
+      <div class="piles">
+        <div class="pile">
+          <div class="stack" #stack>
+            <app-flip7-card class="back back--3" [card]="null" />
+            <app-flip7-card class="back back--2" [card]="null" />
+            <app-flip7-card class="back back--1" [card]="null" />
+          </div>
+          <span class="pile-label">{{ g.draw_count }} Karten</span>
+        </div>
+        @if (layout() === 'quer' || layout() === 'laptop') {
+          <div class="pile">
+            <div class="discard">
+              @if (discard().below; as below) {
+                <app-flip7-card class="discard-below" [card]="below" />
+              }
+              @if (discard().top; as top) {
+                <app-flip7-card class="discard-top" [card]="top" />
+              } @else {
+                <span class="discard-empty" aria-hidden="true"></span>
+              }
+            </div>
+            <span class="pile-label pile-label--plain">Ablage</span>
+          </div>
+        }
+      </div>
+      <button
+        type="button"
+        class="event-chip"
+        [attr.aria-label]="'Letztes Ereignis: ' + lastEvent().text + '. Verlauf öffnen'"
+        (click)="openHistory()"
+      >
+        <span
+          class="material-symbols-rounded fill"
+          aria-hidden="true"
+          [style.color]="lastEvent().color"
+          >{{ lastEvent().icon }}</span
+        >
+        <span class="event-text">{{ lastEvent().text }}</span>
+        <span class="material-symbols-rounded chevron" aria-hidden="true">expand_more</span>
+      </button>
     </div>
-    <p class="live" aria-live="polite">{{ statusText() }}</p>
-    @if (events().length) {
-      <ul class="events events--short">
-        @for (event of events().slice(-2); track $index) {
-          <li>{{ event }}</li>
-        }
-      </ul>
+
+    @for (view of seats(); track view.player.seat) {
+      @if (view.player.state !== 'left') {
+        <div
+          class="fan"
+          [attr.data-state]="view.player.state"
+          [style.left.%]="view.fanX"
+          [style.top.%]="view.fanY"
+        >
+          @if (view.fan.length) {
+            <div class="fan-cards">
+              @for (item of view.fan; track item.key) {
+                <app-flip7-card
+                  [card]="item.card"
+                  [variant]="layout() === 'phone' ? 'flat' : 'fan'"
+                  [highlight]="item.highlight"
+                  [style.transform]="item.transform"
+                  (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
+                />
+              }
+              @if (view.player.state === 'frozen') {
+                <span class="veil" aria-hidden="true"></span>
+              }
+            </div>
+          }
+          @if (view.dots || view.mods) {
+            <div class="fan-meta">
+              @if (view.dots; as dots) {
+                <span class="dots" aria-hidden="true">
+                  @for (on of dots; track $index) {
+                    <span [class.on]="on"></span>
+                  }
+                </span>
+              }
+              @if (view.mods) {
+                <span
+                  class="mod-chip"
+                  role="img"
+                  [attr.aria-label]="'Modifikatoren ' + view.mods"
+                  >{{ view.mods }}</span
+                >
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (view.choice) {
+        <button
+          type="button"
+          appFlip7Seat
+          class="opp"
+          [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+          [player]="view.player"
+          [dealer]="view.player.seat === g.dealer_seat"
+          [turn]="view.turn"
+          [flip3Left]="view.flip3Left"
+          [choice]="view.choice"
+          [scBreak]="view.scBreak"
+          [style.left.%]="view.x"
+          [style.top.%]="view.y"
+          [disabled]="busy()"
+          (click)="pick(view.player.seat)"
+        ></button>
+      } @else {
+        <div
+          appFlip7Seat
+          role="group"
+          class="opp"
+          [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+          [player]="view.player"
+          [dealer]="view.player.seat === g.dealer_seat"
+          [turn]="view.turn"
+          [flip3Left]="view.flip3Left"
+          [dimmed]="view.dimmed"
+          [waiting]="view.waiting"
+          [celebrate]="view.celebrate"
+          [scBreak]="view.scBreak"
+          [bonus]="view.bonus"
+          [style.left.%]="view.x"
+          [style.top.%]="view.y"
+        ></div>
+      }
     }
-    @if (isHost()) {
-      <div class="host-bar">
-        @if (canSkip()) {
-          <button mat-button type="button" [disabled]="busy()" (click)="skip.emit()">
-            <mat-icon aria-hidden="true">skip_next</mat-icon>
-            Überspringen
-          </button>
-        }
-        <button mat-button type="button" [disabled]="busy()" (click)="endGame.emit()">
-          <mat-icon aria-hidden="true">stop_circle</mat-icon>
-          Spiel beenden
-        </button>
+
+    @for (flight of flights(); track flight.id) {
+      <app-flip7-card
+        class="flight"
+        [card]="flight.card"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="flyAction($event, flight)"
+      />
+    }
+
+    <!-- Laptop: eigener Platz liegt auf dem Tisch -->
+    @if (layout() === 'laptop' && mine(); as m) {
+      <div class="laptop-cards">
+        <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+        <div class="laptop-mods">
+          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+        </div>
+      </div>
+      <div class="laptop-seat">
+        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+      </div>
+      <div class="laptop-actions">
+        <ng-container *ngTemplateOutlet="actionsTpl" />
       </div>
     }
-  </header>
+  </div>
+</div>
 
-  <section class="others" aria-label="Mitspieler">
-    @for (player of others(); track player.user_id) {
-      <article
-        class="player ui-surface"
-        [class.player--turn]="player.seat === activeSeat()"
-        [class.player--out]="player.state !== 'active'"
-      >
-        <div class="player-head">
-          <strong class="player-name">{{ player.name }}</strong>
-          @if (player.seat === g.dealer_seat) {
-            <mat-icon class="dealer" aria-label="Geber" matTooltip="Geber">style</mat-icon>
-          }
-          @if (player.state !== 'active') {
-            <span class="badge" [attr.data-state]="player.state">
-              {{ stateLabels[player.state] }}
-            </span>
-          }
-          <span class="player-stats">
-            <span matTooltip="Gesamtpunkte">Σ {{ player.total_score }}</span>
-            <span class="round-points" matTooltip="Punkte dieser Runde"
-              >+{{ preview(player) }}</span
-            >
-            <span matTooltip="Verschiedene Zahlen">{{ distinct(player) }}/7</span>
-          </span>
+@if (layout() !== 'laptop' && mine(); as m) {
+  <section class="sheet" aria-label="Dein Platz">
+    @switch (layout()) {
+      @case ('hoch') {
+        <div class="sheet-row sheet-row--between">
+          <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
         </div>
-        <div class="player-cards">
-          @for (item of hands().get(player.seat); track item.key) {
-            <app-flip7-card
-              class="ui-pop-in"
-              [card]="item.card"
-              [size]="otherCardSize()"
-              [highlight]="item.dup ? 'dup' : null"
-            />
-          } @empty {
-            <span class="no-cards">Noch keine Karten</span>
-          }
+        <div class="sheet-row">
+          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+          <div class="grow">
+            <ng-container *ngTemplateOutlet="actionsTpl" />
+          </div>
         </div>
-      </article>
+      }
+      @case ('quer') {
+        <div class="sheet-col">
+          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+        </div>
+        <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+        <div class="quer-actions">
+          <ng-container *ngTemplateOutlet="actionsTpl" />
+        </div>
+      }
+      @default {
+        <div class="sheet-row sheet-row--center">
+          <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+        </div>
+        <div class="sheet-row sheet-row--between">
+          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+        </div>
+        <ng-container *ngTemplateOutlet="actionsTpl" />
+      }
     }
   </section>
+}
 
-  <aside class="side">
-    <div class="table ui-surface">
-      <div class="pile">
-        <app-flip7-card [card]="null" size="lg" />
-        <span>{{ g.draw_count }} im Stapel</span>
-      </div>
-      <ol class="events events--log" aria-label="Letzte Ereignisse">
-        @for (event of events().slice(-4); track $index) {
-          <li>{{ event }}</li>
-        } @empty {
-          <li class="status-muted">Noch nichts passiert.</li>
+<ng-template #slotsTpl let-m>
+  <div class="slots" role="group" [attr.aria-label]="'Deine Zahlen, ' + m.slots.length + ' von 7'">
+    @for (slot of m.slots; track slot.key) {
+      <div class="slot">
+        <app-flip7-card
+          [card]="slot.card"
+          [highlight]="m.player.state === 'busted' ? 'bust' : null"
+          [style.rotate.deg]="slot.tilt"
+          (animate.enter)="fly($event, 'me:' + slot.key)"
+        />
+        @if (slot.dup; as dup) {
+          <app-flip7-card
+            class="dup"
+            [card]="dup.card"
+            highlight="dup"
+            (animate.enter)="fly($event, 'me:' + dup.key)"
+          />
         }
-      </ol>
-    </div>
-
-    @if (me(); as me) {
-      <section
-        class="me ui-surface"
-        [class.me--turn]="myTurn() || choosing()"
-        aria-label="Deine Karten"
-      >
-        <div class="me-head">
-          <span class="me-points">{{ preview(me) }}</span>
-          <span class="status-muted">Punkte diese Runde</span>
-          <span class="player-stats">
-            <span>Σ {{ me.total_score }}</span>
-            <span>{{ distinct(me) }}/7</span>
-          </span>
-        </div>
-        <div class="me-body">
-          <div class="me-cards">
-            @for (item of hands().get(me.seat); track item.key) {
-              <app-flip7-card
-                class="ui-pop-in"
-                [card]="item.card"
-                [size]="myCardSize()"
-                [highlight]="item.dup ? 'dup' : null"
-              />
-            } @empty {
-              <span class="no-cards">Noch keine Karten</span>
-            }
-          </div>
-
-          <div class="me-actions">
-            @if (choosing()) {
-              <p class="chooser-title">{{ chooserTitle() }}</p>
-              <div class="chooser">
-                @for (target of candidates(); track target.seat) {
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    class="ui-button chooser-button"
-                    [disabled]="busy()"
-                    (click)="choose.emit(target.seat)"
-                  >
-                    {{ target.name }}{{ target.seat === me.seat ? ' (du)' : '' }} ·
-                    {{ preview(target) }} P.
-                  </button>
-                }
-              </div>
-            } @else if (me.state === 'active') {
-              <button
-                mat-flat-button
-                color="primary"
-                type="button"
-                class="ui-button"
-                [disabled]="busy() || !myTurn()"
-                (click)="hit.emit()"
-              >
-                <mat-icon aria-hidden="true">style</mat-icon>
-                Karte ziehen
-              </button>
-              <button
-                mat-stroked-button
-                type="button"
-                class="ui-button"
-                [disabled]="busy() || !myTurn()"
-                (click)="stay.emit()"
-              >
-                <mat-icon aria-hidden="true">pan_tool</mat-icon>
-                Stehen bleiben
-              </button>
-            } @else {
-              <p class="status-muted">{{ waitingText() }}</p>
-            }
-          </div>
-        </div>
-      </section>
+      </div>
     }
-  </aside>
-</div>
+    @for (empty of m.empty; track $index) {
+      <span class="slot slot--empty" aria-hidden="true"></span>
+    }
+  </div>
+</ng-template>
+
+<ng-template #modsTpl let-m>
+  <div class="mods" role="group" [attr.aria-label]="'Modifikatoren ' + m.modText">
+    <div class="mod-cards">
+      @for (mod of m.mods; track mod.key) {
+        <app-flip7-card
+          [card]="mod.card"
+          [style.rotate.deg]="mod.tilt"
+          (animate.enter)="fly($event, 'me:' + mod.key)"
+        />
+      } @empty {
+        <span class="slot slot--empty slot--mod" aria-hidden="true"></span>
+      }
+    </div>
+    <span class="mod-info">
+      <span class="mod-label">Modifikatoren</span>
+      <span class="mod-value">{{ m.modText }}</span>
+    </span>
+  </div>
+</ng-template>
+
+<ng-template #seatTpl let-m>
+  @if (m.choice) {
+    <button
+      type="button"
+      appFlip7Seat
+      variant="mine"
+      class="my-seat"
+      [player]="m.player"
+      [dealer]="m.player.seat === g.dealer_seat"
+      [turn]="m.player.seat === activeSeat()"
+      [flip3Left]="m.flip3Left"
+      [choice]="m.choice"
+      [scBreak]="m.scBreak"
+      [disabled]="busy()"
+      (click)="pick(m.player.seat)"
+    ></button>
+  } @else {
+    <div
+      appFlip7Seat
+      variant="mine"
+      class="my-seat"
+      [player]="m.player"
+      [dealer]="m.player.seat === g.dealer_seat"
+      [turn]="m.player.seat === activeSeat()"
+      [flip3Left]="m.flip3Left"
+      [celebrate]="m.celebrate"
+      [scBreak]="m.scBreak"
+      [bonus]="m.bonus"
+    ></div>
+  }
+</ng-template>
+
+<ng-template #actionsTpl>
+  @if (choosing(); as card) {
+    <div class="prompt" role="status" [attr.data-card]="card">
+      <app-flip7-card class="prompt-card" [card]="card" variant="flat" />
+      <span class="prompt-text">
+        <span class="prompt-title">{{ chooserTitle() }}</span>
+        <span class="prompt-hint">{{ chooserHint() }}</span>
+      </span>
+    </div>
+  } @else {
+    <div class="actions">
+      <div class="buttons">
+        <button
+          type="button"
+          class="btn btn--stay"
+          [disabled]="busy() || !myTurn()"
+          (click)="stay.emit()"
+        >
+          <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
+          Stehen bleiben
+        </button>
+        <button
+          type="button"
+          class="btn btn--hit"
+          [disabled]="busy() || !myTurn()"
+          (click)="hit.emit()"
+        >
+          <span class="material-symbols-rounded fill" aria-hidden="true">style</span>
+          Karte ziehen
+        </button>
+      </div>
+      <p class="status" aria-live="polite">{{ statusText() }}</p>
+    </div>
+  }
+</ng-template>

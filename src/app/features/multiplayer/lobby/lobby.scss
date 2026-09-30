@@ -87,39 +87,6 @@
   color: var(--color-primary-light);
 }
 
-// Während des Spiels: schmaler Kopf und breiteres Spielfeld
-.lobby-slim,
-.lobby-game-area {
-  width: min(100%, 1200px);
-  box-sizing: border-box;
-}
-
-.lobby-slim {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-}
-
-.lobby-slim-back {
-  position: static;
-  flex: 0 0 auto;
-}
-
-.lobby-slim h1 {
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  font-size: 18px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lobby-game-area {
-  display: block;
-  margin-bottom: 16px;
-}
-
 .lobby-section-heading {
   display: flex;
   align-items: center;

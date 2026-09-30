@@ -1,61 +1,71 @@
 import { Component, computed, input } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { cardAriaLabel, cardName, Flip7Card, isActionCard, isNumberCard } from './flip7.model';
+import {
+  ACTION_COLORS,
+  ACTION_ICONS,
+  cardAriaLabel,
+  cardName,
+  Flip7Card,
+  isActionCard,
+  isNumberCard,
+  NUMBER_COLORS,
+} from './flip7.model';
 
-export type Flip7CardSize = 'xs' | 'sm' | 'md' | 'lg';
-
-// Akzentfarben der Zahlenkarten, reihum nach Wert
-const NUMBER_ACCENTS = [
-  'var(--color-chart-cyan)',
-  'var(--color-chart-blue)',
-  'var(--color-chart-green)',
-  'var(--color-chart-yellow)',
-  'var(--color-chart-orange)',
-  'var(--color-secondary)',
-  'var(--color-primary-light)',
-];
-
-const ACTION_ICONS = { FREEZE: 'ac_unit', FLIP3: 'filter_3', SC: 'favorite' } as const;
-
-// Eine offene Karte; card null = Rückseite (Nachziehstapel)
+// Eine Karte; card null = Rückseite. Größe kommt vom Elternteil über --card-w/--card-h.
+// row: eigene Karten, Ablage (Wert mittig, zwei Eckindizes); fan: Mitspieler ab iPad
+// (Zahl oben links, Mini-Index unten rechts); flat: kleine Karten nur mit Wert.
 @Component({
   selector: 'app-flip7-card',
-  imports: [MatIconModule],
   template: `
     @let value = card();
-    @if (value === null) {
-      <span class="card card--back" role="img" aria-label="Nachziehstapel"></span>
-    } @else {
-      <span
-        [class]="'card card--' + kind()"
-        [class.card--dup]="highlight() === 'dup'"
-        [style.--accent]="accent()"
-        role="img"
-        [attr.aria-label]="label()"
-      >
-        @switch (kind()) {
-          @case ('number') {
-            <span class="card-corner" aria-hidden="true">{{ value }}</span>
-            <span class="card-value" aria-hidden="true">{{ value }}</span>
+    @switch (kind()) {
+      @case ('back') {
+        <span class="frame"><span class="seven">7</span></span>
+      }
+      @case ('number') {
+        @if (variant() === 'fan') {
+          <span class="fan-value">{{ value }}</span>
+          <span class="fan-index">{{ value }}</span>
+        } @else {
+          @if (variant() === 'row') {
+            <span class="corner corner--start">{{ value }}</span>
+            <span class="corner corner--end">{{ value }}</span>
           }
-          @case ('modifier') {
-            <span class="card-value" aria-hidden="true">{{ name() }}</span>
-          }
-          @case ('action') {
-            <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
-            <span class="card-name" aria-hidden="true">{{ name() }}</span>
-          }
+          <span class="value">{{ value }}</span>
         }
-      </span>
+      }
+      @case ('modifier') {
+        <span class="value">{{ name() }}</span>
+      }
+      @case ('action') {
+        @if (value === 'FLIP3') {
+          <span class="three">3</span>
+        } @else {
+          <span class="material-symbols-rounded icon">{{ icon() }}</span>
+        }
+        @if (variant() === 'row') {
+          <span class="sub">{{ name() }}</span>
+        }
+      }
     }
   `,
   styleUrl: './flip7-card.scss',
-  host: { '[attr.data-size]': 'size()' },
+  host: {
+    '[attr.role]': "kind() === 'back' ? null : 'img'",
+    '[attr.aria-hidden]': "kind() === 'back' || null",
+    '[attr.aria-label]': 'label()',
+    '[attr.data-kind]': 'kind()',
+    '[attr.data-variant]': 'variant()',
+    '[attr.data-highlight]': 'highlight()',
+    '[class.underline]': "card() === '6' || card() === '9'",
+    '[style.--face]': 'colors()?.bg',
+    '[style.--ink]': 'colors()?.fg',
+  },
 })
 export class Flip7CardView {
   readonly card = input.required<Flip7Card | null>();
-  readonly size = input<Flip7CardSize>('md');
-  readonly highlight = input<'dup' | null>(null);
+  readonly variant = input<'row' | 'fan' | 'flat'>('row');
+  // bust: graue Karte eines rausgeflogenen Spielers; dup: die doppelte Zahl
+  readonly highlight = input<'dup' | 'bust' | null>(null);
 
   readonly kind = computed(() => {
     const card = this.card();
@@ -69,19 +79,19 @@ export class Flip7CardView {
   });
   readonly label = computed(() => {
     const card = this.card();
-    return card === null ? '' : cardAriaLabel(card);
+    if (card === null) return null;
+    return this.highlight() === 'dup'
+      ? `${cardAriaLabel(card)}, doppelt – Bust`
+      : cardAriaLabel(card);
   });
   readonly icon = computed(() => {
     const card = this.card();
-    return card !== null && isActionCard(card) ? ACTION_ICONS[card] : '';
+    return card !== null && isActionCard(card) ? ACTION_ICONS[card].icon : '';
   });
-  readonly accent = computed(() => {
+  readonly colors = computed(() => {
     const card = this.card();
     if (card === null) return null;
-    if (isNumberCard(card)) return NUMBER_ACCENTS[Number(card) % NUMBER_ACCENTS.length];
-    if (card === 'FREEZE') return 'var(--color-chart-cyan)';
-    if (card === 'FLIP3') return 'var(--color-primary-light)';
-    if (card === 'SC') return 'var(--color-success-light)';
-    return 'var(--color-warning)';
+    if (isNumberCard(card)) return { bg: NUMBER_COLORS[Number(card) % 7], fg: '#0f1115' };
+    return isActionCard(card) ? ACTION_COLORS[card] : null;
   });
 }

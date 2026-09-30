@@ -1,16 +1,6 @@
 <div class="lobby-root ui-page-root" [class.ui-page-root--spacious]="!started()">
-  @if (started()) {
-    <header class="lobby-slim">
-      <a
-        class="ui-header-button lobby-slim-back"
-        routerLink="/multiplayer"
-        aria-label="Zurück zu den Lobbys"
-      >
-        <mat-icon aria-hidden="true">chevron_left</mat-icon>
-      </a>
-      <h1>{{ gameName() }} · Lobby von {{ hostName() }}</h1>
-    </header>
-  } @else {
+  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game) -->
+  @if (!started()) {
     <header class="lobby-header ui-hero ui-header-nav">
       <a
         class="ui-header-button ui-header-button--start"
@@ -39,11 +29,11 @@
   } @else if (lobby(); as current) {
     @if (started()) {
       <app-flip7-game
-        class="lobby-game-area"
         [lobbyId]="lobbyId"
         [hostUserId]="current.host_user_id"
         [userId]="userId()!"
         (returned)="reload()"
+        (leave)="leave($event)"
       />
     } @else {
       @if (isHost() && code(); as lobbyCode) {
@@ -137,8 +127,8 @@
       </section>
     }
 
-    <div class="lobby-actions">
-      @if (!started()) {
+    @if (!started()) {
+      <div class="lobby-actions">
         <button
           mat-stroked-button
           type="button"
@@ -175,18 +165,18 @@
             Freunde einladen
           </button>
         }
-      }
 
-      <button
-        mat-button
-        type="button"
-        class="lobby-action lobby-action--wide lobby-leave ui-button"
-        [disabled]="busy()"
-        (click)="leave()"
-      >
-        {{ isHost() ? 'Lobby schließen' : 'Lobby verlassen' }}
-      </button>
-    </div>
+        <button
+          mat-button
+          type="button"
+          class="lobby-action lobby-action--wide lobby-leave ui-button"
+          [disabled]="busy()"
+          (click)="leave()"
+        >
+          {{ isHost() ? 'Lobby schließen' : 'Lobby verlassen' }}
+        </button>
+      </div>
+    }
   } @else {
     <!-- Erstes Laden fehlgeschlagen (Fehler wurde schon gemeldet) -->
     <section class="lobby-section lobby-empty ui-surface" role="status">

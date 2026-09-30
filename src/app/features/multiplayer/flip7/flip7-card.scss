@@ -1,102 +1,165 @@
+// Maße aus Sonderkarten/Kartenreihe: Radius, Schrift und Abstände wachsen mit der Kartenbreite
 :host {
-  --card-w: 40px;
-  display: inline-block;
-  flex: 0 0 auto;
-  width: var(--card-w);
-  line-height: 1;
-}
-
-:host([data-size='xs']) {
-  --card-w: 26px;
-}
-
-:host([data-size='sm']) {
-  --card-w: 32px;
-}
-
-:host([data-size='lg']) {
-  --card-w: 52px;
-}
-
-.card {
+  --card-w: 44px;
+  --card-h: 62px;
   position: relative;
   display: flex;
-  width: 100%;
-  aspect-ratio: 5 / 7;
-  box-sizing: border-box;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: calc(var(--card-w) * 0.14);
-  background: var(--color-surface-raised);
-  // Mit der Textfarbe gemischt, damit auch Gelb im hellen Schema lesbar bleibt
-  color: color-mix(in srgb, var(--accent) 78%, var(--color-text));
-  box-shadow: 0 1px 2px var(--color-shadow-surface);
+  gap: 4px;
+  width: var(--card-w);
+  height: var(--card-h);
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: max(3px, calc(var(--card-w) * 0.145));
+  background: var(--face);
+  color: var(--ink);
+  box-shadow: var(--f7-card-shadow);
   font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
   user-select: none;
 }
 
-// Zahl mittig, klein in der Ecke
-.card--number {
-  border-bottom: 3px solid var(--accent);
+:host(.underline) .value,
+:host(.underline) .fan-value {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.card-value {
-  font-size: calc(var(--card-w) * 0.44);
+.value {
+  font-size: var(--card-font, calc(var(--card-w) * 0.64));
 }
 
-.card-corner {
+.corner {
   position: absolute;
-  top: 3px;
-  left: 4px;
-  font-size: calc(var(--card-w) * 0.2);
+  font-size: calc(var(--card-w) * 0.205);
+  font-weight: 700;
+  opacity: 0.7;
 }
 
-.card--modifier,
-.card--action {
-  border-color: var(--accent);
+.corner--start {
+  top: calc(var(--card-h) * 0.05);
+  left: calc(var(--card-w) * 0.1);
 }
 
-.card--modifier .card-value {
-  font-size: calc(var(--card-w) * 0.34);
+.corner--end {
+  right: calc(var(--card-w) * 0.1);
+  bottom: calc(var(--card-h) * 0.05);
+  transform: rotate(180deg);
 }
 
-.card mat-icon {
-  width: calc(var(--card-w) * 0.5);
-  height: calc(var(--card-w) * 0.5);
-  font-size: calc(var(--card-w) * 0.5);
+// Mitspieler-Fächer: Zahl oben links bleibt beim Überlappen frei
+:host([data-variant='fan']) {
+  display: block;
+  border-radius: 4px;
+  letter-spacing: -0.03em;
 }
 
-.card-name {
-  display: none;
+.fan-value {
+  position: absolute;
+  top: calc(var(--card-w) * 0.1);
+  left: calc(var(--card-w) * 0.1);
+  font-size: calc(var(--card-w) * 0.58);
+}
+
+.fan-index {
+  position: absolute;
+  right: calc(var(--card-w) * 0.1);
+  bottom: calc(var(--card-w) * 0.085);
+  font-size: calc(var(--card-w) * 0.29);
+  opacity: 0.55;
+  transform: rotate(180deg);
+}
+
+// Kleine Handy-Fächerkarten: nur die Zahl, mittig
+:host([data-variant='flat']) .value {
+  font-size: var(--card-font, calc(var(--card-w) * 0.62 + 3.5px));
+}
+
+:host([data-kind='modifier']) {
+  border: 1.5px solid var(--f7-mod-border);
+  background: var(--f7-mod-bg);
+  color: var(--f7-mod-text);
+  letter-spacing: normal;
+}
+
+:host([data-kind='modifier']) .value {
+  font-size: var(--card-font, calc(var(--card-w) * 0.47));
+}
+
+.icon {
+  font-size: calc(var(--card-w) * 0.553);
+  font-variation-settings: 'FILL' 1;
+}
+
+.three {
+  font-size: calc(var(--card-w) * 0.64);
+  font-weight: 900;
+}
+
+.sub {
   max-width: 100%;
   padding: 0 2px;
   overflow: hidden;
   box-sizing: border-box;
-  font-size: 8px;
+  font-size: max(8px, calc(var(--card-w) * 0.13));
   font-weight: 700;
+  letter-spacing: 0.02em;
   text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-:host([data-size='lg']) .card-name {
-  display: block;
+// Bust: grau; die doppelte Zahl rot mit weißem Rand
+:host([data-highlight='bust']) {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: var(--f7-bust-bg);
+  color: var(--f7-bust-text);
 }
 
-// Doppelte Zahl beim Rausfliegen
-.card--dup {
-  border: 2px solid var(--color-danger-light);
-  background: var(--color-danger-12);
+:host([data-highlight='dup']) {
+  border-color: #ffffff;
+  background: var(--f7-dup);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 2px var(--f7-dup),
+    var(--f7-card-shadow);
 }
 
-.card--back {
-  border-color: var(--color-primary-light-48);
-  background:
-    repeating-linear-gradient(45deg, var(--color-white-10) 0 4px, transparent 4px 9px),
-    var(--color-primary);
+:host([data-highlight='dup'][data-variant='row']) {
+  box-shadow:
+    0 0 0 3px var(--f7-dup),
+    var(--f7-card-shadow);
 }
 
-:host([data-size='xs']) .card-corner {
-  display: none;
+// Rückseite: Rahmen in Markenfarbe, Streifen, kursive 7
+:host([data-kind='back']) {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--f7-card-back);
+}
+
+.frame {
+  position: absolute;
+  inset: calc(var(--card-w) * 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--f7-back-frame);
+  border-radius: max(2px, calc(var(--card-w) * 0.145 - 3px));
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.05) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.seven {
+  color: #f27ba5;
+  font-size: calc(var(--card-w) * 0.47);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.04em;
 }

@@ -1,276 +1,510 @@
-// Handy: Liste + eigene Hand unten angeheftet; Tablet: Kacheln in 2 Spalten;
-// Laptop (>= 1024 px): Spielfeld links, Stapel/Log/Hand rechts angeheftet
+// Spieltisch nach den Artboards Handy (390), iPad hoch (820), iPad quer (1180) und
+// Laptop (1440). Alles auf der Tischplatte sitzt in Prozent der Platte; Schilder,
+// Karten und Schrift behalten ihre Design-Pixel. --s skaliert die Mitspieler-Plätze
+// (≤ 3 Spieler groß, 4–5 mittel, ab 6 Grundgröße).
 :host {
-  display: block;
-}
+  // Handy (--head-h: Kopf der Bühne; --below: Platz unter der Tischplatte laut Design)
+  --s: 1;
+  --head-h: 56px;
+  --area-top: 8px;
+  --below: 220px;
+  --table-w: 378;
+  --table-h: 560;
+  --table-margin: 12px;
+  --table-radius: 50% 50% 28px 28px / 44.64% 44.64% 28px 28px;
+  --felt-y: 70%;
+  --rim: 10px;
+  --table-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  --mark-size: 180px;
+  --mark-x: 50%;
+  --mark-y: 73.21%;
+  --center-x: 50%;
+  --center-y: 72.5%;
+  --center-gap: 10px;
+  --center-max: 260px;
+  --pile-w: 40px;
+  --pile-h: 56px;
+  --pile-label: 11px;
+  --chip-size: 13px;
+  --chip-icon: 17px;
+  --fan-w: calc(14px * var(--s));
+  --fan-h: calc(20px * var(--s));
+  --fan-overlap: -0.45;
+  --dot: 4px;
+  --mod-chip-size: 10px;
+  --mod-chip-lh: 14px;
+  --mod-chip-pad: 1px 5px;
+  --slot-w: 44px;
+  --slot-h: 62px;
+  --slot-gap: 6px;
+  --mod-w: 26px;
+  --mod-h: 36px;
+  --mod-font: 15px;
+  --mod-label: 11px;
+  --mod-value: 15px;
+  --btn-h: 50px;
+  --btn-font: 15px;
+  --btn-icon: 19px;
+  --status-size: 13px;
 
-.board {
+  // Tisch oben verankert, das Sheet überlappt ihn und füllt den Rest nach unten
   display: grid;
-  gap: 10px;
-}
-
-.status {
-  padding: 10px 14px;
-}
-
-.status-row,
-.player-head,
-.me-head,
-.piles,
-.piles > span,
-.player-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-row {
-  font-size: 13px;
-}
-
-.piles {
-  margin-left: auto;
-  color: var(--color-text-muted);
-}
-
-.piles mat-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 2px;
-  font-size: 16px;
-}
-
-.status-muted,
-.no-cards {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.live {
-  margin: 6px 0 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.events {
-  margin: 4px 0 0;
-  padding: 0;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  list-style: none;
-}
-
-.host-bar {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.others {
-  display: grid;
-  gap: 8px;
-}
-
-.player {
-  min-width: 0;
-  padding: 10px 12px;
-}
-
-.player--turn,
-.me--turn {
-  border-color: var(--color-primary-light-48);
-  background: var(--color-primary-soft);
-}
-
-// Deckend, weil die Kacheln unter der angehefteten Hand durchscrollen
-.me--turn {
-  background:
-    linear-gradient(var(--color-primary-soft), var(--color-primary-soft)), var(--color-surface);
-}
-
-.player-name {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player--out .player-name {
-  color: var(--color-text-muted);
-}
-
-.dealer {
-  width: 16px;
-  height: 16px;
-  color: var(--color-warning);
-  font-size: 16px;
-}
-
-.badge {
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
-  background: var(--color-white-08);
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.badge[data-state='busted'] {
-  color: var(--color-danger-light);
-}
-
-.badge[data-state='frozen'] {
-  color: var(--color-chart-cyan);
-}
-
-.badge[data-state='flip7'] {
-  color: var(--color-success-light);
-}
-
-.player-stats {
-  margin-left: auto;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.round-points {
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
   color: var(--color-text);
-  font-weight: 700;
+  font-family: var(--font-sans);
 }
 
-// Handy: eine Zeile, seitlich scrollbar
-.player-cards,
-.me-cards {
+:host([data-size='m']) {
+  --s: 1.1;
+}
+
+:host([data-size='l']) {
+  --s: 1.25;
+}
+
+:host([data-layout='hoch']) {
+  --head-h: 64px;
+  --area-top: 12px;
+  --below: 304px;
+  --table-w: 788;
+  --table-h: 800;
+  --table-margin: 32px;
+  --table-radius: 50% 50% 36px 36px / 47.5% 47.5% 36px 36px;
+  --felt-y: 65%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 300px;
+  --mark-y: 74.25%;
+  --center-y: 73%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 52px;
+  --pile-h: 72px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(28px * var(--s));
+  --fan-h: calc(40px * var(--s));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 12px;
+  --mod-chip-lh: 17px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 62px;
+  --slot-h: 86px;
+  --slot-gap: 10px;
+  --mod-w: 38px;
+  --mod-h: 54px;
+  --mod-font: 18px;
+  --mod-label: 12px;
+  --mod-value: 16px;
+  --btn-h: 56px;
+  --btn-font: 16px;
+  --btn-icon: 20px;
+  --status-size: 14px;
+}
+
+:host([data-layout='quer']) {
+  --area-top: 12px;
+  --below: 232px;
+  --table-w: 1140;
+  --table-h: 520;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 55%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 300px;
+  --mark-y: 50%;
+  --center-y: 48.08%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 52px;
+  --pile-h: 72px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(28px * var(--s));
+  --fan-h: calc(40px * var(--s));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 11px;
+  --mod-chip-lh: 15px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 58px;
+  --slot-h: 80px;
+  --slot-gap: 8px;
+  --mod-w: 30px;
+  --mod-h: 42px;
+  --mod-font: 18px;
+  --status-size: 12px;
+}
+
+:host([data-layout='laptop']) {
+  --head-h: 64px;
+  --area-top: 54px;
+  --below: 122px;
+  --table-w: 1220;
+  --table-h: 720;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 50%;
+  --rim: 16px;
+  --table-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  --mark-size: 300px;
+  --mark-y: 40.56%;
+  --center-y: 39.17%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 60px;
+  --pile-h: 84px;
+  --pile-label: 12px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(36px * var(--s));
+  --fan-h: calc(50px * var(--s));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 12px;
+  --mod-chip-lh: 17px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 68px;
+  --slot-h: 94px;
+  --slot-gap: 10px;
+  --mod-w: 38px;
+  --mod-h: 54px;
+  --mod-font: 18px;
+  --mod-label: 12px;
+  --mod-value: 16px;
+  --btn-h: 52px;
+}
+
+:host([data-layout='hoch'][data-size='m']) {
+  --s: 1.1;
+}
+
+:host([data-layout='hoch'][data-size='l']) {
+  --s: 1.2;
+}
+
+:host([data-layout='quer'][data-size='m']),
+:host([data-layout='laptop'][data-size='m']) {
+  --s: 1.05;
+}
+
+:host([data-layout='quer'][data-size='l']),
+:host([data-layout='laptop'][data-size='l']) {
+  --s: 1.15;
+}
+
+// Tischplatte: festes Seitenverhältnis, so hoch wie Platz ist (höchstens Design-Größe)
+.table-area {
   display: flex;
-  gap: 4px;
-  margin-top: 8px;
-  overflow-x: auto;
-}
-
-.me-cards {
-  flex-wrap: wrap;
-  gap: 6px;
+  justify-content: center;
+  padding-top: var(--area-top);
 }
 
 .table {
-  display: none;
+  position: relative;
+  flex: none;
+  height: min(
+    calc(var(--table-h) * 1px),
+    calc(100dvh - var(--head-h) - var(--area-top) - var(--below)),
+    calc((100vw - var(--table-margin)) * var(--table-h) / var(--table-w))
+  );
+  border-radius: var(--table-radius);
+  background: radial-gradient(
+    ellipse at 50% var(--felt-y),
+    var(--f7-table-center) 0%,
+    var(--f7-table-edge) 70%
+  );
+  box-shadow:
+    inset 0 0 0 var(--rim) var(--f7-rim),
+    inset 0 0 0 calc(var(--rim) + 1px) var(--f7-rim-line),
+    var(--table-shadow);
 }
 
-.side {
-  display: contents;
+.watermark {
+  position: absolute;
+  top: var(--mark-y);
+  left: var(--mark-x);
+  z-index: 0;
+  color: var(--color-text);
+  font-size: var(--mark-size);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  opacity: 0.025;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
 }
 
-.me {
-  position: sticky;
-  bottom: var(--bottom-nav-space);
-  z-index: 2;
-  padding: 12px 14px;
-  box-shadow: var(--shadow-navigation);
-}
-
-.me-points {
-  font-size: 28px;
-  font-weight: 800;
-}
-
-.me-actions {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.me-actions .ui-button {
+// Zug-Zeiger: gepunktete Linie vom Stapel zum Spieler am Zug
+.pointer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
-  min-height: 48px;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.chooser-title {
-  margin: 0;
-  font-weight: 700;
+.pointer--off {
+  visibility: hidden;
 }
 
-// Bis zu 8 Ziele: nebeneinander, damit die angeheftete Hand nicht zu hoch wird
-.chooser {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+.pointer-ring {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+}
+
+.pointer-arm {
+  transform-box: view-box;
+  transition: transform 240ms ease;
+}
+
+.pointer-arm line {
+  stroke: var(--color-primary);
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.pointer-arm polygon {
+  fill: var(--color-primary);
+}
+
+// Mitte: Stapel, Ablage, Ereignis-Chip
+.center {
+  position: absolute;
+  top: var(--center-y);
+  left: var(--center-x);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--center-gap);
+  max-width: var(--center-max);
+  transform: translate(-50%, -50%);
+}
+
+.piles {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stack,
+.discard {
+  position: relative;
+  width: calc(var(--pile-w) + 6px);
+  height: calc(var(--pile-h) + 6px);
+}
+
+.stack app-flip7-card,
+.discard app-flip7-card,
+.discard-empty {
+  --card-w: var(--pile-w);
+  --card-h: var(--pile-h);
+  position: absolute;
+}
+
+.back--1 {
+  top: 0;
+  left: 0;
+}
+
+.back--2 {
+  top: 3px;
+  left: 3px;
+}
+
+.back--3 {
+  top: 6px;
+  left: 6px;
+}
+
+.discard-below {
+  top: 4px;
+  left: 4px;
+  opacity: 0.55;
+  rotate: -8deg;
+}
+
+.discard-top {
+  top: 2px;
+  left: 2px;
+  rotate: 5deg;
+}
+
+.discard-empty {
+  top: 2px;
+  left: 2px;
+  width: var(--pile-w);
+  height: var(--pile-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--f7-slot-border);
+  border-radius: calc(var(--pile-w) * 0.145);
+  background: var(--f7-slot-bg);
+}
+
+.pile-label {
+  color: var(--color-text-muted);
+  font-size: var(--pile-label);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pile-label--plain {
+  font-size: 12px;
+}
+
+.event-chip {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px 7px 12px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  color: var(--color-text);
+  font: 600 var(--chip-size) var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.me-actions .chooser-button {
-  min-width: 0;
-  min-height: 44px;
-  white-space: normal;
+.event-chip .material-symbols-rounded {
+  flex-shrink: 0;
+  font-size: var(--chip-icon);
 }
 
-@media (min-width: 600px) {
-  .others {
-    grid-template-columns: 1fr 1fr;
-  }
+.event-chip .chevron {
+  color: var(--color-text-muted);
+}
 
-  .player-cards {
-    flex-wrap: wrap;
-  }
+.event-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  .me-body {
-    display: grid;
-    grid-template-columns: 1fr minmax(180px, 34%);
-    align-items: center;
-    gap: 14px;
+// Kartenfächer der Mitspieler
+.fan {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-50%, -50%);
+}
+
+.fan-cards {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.fan-cards app-flip7-card {
+  --card-w: var(--fan-w);
+  --card-h: var(--fan-h);
+}
+
+.fan-cards app-flip7-card + app-flip7-card {
+  margin-left: calc(var(--fan-w) * var(--fan-overlap));
+}
+
+// Ab iPad: Handbogen, Drehpunkt unten
+:host(:not([data-layout='phone'])) .fan-cards {
+  align-items: flex-start;
+  padding: 2px 0 3px;
+}
+
+:host(:not([data-layout='phone'])) .fan-cards app-flip7-card {
+  transform-origin: 50% 100%;
+}
+
+.fan[data-state='stayed'] app-flip7-card {
+  opacity: 0.7;
+}
+
+// Eisschleier über den Karten eingefrorener Spieler
+.veil {
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.13);
+  pointer-events: none;
+}
+
+:host(.live) .veil {
+  animation: f7-fade-in 200ms ease-out;
+}
+
+@keyframes f7-fade-in {
+  from {
+    opacity: 0;
   }
 }
 
-@media (min-width: 1024px) {
-  .board {
-    grid-template-columns: 1fr 360px;
-    // Höhe der rechten Spalte geht in die zweite Zeile, nicht zwischen Status und Kacheln
-    grid-template-rows: auto 1fr;
-    align-items: start;
-  }
+.fan-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 
-  .others {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
+.dots {
+  display: flex;
+  gap: 2px;
+}
 
-  .side {
-    position: sticky;
-    top: 16px;
-    display: grid;
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    gap: 10px;
-  }
+.dots span {
+  width: var(--dot);
+  height: var(--dot);
+  box-sizing: border-box;
+  border: 1px solid var(--f7-slot-border);
+  border-radius: 50%;
+}
 
-  .events--short {
-    display: none;
-  }
+.dots span.on {
+  border: 0;
+  background: var(--f7-ring-on);
+}
 
-  .table {
-    display: flex;
-    gap: 14px;
-    padding: 12px 14px;
-  }
+.mod-chip {
+  padding: var(--mod-chip-pad);
+  border: 1px solid var(--f7-mod-border);
+  border-radius: 5px;
+  background: var(--f7-mod-bg);
+  color: var(--f7-mod-text);
+  font-size: var(--mod-chip-size);
+  font-weight: 800;
+  line-height: var(--mod-chip-lh);
+  white-space: nowrap;
+}
 
-  .pile {
-    display: grid;
-    justify-items: center;
-    gap: 4px;
-    color: var(--color-text-muted);
-    font-size: 11px;
-    text-align: center;
-  }
+// Fokusring auf allen drei Farbschemas sichtbar
+button:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
 
-  .me {
-    position: static;
-    box-shadow: var(--shadow-surface);
-  }
-
-  .me-body {
-    display: block;
-  }
+.material-symbols-rounded.fill {
+  font-variation-settings: 'FILL' 1;
 }

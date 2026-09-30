@@ -196,7 +196,8 @@ describe('Lobby', () => {
     });
     expect(component.started()).toBe(true);
     expect(fixture.nativeElement.querySelector('app-flip7-game')).not.toBeNull();
-    expect(text()).toContain('Flip 7 · Lobby von host');
+    // Im Spiel zeigt der Spieltisch seinen eigenen Kopf
+    expect(text()).toContain('Flip 7');
     expect(flip7.load).toHaveBeenCalledWith('lobby-1');
   });
 

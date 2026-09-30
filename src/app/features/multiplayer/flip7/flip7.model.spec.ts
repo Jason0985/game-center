@@ -9,7 +9,7 @@ import {
   Flip7PlayerState,
   flip7Score,
   rankPlayers,
-  sortedForDisplay,
+  seatSpots,
   targetCandidates,
   winners,
 } from './flip7.model';
@@ -119,44 +119,40 @@ describe('winners', () => {
   });
 });
 
-describe('sortedForDisplay', () => {
-  it('shows numbers ascending, then modifiers, then actions', () => {
-    expect(sortedForDisplay(['SC', '+4', '12', 'x2', '3', 'FREEZE', '0', '+10'])).toEqual([
-      '0',
-      '3',
-      '12',
-      'x2',
-      '+4',
-      '+10',
-      'FREEZE',
-      'SC',
-    ]);
-  });
-});
-
 describe('describeEvent', () => {
-  const nameOf = (seat: number) => ['Anna', 'Ben'][seat];
+  const players = [
+    player(0, 'active', [], 0),
+    player(1, 'stayed', ['7', '9', '+4'], 0),
+    player(2, 'active', ['FLIP3'], 0),
+  ].map((p, seat) => ({ ...p, name: ['Anna', 'Ben', 'Carl'][seat] }));
+  const game = { players, flip3_seat: 2, flip3_left: 2 };
+  // Aus Sicht von Carl (Platz 2): Du-Form, wenn es um ihn geht
   const cases: [Flip7Event, string][] = [
-    [{ t: 'draw', seat: 0, card: '7' }, 'Anna zieht 7.'],
-    [{ t: 'draw', seat: 0, card: 'x2' }, 'Anna zieht ×2.'],
-    [{ t: 'bust', seat: 1, card: '5' }, 'Ben hat die 5 doppelt – raus!'],
-    [{ t: 'second_chance', seat: 0, card: '5' }, 'Anna rettet sich mit der Zweiten Chance.'],
-    [{ t: 'sc_given', seat: 0, target: 1 }, 'Anna schenkt Ben eine Zweite Chance.'],
-    [{ t: 'sc_discarded', seat: 0 }, 'Niemand kann die Zweite Chance von Anna nehmen – abgelegt.'],
-    [{ t: 'freeze', seat: 0, target: 1 }, 'Anna friert Ben ein.'],
-    [{ t: 'freeze', seat: 1, target: 1 }, 'Ben friert sich selbst ein.'],
-    [{ t: 'flip3', seat: 0, target: 1 }, 'Anna lässt Ben drei Karten ziehen.'],
-    [{ t: 'flip3', seat: 0, target: 0 }, 'Anna zieht selbst drei Karten.'],
-    [{ t: 'set_aside', seat: 1, card: 'FREEZE' }, 'Ben legt Einfrieren zur Seite.'],
-    [{ t: 'flip7', seat: 1 }, 'Ben hat Flip 7!'],
-    [{ t: 'stay', seat: 0 }, 'Anna bleibt stehen.'],
-    [{ t: 'reshuffle' }, 'Der Ablagestapel wird neu gemischt.'],
-    [{ t: 'left', seat: 1 }, 'Ben hat das Spiel verlassen.'],
-    [{ t: 'skip', seat: 0 }, 'Anna wurde übersprungen.'],
+    [{ t: 'draw', seat: 0, card: '7' }, 'Anna zieht eine 7'],
+    [{ t: 'draw', seat: 2, card: '+4' }, 'Du ziehst +4'],
+    [{ t: 'draw', seat: 2, card: 'FREEZE' }, 'Du ziehst Freeze'],
+    [{ t: 'draw', seat: 0, card: 'x2' }, 'Anna zieht ×2'],
+    [{ t: 'bust', seat: 1, card: '9' }, 'Ben hat Bust – doppelte 9'],
+    [{ t: 'second_chance', seat: 0, card: '5' }, 'Anna rettet sich mit Second Chance'],
+    [{ t: 'sc_given', seat: 0, target: 1 }, 'Anna gibt Ben Second Chance'],
+    [{ t: 'sc_given', seat: 0, target: 2 }, 'Anna gibt dir Second Chance'],
+    [{ t: 'sc_discarded', seat: 0 }, 'Second Chance von Anna wird abgelegt'],
+    [{ t: 'freeze', seat: 0, target: 1 }, 'Anna friert Ben ein'],
+    [{ t: 'freeze', seat: 1, target: 1 }, 'Ben friert sich selbst ein'],
+    [{ t: 'freeze', seat: 0, target: 2 }, 'Anna friert dich ein'],
+    [{ t: 'flip3', seat: 0, target: 2 }, 'Anna gibt dir Flip 3 – noch 2 Karten'],
+    [{ t: 'flip3', seat: 0, target: 1 }, 'Anna gibt Ben Flip 3'],
+    [{ t: 'set_aside', seat: 1, card: 'FREEZE' }, 'Ben legt Freeze zur Seite'],
+    [{ t: 'flip7', seat: 1 }, 'Ben schafft Flip 7! +15'],
+    [{ t: 'stay', seat: 1 }, 'Ben bleibt stehen (+20)'],
+    [{ t: 'stay', seat: 2 }, 'Du bleibst stehen (+0)'],
+    [{ t: 'reshuffle' }, 'Die Ablage wird neu gemischt'],
+    [{ t: 'left', seat: 1 }, 'Ben hat das Spiel verlassen'],
+    [{ t: 'skip', seat: 0 }, 'Anna wurde übersprungen'],
   ];
 
   it.each(cases)('describes %o', (event, text) => {
-    expect(describeEvent(event, nameOf)).toBe(text);
+    expect(describeEvent(event, game, 2)).toBe(text);
   });
 });
 
@@ -166,11 +162,99 @@ describe('cardAriaLabel', () => {
       ['7', '+4', 'x2', 'FREEZE', 'FLIP3', 'SC'].map((card) => cardAriaLabel(card as Flip7Card)),
     ).toEqual([
       'Zahl 7',
-      'Plus 4',
-      'Mal 2',
-      'Aktion Einfrieren',
-      'Aktion Drei ziehen',
-      'Aktion Zweite Chance',
+      'Modifikator +4',
+      'Modifikator ×2',
+      'Aktionskarte Freeze',
+      'Aktionskarte Flip 3',
+      'Aktionskarte Second Chance',
     ]);
+  });
+});
+
+describe('seatSpots', () => {
+  // Positionen aus den Artboards (Design-Pixel der Tischplatte)
+  const near = (spots: { x: number; y: number }[], expected: number[][], tolerance: number) => {
+    expect(spots.length).toBe(expected.length);
+    spots.forEach((spot, i) => {
+      expect(Math.hypot(spot.x - expected[i][0], spot.y - expected[i][1])).toBeLessThanOrEqual(
+        tolerance + 1e-9,
+      );
+    });
+  };
+
+  it('matches the laptop artboards (3, 5 and 8 players)', () => {
+    near(
+      seatSpots('laptop', 2),
+      [
+        [121.8, 143],
+        [1097.4, 142.3],
+      ],
+      2,
+    );
+    near(
+      seatSpots('laptop', 4),
+      [
+        [50.7, 504.5],
+        [303.9, 46.9],
+        [915, 46.5],
+        [1169.8, 503.8],
+      ],
+      2,
+    );
+    near(
+      seatSpots('laptop', 7),
+      [
+        [50.7, 504.5],
+        [50.2, 216.2],
+        [303.9, 46.9],
+        [610, -2],
+        [915, 46.5],
+        [1169.3, 215.5],
+        [1169.8, 503.8],
+      ],
+      2,
+    );
+    const fans = seatSpots('laptop', 4).map((spot) => ({ x: spot.fanX, y: spot.fanY }));
+    near(
+      fans,
+      [
+        [247.8, 450.2],
+        [411.8, 164.5],
+        [807.5, 164.3],
+        [972.5, 449.8],
+      ],
+      3,
+    );
+  });
+
+  it('matches the phone and iPad landscape artboards', () => {
+    near(
+      seatSpots('phone', 2),
+      [
+        [86.7, 183.6],
+        [291.4, 184],
+      ],
+      6,
+    );
+    near(
+      seatSpots('phone', 4),
+      [
+        [64.3, 265.9],
+        [122.7, 106.3],
+        [255.5, 106.5],
+        [313.8, 266.4],
+      ],
+      6,
+    );
+    near(
+      seatSpots('quer', 4),
+      [
+        [70.7, 226.3],
+        [382.1, 41.1],
+        [758.8, 41.3],
+        [1069.4, 226.8],
+      ],
+      6,
+    );
   });
 });

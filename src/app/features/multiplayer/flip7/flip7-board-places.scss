@@ -1,0 +1,436 @@
+// Plätze am Tisch: Mitspieler-Schilder und eigener Platz. Zweites Stylesheet von
+// Flip7Board (Budget pro Datei); die Variablen je Layout stehen in flip7-board.scss.
+// Namensschilder der Mitspieler (Maße siehe flip7-seat.scss)
+.opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  --w: calc(66px * var(--s));
+  --ring: round(calc(38px * var(--s)), 1px);
+  --name-size: round(down, calc(11px * var(--s)), 1px);
+}
+
+:host([data-layout='hoch']) .opp {
+  --w: calc(98px * var(--s));
+  --pad: 8px 4px;
+  --radius: 16px;
+  --gap: 4px;
+  --ring: round(calc(50px * var(--s)), 1px);
+  --avatar-k: 0.72;
+  --name-size: 13px;
+  --stat-size: 12px;
+  --chip-pad: 1px 6px;
+  --chip-lh: 18px;
+  --stats-gap: 6px;
+  --label-size: 12px;
+  --label-bottom: -23px;
+  --badge-size: 12px;
+  --badge-top: -16px;
+  --glow: 8px;
+}
+
+:host([data-layout='quer']) .opp {
+  --w: calc(160px * var(--s));
+  --ring: round(calc(42px * var(--s)), 1px);
+  --avatar-k: 0.72;
+  --gap: 7px;
+  --name-size: 13px;
+  --stat-size: 11px;
+  --chip-pad: 1px 6px;
+  --chip-lh: 17px;
+  --stats-gap: 4px;
+  --info-gap: 3px;
+  --label-size: 11px;
+  --label-bottom: -21px;
+  --badge-size: 11px;
+  --badge-top: -15px;
+}
+
+:host([data-layout='laptop']) .opp {
+  --w: calc(186px * var(--s));
+  --ring: round(calc(50px * var(--s)), 1px);
+  --avatar-k: 0.72;
+  --gap: 8px;
+  --name-size: 14px;
+  --stat-size: 12px;
+  --chip-pad: 1px 6px;
+  --chip-lh: 18px;
+  --stats-gap: 6px;
+  --info-gap: 4px;
+  --label-size: 12px;
+  --label-bottom: -23px;
+  --badge-size: 12px;
+  --badge-top: -16px;
+  --glow: 8px;
+}
+
+// Freeze/Flip 3 auf dem Weg zum Ziel
+.flight {
+  --card-w: 46px;
+  --card-h: 64px;
+  position: absolute;
+  z-index: 7;
+  margin: -32px 0 0 -23px;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+
+// Eigener Platz: Sheet unten (Handy, iPad), am Laptop direkt auf dem Tisch
+.sheet {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -77px;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  // Die schwebende App-Navigation liegt auf der Sheet-Fläche
+  padding-bottom: calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='hoch']) .sheet {
+  gap: 14px;
+  margin-top: -40px;
+  padding-top: 18px;
+  padding-inline: 24px;
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='quer']) .sheet {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 10px;
+  padding-top: 14px;
+  padding-inline: 24px;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:host([data-layout='hoch']) .sheet-row {
+  gap: 16px;
+}
+
+.sheet-row--between {
+  justify-content: space-between;
+}
+
+.sheet-row--center {
+  justify-content: center;
+}
+
+.sheet-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.quer-actions {
+  flex-shrink: 0;
+  width: 250px;
+}
+
+// Laptop: Karten bei ~73 % der Tischhöhe, Schild auf der Unterkante, Buttons darunter
+.laptop-cards {
+  position: absolute;
+  top: 72.92%;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
+}
+
+.laptop-mods {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 22px);
+  transform: translateY(-50%);
+}
+
+.laptop-seat,
+.laptop-actions {
+  position: absolute;
+  left: 50%;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+}
+
+.laptop-seat {
+  top: calc(100% + 4px);
+}
+
+.laptop-actions {
+  top: calc(100% + 78px);
+  width: 520px;
+}
+
+// Eigene Zahlen: 7 Slots in Zugreihenfolge
+.slots {
+  display: flex;
+  gap: var(--slot-gap);
+}
+
+.slot {
+  position: relative;
+  flex: none;
+}
+
+.slot app-flip7-card {
+  --card-w: var(--slot-w);
+  --card-h: var(--slot-h);
+}
+
+.slot--empty {
+  display: block;
+  width: var(--slot-w);
+  height: var(--slot-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--f7-slot-border);
+  border-radius: calc(var(--slot-w) * 0.145);
+  background: var(--f7-slot-bg);
+}
+
+// Bust: die doppelte Karte liegt leicht versetzt auf ihrem Zwilling
+.slot .dup {
+  position: absolute;
+  top: calc(var(--slot-h) * -0.117);
+  left: calc(var(--slot-w) * 0.22);
+  z-index: 1;
+  rotate: 9deg;
+}
+
+// Modifikatoren: eigener kleiner Stapel, Beitrag daneben
+.mods {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mod-cards {
+  display: flex;
+  align-items: center;
+}
+
+.mod-cards app-flip7-card {
+  --card-w: var(--mod-w);
+  --card-h: var(--mod-h);
+  --card-font: var(--mod-font);
+}
+
+.mod-cards app-flip7-card + app-flip7-card {
+  margin-left: calc(var(--mod-w) * -0.55);
+}
+
+.slot--mod {
+  width: var(--mod-w);
+  height: var(--mod-h);
+  border-radius: calc(var(--mod-w) * 0.145);
+}
+
+.mod-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mod-label {
+  color: var(--color-text-muted);
+  font-size: var(--mod-label);
+  font-weight: 600;
+}
+
+.mod-value {
+  color: var(--f7-mod-text);
+  font-size: var(--mod-value);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+// Eigenes Namensschild
+.my-seat {
+  --ring: 40px;
+  --name-size: 14px;
+  --you-size: 11px;
+  --stat-size: 13px;
+  --chip-pad: 1px 7px;
+  --chip-lh: 20px;
+  --stats-gap: 6px;
+  flex-shrink: 0;
+}
+
+:host([data-layout='hoch']) .my-seat,
+:host([data-layout='laptop']) .my-seat {
+  --ring: 48px;
+  --name-size: 16px;
+  --you-size: 13px;
+  --stat-size: 15px;
+  --chip-pad: 1px 8px;
+  --chip-lh: 23px;
+}
+
+:host([data-layout='laptop']) .my-seat {
+  --ring: 52px;
+  --avatar-k: 0.72;
+}
+
+:host([data-layout='quer']) .my-seat {
+  --ring: 46px;
+  --name-size: 15px;
+  --you-size: 12px;
+  --stat-size: 14px;
+  --chip-lh: 21px;
+}
+
+// Aktionen
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
+:host([data-layout='quer']) .buttons {
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+.btn {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--btn-h);
+  box-sizing: border-box;
+  border-radius: 14px;
+  font: 700 var(--btn-font) var(--font-sans);
+  cursor: pointer;
+}
+
+.btn .material-symbols-rounded {
+  font-size: var(--btn-icon);
+}
+
+.btn--stay {
+  border: 1.5px solid var(--f7-stay);
+  background: transparent;
+  color: var(--color-text);
+}
+
+.btn--stay .material-symbols-rounded {
+  color: var(--f7-stay);
+}
+
+.btn--hit {
+  flex-grow: 1.4;
+  border: 0;
+  background: var(--color-primary);
+  box-shadow: 0 6px 16px rgba(200, 56, 109, 0.35);
+  color: #ffffff;
+}
+
+:host([data-layout='quer']) .btn {
+  flex: none;
+  height: 48px;
+}
+
+:host([data-layout='quer']) .btn--hit {
+  height: 52px;
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--status-size);
+  font-weight: 500;
+  text-align: center;
+}
+
+// Zielwahl: Hinweis statt Buttons
+.prompt {
+  --pc: #7dd3fc;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
+  padding: 8px 14px 8px 8px;
+  border: 1.5px solid var(--pc);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pc) 13%, transparent);
+}
+
+.prompt[data-card='FLIP3'] {
+  --pc: #ff9150;
+}
+
+.prompt[data-card='SC'] {
+  --pc: #c8386d;
+}
+
+.prompt-card {
+  --card-w: 31px;
+  --card-h: 43px;
+}
+
+.prompt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prompt-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.prompt-hint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:host([data-layout='quer']) .prompt {
+  min-height: 52px;
+}
+
+:host([data-layout='quer']) .prompt-card {
+  --card-w: 32px;
+  --card-h: 45px;
+}
+
+:host([data-layout='quer']) .prompt-title {
+  font-size: 14px;
+}
+
+:host([data-layout='quer']) .prompt-hint {
+  font-size: 12px;
+}

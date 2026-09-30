@@ -1,5 +1,115 @@
-:host {
-  display: block;
+// Eigene Bühne über der App-Topbar; die schwebende Bottom-Nav (z 10), Toasts und
+// Dialoge liegen darüber. Am Laptop verdeckt der Tisch auch die Nav (wie im Design).
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-background);
+}
+
+.icon-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.icon-button span {
+  font-size: 24px;
+}
+
+.icon-button:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+.brand {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+  padding-right: 16px;
+  border-right: 1px solid var(--color-border-subtle);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.brand span {
+  color: #f27ba5;
+  font-size: 20px;
+  font-variation-settings: 'FILL' 1;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title-main {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.title-sub {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.count span {
+  font-size: 16px;
+}
+
+.content {
+  display: grid;
+  min-height: 0;
+}
+
+.scroll {
+  min-height: 0;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 16px 16px var(--bottom-nav-space);
 }
 
 .game-message {
@@ -21,4 +131,46 @@
 
 .game-message mat-icon {
   color: var(--color-text-subtle);
+}
+
+// iPad hoch
+@media (min-width: 600px) and (orientation: portrait) {
+  .head {
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  .title-main {
+    font-size: 18px;
+  }
+}
+
+// iPad quer
+@media (min-width: 900px) and (orientation: landscape) {
+  .head {
+    padding: 0 12px;
+  }
+
+  .title-main {
+    font-size: 18px;
+  }
+}
+
+// Laptop
+@media (min-width: 1280px) and (orientation: landscape) {
+  .stage {
+    z-index: 11;
+  }
+
+  .head {
+    height: 64px;
+  }
+
+  .brand {
+    display: flex;
+  }
+
+  .scroll {
+    padding-bottom: 24px;
+  }
 }

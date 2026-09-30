@@ -12,21 +12,43 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
-import { Flip7Board } from './flip7-board';
+import { Flip7Board, formatClock } from './flip7-board';
 import { Flip7Final } from './flip7-final';
 import { Flip7RoundSummary } from './flip7-round-summary';
+import { Flip7RulesDialog } from './flip7-rules-dialog';
 import { Flip7Service } from './flip7.service';
-import { Flip7Game, FLIP7_NEXT_ROUND_DELAY_S, FLIP7_SKIP_AFTER_S } from './flip7.model';
+import {
+  activeSeatOf,
+  Flip7Game,
+  FLIP7_NEXT_ROUND_DELAY_S,
+  FLIP7_SKIP_AFTER_S,
+} from './flip7.model';
+
+// Nach Rundenende bleibt der Tisch so lange stehen, danach kommt die Übersicht
+// (mit vollem Countdown; die Datenbank verlangt nur 8 s seit Rundenende)
+const ROUND_END_TABLE_S = 3;
+const ROUND_END_S = ROUND_END_TABLE_S + FLIP7_NEXT_ROUND_DELAY_S;
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und
-// schaltet zwischen Spielfeld, Rundenübersicht und Endstand um.
+// schaltet zwischen Spieltisch, Rundenübersicht und Endstand um. Liegt als eigene
+// Bühne über der App (Kopf mit ⋮-Menü für Host-Aktionen und Verlassen).
 @Component({
   selector: 'app-flip7-game',
-  imports: [MatButtonModule, MatIconModule, Flip7Board, Flip7RoundSummary, Flip7Final],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    RouterLink,
+    Flip7Board,
+    Flip7RoundSummary,
+    Flip7Final,
+  ],
   templateUrl: './flip7-game.html',
   styleUrl: './flip7-game.scss',
 })
@@ -40,6 +62,9 @@ export class Flip7GameView {
   readonly userId = input.required<string>();
   // Host ist zurück in der Warte-Lobby (die Lobby lädt dann neu)
   readonly returned = output<void>();
+  // Spiel verlassen bzw. (Host) Lobby schließen; Bestätigung macht die Lobby.
+  // true: das Spiel ist schon vorbei
+  readonly leave = output<boolean>();
 
   readonly game = signal<Flip7Game | null>(null);
   readonly loading = signal(true);
@@ -48,20 +73,34 @@ export class Flip7GameView {
 
   // Sekundentakt für Countdown und Überspringen; gemessen in lokaler Zeit,
   // damit eine falsch gehende Uhr am Gerät nichts ausmacht
-  private readonly now = signal(Date.now());
+  readonly now = signal(Date.now());
   private readonly roundOverSince = signal<number | null>(null);
   private readonly waitingSince = signal(Date.now());
 
   readonly secondsLeft = computed(() => {
     const since = this.roundOverSince();
     if (since === null) return 0;
-    return Math.max(0, Math.ceil((since + FLIP7_NEXT_ROUND_DELAY_S * 1000 - this.now()) / 1000));
+    return Math.max(0, Math.ceil((since + ROUND_END_S * 1000 - this.now()) / 1000));
   });
+  readonly waitingSeconds = computed(() => Math.floor((this.now() - this.waitingSince()) / 1000));
+  readonly waitingClock = computed(() => formatClock(this.waitingSeconds()));
   readonly canSkip = computed(
     () =>
       this.isHost() &&
       this.game()?.status === 'playing' &&
-      this.now() - this.waitingSince() >= FLIP7_SKIP_AFTER_S * 1000,
+      this.waitingSeconds() >= FLIP7_SKIP_AFTER_S,
+  );
+  // Rundenende: erst ein paar Sekunden der Tisch (Flip-7-Moment), dann die Übersicht
+  readonly showRoundTable = computed(
+    () => this.roundOverSince() === null || this.secondsLeft() > FLIP7_NEXT_ROUND_DELAY_S,
+  );
+  readonly activeName = computed(() => {
+    const game = this.game();
+    const seat = game ? activeSeatOf(game) : null;
+    return game?.players.find((player) => player.seat === seat)?.name ?? 'Spieler';
+  });
+  readonly playerCount = computed(
+    () => this.game()?.players.filter((player) => player.state !== 'left').length ?? 0,
   );
 
   private loadSequence = 0;
@@ -94,11 +133,12 @@ export class Flip7GameView {
       const game = untracked(this.game)!;
       this.roundOverSince.set(Date.now());
       this.now.set(Date.now());
-      const timer = setTimeout(
-        () => void this.nextRound(game.id, game.round_no, false),
-        FLIP7_NEXT_ROUND_DELAY_S * 1000,
-      );
-      onCleanup(() => clearTimeout(timer));
+      // Uhr genau zum Wechsel auf die Übersicht nachstellen, nicht erst beim nächsten Takt
+      const timers = [
+        setTimeout(() => this.now.set(Date.now()), ROUND_END_TABLE_S * 1000),
+        setTimeout(() => void this.nextRound(game.id, game.round_no, false), ROUND_END_S * 1000),
+      ];
+      onCleanup(() => timers.forEach(clearTimeout));
     });
 
     // Jede neue Wartesituation (Zug oder Zielauswahl) startet die Uhr fürs Überspringen neu
@@ -165,6 +205,10 @@ export class Flip7GameView {
       return;
     }
     await this.run(() => this.flip7.nextRound(gameId, roundNo));
+  }
+
+  openRules(): void {
+    this.dialog.open(Flip7RulesDialog, { width: '440px' });
   }
 
   async continueOpen(game: Flip7Game): Promise<void> {

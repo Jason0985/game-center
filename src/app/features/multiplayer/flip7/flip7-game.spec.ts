@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AppErrorService } from '../../../services/app-error.service';
@@ -32,9 +33,13 @@ function makeGame(overrides: Partial<Flip7Game> = {}): Flip7Game {
     turn_seat: 0,
     pending_card: null,
     pending_seat: null,
+    flip3_seat: null,
+    flip3_left: null,
     draw_count: 80,
     discard_count: 0,
+    discard_top: [],
     last_events: [],
+    round_log: [],
     waiting_since: '2026-09-30T12:00:00Z',
     players: [
       player(0, { cards: ['3'] }),
@@ -67,6 +72,15 @@ describe('Flip7GameView', () => {
   const buttons = (): HTMLButtonElement[] => [...el().querySelectorAll('button')];
   const button = (label: string) =>
     buttons().find((candidate) => candidate.textContent?.includes(label));
+  // Das ⋮-Menü liegt im Overlay außerhalb der Komponente
+  const openMenu = async (): Promise<HTMLElement[]> => {
+    button('more_vert')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return [...document.querySelectorAll<HTMLElement>('.mat-mdc-menu-item')];
+  };
+  const menuItem = (items: HTMLElement[], label: string) =>
+    items.find((item) => item.textContent?.includes(label));
 
   beforeEach(async () => {
     flip7 = {
@@ -86,6 +100,7 @@ describe('Flip7GameView', () => {
     await TestBed.configureTestingModule({
       imports: [Flip7GameView],
       providers: [
+        provideRouter([]),
         { provide: Flip7Service, useValue: flip7 },
         { provide: MatDialog, useValue: dialog },
         { provide: AppErrorService, useValue: { report: vi.fn() } },
@@ -100,20 +115,43 @@ describe('Flip7GameView', () => {
   it('switches between board, round summary and final overview', async () => {
     await render('guest', makeGame());
     expect(el().querySelector('app-flip7-board')).not.toBeNull();
+    expect(el().textContent).toContain('Runde 1 · Ziel 200');
     fixture.destroy();
 
+    vi.useFakeTimers();
     await render('guest', makeGame({ status: 'round_over', phase: null, turn_seat: null }));
+    // Erst bleibt der Tisch kurz stehen, dann kommt die Übersicht
+    expect(el().querySelector('app-flip7-board')).not.toBeNull();
+    expect(el().textContent).toContain('Runde beendet');
+    // Sekundentakt: nach spätestens 4 s ist die Übersicht da
+    await vi.advanceTimersByTimeAsync(4_000);
+    fixture.detectChanges();
     expect(el().querySelector('app-flip7-round-summary')).not.toBeNull();
     expect(el().textContent).toContain('Runde 1 beendet');
     fixture.destroy();
+    vi.useRealTimers();
 
     await render('guest', makeGame({ status: 'finished', phase: null }));
     expect(el().querySelector('app-flip7-final')).not.toBeNull();
   });
 
+  it('keeps the same table through the end of a round', async () => {
+    await render('guest', makeGame());
+    const board = el().querySelector('app-flip7-board');
+    flip7['load'].mockResolvedValue({
+      ok: true,
+      value: makeGame({ status: 'round_over', phase: null, turn_seat: null }),
+    });
+    // Realtime meldet das Rundenende; der Tisch darf nicht neu entstehen (sonst keine Animation)
+    flip7['subscribe'].mock.calls[0][1]();
+    await vi.waitFor(() => expect(component.game()?.status).toBe('round_over'));
+    fixture.detectChanges();
+    expect(el().querySelector('app-flip7-board')).toBe(board);
+  });
+
   it('enables Hit and Stay only on the own turn', async () => {
     await render('host', makeGame());
-    expect(el().textContent).toContain('Du bist am Zug.');
+    expect(el().textContent).not.toContain('ist am Zug');
     expect(button('Karte ziehen')!.disabled).toBe(false);
 
     button('Karte ziehen')!.click();
@@ -126,7 +164,7 @@ describe('Flip7GameView', () => {
     fixture.destroy();
 
     await render('guest', makeGame());
-    expect(el().textContent).toContain('Host ist am Zug.');
+    expect(el().textContent).toContain('Host ist am Zug');
     expect(button('Karte ziehen')!.disabled).toBe(true);
     expect(button('Stehen bleiben')!.disabled).toBe(true);
   });
@@ -150,15 +188,18 @@ describe('Flip7GameView', () => {
     expect(flip7['hit']).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the target chooser only to the player who must choose', async () => {
-    const pending = makeGame({ pending_card: 'FREEZE', pending_seat: 1 });
+  it('lets only the choosing player pick a target seat at the table', async () => {
+    const pending = makeGame({ pending_card: 'FREEZE', pending_seat: 1, turn_seat: 1 });
     await render('guest', pending);
-    expect(el().textContent).toContain('Wen willst du einfrieren?');
-    const targets = [...el().querySelectorAll('.chooser-button')].map((b) => b.textContent?.trim());
-    expect(targets.length).toBe(3);
-    expect(targets.some((label) => label?.includes('Gast (du)'))).toBe(true);
+    expect(el().textContent).toContain('Wen frierst du ein?');
+    const targets = [...el().querySelectorAll<HTMLButtonElement>('button[appflip7seat]')];
+    expect(targets.map((target) => target.getAttribute('aria-label'))).toEqual([
+      'Dritte einfrieren, 7 Rundenpunkte',
+      'Host einfrieren, 3 Rundenpunkte',
+      'Dich selbst wählen, 5 Rundenpunkte',
+    ]);
 
-    button('Host')!.click();
+    targets[1].click();
     await vi.waitFor(() =>
       expect(flip7['chooseTarget']).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'game-1', waiting_since: '2026-09-30T12:00:00Z' }),
@@ -168,19 +209,26 @@ describe('Flip7GameView', () => {
     fixture.destroy();
 
     await render('host', pending);
-    expect(el().textContent).not.toContain('Wen willst du einfrieren?');
-    expect(el().textContent).toContain('Gast wählt ein Ziel für Einfrieren.');
+    expect(el().textContent).not.toContain('Wen frierst du ein?');
+    expect(el().querySelector('button[appflip7seat]')).toBeNull();
+    expect(el().textContent).toContain('Gast wählt ein Ziel für Freeze');
   });
 
-  it('shows host controls only to the host', async () => {
+  it('puts host actions and leaving into the game menu', async () => {
     vi.useFakeTimers();
     await render('host', makeGame({ turn_seat: 1 }));
-    expect(button('Spiel beenden')).toBeDefined();
-    expect(button('Überspringen')).toBeUndefined();
+    let items = await openMenu();
+    expect(menuItem(items, 'Spiel beenden')).toBeDefined();
+    expect(menuItem(items, 'Lobby schließen')).toBeDefined();
+    expect(menuItem(items, 'überspringen')).toBeUndefined();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
 
     await vi.advanceTimersByTimeAsync(31_000);
     fixture.detectChanges();
-    button('Überspringen')!.click();
+    items = await openMenu();
+    expect(menuItem(items, 'wartet seit 0:3')).toBeDefined();
+    menuItem(items, 'Gast überspringen')!.click();
     await vi.advanceTimersByTimeAsync(0);
     expect(dialog.open).toHaveBeenCalled();
     expect(flip7['skip']).toHaveBeenCalledWith(
@@ -190,8 +238,21 @@ describe('Flip7GameView', () => {
     vi.useRealTimers();
 
     await render('guest', makeGame({ turn_seat: 1 }));
-    expect(button('Spiel beenden')).toBeUndefined();
-    expect(button('Überspringen')).toBeUndefined();
+    const leave = vi.fn();
+    component.leave.subscribe(leave);
+    items = await openMenu();
+    expect(menuItem(items, 'Spiel beenden')).toBeUndefined();
+    expect(menuItem(items, 'überspringen')).toBeUndefined();
+    menuItem(items, 'Spiel verlassen')!.click();
+    expect(leave).toHaveBeenCalledWith(false);
+    fixture.destroy();
+
+    // Nach Spielende verlässt man nur noch die Lobby
+    await render('guest', makeGame({ status: 'finished', phase: null }));
+    component.leave.subscribe(leave);
+    items = await openMenu();
+    menuItem(items, 'Lobby verlassen')!.click();
+    expect(leave).toHaveBeenLastCalledWith(true);
   });
 
   it('lets only the host decide on the final overview', async () => {
@@ -232,17 +293,19 @@ describe('Flip7GameView', () => {
   it('starts the next round exactly once after the summary', async () => {
     vi.useFakeTimers();
     await render('guest', makeGame({ status: 'round_over', phase: null, round_no: 3 }));
+    expect(el().querySelector('app-flip7-board')).not.toBeNull();
+
+    // Nach 3 s Tisch bekommt die Übersicht ihren vollen Countdown
+    await vi.advanceTimersByTimeAsync(3_000);
+    fixture.detectChanges();
     expect(el().textContent).toContain('Nächste Runde in 10 s');
 
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(9_000);
     fixture.detectChanges();
-    // render() lässt beim Warten schon etwas Zeit vergehen
-    expect(el().textContent).toMatch(/Nächste Runde in [56] s/);
     expect(flip7['nextRound']).not.toHaveBeenCalled();
-
     expect(button('Jetzt weiter')).toBeUndefined();
 
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(1_000);
     expect(flip7['nextRound']).toHaveBeenCalledTimes(1);
     expect(flip7['nextRound']).toHaveBeenCalledWith('game-1', 3);
     // Hängt der automatische Start, dürfen nach dem Countdown alle weiterschalten
