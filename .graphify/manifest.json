@@ -726,5 +726,9 @@
   "src/app/features/multiplayer/table/game-stage.html": {
     "mtime": 1790860987750.332,
     "hash": "42128868b1d4c6da8c115c4322be1e4e"
+  },
+  ".graphify/GRAPH_REPORT.md": {
+    "mtime": 1790861072024.696,
+    "hash": "91d82b49e8d03d66514380edb71e0ea5"
   }
 }
