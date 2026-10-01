@@ -124,30 +124,31 @@
   --transition-fast: 150ms ease;
   --transition-normal: 220ms ease;
 
-  // Flip-7-Spieltisch (Zahlen-, Freeze- und Flip-3-Farben sind in allen Schemas gleich)
-  --f7-table-center: #20252f;
-  --f7-table-edge: #1b1f28;
-  --f7-rim: #2a303b;
-  --f7-rim-line: rgba(255, 255, 255, 0.06);
-  --f7-card-back: #2a1d3a;
-  --f7-back-frame: #c8386d;
+  // Spieltisch aller Kartenspiele (--table-*); --f7-* nur Flip 7. Zahlen-, Freeze- und
+  // Flip-3-Farben sind in allen Schemas gleich
+  --table-center: #20252f;
+  --table-edge: #1b1f28;
+  --table-rim: #2a303b;
+  --table-rim-line: rgba(255, 255, 255, 0.06);
+  --table-card-back: #2a1d3a;
+  --table-back-frame: #c8386d;
   --f7-mod-bg: #262045;
   --f7-mod-border: #8b7cf0;
   --f7-mod-text: #d8d2ff;
   --f7-bust-bg: #454a55;
   --f7-bust-text: #c3c8d1;
-  --f7-dup: #ff5d6c;
-  --f7-chip-bg: rgba(242, 123, 165, 0.16);
-  --f7-chip-text: #f7a1c0;
+  --table-danger: #ff5d6c;
+  --table-chip-bg: rgba(242, 123, 165, 0.16);
+  --table-chip-text: #f7a1c0;
   --f7-chip-bust-bg: rgba(255, 93, 108, 0.16);
   --f7-chip-bust-text: #ff8f9a;
-  --f7-gold: #f5c84b;
+  --table-gold: #f5c84b;
   --f7-ring-on: #f27ba5;
   --f7-ring-off: rgba(255, 255, 255, 0.12);
-  --f7-slot-border: rgba(255, 255, 255, 0.18);
-  --f7-slot-bg: rgba(255, 255, 255, 0.025);
-  --f7-stay: #8b7cf0;
+  --table-slot-border: rgba(255, 255, 255, 0.18);
+  --table-slot-bg: rgba(255, 255, 255, 0.025);
+  --table-violet: #8b7cf0;
   --f7-ice-text: #7dd3fc;
-  --f7-seat-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --f7-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --table-seat-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --table-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
 }

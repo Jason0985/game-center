@@ -1,7 +1,11 @@
 import { Component, inject, Signal } from '@angular/core';
-import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
+import {
+  MAT_BOTTOM_SHEET_DATA,
+  MatBottomSheet,
+  MatBottomSheetRef,
+} from '@angular/material/bottom-sheet';
 
-export interface Flip7HistoryRow {
+export interface HistoryRow {
   icon: string;
   color: string;
   text: string;
@@ -10,18 +14,18 @@ export interface Flip7HistoryRow {
 }
 
 // Signale statt fester Werte: Der Verlauf läuft weiter, während er offen ist
-export interface Flip7HistoryData {
-  rows: Signal<Flip7HistoryRow[]>;
-  round: Signal<number>;
+export interface HistoryData {
+  title: Signal<string>;
+  rows: Signal<HistoryRow[]>;
 }
 
-// Verlauf der laufenden Runde als Bottom-Sheet (neueste Aktion oben und fett)
+// Verlauf (z. B. der laufenden Runde) als Bottom-Sheet (neueste Aktion oben und fett)
 @Component({
-  selector: 'app-flip7-history-sheet',
+  selector: 'app-history-sheet',
   template: `
     <div class="grip" aria-hidden="true"></div>
     <div class="head">
-      <h2>Verlauf · Runde {{ data.round() }}</h2>
+      <h2>{{ data.title() }}</h2>
       <button type="button" class="close" aria-label="Schließen" (click)="sheet.dismiss()">
         <span class="material-symbols-rounded" aria-hidden="true">close</span>
       </button>
@@ -138,7 +142,17 @@ export interface Flip7HistoryData {
     }
   `,
 })
-export class Flip7HistorySheet {
-  readonly data = inject<Flip7HistoryData>(MAT_BOTTOM_SHEET_DATA);
+export class HistorySheet {
+  readonly data = inject<HistoryData>(MAT_BOTTOM_SHEET_DATA);
   readonly sheet = inject(MatBottomSheetRef);
+}
+
+// Panel- und Backdrop-Klassen stehen global in styles.scss (Overlay)
+export function openHistorySheet(sheet: MatBottomSheet, data: HistoryData): MatBottomSheetRef {
+  return sheet.open(HistorySheet, {
+    data,
+    panelClass: 'game-history-panel',
+    backdropClass: 'game-history-backdrop',
+    ariaLabel: 'Verlauf',
+  });
 }

@@ -1,146 +1,56 @@
-<div class="stage">
-  <header class="head">
-    <a class="icon-button" routerLink="/multiplayer" aria-label="Zurück">
-      <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-    </a>
-    <span class="brand">
-      <span class="material-symbols-rounded fill" aria-hidden="true">sports_esports</span>
-      Game Center
-    </span>
-    <div class="title">
-      <span class="title-main">Flip 7</span>
-      @if (game(); as g) {
-        <span class="title-sub"
-          >Runde {{ g.round_no }} · {{ g.target_score ? 'Ziel ' + g.target_score : 'Offen' }}</span
-        >
-      }
-    </div>
-    @if (game()) {
-      <span class="count" role="img" [attr.aria-label]="playerCount() + ' Spieler'">
-        <span class="material-symbols-rounded" aria-hidden="true">group</span>
-        {{ playerCount() }}
-      </span>
-    }
-    <button type="button" class="icon-button" aria-label="Spielmenü" [matMenuTriggerFor]="menu">
-      <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
-    </button>
-  </header>
-
-  <mat-menu #menu="matMenu" class="flip7-menu" xPosition="before">
-    @if (isHost()) {
-      <div class="flip7-menu-section">Host</div>
-      @if (game(); as g) {
-        @if (canSkip()) {
-          <button mat-menu-item type="button" [disabled]="busy()" (click)="skip(g)">
-            <span class="material-symbols-rounded" aria-hidden="true">skip_next</span>
-            <span class="flip7-menu-text">
-              {{ activeName() }} überspringen
-              <span class="flip7-menu-sub">wartet seit {{ waitingClock() }}</span>
-            </span>
-          </button>
-        }
-        @if (g.status !== 'finished') {
-          <button
-            mat-menu-item
-            type="button"
-            class="flip7-menu-danger"
-            [disabled]="busy()"
-            (click)="endGame(g)"
-          >
-            <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
-            <span class="flip7-menu-text">
-              Spiel beenden
-              <span class="flip7-menu-sub">{{
-                g.status === 'playing' ? 'Laufende Runde zählt nicht' : 'Zum Endstand'
-              }}</span>
-            </span>
-          </button>
-        }
-      }
-      <button mat-menu-item type="button" (click)="leave.emit(false)">
-        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-        <span class="flip7-menu-text">
-          Lobby schließen
-          <span class="flip7-menu-sub">Alle Spieler werden entfernt</span>
-        </span>
-      </button>
+<app-game-stage
+  gameTitle="Flip 7"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="!boardView()"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [skipName]="canSkip() ? activeName() : null"
+  [waitingClock]="waitingClock()"
+  [finished]="game()?.status === 'finished'"
+  [endHint]="game()?.status === 'playing' ? 'Laufende Runde zählt nicht' : 'Zum Endstand'"
+  [rules]="rules"
+  (skip)="skip(game()!)"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+>
+  @if (game(); as g) {
+    @if (g.status === 'finished') {
+      <app-flip7-final
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        (backToLobby)="backToLobby()"
+        (continueOpen)="continueOpen(g)"
+      />
+    } @else if (boardView()) {
+      <!-- Derselbe Tisch bleibt am Rundenende stehen, damit der letzte Zug noch animiert -->
+      <app-flip7-board
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy() || g.status !== 'playing'"
+        [canSkip]="canSkip()"
+        [waitingSeconds]="waitingSeconds()"
+        [now]="now()"
+        (hit)="hit(g)"
+        (stay)="stay(g)"
+        (choose)="choose(g, $event)"
+      />
     } @else {
-      @let over = game()?.status === 'finished';
-      <button mat-menu-item type="button" class="flip7-menu-danger" (click)="leave.emit(over)">
-        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-        <span class="flip7-menu-text">
-          {{ over ? 'Lobby verlassen' : 'Spiel verlassen' }}
-          <span class="flip7-menu-sub">{{
-            over ? 'Du spielst nicht weiter mit' : 'Du scheidest endgültig aus'
-          }}</span>
-        </span>
-      </button>
+      <app-flip7-round-summary
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        [secondsLeft]="secondsLeft()"
+        (next)="nextRound(g.id, g.round_no)"
+        (endGame)="endGame(g)"
+      />
     }
-    <div class="flip7-menu-divider" role="separator"></div>
-    <button mat-menu-item type="button" (click)="openRules()">
-      <span class="material-symbols-rounded" aria-hidden="true">menu_book</span>
-      <span class="flip7-menu-text">Regeln</span>
-    </button>
-  </mat-menu>
-
-  <div class="content">
-    @if (game(); as g) {
-      @if (g.status === 'finished') {
-        <div class="scroll">
-          <app-flip7-final
-            [game]="g"
-            [userId]="userId()"
-            [isHost]="isHost()"
-            [busy]="busy()"
-            (backToLobby)="backToLobby()"
-            (continueOpen)="continueOpen(g)"
-          />
-        </div>
-      } @else if (g.status === 'playing' || showRoundTable()) {
-        <!-- Derselbe Tisch bleibt am Rundenende stehen, damit der letzte Zug noch animiert -->
-        <app-flip7-board
-          [game]="g"
-          [userId]="userId()"
-          [isHost]="isHost()"
-          [busy]="busy() || g.status !== 'playing'"
-          [canSkip]="canSkip()"
-          [waitingSeconds]="waitingSeconds()"
-          [now]="now()"
-          (hit)="hit(g)"
-          (stay)="stay(g)"
-          (choose)="choose(g, $event)"
-        />
-      } @else {
-        <div class="scroll">
-          <app-flip7-round-summary
-            [game]="g"
-            [userId]="userId()"
-            [isHost]="isHost()"
-            [busy]="busy()"
-            [secondsLeft]="secondsLeft()"
-            (next)="nextRound(g.id, g.round_no)"
-            (endGame)="endGame(g)"
-          />
-        </div>
-      }
-    } @else {
-      <div class="scroll">
-        <section class="game-message ui-surface" role="status">
-          <mat-icon aria-hidden="true">{{ loading() ? 'hourglass_empty' : 'info' }}</mat-icon>
-          <p>{{ loading() ? 'Spiel wird geladen ...' : 'Zu dieser Lobby läuft kein Spiel.' }}</p>
-          @if (!loading() && isHost()) {
-            <button
-              mat-stroked-button
-              type="button"
-              class="ui-button"
-              [disabled]="busy()"
-              (click)="backToLobby()"
-            >
-              Zurück zur Warte-Lobby
-            </button>
-          }
-        </section>
-      </div>
-    }
-  </div>
-</div>
+  }
+</app-game-stage>

@@ -3,7 +3,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AppErrorService } from '../../../services/app-error.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
-import { LobbyGameSettings } from '../lobby.model';
+import { GAMES, gameOf, LobbyGameSettings } from '../lobby.model';
 import { FLIP7_DEFAULT_TARGET, FLIP7_TARGET_OPTIONS } from '../flip7/flip7.model';
 
 // Spielauswahl und Rahmenbedingungen in der Warte-Lobby; ändern darf nur der Host
@@ -25,35 +25,40 @@ export class LobbyGameSetup {
   // Gespeichert (die Lobby lädt dann neu)
   readonly changed = output<void>();
 
+  readonly games = GAMES;
   readonly targetOptions = FLIP7_TARGET_OPTIONS;
   readonly saving = signal(false);
-  readonly selected = computed(() => this.gameKey() === 'flip-7');
+  readonly selectedGame = computed(() => gameOf(this.gameKey()));
+  readonly flip7 = computed(() => this.gameKey() === 'flip-7');
   // Auswahl sofort anzeigen, bei Fehler zurücksetzen
   readonly target = linkedSignal<number | null>(() => {
-    const settings = this.settings();
-    return settings ? settings.targetScore : FLIP7_DEFAULT_TARGET;
+    const target = this.settings()?.targetScore;
+    return target === undefined ? FLIP7_DEFAULT_TARGET : target;
   });
 
   async selectTarget(target: number | null): Promise<void> {
-    if (target === this.target() && this.selected()) return;
-    await this.save(target);
+    if (target === this.target() && this.flip7()) return;
+    await this.save('flip-7', target);
   }
 
-  async selectGame(): Promise<void> {
-    if (!this.selected()) {
-      await this.save(this.target());
+  async selectGame(gameKey: string): Promise<void> {
+    if (gameKey !== this.gameKey()) {
+      await this.save(gameKey, this.target());
     }
   }
 
-  private async save(target: number | null): Promise<void> {
+  // target gilt nur für Flip 7; Skip-Bo hat keine Einstellungen
+  private async save(gameKey: string, target: number | null): Promise<void> {
     if (!this.isHost() || this.saving()) return;
 
     const previous = this.target();
     this.target.set(target);
     this.saving.set(true);
-    const result = await this.lobbyService.setGame(this.lobbyId(), 'flip-7', {
-      targetScore: target,
-    });
+    const result = await this.lobbyService.setGame(
+      this.lobbyId(),
+      gameKey,
+      gameKey === 'flip-7' ? { targetScore: target } : {},
+    );
     this.saving.set(false);
 
     if (!result.ok) {

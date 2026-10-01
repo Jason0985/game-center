@@ -120,8 +120,8 @@
           @if (members().length < minMembers) {
             <br />Zum Starten braucht es mindestens {{ minMembers }} Spieler.
           }
-          @if (!current.game_key) {
-            <br />Der Host muss noch ein Spiel auswählen.
+          @if (startBlocker(); as reason) {
+            <br />{{ reason }}
           }
         </p>
       </section>

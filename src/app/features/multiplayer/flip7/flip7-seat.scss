@@ -1,41 +1,11 @@
-// Maße aus Namensschild/Zustaende. Der Tisch setzt die Variablen je Layout und
-// Spielerzahl; die Standardwerte sind das Handy-Schild bei 8 Spielern.
+@use '../table/seat-base';
+
+// Flip-7-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Ring, Zustände,
+// Aktions-Tokens, Rundenchip. Der Tisch setzt die Variablen je Layout und Spielerzahl.
 :host {
   --freeze: #7dd3fc;
   --flip3: #ff9150;
   --sc: #c8386d;
-  --plate: var(--color-surface);
-  --avatar: round(down, calc(var(--ring, 38px) * var(--avatar-k, 0.75)), 1px);
-  --avatar-font: round(calc(var(--avatar) * 0.47), 1px);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--gap, 3px);
-  width: var(--w, 66px);
-  box-sizing: border-box;
-  margin: 0;
-  padding: var(--pad, 6px 4px);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius, 14px);
-  background: var(--plate);
-  box-shadow: var(--f7-seat-shadow);
-  color: var(--color-text);
-  font: inherit;
-  text-align: center;
-  cursor: default;
-  // Das Leuchten kommt erst, wenn der Zeiger angekommen ist
-  transition:
-    box-shadow 0s 240ms,
-    border-color 0s 240ms;
-}
-
-:host([data-variant='row']) {
-  flex-direction: row;
-  gap: var(--gap, 7px);
-  padding: 7px 11px 7px 7px;
-  border-radius: 999px;
-  text-align: left;
 }
 
 :host([data-variant='mine']) {
@@ -76,12 +46,13 @@
 }
 
 :host([data-state='flip7']) {
-  border: 1.5px solid var(--f7-gold);
+  border: 1.5px solid var(--table-gold);
   box-shadow:
     0 0 0 3px rgba(245, 200, 75, 0.18),
     0 0 28px rgba(245, 200, 75, 0.18);
 }
 
+// Nach .is-turn, damit ein ausgeschiedener Platz am Zug gestrichelt bleibt
 :host([data-state='left']) {
   border: 1.5px dashed var(--color-border-subtle);
   background: transparent;
@@ -131,14 +102,6 @@
 }
 
 // Avatar mit Ring und Tokens an festen Ecken
-.avatar-wrap {
-  --token: round(calc(var(--ring, 38px) * 0.36), 1px);
-  position: relative;
-  flex-shrink: 0;
-  width: var(--ring, 38px);
-  height: var(--ring, 38px);
-}
-
 .ring {
   position: absolute;
   inset: 0;
@@ -165,11 +128,11 @@
 }
 
 :host([data-state='flip7']) .ring {
-  filter: drop-shadow(0 0 var(--glow, 6px) var(--f7-gold));
+  filter: drop-shadow(0 0 var(--glow, 6px) var(--table-gold));
 }
 
 :host([data-state='flip7']) .ring path {
-  stroke: var(--f7-gold);
+  stroke: var(--table-gold);
 }
 
 // Flip-7-Moment: einmal kurz pulsieren (Klasse nur direkt nach der Aktion)
@@ -187,53 +150,8 @@
 @keyframes f7-ring-pulse {
   40% {
     transform: scale(1.12);
-    filter: drop-shadow(0 0 16px var(--f7-gold));
+    filter: drop-shadow(0 0 16px var(--table-gold));
   }
-}
-
-.avatar {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--avatar);
-  height: var(--avatar);
-  box-sizing: border-box;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: var(--avatar-font);
-  font-weight: 700;
-  transform: translate(-50%, -50%);
-}
-
-.avatar--left {
-  border: 1.5px dashed #6b7280;
-  color: #6b7280;
-}
-
-.avatar--left span {
-  font-size: calc(var(--avatar) * 0.55);
-}
-
-.token {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--token);
-  height: var(--token);
-  box-sizing: border-box;
-  border: 2px solid var(--plate);
-  border-radius: 50%;
-  font-size: calc(var(--token) * 0.55);
-  font-weight: 800;
-  line-height: 1;
-}
-
-.token span {
-  font-size: calc(var(--token) * 0.58);
 }
 
 .token--start {
@@ -284,13 +202,6 @@
   clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%, 58% 55%, 42% 35%);
 }
 
-.token--dealer {
-  bottom: calc(var(--token) * -0.2);
-  left: calc(var(--token) * -0.2);
-  background: #f7f7f5;
-  color: #15171c;
-}
-
 .token--stay {
   right: calc(var(--token) * -0.2);
   bottom: calc(var(--token) * -0.2);
@@ -298,63 +209,11 @@
   color: var(--color-text-muted);
 }
 
-.fill {
-  font-variation-settings: 'FILL' 1;
-}
-
-// Name und Punkte
-.info {
-  display: contents;
-}
-
-:host([data-variant='row']) .info,
 :host([data-variant='mine']) .info {
   display: flex;
   flex-direction: column;
   gap: var(--info-gap, 3px);
   min-width: 0;
-}
-
-.name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  min-width: 0;
-  font-size: var(--name-size, 11px);
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-:host([data-variant='column']) .name {
-  justify-content: center;
-}
-
-.name-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:host([data-variant='mine']) .name {
-  font-weight: 700;
-}
-
-.you {
-  color: var(--color-text-muted);
-  font-size: var(--you-size, 11px);
-  font-weight: 600;
-}
-
-:host([data-state='left']) .name {
-  color: #6b7280;
-  text-decoration: line-through;
-}
-
-.gone {
-  color: #6b7280;
-  font-size: calc(var(--name-size, 11px) - 1px);
-  font-weight: 500;
 }
 
 .stats {
@@ -383,14 +242,14 @@
 }
 
 .star {
-  color: var(--f7-gold);
+  color: var(--table-gold);
 }
 
 .chip {
   padding: var(--chip-pad, 1px 5px);
   border-radius: 999px;
-  background: var(--f7-chip-bg);
-  color: var(--f7-chip-text);
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
   font-weight: 700;
   line-height: var(--chip-lh, 15px);
 }
@@ -413,7 +272,7 @@
 
 :host([data-state='flip7']) .chip {
   background: rgba(245, 200, 75, 0.18);
-  color: var(--f7-gold);
+  color: var(--table-gold);
 }
 
 // Rundenpunkte zählen beim Ziehen hoch (--n ist als <integer> registriert, styles.scss)
@@ -430,20 +289,10 @@
   content: '+' counter(n);
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 // Chips am Rand des Schilds
 .badge-flip7,
 .bonus,
-.choice-label,
-.waiting {
+.choice-label {
   position: absolute;
   left: 50%;
   padding: 2px 8px;
@@ -454,7 +303,7 @@
 
 .badge-flip7 {
   top: var(--badge-top, -13px);
-  background: var(--f7-gold);
+  background: var(--table-gold);
   color: #2a1d00;
   font-size: var(--badge-size, 10px);
   font-weight: 900;
@@ -463,7 +312,7 @@
 
 .bonus {
   bottom: var(--label-bottom, -19px);
-  background: var(--f7-gold);
+  background: var(--table-gold);
   color: #2a1d00;
   font-size: 12px;
   font-weight: 900;
@@ -475,22 +324,6 @@
   color: #0f1115;
   font-size: var(--label-size, 10px);
   font-weight: 700;
-}
-
-.waiting {
-  bottom: var(--label-bottom, -19px);
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: 1px solid var(--color-border-subtle);
-  background: var(--color-surface-raised);
-  color: var(--color-text-muted);
-  font-size: var(--label-size, 10px);
-  font-weight: 600;
-}
-
-.waiting span {
-  font-size: calc(var(--label-size, 10px) + 1px);
 }
 
 .me-chip {

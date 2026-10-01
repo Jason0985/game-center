@@ -15,12 +15,18 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MatBottomSheet, MatBottomSheetRef } from '@angular/material/bottom-sheet';
-import { map } from 'rxjs';
+import { HistoryRow, openHistorySheet } from '../table/history-sheet';
+import { CardFlyIn, reducedMotion } from '../table/table-motion';
+import {
+  eventAge,
+  formatClock,
+  injectTableLayout,
+  seatsAfter,
+  TableLayout,
+} from '../table/table.model';
+import { TableTop } from '../table/table-top';
 import { Flip7CardView } from './flip7-card';
-import { Flip7HistoryRow, Flip7HistorySheet } from './flip7-history-sheet';
 import { Flip7Seat } from './flip7-seat';
 import {
   ACTION_NAMES,
@@ -31,7 +37,6 @@ import {
   Flip7Card,
   Flip7Event,
   Flip7Game,
-  Flip7Layout,
   Flip7Player,
   flip7Score,
   FLIP7_TABLES,
@@ -66,16 +71,9 @@ interface Flight {
   target: number;
 }
 
-// Breakpoints der vier Layouts; alles andere ist Handy
-const QUERIES = {
-  laptop: '(min-width: 1280px) and (orientation: landscape)',
-  quer: '(min-width: 900px) and (max-width: 1279.98px) and (orientation: landscape)',
-  hoch: '(min-width: 600px) and (orientation: portrait)',
-} as const;
-
 // Stapelmitte (Ring des Zug-Zeigers) und wohin der Zeiger zeigt, wenn ich dran bin
 // (auf meine Karten); Design-Pixel der Tischplatte
-const POINTER: Record<Flip7Layout, { x: number; y: number; r: number; meX: number; meY: number }> =
+const POINTER: Record<TableLayout, { x: number; y: number; r: number; meX: number; meY: number }> =
   {
     phone: { x: 189, y: 380, r: 40, meX: 189, meY: 547 },
     hoch: { x: 394, y: 550, r: 58, meX: 287, meY: 795 },
@@ -102,20 +100,11 @@ function handCards(player: Flip7Player): HandCard[] {
   });
 }
 
-function reducedMotion(): boolean {
-  return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
-export function formatClock(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
 // Spieltisch einer laufenden Runde: ovale Platte mit Plätzen, Fächern und Stapel,
 // darunter (bzw. am Laptop darauf) der eigene Platz mit Karten und Aktionen.
 @Component({
   selector: 'app-flip7-board',
-  imports: [NgTemplateOutlet, Flip7CardView, Flip7Seat],
+  imports: [NgTemplateOutlet, Flip7CardView, Flip7Seat, TableTop],
   templateUrl: './flip7-board.html',
   styleUrls: ['./flip7-board.scss', './flip7-board-places.scss'],
   host: {
@@ -142,22 +131,7 @@ export class Flip7Board {
   readonly stay = output<void>();
   readonly choose = output<number>();
 
-  readonly layout = toSignal(
-    inject(BreakpointObserver)
-      .observe(Object.values(QUERIES))
-      .pipe(
-        map((state): Flip7Layout =>
-          state.breakpoints[QUERIES.laptop]
-            ? 'laptop'
-            : state.breakpoints[QUERIES.quer]
-              ? 'quer'
-              : state.breakpoints[QUERIES.hoch]
-                ? 'hoch'
-                : 'phone',
-        ),
-      ),
-    { requireSync: true },
-  );
+  readonly layout = injectTableLayout();
   readonly table = computed(() => FLIP7_TABLES[this.layout()]);
   // Mitspieler-Schilder: ≤ 3 Spieler groß, 4–5 mittel, ab 6 Grundgröße
   readonly sizeClass = computed(() => {
@@ -173,10 +147,7 @@ export class Flip7Board {
   // Reihum ab dem Platz nach mir; verlassene Spieler behalten ihren Platz
   readonly others = computed(() => {
     const { players, seat_count: count } = this.game();
-    const mySeat = this.me()?.seat ?? -1;
-    return players
-      .filter((player) => player.seat !== mySeat)
-      .sort((a, b) => ((a.seat - mySeat + count) % count) - ((b.seat - mySeat + count) % count));
+    return seatsAfter(players, this.me()?.seat ?? -1, count);
   });
 
   readonly activeSeat = computed(() => activeSeatOf(this.game()));
@@ -364,22 +335,18 @@ export class Flip7Board {
     const event = this.roundLog().at(-1) ?? this.game().last_events.at(-1);
     return event ? this.describe(event) : this.roundStart();
   });
-  readonly historyRows = computed((): Flip7HistoryRow[] => {
+  readonly historyRows = computed((): HistoryRow[] => {
     const log = this.roundLog();
-    const latestAt = Date.parse(log.at(-1)?.at ?? '');
-    const age = (at?: string) => {
-      const ms = this.now() - this.seenAt() + (latestAt - Date.parse(at ?? ''));
-      return Number.isNaN(ms) ? '' : ms < 10_000 ? 'jetzt' : formatClock(ms / 1000);
-    };
+    const age = (at?: string) => eventAge(this.now(), this.seenAt(), log.at(-1)?.at, at);
     return [
       ...log.map((event) => ({ ...this.describe(event), time: age(event.at) })).reverse(),
       { ...this.roundStart(), time: log.length ? age(log[0].at) : 'jetzt' },
     ];
   });
 
-  // Zug-Zeiger vom Stapel zum Spieler am Zug; Winkel läuft den kürzesten Weg weiter
+  // Zug-Zeiger vom Stapel zum Spieler am Zug (zeichnet die Tischplatte)
   readonly pointerCenter = computed(() => POINTER[this.layout()]);
-  private readonly pointerTarget = computed(() => {
+  readonly pointerTarget = computed(() => {
     const game = this.game();
     const seat = this.activeSeat();
     if (game.status !== 'playing' || game.phase !== 'turn' || game.pending_card || seat === null) {
@@ -387,38 +354,10 @@ export class Flip7Board {
     }
     const center = this.pointerCenter();
     const table = this.table();
-    let x = center.meX;
-    let y = center.meY;
-    let before = 0;
-    if (seat !== this.me()?.seat) {
-      const spot = this.seats().find((view) => view.player.seat === seat);
-      if (!spot) return null;
-      x = (spot.fanX / 100) * table.w;
-      y = (spot.fanY / 100) * table.h;
-      before = 30;
-    }
-    const angle = (Math.atan2(y - center.y, x - center.x) * 180) / Math.PI;
-    return { angle, tip: Math.hypot(x - center.x, y - center.y) - before };
-  });
-  private readonly pointerAngle = linkedSignal<number | undefined, number>({
-    source: () => this.pointerTarget()?.angle,
-    computation: (angle, previous) => {
-      if (angle === undefined) return previous?.value ?? 0;
-      if (!previous) return angle;
-      return previous.value + ((((angle - previous.value) % 360) + 540) % 360) - 180;
-    },
-  });
-  readonly pointer = computed(() => {
-    const target = this.pointerTarget();
-    if (!target) return null;
-    const { x, y, r } = this.pointerCenter();
-    const tip = x + target.tip;
-    return {
-      angle: this.pointerAngle(),
-      x1: x + r + 6,
-      x2: Math.max(x + r + 6, tip - 8),
-      head: `${tip},${y} ${tip - 12.6},${y - 7.2} ${tip - 12.6},${y + 7.2}`,
-    };
+    if (seat === this.me()?.seat) return { x: center.meX, y: center.meY, before: 0 };
+    const spot = this.seats().find((view) => view.player.seat === seat);
+    if (!spot) return null;
+    return { x: (spot.fanX / 100) * table.w, y: (spot.fanY / 100) * table.h, before: 30 };
   });
 
   // Freeze/Flip 3 fliegt von der Mitte zum Ziel
@@ -427,8 +366,7 @@ export class Flip7Board {
   private eventsKey: string | null = null;
 
   private readonly stack = viewChild<ElementRef<HTMLElement>>('stack');
-  private readonly seen = new Set<string>();
-  private flyBatch = 0;
+  private readonly flyIn = new CardFlyIn(this.live);
   private historySheet: MatBottomSheetRef | null = null;
 
   constructor() {
@@ -469,47 +407,15 @@ export class Flip7Board {
   }
 
   openHistory(): void {
-    this.historySheet = this.bottomSheet.open(Flip7HistorySheet, {
-      data: { rows: this.historyRows, round: computed(() => this.game().round_no) },
-      panelClass: 'flip7-history-panel',
-      backdropClass: 'flip7-history-backdrop',
-      ariaLabel: 'Verlauf',
+    this.historySheet = openHistorySheet(this.bottomSheet, {
+      title: computed(() => `Verlauf · Runde ${this.game().round_no}`),
+      rows: this.historyRows,
     });
   }
 
-  // Karte vom Stapel: kurz anheben, im Bogen zum Platz, im letzten Drittel umdrehen
+  // Karte vom Stapel an ihren Platz (Vorlage ruft das bei animate.enter)
   fly(event: AnimationCallbackEvent, id: string): void {
-    const isNew = this.live() && !this.seen.has(id);
-    this.seen.add(id);
-    const card = event.target as HTMLElement;
-    const stack = this.stack()?.nativeElement;
-    if (!isNew || !stack || typeof card.animate !== 'function' || reducedMotion()) {
-      event.animationComplete();
-      return;
-    }
-
-    const from = stack.getBoundingClientRect();
-    const to = card.getBoundingClientRect();
-    const dx = from.left + from.width / 2 - (to.left + to.width / 2);
-    const dy = from.top + from.height / 2 - (to.top + to.height / 2);
-    const scale = from.width / (to.width || 1);
-    const middle = (scale + 1) / 2;
-    const delay = this.flyBatch++ * 100;
-    if (!delay) setTimeout(() => (this.flyBatch = 0));
-
-    card
-      .animate(
-        [
-          { translate: `${dx}px ${dy}px`, scale: `${scale}` },
-          { translate: `${dx}px ${dy - 4}px`, scale: `${scale}`, offset: 0.2 },
-          { translate: `${dx * 0.45}px ${dy * 0.45 - 40}px`, scale: `${middle}`, offset: 0.6 },
-          { translate: `${dx * 0.15}px ${dy * 0.15 - 16}px`, scale: `0 ${middle}`, offset: 0.8 },
-          { translate: '0 0', scale: '1' },
-        ],
-        { duration: 400, delay, easing: 'ease-out', fill: 'backwards' },
-      )
-      .finished.catch(() => undefined)
-      .finally(() => event.animationComplete());
+    this.flyIn.fly(event, id, this.stack()?.nativeElement);
   }
 
   // Freeze/Flip 3: in der Mitte aufdrehen (200 ms), dann im Bogen zum Ziel-Schild (280 ms)
@@ -546,7 +452,7 @@ export class Flip7Board {
       .finally(done);
   }
 
-  private describe(event: Flip7Event): Omit<Flip7HistoryRow, 'time'> {
+  private describe(event: Flip7Event): Omit<HistoryRow, 'time'> {
     const game = this.game();
     const context = event === this.liveFlip3() ? game : { ...game, flip3_left: null };
     return {
@@ -555,7 +461,7 @@ export class Flip7Board {
     };
   }
 
-  private roundStart(): Omit<Flip7HistoryRow, 'time'> {
+  private roundStart(): Omit<HistoryRow, 'time'> {
     const game = this.game();
     const dealer = game.players.find((player) => player.seat === game.dealer_seat);
     const name = dealer === this.me() ? 'du' : (dealer?.name ?? '–');

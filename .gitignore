@@ -76,3 +76,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# graphify local state
+.graphify/cache/
+.graphify/branch.json
+.graphify/worktree.json
+.graphify/needs_update

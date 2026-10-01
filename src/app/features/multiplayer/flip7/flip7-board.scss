@@ -1,3 +1,5 @@
+@use '../table/table-base';
+
 // Spieltisch nach den Artboards Handy (390), iPad hoch (820), iPad quer (1180) und
 // Laptop (1440). Alles auf der Tischplatte sitzt in Prozent der Platte; Schilder,
 // Karten und Schrift behalten ihre Design-Pixel. --s skaliert die Mitspieler-Plätze
@@ -197,88 +199,6 @@
   --s: 1.15;
 }
 
-// Tischplatte: festes Seitenverhältnis, so hoch wie Platz ist (höchstens Design-Größe)
-.table-area {
-  display: flex;
-  justify-content: center;
-  padding-top: var(--area-top);
-}
-
-.table {
-  position: relative;
-  flex: none;
-  height: min(
-    calc(var(--table-h) * 1px),
-    calc(100dvh - var(--head-h) - var(--area-top) - var(--below)),
-    calc((100vw - var(--table-margin)) * var(--table-h) / var(--table-w))
-  );
-  border-radius: var(--table-radius);
-  background: radial-gradient(
-    ellipse at 50% var(--felt-y),
-    var(--f7-table-center) 0%,
-    var(--f7-table-edge) 70%
-  );
-  box-shadow:
-    inset 0 0 0 var(--rim) var(--f7-rim),
-    inset 0 0 0 calc(var(--rim) + 1px) var(--f7-rim-line),
-    var(--table-shadow);
-}
-
-.watermark {
-  position: absolute;
-  top: var(--mark-y);
-  left: var(--mark-x);
-  z-index: 0;
-  color: var(--color-text);
-  font-size: var(--mark-size);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  opacity: 0.025;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  user-select: none;
-}
-
-// Zug-Zeiger: gepunktete Linie vom Stapel zum Spieler am Zug
-.pointer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.pointer--off {
-  visibility: hidden;
-}
-
-.pointer-ring {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-opacity: 0.35;
-  stroke-width: 2;
-}
-
-.pointer-arm {
-  transform-box: view-box;
-  transition: transform 240ms ease;
-}
-
-.pointer-arm line {
-  stroke: var(--color-primary);
-  stroke-dasharray: 1 7;
-  stroke-linecap: round;
-  stroke-width: 3;
-}
-
-.pointer-arm polygon {
-  fill: var(--color-primary);
-}
-
 // Mitte: Stapel, Ablage, Ereignis-Chip
 .center {
   position: absolute;
@@ -299,41 +219,17 @@
   gap: 18px;
 }
 
-.pile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.stack,
 .discard {
   position: relative;
   width: calc(var(--pile-w) + 6px);
   height: calc(var(--pile-h) + 6px);
 }
 
-.stack app-flip7-card,
 .discard app-flip7-card,
 .discard-empty {
   --card-w: var(--pile-w);
   --card-h: var(--pile-h);
   position: absolute;
-}
-
-.back--1 {
-  top: 0;
-  left: 0;
-}
-
-.back--2 {
-  top: 3px;
-  left: 3px;
-}
-
-.back--3 {
-  top: 6px;
-  left: 6px;
 }
 
 .discard-below {
@@ -355,16 +251,9 @@
   width: var(--pile-w);
   height: var(--pile-h);
   box-sizing: border-box;
-  border: 1.5px dashed var(--f7-slot-border);
+  border: 1.5px dashed var(--table-slot-border);
   border-radius: calc(var(--pile-w) * 0.145);
-  background: var(--f7-slot-bg);
-}
-
-.pile-label {
-  color: var(--color-text-muted);
-  font-size: var(--pile-label);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  background: var(--table-slot-bg);
 }
 
 .pile-label--plain {
@@ -478,7 +367,7 @@
   width: var(--dot);
   height: var(--dot);
   box-sizing: border-box;
-  border: 1px solid var(--f7-slot-border);
+  border: 1px solid var(--table-slot-border);
   border-radius: 50%;
 }
 
@@ -497,14 +386,4 @@
   font-weight: 800;
   line-height: var(--mod-chip-lh);
   white-space: nowrap;
-}
-
-// Fokusring auf allen drei Farbschemas sichtbar
-button:focus-visible {
-  outline: 3px solid #f27ba5;
-  outline-offset: 3px;
-}
-
-.material-symbols-rounded.fill {
-  font-variation-settings: 'FILL' 1;
 }

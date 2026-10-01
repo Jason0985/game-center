@@ -1,0 +1,187 @@
+// Namensschild-Grundlage aller Spiele: Platte, Avatar, Tokens, Name, Trödler-Pille.
+// Maße kommen als Variablen vom Tisch (Standard: Handy-Schild bei 8 Spielern).
+:host {
+  --plate: var(--color-surface);
+  --avatar: round(down, calc(var(--ring, 38px) * var(--avatar-k, 0.75)), 1px);
+  --avatar-font: round(calc(var(--avatar) * 0.47), 1px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap, 3px);
+  width: var(--w, 66px);
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--pad, 6px 4px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius, 14px);
+  background: var(--plate);
+  box-shadow: var(--table-seat-shadow);
+  color: var(--color-text);
+  font: inherit;
+  text-align: center;
+  cursor: default;
+  // Das Leuchten kommt erst, wenn der Zeiger angekommen ist
+  transition:
+    box-shadow 0s 240ms,
+    border-color 0s 240ms;
+}
+
+:host([data-variant='row']) {
+  flex-direction: row;
+  gap: var(--gap, 7px);
+  padding: 7px 11px 7px 7px;
+  border-radius: 999px;
+  text-align: left;
+}
+
+// Avatar und Tokens an festen Ecken
+.avatar-wrap {
+  --token: round(calc(var(--ring, 38px) * 0.36), 1px);
+  position: relative;
+  flex-shrink: 0;
+  width: var(--ring, 38px);
+  height: var(--ring, 38px);
+}
+
+.avatar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar);
+  height: var(--avatar);
+  box-sizing: border-box;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: var(--avatar-font);
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+
+.avatar--left {
+  border: 1.5px dashed #6b7280;
+  color: #6b7280;
+}
+
+.avatar--left span {
+  font-size: calc(var(--avatar) * 0.55);
+}
+
+.token {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--token);
+  height: var(--token);
+  box-sizing: border-box;
+  border: 2px solid var(--plate);
+  border-radius: 50%;
+  font-size: calc(var(--token) * 0.55);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.token span {
+  font-size: calc(var(--token) * 0.58);
+}
+
+.token--dealer {
+  bottom: calc(var(--token) * -0.2);
+  left: calc(var(--token) * -0.2);
+  background: #f7f7f5;
+  color: #15171c;
+}
+
+.fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+// Name und Punkte
+.info {
+  display: contents;
+}
+
+:host([data-variant='row']) .info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--info-gap, 3px);
+  min-width: 0;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  font-size: var(--name-size, 11px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+:host([data-variant='column']) .name {
+  justify-content: center;
+}
+
+.name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host([data-variant='mine']) .name {
+  font-weight: 700;
+}
+
+.you {
+  color: var(--color-text-muted);
+  font-size: var(--you-size, 11px);
+  font-weight: 600;
+}
+
+:host([data-state='left']) .name {
+  color: #6b7280;
+  text-decoration: line-through;
+}
+
+.gone {
+  color: #6b7280;
+  font-size: calc(var(--name-size, 11px) - 1px);
+  font-weight: 500;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Pille am unteren Rand: Host sieht, wie lange dieser Platz schon wartet
+.waiting {
+  position: absolute;
+  left: 50%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  bottom: var(--label-bottom, -19px);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: var(--label-size, 10px);
+  font-weight: 600;
+}
+
+.waiting span {
+  font-size: calc(var(--label-size, 10px) + 1px);
+}

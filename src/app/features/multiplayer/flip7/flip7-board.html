@@ -1,183 +1,165 @@
 @let g = game();
 @let t = table();
 @let c = pointerCenter();
-<div class="table-area">
-  <div class="table" [style.aspect-ratio]="t.w + ' / ' + t.h">
-    <span class="watermark" aria-hidden="true">7</span>
-
-    <svg
-      class="pointer"
-      [class.pointer--off]="!pointer()"
-      [attr.viewBox]="'0 0 ' + t.w + ' ' + t.h"
-      aria-hidden="true"
-    >
-      <circle class="pointer-ring" [attr.cx]="c.x" [attr.cy]="c.y" [attr.r]="c.r" />
-      @if (pointer(); as p) {
-        <g
-          class="pointer-arm"
-          [style.transform]="'rotate(' + p.angle + 'deg)'"
-          [style.transform-origin]="c.x + 'px ' + c.y + 'px'"
-        >
-          <line [attr.x1]="p.x1" [attr.x2]="p.x2" [attr.y1]="c.y" [attr.y2]="c.y" />
-          <polygon [attr.points]="p.head" />
-        </g>
-      }
-    </svg>
-
-    <div class="center">
-      <div class="piles">
-        <div class="pile">
-          <div class="stack" #stack>
-            <app-flip7-card class="back back--3" [card]="null" />
-            <app-flip7-card class="back back--2" [card]="null" />
-            <app-flip7-card class="back back--1" [card]="null" />
-          </div>
-          <span class="pile-label">{{ g.draw_count }} Karten</span>
+<div
+  class="table-area"
+  appTableTop
+  mark="7"
+  [w]="t.w"
+  [h]="t.h"
+  [center]="c"
+  [target]="pointerTarget()"
+>
+  <div class="center">
+    <div class="piles">
+      <div class="pile">
+        <div class="stack" #stack>
+          <app-flip7-card class="back back--3" [card]="null" />
+          <app-flip7-card class="back back--2" [card]="null" />
+          <app-flip7-card class="back back--1" [card]="null" />
         </div>
-        @if (layout() === 'quer' || layout() === 'laptop') {
-          <div class="pile">
-            <div class="discard">
-              @if (discard().below; as below) {
-                <app-flip7-card class="discard-below" [card]="below" />
-              }
-              @if (discard().top; as top) {
-                <app-flip7-card class="discard-top" [card]="top" />
-              } @else {
-                <span class="discard-empty" aria-hidden="true"></span>
-              }
-            </div>
-            <span class="pile-label pile-label--plain">Ablage</span>
+        <span class="pile-label">{{ g.draw_count }} Karten</span>
+      </div>
+      @if (layout() === 'quer' || layout() === 'laptop') {
+        <div class="pile">
+          <div class="discard">
+            @if (discard().below; as below) {
+              <app-flip7-card class="discard-below" [card]="below" />
+            }
+            @if (discard().top; as top) {
+              <app-flip7-card class="discard-top" [card]="top" />
+            } @else {
+              <span class="discard-empty" aria-hidden="true"></span>
+            }
+          </div>
+          <span class="pile-label pile-label--plain">Ablage</span>
+        </div>
+      }
+    </div>
+    <button
+      type="button"
+      class="event-chip"
+      [attr.aria-label]="'Letztes Ereignis: ' + lastEvent().text + '. Verlauf öffnen'"
+      (click)="openHistory()"
+    >
+      <span
+        class="material-symbols-rounded fill"
+        aria-hidden="true"
+        [style.color]="lastEvent().color"
+        >{{ lastEvent().icon }}</span
+      >
+      <span class="event-text">{{ lastEvent().text }}</span>
+      <span class="material-symbols-rounded chevron" aria-hidden="true">expand_more</span>
+    </button>
+  </div>
+
+  @for (view of seats(); track view.player.seat) {
+    @if (view.player.state !== 'left') {
+      <div
+        class="fan"
+        [attr.data-state]="view.player.state"
+        [style.left.%]="view.fanX"
+        [style.top.%]="view.fanY"
+      >
+        @if (view.fan.length) {
+          <div class="fan-cards">
+            @for (item of view.fan; track item.key) {
+              <app-flip7-card
+                [card]="item.card"
+                [variant]="layout() === 'phone' ? 'flat' : 'fan'"
+                [highlight]="item.highlight"
+                [style.transform]="item.transform"
+                (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
+              />
+            }
+            @if (view.player.state === 'frozen') {
+              <span class="veil" aria-hidden="true"></span>
+            }
+          </div>
+        }
+        @if (view.dots || view.mods) {
+          <div class="fan-meta">
+            @if (view.dots; as dots) {
+              <span class="dots" aria-hidden="true">
+                @for (on of dots; track $index) {
+                  <span [class.on]="on"></span>
+                }
+              </span>
+            }
+            @if (view.mods) {
+              <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
+                view.mods
+              }}</span>
+            }
           </div>
         }
       </div>
+    }
+
+    @if (view.choice) {
       <button
         type="button"
-        class="event-chip"
-        [attr.aria-label]="'Letztes Ereignis: ' + lastEvent().text + '. Verlauf öffnen'"
-        (click)="openHistory()"
-      >
-        <span
-          class="material-symbols-rounded fill"
-          aria-hidden="true"
-          [style.color]="lastEvent().color"
-          >{{ lastEvent().icon }}</span
-        >
-        <span class="event-text">{{ lastEvent().text }}</span>
-        <span class="material-symbols-rounded chevron" aria-hidden="true">expand_more</span>
-      </button>
+        appFlip7Seat
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [dealer]="view.player.seat === g.dealer_seat"
+        [turn]="view.turn"
+        [flip3Left]="view.flip3Left"
+        [choice]="view.choice"
+        [scBreak]="view.scBreak"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+        [disabled]="busy()"
+        (click)="pick(view.player.seat)"
+      ></button>
+    } @else {
+      <div
+        appFlip7Seat
+        role="group"
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [dealer]="view.player.seat === g.dealer_seat"
+        [turn]="view.turn"
+        [flip3Left]="view.flip3Left"
+        [dimmed]="view.dimmed"
+        [waiting]="view.waiting"
+        [celebrate]="view.celebrate"
+        [scBreak]="view.scBreak"
+        [bonus]="view.bonus"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+      ></div>
+    }
+  }
+
+  @for (flight of flights(); track flight.id) {
+    <app-flip7-card
+      class="flight"
+      [card]="flight.card"
+      [style.left.%]="(c.x / t.w) * 100"
+      [style.top.%]="(c.y / t.h) * 100"
+      (animate.enter)="flyAction($event, flight)"
+    />
+  }
+
+  <!-- Laptop: eigener Platz liegt auf dem Tisch -->
+  @if (layout() === 'laptop' && mine(); as m) {
+    <div class="laptop-cards">
+      <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+      <div class="laptop-mods">
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
     </div>
-
-    @for (view of seats(); track view.player.seat) {
-      @if (view.player.state !== 'left') {
-        <div
-          class="fan"
-          [attr.data-state]="view.player.state"
-          [style.left.%]="view.fanX"
-          [style.top.%]="view.fanY"
-        >
-          @if (view.fan.length) {
-            <div class="fan-cards">
-              @for (item of view.fan; track item.key) {
-                <app-flip7-card
-                  [card]="item.card"
-                  [variant]="layout() === 'phone' ? 'flat' : 'fan'"
-                  [highlight]="item.highlight"
-                  [style.transform]="item.transform"
-                  (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
-                />
-              }
-              @if (view.player.state === 'frozen') {
-                <span class="veil" aria-hidden="true"></span>
-              }
-            </div>
-          }
-          @if (view.dots || view.mods) {
-            <div class="fan-meta">
-              @if (view.dots; as dots) {
-                <span class="dots" aria-hidden="true">
-                  @for (on of dots; track $index) {
-                    <span [class.on]="on"></span>
-                  }
-                </span>
-              }
-              @if (view.mods) {
-                <span
-                  class="mod-chip"
-                  role="img"
-                  [attr.aria-label]="'Modifikatoren ' + view.mods"
-                  >{{ view.mods }}</span
-                >
-              }
-            </div>
-          }
-        </div>
-      }
-
-      @if (view.choice) {
-        <button
-          type="button"
-          appFlip7Seat
-          class="opp"
-          [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
-          [player]="view.player"
-          [dealer]="view.player.seat === g.dealer_seat"
-          [turn]="view.turn"
-          [flip3Left]="view.flip3Left"
-          [choice]="view.choice"
-          [scBreak]="view.scBreak"
-          [style.left.%]="view.x"
-          [style.top.%]="view.y"
-          [disabled]="busy()"
-          (click)="pick(view.player.seat)"
-        ></button>
-      } @else {
-        <div
-          appFlip7Seat
-          role="group"
-          class="opp"
-          [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
-          [player]="view.player"
-          [dealer]="view.player.seat === g.dealer_seat"
-          [turn]="view.turn"
-          [flip3Left]="view.flip3Left"
-          [dimmed]="view.dimmed"
-          [waiting]="view.waiting"
-          [celebrate]="view.celebrate"
-          [scBreak]="view.scBreak"
-          [bonus]="view.bonus"
-          [style.left.%]="view.x"
-          [style.top.%]="view.y"
-        ></div>
-      }
-    }
-
-    @for (flight of flights(); track flight.id) {
-      <app-flip7-card
-        class="flight"
-        [card]="flight.card"
-        [style.left.%]="(c.x / t.w) * 100"
-        [style.top.%]="(c.y / t.h) * 100"
-        (animate.enter)="flyAction($event, flight)"
-      />
-    }
-
-    <!-- Laptop: eigener Platz liegt auf dem Tisch -->
-    @if (layout() === 'laptop' && mine(); as m) {
-      <div class="laptop-cards">
-        <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
-        <div class="laptop-mods">
-          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
-        </div>
-      </div>
-      <div class="laptop-seat">
-        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
-      </div>
-      <div class="laptop-actions">
-        <ng-container *ngTemplateOutlet="actionsTpl" />
-        <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
-      </div>
-    }
-  </div>
+    <div class="laptop-seat">
+      <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+    </div>
+    <div class="laptop-actions">
+      <ng-container *ngTemplateOutlet="actionsTpl" />
+      <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
+    </div>
+  }
 </div>
 
 @if (layout() !== 'laptop' && mine(); as m) {

@@ -1,6 +1,6 @@
 import { AnimationCallbackEvent, Component, computed, input } from '@angular/core';
+import { AVATAR_COLORS } from '../table/table.model';
 import {
-  AVATAR_COLORS,
   distinctNumbers,
   Flip7ActionCard,
   Flip7Player,

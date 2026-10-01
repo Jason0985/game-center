@@ -105,7 +105,9 @@
   min-height: 0;
 }
 
-.scroll {
+// Endstand, Übersicht, Meldungen: scrollen wie normaler Fluss (das Spiel projiziert sie)
+.content.scroll {
+  display: block;
   min-height: 0;
   overflow: auto;
   box-sizing: border-box;
@@ -170,7 +172,7 @@
     display: flex;
   }
 
-  .scroll {
+  .content.scroll {
     padding-bottom: 24px;
   }
 }

@@ -18,6 +18,7 @@ import {
   LobbyDetail,
   LobbyMember,
   requiredReadyCount,
+  startBlocker,
 } from '../lobby.model';
 import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
 import { LobbyGameSetup } from './lobby-game-settings';
@@ -68,8 +69,11 @@ export class Lobby {
   readonly me = computed(() => this.members().find((member) => member.user_id === this.userId()));
   readonly readyCount = computed(() => this.members().filter((member) => member.ready).length);
   readonly requiredReady = computed(() => requiredReadyCount(this.members().length));
-  // Starten braucht zusätzlich ein gewähltes Spiel
-  readonly canStart = computed(() => canStartLobby(this.members()) && !!this.lobby()?.game_key);
+  // Starten braucht zusätzlich ein gewähltes, startbares Spiel für diese Spielerzahl
+  readonly startBlocker = computed(() =>
+    startBlocker(this.lobby()?.game_key, this.members().length),
+  );
+  readonly canStart = computed(() => canStartLobby(this.members()) && !this.startBlocker());
 
   // Nach eigenem Verlassen/Schließen (oder Weg-Navigieren) keine Meldungen und Umleitungen mehr
   private leaving = false;

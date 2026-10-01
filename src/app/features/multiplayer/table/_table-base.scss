@@ -1,0 +1,91 @@
+// Tisch-Grundlage aller Kartenspiele: Stapel mit Rückseiten, Stapel-Beschriftung und
+// das eigene Sheet unter dem Tisch. Maße (--pile-w, --pile-h …) setzt das Spiel je Layout.
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stack {
+  position: relative;
+  width: calc(var(--pile-w) + 6px);
+  height: calc(var(--pile-h) + 6px);
+}
+
+.stack > * {
+  --card-w: var(--pile-w);
+  --card-h: var(--pile-h);
+  position: absolute;
+}
+
+.back--1 {
+  top: 0;
+  left: 0;
+}
+
+.back--2 {
+  top: 3px;
+  left: 3px;
+}
+
+.back--3 {
+  top: 6px;
+  left: 6px;
+}
+
+.pile-label {
+  color: var(--color-text-muted);
+  font-size: var(--pile-label);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+// Eigener Platz: Sheet unten (Handy, iPad), am Laptop direkt auf dem Tisch
+.sheet {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -77px;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  // Die schwebende App-Navigation liegt auf der Sheet-Fläche
+  padding-bottom: calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='hoch']) .sheet {
+  gap: 14px;
+  margin-top: -40px;
+  padding-top: 18px;
+  padding-inline: 24px;
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='quer']) .sheet {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 10px;
+  padding-top: 14px;
+  padding-inline: 24px;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+// Fokusring auf allen drei Farbschemas sichtbar
+button:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+.material-symbols-rounded.fill {
+  font-variation-settings: 'FILL' 1;
+}

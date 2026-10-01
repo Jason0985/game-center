@@ -2,9 +2,10 @@ import { Profile } from '../profile/profile.model';
 
 export type LobbyStatus = 'open' | 'started';
 
-// Rahmenbedingungen des Spiels (set_lobby_game); targetScore null = offen ohne Punkteziel
+// Rahmenbedingungen des Spiels (set_lobby_game). Flip 7: targetScore null = offen ohne
+// Punkteziel; Skip-Bo hat keine Einstellungen ({})
 export interface LobbyGameSettings {
-  targetScore: number | null;
+  targetScore?: number | null;
 }
 
 // Gleiche Grenzen wie in der DB (_add_lobby_member / start_lobby)
@@ -56,10 +57,45 @@ export const canStartLobby = (members: LobbyMember[]): boolean =>
   members.length >= LOBBY_MIN_MEMBERS &&
   members.filter((member) => member.ready).length >= requiredReadyCount(members.length);
 
-const GAME_NAMES: Record<string, string> = { 'flip-7': 'Flip 7' };
+// Wählbare Spiele; Grenzen wie in der DB (start_lobby). available false: sichtbar, aber
+// noch nicht wählbar (Skip-Bo, bis sein Backend steht)
+export const GAMES = [
+  {
+    key: 'flip-7',
+    name: 'Flip 7',
+    icon: 'style',
+    blurb: 'Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!',
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    available: true,
+  },
+  {
+    key: 'skip-bo',
+    name: 'Skip-Bo',
+    icon: 'layers',
+    blurb: 'Spielstapel leer spielen – Karten von 1 bis 12 in die Mitte legen.',
+    maxPlayers: 6,
+    available: false,
+  },
+] as const;
+
+export const gameOf = (gameKey: string | null | undefined) =>
+  GAMES.find((game) => game.key === gameKey) ?? null;
 
 export const gameName = (gameKey: string | null | undefined): string | null =>
-  (gameKey && GAME_NAMES[gameKey]) || null;
+  gameOf(gameKey)?.name ?? null;
+
+// Warum der Host (noch) nicht starten kann, unabhängig von der Bereitschaft; null = Spiel passt
+export function startBlocker(
+  gameKey: string | null | undefined,
+  memberCount: number,
+): string | null {
+  const game = gameOf(gameKey);
+  if (!game) return 'Der Host muss noch ein Spiel auswählen.';
+  if (memberCount > game.maxPlayers) {
+    return `${game.name} geht mit höchstens ${game.maxPlayers} Spielern.`;
+  }
+  return game.available ? null : `${game.name} ist noch nicht verfügbar.`;
+}
 
 // z. B. "Flip 7 · bis 200 Punkte" oder "Flip 7 · Offen"
 export function gameLabel(
@@ -70,6 +106,8 @@ export function gameLabel(
   if (!name) {
     return 'Noch kein Spiel gewählt';
   }
+
+  if (gameKey !== 'flip-7') return name;
 
   const target = settings?.targetScore;
   return typeof target === 'number' ? `${name} · bis ${target} Punkte` : `${name} · Offen`;

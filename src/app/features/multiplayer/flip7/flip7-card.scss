@@ -1,82 +1,10 @@
-// Maße aus Sonderkarten/Kartenreihe: Radius, Schrift und Abstände wachsen mit der Kartenbreite
-:host {
-  --card-w: 44px;
-  --card-h: 62px;
-  position: relative;
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: var(--card-w);
-  height: var(--card-h);
-  box-sizing: border-box;
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  border-radius: max(3px, calc(var(--card-w) * 0.145));
-  background: var(--face);
-  color: var(--ink);
-  box-shadow: var(--f7-card-shadow);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  user-select: none;
-}
+@use '../table/card-base';
 
+// Flip-7-Gesichter (Grundlage in table/_card-base.scss)
 :host(.underline) .value,
 :host(.underline) .fan-value {
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-.value {
-  font-size: var(--card-font, calc(var(--card-w) * 0.64));
-}
-
-.corner {
-  position: absolute;
-  font-size: calc(var(--card-w) * 0.205);
-  font-weight: 700;
-  opacity: 0.7;
-}
-
-.corner--start {
-  top: calc(var(--card-h) * 0.05);
-  left: calc(var(--card-w) * 0.1);
-}
-
-.corner--end {
-  right: calc(var(--card-w) * 0.1);
-  bottom: calc(var(--card-h) * 0.05);
-  transform: rotate(180deg);
-}
-
-// Mitspieler-Fächer: Zahl oben links bleibt beim Überlappen frei
-:host([data-variant='fan']) {
-  display: block;
-  border-radius: 4px;
-  letter-spacing: -0.03em;
-}
-
-.fan-value {
-  position: absolute;
-  top: calc(var(--card-w) * 0.1);
-  left: calc(var(--card-w) * 0.1);
-  font-size: calc(var(--card-w) * 0.58);
-}
-
-.fan-index {
-  position: absolute;
-  right: calc(var(--card-w) * 0.1);
-  bottom: calc(var(--card-w) * 0.085);
-  font-size: calc(var(--card-w) * 0.29);
-  opacity: 0.55;
-  transform: rotate(180deg);
-}
-
-// Kleine Handy-Fächerkarten: nur die Zahl, mittig
-:host([data-variant='flat']) .value {
-  font-size: var(--card-font, calc(var(--card-w) * 0.62 + 3.5px));
 }
 
 :host([data-kind='modifier']) {
@@ -122,38 +50,17 @@
 
 :host([data-highlight='dup']) {
   border-color: #ffffff;
-  background: var(--f7-dup);
+  background: var(--table-danger);
   color: #ffffff;
   box-shadow:
-    0 0 0 2px var(--f7-dup),
-    var(--f7-card-shadow);
+    0 0 0 2px var(--table-danger),
+    var(--table-card-shadow);
 }
 
 :host([data-highlight='dup'][data-variant='row']) {
   box-shadow:
-    0 0 0 3px var(--f7-dup),
-    var(--f7-card-shadow);
-}
-
-// Rückseite: Rahmen in Markenfarbe, Streifen, kursive 7
-:host([data-kind='back']) {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: var(--f7-card-back);
-}
-
-.frame {
-  position: absolute;
-  inset: calc(var(--card-w) * 0.09);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--f7-back-frame);
-  border-radius: max(2px, calc(var(--card-w) * 0.145 - 3px));
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.05) 0 3px,
-    transparent 3px 7px
-  );
+    0 0 0 3px var(--table-danger),
+    var(--table-card-shadow);
 }
 
 .seven {

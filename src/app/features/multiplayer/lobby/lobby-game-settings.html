@@ -1,43 +1,49 @@
 <h2 id="lobby-game-title">Spiel</h2>
 
-<ng-template #tile>
-  <mat-icon class="game-icon" aria-hidden="true">style</mat-icon>
+<ng-template #tile let-game>
+  <mat-icon class="game-icon" aria-hidden="true">{{ game.icon }}</mat-icon>
   <span class="game-copy">
-    <strong>Flip 7</strong>
-    <small>Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!</small>
+    <strong>{{ game.name }}</strong>
+    <small>{{ game.blurb }}</small>
   </span>
-  @if (selected()) {
+  @if (game.key === gameKey()) {
     <mat-icon class="game-check" aria-hidden="true">check_circle</mat-icon>
+  } @else if (!game.available) {
+    <span class="soon">Bald verfügbar</span>
   }
 </ng-template>
 
 @if (isHost()) {
-  <button
-    type="button"
-    class="game-tile"
-    [class.game-tile--selected]="selected()"
-    [attr.aria-pressed]="selected()"
-    [disabled]="disabled() || saving()"
-    (click)="selectGame()"
-  >
-    <ng-container [ngTemplateOutlet]="tile" />
-  </button>
-} @else if (selected()) {
+  @for (game of games; track game.key) {
+    <button
+      type="button"
+      class="game-tile"
+      [class.game-tile--selected]="game.key === gameKey()"
+      [class.game-tile--soon]="!game.available"
+      [attr.aria-pressed]="game.key === gameKey()"
+      [disabled]="!game.available || disabled() || saving()"
+      (click)="selectGame(game.key)"
+    >
+      <ng-container [ngTemplateOutlet]="tile" [ngTemplateOutletContext]="{ $implicit: game }" />
+    </button>
+  }
+} @else if (selectedGame(); as game) {
   <div class="game-tile game-tile--selected">
-    <ng-container [ngTemplateOutlet]="tile" />
+    <ng-container [ngTemplateOutlet]="tile" [ngTemplateOutletContext]="{ $implicit: game }" />
   </div>
 } @else {
   <p class="hint">Der Host wählt noch ein Spiel aus.</p>
 }
 
-@if (selected() || isHost()) {
+<!-- Punkteziel und Kurzregeln gibt es nur für Flip 7 (ohne Spiel sieht der Host sie schon) -->
+@if (flip7() || (isHost() && !gameKey())) {
   <p class="label" id="lobby-target-label">Punkteziel</p>
   @if (isHost()) {
     <div class="segments" role="group" aria-labelledby="lobby-target-label">
       @for (option of targetOptions; track option) {
         <button
           type="button"
-          [attr.aria-pressed]="selected() && target() === option"
+          [attr.aria-pressed]="flip7() && target() === option"
           [disabled]="disabled() || saving()"
           (click)="selectTarget(option)"
         >
@@ -46,7 +52,7 @@
       }
       <button
         type="button"
-        [attr.aria-pressed]="selected() && target() === null"
+        [attr.aria-pressed]="flip7() && target() === null"
         [disabled]="disabled() || saving()"
         (click)="selectTarget(null)"
       >

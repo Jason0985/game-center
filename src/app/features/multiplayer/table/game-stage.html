@@ -1,0 +1,102 @@
+<div class="stage">
+  <header class="head">
+    <a class="icon-button" routerLink="/multiplayer" aria-label="Zurück">
+      <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+    </a>
+    <span class="brand">
+      <span class="material-symbols-rounded fill" aria-hidden="true">sports_esports</span>
+      Game Center
+    </span>
+    <div class="title">
+      <span class="title-main">{{ gameTitle() }}</span>
+      @if (subtitle(); as sub) {
+        <span class="title-sub">{{ sub }}</span>
+      }
+    </div>
+    @if (players() !== null) {
+      <span class="count" role="img" [attr.aria-label]="players() + ' Spieler'">
+        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+        {{ players() }}
+      </span>
+    }
+    <button type="button" class="icon-button" aria-label="Spielmenü" [matMenuTriggerFor]="menu">
+      <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
+    </button>
+  </header>
+
+  <mat-menu #menu="matMenu" class="game-menu" xPosition="before">
+    @if (isHost()) {
+      <div class="game-menu-section">Host</div>
+      @if (hasGame()) {
+        @if (skipName(); as name) {
+          <button mat-menu-item type="button" [disabled]="busy()" (click)="skip.emit()">
+            <span class="material-symbols-rounded" aria-hidden="true">skip_next</span>
+            <span class="game-menu-text">
+              {{ name }} überspringen
+              <span class="game-menu-sub">wartet seit {{ waitingClock() }}</span>
+            </span>
+          </button>
+        }
+        @if (!finished()) {
+          <button
+            mat-menu-item
+            type="button"
+            class="game-menu-danger"
+            [disabled]="busy()"
+            (click)="endGame.emit()"
+          >
+            <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
+            <span class="game-menu-text">
+              Spiel beenden
+              <span class="game-menu-sub">{{ endHint() }}</span>
+            </span>
+          </button>
+        }
+      }
+      <button mat-menu-item type="button" (click)="leave.emit(false)">
+        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+        <span class="game-menu-text">
+          Lobby schließen
+          <span class="game-menu-sub">Alle Spieler werden entfernt</span>
+        </span>
+      </button>
+    } @else {
+      @let over = finished();
+      <button mat-menu-item type="button" class="game-menu-danger" (click)="leave.emit(over)">
+        <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+        <span class="game-menu-text">
+          {{ over ? 'Lobby verlassen' : 'Spiel verlassen' }}
+          <span class="game-menu-sub">{{
+            over ? 'Du spielst nicht weiter mit' : 'Du scheidest endgültig aus'
+          }}</span>
+        </span>
+      </button>
+    }
+    <div class="game-menu-divider" role="separator"></div>
+    <button mat-menu-item type="button" (click)="openRules()">
+      <span class="material-symbols-rounded" aria-hidden="true">menu_book</span>
+      <span class="game-menu-text">Regeln</span>
+    </button>
+  </mat-menu>
+
+  <div class="content" [class.scroll]="scroll() || !hasGame()">
+    @if (!hasGame()) {
+      <section class="game-message ui-surface" role="status">
+        <mat-icon aria-hidden="true">{{ loading() ? 'hourglass_empty' : 'info' }}</mat-icon>
+        <p>{{ loading() ? 'Spiel wird geladen ...' : 'Zu dieser Lobby läuft kein Spiel.' }}</p>
+        @if (!loading() && isHost()) {
+          <button
+            mat-stroked-button
+            type="button"
+            class="ui-button"
+            [disabled]="busy()"
+            (click)="backToLobby.emit()"
+          >
+            Zurück zur Warte-Lobby
+          </button>
+        }
+      </section>
+    }
+    <ng-content />
+  </div>
+</div>

@@ -1,4 +1,10 @@
-import { canStartLobby, gameLabel, LobbyMember, requiredReadyCount } from './lobby.model';
+import {
+  canStartLobby,
+  gameLabel,
+  LobbyMember,
+  requiredReadyCount,
+  startBlocker,
+} from './lobby.model';
 
 function members(total: number, ready: number): LobbyMember[] {
   return Array.from({ length: total }, (_, index) => ({
@@ -37,8 +43,28 @@ describe('gameLabel', () => {
     expect(gameLabel('flip-7', { targetScore: null })).toBe('Flip 7 · Offen');
   });
 
+  it('names games without settings plainly', () => {
+    expect(gameLabel('skip-bo', {})).toBe('Skip-Bo');
+  });
+
   it('handles lobbies without a game', () => {
     expect(gameLabel(null, null)).toBe('Noch kein Spiel gewählt');
     expect(gameLabel('unknown', { targetScore: 200 })).toBe('Noch kein Spiel gewählt');
+  });
+});
+
+describe('startBlocker', () => {
+  it('lets Flip 7 start', () => {
+    expect(startBlocker('flip-7', 8)).toBeNull();
+  });
+
+  it('needs a known game', () => {
+    expect(startBlocker(null, 2)).toBe('Der Host muss noch ein Spiel auswählen.');
+    expect(startBlocker('unknown', 2)).toBe('Der Host muss noch ein Spiel auswählen.');
+  });
+
+  it('blocks Skip-Bo until it is available, and above 6 players', () => {
+    expect(startBlocker('skip-bo', 4)).toBe('Skip-Bo ist noch nicht verfügbar.');
+    expect(startBlocker('skip-bo', 7)).toBe('Skip-Bo geht mit höchstens 6 Spielern.');
   });
 });

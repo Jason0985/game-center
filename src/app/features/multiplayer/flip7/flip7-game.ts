@@ -9,24 +9,22 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
-import { Flip7Board, formatClock } from './flip7-board';
+import { GameStage } from '../table/game-stage';
+import { formatClock } from '../table/table.model';
+import { Flip7Board } from './flip7-board';
 import { Flip7Final } from './flip7-final';
 import { Flip7RoundSummary } from './flip7-round-summary';
-import { Flip7RulesDialog } from './flip7-rules-dialog';
 import { Flip7Service } from './flip7.service';
 import {
   activeSeatOf,
   Flip7Game,
   FLIP7_NEXT_ROUND_DELAY_S,
+  FLIP7_RULES,
   FLIP7_SKIP_AFTER_S,
 } from './flip7.model';
 
@@ -36,21 +34,12 @@ const ROUND_END_TABLE_S = 3;
 const ROUND_END_S = ROUND_END_TABLE_S + FLIP7_NEXT_ROUND_DELAY_S;
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und
-// schaltet zwischen Spieltisch, Rundenübersicht und Endstand um. Liegt als eigene
-// Bühne über der App (Kopf mit ⋮-Menü für Host-Aktionen und Verlassen).
+// schaltet zwischen Spieltisch, Rundenübersicht und Endstand um. Liegt auf der
+// gemeinsamen Bühne (Kopf mit ⋮-Menü für Host-Aktionen und Verlassen).
 @Component({
   selector: 'app-flip7-game',
-  imports: [
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    RouterLink,
-    Flip7Board,
-    Flip7RoundSummary,
-    Flip7Final,
-  ],
+  imports: [GameStage, Flip7Board, Flip7RoundSummary, Flip7Final],
   templateUrl: './flip7-game.html',
-  styleUrl: './flip7-game.scss',
 })
 export class Flip7GameView {
   private readonly flip7 = inject(Flip7Service);
@@ -102,6 +91,19 @@ export class Flip7GameView {
   readonly playerCount = computed(
     () => this.game()?.players.filter((player) => player.state !== 'left').length ?? 0,
   );
+  readonly subtitle = computed(() => {
+    const game = this.game();
+    if (!game) return null;
+    return `Runde ${game.round_no} · ${game.target_score ? 'Ziel ' + game.target_score : 'Offen'}`;
+  });
+  // Tisch statt Übersicht/Endstand (nimmt die volle Höhe, scrollt nicht)
+  readonly boardView = computed(() => {
+    const game = this.game();
+    return (
+      !!game && game.status !== 'finished' && (game.status === 'playing' || this.showRoundTable())
+    );
+  });
+  readonly rules = { title: 'Flip 7 – Regeln', rules: FLIP7_RULES };
 
   private loadSequence = 0;
   private destroyed = false;
@@ -205,10 +207,6 @@ export class Flip7GameView {
       return;
     }
     await this.run(() => this.flip7.nextRound(gameId, roundNo));
-  }
-
-  openRules(): void {
-    this.dialog.open(Flip7RulesDialog, { width: '440px' });
   }
 
   async continueOpen(game: Flip7Game): Promise<void> {

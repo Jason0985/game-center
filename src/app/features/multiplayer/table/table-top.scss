@@ -1,0 +1,82 @@
+// Tischplatte: festes Seitenverhältnis, so hoch wie Platz ist (höchstens Design-Größe).
+// Die Variablen (--table-w, --area-top, --rim …) setzt das Spiel je Layout an seinem Host.
+:host {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--area-top);
+}
+
+.table {
+  position: relative;
+  flex: none;
+  height: min(
+    calc(var(--table-h) * 1px),
+    calc(100dvh - var(--head-h) - var(--area-top) - var(--below)),
+    calc((100vw - var(--table-margin)) * var(--table-h) / var(--table-w))
+  );
+  border-radius: var(--table-radius);
+  background: radial-gradient(
+    ellipse at 50% var(--felt-y),
+    var(--table-center) 0%,
+    var(--table-edge) 70%
+  );
+  box-shadow:
+    inset 0 0 0 var(--rim) var(--table-rim),
+    inset 0 0 0 calc(var(--rim) + 1px) var(--table-rim-line),
+    var(--table-shadow);
+}
+
+.watermark {
+  position: absolute;
+  top: var(--mark-y);
+  left: var(--mark-x);
+  z-index: 0;
+  color: var(--color-text);
+  font-size: var(--mark-size);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  opacity: 0.025;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+// Zug-Zeiger: gepunktete Linie vom Stapel zum Spieler am Zug
+.pointer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pointer--off {
+  visibility: hidden;
+}
+
+.pointer-ring {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+}
+
+.pointer-arm {
+  transform-box: view-box;
+  transition: transform 240ms ease;
+}
+
+.pointer-arm line {
+  stroke: var(--color-primary);
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.pointer-arm polygon {
+  fill: var(--color-primary);
+}

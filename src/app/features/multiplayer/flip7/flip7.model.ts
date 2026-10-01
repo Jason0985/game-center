@@ -2,6 +2,8 @@
 // (supabase/migrations/20260930161000_flip7.sql); hier wird nur gespiegelt,
 // was für die Anzeige nötig ist.
 
+import { arcSpots, TableGeometry, TableLayout } from '../table/table.model';
+
 export type Flip7NumberCard =
   '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12';
 export type Flip7ModifierCard = '+2' | '+4' | '+6' | '+8' | '+10' | 'x2';
@@ -88,6 +90,16 @@ export const FLIP7_NEXT_ROUND_DELAY_S = 10;
 export const FLIP7_SKIP_AFTER_S = 30;
 export const FLIP7_BONUS = 15;
 
+// Kurzregeln für das ⋮-Menü im Spiel
+export const FLIP7_RULES = [
+  'Wer am Zug ist, zieht eine Karte oder bleibt stehen. Stehen bleiben sichert die Punkte dieser Runde.',
+  'Zieht jemand eine Zahl, die er schon hat, ist das ein Bust: 0 Punkte in dieser Runde.',
+  `Sieben verschiedene Zahlen sind Flip 7: +${FLIP7_BONUS} Punkte, und die Runde endet sofort.`,
+  'Modifikatoren: ×2 verdoppelt die Zahlen, +2 bis +10 kommen danach dazu.',
+  'Freeze: Das Ziel muss sofort stehen bleiben. Flip 3: Das Ziel zieht drei Karten. Second Chance: fängt einen Bust einmal ab.',
+  'Erreicht jemand am Rundenende das Punkteziel, ist das Spiel vorbei: Die meisten Punkte gewinnen, bei Gleichstand wird geteilt.',
+];
+
 export const isNumberCard = (card: Flip7Card): card is Flip7NumberCard => /^\d+$/.test(card);
 export const isModifierCard = (card: Flip7Card): card is Flip7ModifierCard =>
   card === 'x2' || card.startsWith('+');
@@ -127,17 +139,6 @@ export const ACTION_COLORS: Record<Flip7ActionCard, { bg: string; fg: string }> 
   FLIP3: { bg: '#ff9150', fg: '#2a1204' },
   SC: { bg: '#c8386d', fg: '#ffffff' },
 };
-// Feste Farbe pro Sitz, weiße Initiale jeweils >= 4.5:1
-export const AVATAR_COLORS = [
-  '#3b6aa0',
-  '#6d45a8',
-  '#23705f',
-  '#8f4c1f',
-  '#4351a8',
-  '#4c6379',
-  '#655a1f',
-  '#8a3a5c',
-] as const;
 
 // Modifikatoren als Kurztext, z. B. "×2 +6"; "" ohne Modifikatoren
 export function modifierText(cards: readonly Flip7Card[]): string {
@@ -291,7 +292,7 @@ export const ACTION_ICONS: Record<Flip7ActionCard, Flip7Icon> = {
 
 function cardIcon(card?: Flip7Card): Flip7Icon {
   if (!card || isNumberCard(card)) return { icon: 'style', color: 'var(--color-primary-light)' };
-  return isModifierCard(card) ? { icon: 'add', color: 'var(--f7-stay)' } : ACTION_ICONS[card];
+  return isModifierCard(card) ? { icon: 'add', color: 'var(--table-violet)' } : ACTION_ICONS[card];
 }
 
 // Symbol und Farbe für Ereignis-Chip und Verlauf
@@ -301,7 +302,7 @@ export function eventIcon(event: Flip7Event): Flip7Icon {
     case 'set_aside':
       return cardIcon(event.card);
     case 'bust':
-      return { icon: 'close', color: 'var(--f7-dup)' };
+      return { icon: 'close', color: 'var(--table-danger)' };
     case 'second_chance':
     case 'sc_given':
     case 'sc_discarded':
@@ -311,9 +312,9 @@ export function eventIcon(event: Flip7Event): Flip7Icon {
     case 'flip3':
       return ACTION_ICONS.FLIP3;
     case 'flip7':
-      return { icon: 'auto_awesome', color: 'var(--f7-gold)' };
+      return { icon: 'auto_awesome', color: 'var(--table-gold)' };
     case 'stay':
-      return { icon: 'pan_tool', color: 'var(--f7-stay)' };
+      return { icon: 'pan_tool', color: 'var(--table-violet)' };
     case 'reshuffle':
       return { icon: 'shuffle', color: MUTED };
     case 'left':
@@ -323,122 +324,71 @@ export function eventIcon(event: Flip7Event): Flip7Icon {
   }
 }
 
-// Spieltisch: vier Layouts (Handy, iPad hoch, iPad quer, Laptop). Maße in Design-Pixeln
-// der Tischplatte; die Anzeige rechnet sie in Prozent der Platte um.
-export type Flip7Layout = 'phone' | 'hoch' | 'quer' | 'laptop';
+// Tischgeometrie je Layout (Design-Pixel der Platte); Kartenfächer liegen zwischen
+// Platz und Ellipsenmitte (fan: Anteil des Wegs in x/y)
+export const FLIP7_TABLES: Record<TableLayout, TableGeometry & { fan: readonly [number, number] }> =
+  {
+    phone: {
+      w: 378,
+      h: 560,
+      cx: 189,
+      cy: 509.4,
+      a: 151,
+      b: 443.4,
+      from: 158,
+      to: 22,
+      fan: [0.61, 0.69],
+    },
+    hoch: {
+      w: 788,
+      h: 800,
+      cx: 394,
+      cy: 794.5,
+      a: 338.6,
+      b: 747.3,
+      from: 172,
+      to: 8,
+      fan: [0.62, 0.71],
+    },
+    quer: {
+      w: 1140,
+      h: 520,
+      cx: 570,
+      cy: 260,
+      a: 504.6,
+      b: 236,
+      from: 212,
+      to: -32,
+      fan: [0.59, 0.58],
+    },
+    // Ganzer Tischrand, ich sitze unten (270°)
+    laptop: {
+      w: 1220,
+      h: 720,
+      cx: 610,
+      cy: 360,
+      a: 610,
+      b: 360,
+      from: 270,
+      to: -90,
+      fan: [0.65, 0.62],
+    },
+  };
 
-export interface Flip7Table {
-  w: number;
-  h: number;
-  // Ellipse, auf der die Plätze sitzen; Bogen von `from` nach `to` (Grad, im Uhrzeigersinn)
-  cx: number;
-  cy: number;
-  a: number;
-  b: number;
-  from: number;
-  to: number;
-  // Kartenfächer liegen zwischen Platz und Ellipsenmitte
-  fan: readonly [number, number];
-}
-
-export const FLIP7_TABLES: Record<Flip7Layout, Flip7Table> = {
-  phone: {
-    w: 378,
-    h: 560,
-    cx: 189,
-    cy: 509.4,
-    a: 151,
-    b: 443.4,
-    from: 158,
-    to: 22,
-    fan: [0.61, 0.69],
-  },
-  hoch: {
-    w: 788,
-    h: 800,
-    cx: 394,
-    cy: 794.5,
-    a: 338.6,
-    b: 747.3,
-    from: 172,
-    to: 8,
-    fan: [0.62, 0.71],
-  },
-  quer: {
-    w: 1140,
-    h: 520,
-    cx: 570,
-    cy: 260,
-    a: 504.6,
-    b: 236,
-    from: 212,
-    to: -32,
-    fan: [0.59, 0.58],
-  },
-  // Ganzer Tischrand, ich sitze unten (270°)
-  laptop: {
-    w: 1220,
-    h: 720,
-    cx: 610,
-    cy: 360,
-    a: 610,
-    b: 360,
-    from: 270,
-    to: -90,
-    fan: [0.65, 0.62],
-  },
-};
-
-export interface Flip7SeatSpot {
-  x: number;
-  y: number;
-  fanX: number;
-  fanY: number;
-}
-
-// Plätze der Mitspieler (ab dem Platz nach mir, erster links von mir), gleichmäßig nach
-// Bogenlänge verteilt: Auf einem Oval lägen sie nach Winkel oben gedrängt.
-export function seatSpots(layout: Flip7Layout, count: number): Flip7SeatSpot[] {
+// Plätze der Mitspieler auf dem Bogen, dazu je Platz die Lage des Kartenfächers.
+// Laptop: neben mir mindestens ein Stück frei (Platz für meine Karten).
+export function seatSpots(
+  layout: TableLayout,
+  count: number,
+): { x: number; y: number; fanX: number; fanY: number }[] {
   const table = FLIP7_TABLES[layout];
-  const steps = 360;
-  const points: [number, number][] = [];
-  const lengths = [0];
-  for (let i = 0; i <= steps; i++) {
-    const t = ((table.from + ((table.to - table.from) * i) / steps) * Math.PI) / 180;
-    points.push([table.cx + table.a * Math.cos(t), table.cy - table.b * Math.sin(t)]);
-    if (i) {
-      const [x0, y0] = points[i - 1];
-      lengths.push(lengths[i - 1] + Math.hypot(points[i][0] - x0, points[i][1] - y0));
-    }
-  }
-
-  // Anteile am Bogen: Handy/iPad je Platz ein gleich langes Stück, Platz in dessen Mitte.
-  // Laptop: gleichmäßig um den Tisch, neben mir aber mindestens m frei (Platz für meine Karten).
-  let shares = Array.from({ length: count }, (_, i) => (i + 0.5) / count);
-  if (layout === 'laptop') {
-    const m = count + 1 >= 7 ? 0.2 : 0.17;
-    shares = Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
-    if (count > 1 && shares[0] < m) {
-      shares = shares.map((_, i) => m + ((1 - 2 * m) * i) / (count - 1));
-    }
-  }
-
-  return shares.map((share) => {
-    const target = share * lengths[steps];
-    const i = Math.max(
-      1,
-      lengths.findIndex((length) => length >= target),
-    );
-    const ratio = (target - lengths[i - 1]) / (lengths[i] - lengths[i - 1] || 1);
-    const x = points[i - 1][0] + (points[i][0] - points[i - 1][0]) * ratio;
-    const y = points[i - 1][1] + (points[i][1] - points[i - 1][1]) * ratio;
-    return {
-      x,
-      y,
-      fanX: table.cx + table.fan[0] * (x - table.cx),
-      fanY: table.cy + table.fan[1] * (y - table.cy),
-    };
-  });
+  const gap = layout === 'laptop' ? (count + 1 >= 7 ? 0.2 : 0.17) : null;
+  return arcSpots(table, count, gap).map(({ x, y }) => ({
+    x,
+    y,
+    fanX: table.cx + table.fan[0] * (x - table.cx),
+    fanY: table.cy + table.fan[1] * (y - table.cy),
+  }));
 }
 
 export const PLAYER_STATE_LABELS: Record<Flip7PlayerState, string> = {
