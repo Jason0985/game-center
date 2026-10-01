@@ -1,0 +1,46 @@
+<app-game-stage
+  gameTitle="Skip-Bo"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="showFinal()"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [skipName]="canSkip() ? activeName() : null"
+  [waitingClock]="waitingClock()"
+  [finished]="game()?.status === 'finished'"
+  endHint="Zum Endstand"
+  [rules]="rules"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
+  (skip)="skip(game()!)"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+  (history)="openHistory()"
+>
+  @if (game(); as g) {
+    @if (showFinal()) {
+      <app-skipbo-final
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        (backToLobby)="backToLobby()"
+      />
+    } @else {
+      <!-- Derselbe Tisch bleibt nach dem letzten Zug kurz stehen, damit er noch animiert -->
+      <app-skipbo-board
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy() || g.status !== 'playing'"
+        [canSkip]="canSkip()"
+        [waitingSeconds]="waitingSeconds()"
+        (play)="play(g, $event)"
+        (discard)="discard(g, $event)"
+      />
+    }
+  }
+</app-game-stage>

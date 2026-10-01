@@ -13,11 +13,32 @@
         <span class="title-sub">{{ sub }}</span>
       }
     </div>
+    @if (lastEvent(); as event) {
+      <span class="event">
+        <span class="material-symbols-rounded fill" aria-hidden="true" [style.color]="event.color">{{
+          event.icon
+        }}</span>
+        <span class="event-text">{{ event.text }}</span>
+      </span>
+    }
     @if (players() !== null) {
       <span class="count" role="img" [attr.aria-label]="players() + ' Spieler'">
         <span class="material-symbols-rounded" aria-hidden="true">group</span>
         {{ players() }}
       </span>
+    }
+    @if (lastEvent(); as event) {
+      <button
+        type="button"
+        class="icon-button history"
+        [attr.aria-label]="'Verlauf öffnen. Zuletzt: ' + event.text"
+        (click)="history.emit()"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">history</span>
+        @if (historyNew()) {
+          <span class="history-dot" aria-hidden="true"></span>
+        }
+      </button>
     }
     <button type="button" class="icon-button" aria-label="Spielmenü" [matMenuTriggerFor]="menu">
       <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>

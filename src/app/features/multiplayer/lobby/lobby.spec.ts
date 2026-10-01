@@ -9,6 +9,7 @@ import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { Flip7Service } from '../flip7/flip7.service';
+import { SkipboService } from '../skipbo/skipbo.service';
 import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
 
@@ -56,6 +57,7 @@ describe('Lobby', () => {
     setGame: ReturnType<typeof vi.fn>;
   };
   let flip7: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
+  let skipbo: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
 
   async function render(userId: string, lobby: LobbyDetail | null = lobbyDetail()) {
     user.set({ id: userId });
@@ -87,6 +89,10 @@ describe('Lobby', () => {
       load: vi.fn().mockResolvedValue({ ok: true, value: null }),
       subscribe: vi.fn().mockReturnValue(() => {}),
     };
+    skipbo = {
+      load: vi.fn().mockResolvedValue({ ok: true, value: null }),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
 
     await TestBed.configureTestingModule({
       imports: [Lobby],
@@ -99,6 +105,7 @@ describe('Lobby', () => {
         { provide: SessionService, useValue: { user } },
         { provide: MultiplayerLobbyService, useValue: lobbyService },
         { provide: Flip7Service, useValue: flip7 },
+        { provide: SkipboService, useValue: skipbo },
         { provide: MatDialog, useValue: dialog },
         { provide: ToastService, useValue: toast },
         { provide: AppErrorService, useValue: appErrors },
@@ -199,6 +206,16 @@ describe('Lobby', () => {
     // Im Spiel zeigt der Spieltisch seinen eigenen Kopf
     expect(text()).toContain('Flip 7');
     expect(flip7.load).toHaveBeenCalledWith('lobby-1');
+  });
+
+  it('shows the Skip-Bo table for a started Skip-Bo lobby', async () => {
+    await render('guest', lobbyDetail({ status: 'started', game_key: 'skip-bo' }));
+
+    expect(fixture.nativeElement.querySelector('app-skipbo-game')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-flip7-game')).toBeNull();
+    expect(text()).toContain('Skip-Bo');
+    expect(skipbo.load).toHaveBeenCalledWith('lobby-1');
+    expect(flip7.load).not.toHaveBeenCalled();
   });
 
   it('lets only the host change the game settings', async () => {

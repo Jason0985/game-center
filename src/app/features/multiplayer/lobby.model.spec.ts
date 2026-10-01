@@ -63,8 +63,8 @@ describe('startBlocker', () => {
     expect(startBlocker('unknown', 2)).toBe('Der Host muss noch ein Spiel auswählen.');
   });
 
-  it('blocks Skip-Bo until it is available, and above 6 players', () => {
-    expect(startBlocker('skip-bo', 4)).toBe('Skip-Bo ist noch nicht verfügbar.');
+  it('lets Skip-Bo start with up to 6 players', () => {
+    expect(startBlocker('skip-bo', 6)).toBeNull();
     expect(startBlocker('skip-bo', 7)).toBe('Skip-Bo geht mit höchstens 6 Spielern.');
   });
 });

@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
+import { HistoryRow } from './history-sheet';
 import { RulesDialog, RulesDialogData } from './rules-dialog';
 
 // Bühne eines laufenden Spiels über der App: Kopf mit ⋮-Menü (Host-Aktionen, Verlassen,
@@ -34,12 +35,17 @@ export class GameStage {
   // Unterzeile von „Spiel beenden“
   readonly endHint = input('');
   readonly rules = input.required<RulesDialogData>();
+  // Letztes Ereignis im Kopf mit Verlauf-Button (Skip-Bo); null = nichts davon zeigen
+  readonly lastEvent = input<Omit<HistoryRow, 'time'> | null>(null);
+  // Punkt am Verlauf-Button: Es gibt ungesehene Ereignisse
+  readonly historyNew = input(false);
 
   readonly skip = output<void>();
   readonly endGame = output<void>();
   // Spiel verlassen bzw. (Host) Lobby schließen; true: das Spiel ist schon vorbei
   readonly leave = output<boolean>();
   readonly backToLobby = output<void>();
+  readonly history = output<void>();
 
   openRules(): void {
     this.dialog.open(RulesDialog, { width: '440px', data: this.rules() });

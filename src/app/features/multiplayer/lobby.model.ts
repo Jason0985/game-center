@@ -57,8 +57,7 @@ export const canStartLobby = (members: LobbyMember[]): boolean =>
   members.length >= LOBBY_MIN_MEMBERS &&
   members.filter((member) => member.ready).length >= requiredReadyCount(members.length);
 
-// Wählbare Spiele; Grenzen wie in der DB (start_lobby). available false: sichtbar, aber
-// noch nicht wählbar (Skip-Bo, bis sein Backend steht)
+// Wählbare Spiele; Grenzen wie in der DB (start_lobby)
 export const GAMES = [
   {
     key: 'flip-7',
@@ -66,7 +65,6 @@ export const GAMES = [
     icon: 'style',
     blurb: 'Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!',
     maxPlayers: LOBBY_MAX_MEMBERS,
-    available: true,
   },
   {
     key: 'skip-bo',
@@ -74,7 +72,6 @@ export const GAMES = [
     icon: 'layers',
     blurb: 'Spielstapel leer spielen – Karten von 1 bis 12 in die Mitte legen.',
     maxPlayers: 6,
-    available: false,
   },
 ] as const;
 
@@ -91,10 +88,9 @@ export function startBlocker(
 ): string | null {
   const game = gameOf(gameKey);
   if (!game) return 'Der Host muss noch ein Spiel auswählen.';
-  if (memberCount > game.maxPlayers) {
-    return `${game.name} geht mit höchstens ${game.maxPlayers} Spielern.`;
-  }
-  return game.available ? null : `${game.name} ist noch nicht verfügbar.`;
+  return memberCount > game.maxPlayers
+    ? `${game.name} geht mit höchstens ${game.maxPlayers} Spielern.`
+    : null;
 }
 
 // z. B. "Flip 7 · bis 200 Punkte" oder "Flip 7 · Offen"

@@ -23,6 +23,7 @@ import {
 import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
 import { LobbyGameSetup } from './lobby-game-settings';
 import { Flip7GameView } from '../flip7/flip7-game';
+import { SkipboGameView } from '../skipbo/skipbo-game';
 
 @Component({
   selector: 'app-lobby',
@@ -33,6 +34,7 @@ import { Flip7GameView } from '../flip7/flip7-game';
     RouterLink,
     LobbyGameSetup,
     Flip7GameView,
+    SkipboGameView,
   ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',

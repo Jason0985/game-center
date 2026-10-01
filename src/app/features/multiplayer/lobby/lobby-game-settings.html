@@ -8,8 +8,6 @@
   </span>
   @if (game.key === gameKey()) {
     <mat-icon class="game-check" aria-hidden="true">check_circle</mat-icon>
-  } @else if (!game.available) {
-    <span class="soon">Bald verfügbar</span>
   }
 </ng-template>
 
@@ -19,9 +17,8 @@
       type="button"
       class="game-tile"
       [class.game-tile--selected]="game.key === gameKey()"
-      [class.game-tile--soon]="!game.available"
       [attr.aria-pressed]="game.key === gameKey()"
-      [disabled]="!game.available || disabled() || saving()"
+      [disabled]="disabled() || saving()"
       (click)="selectGame(game.key)"
     >
       <ng-container [ngTemplateOutlet]="tile" [ngTemplateOutletContext]="{ $implicit: game }" />

@@ -34,21 +34,6 @@ button.game-tile:disabled {
   margin-top: 8px;
 }
 
-// Noch nicht wählbar (Skip-Bo, bis sein Backend steht)
-.game-tile--soon {
-  opacity: 0.6;
-}
-
-.soon {
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-
 .game-tile--selected {
   border-color: var(--color-primary-light-48);
   background: var(--color-primary-soft);

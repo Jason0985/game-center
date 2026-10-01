@@ -1,0 +1,86 @@
+@let p = player();
+@if (winner() && !own()) {
+  <span class="badge-win" aria-hidden="true">SIEG</span>
+}
+<span class="avatar-wrap">
+  @if (p.state === 'left') {
+    <span class="avatar avatar--left" aria-hidden="true">
+      <span class="material-symbols-rounded">event_seat</span>
+    </span>
+  } @else {
+    <span
+      class="avatar"
+      [class.avatar--pulse]="celebrate()"
+      [style.background]="color()"
+      aria-hidden="true"
+      >{{ initial() }}</span
+    >
+  }
+  @if (dealer()) {
+    <span class="token token--dealer" role="img" aria-label="Geber">G</span>
+  }
+</span>
+
+<span class="info">
+  <span class="name">
+    <span class="name-text">{{ p.name }}</span>
+    @if (variant() === 'pill') {
+      <span class="you">(du)</span>
+    }
+  </span>
+  @if (p.state === 'left') {
+    <span class="gone">hat verlassen</span>
+  } @else if (!own()) {
+    <span class="stats">
+      <span class="chip">
+        <span class="material-symbols-rounded fill" aria-hidden="true">layers</span>
+        {{ p.stock_count }}<span class="sr-only"> Karten im Spielstapel</span>
+      </span>
+      @if (p.hand_count) {
+        <span class="hand" role="img" [attr.aria-label]="p.hand_count + ' Handkarten'">
+          <span class="backs" aria-hidden="true">
+            @for (tilt of backs(); track $index) {
+              <span [style.rotate.deg]="tilt"></span>
+            }
+          </span>
+          {{ p.hand_count }}
+        </span>
+      }
+    </span>
+  }
+</span>
+
+@if (waiting(); as time) {
+  <span class="waiting">
+    <span class="material-symbols-rounded" aria-hidden="true">hourglass_bottom</span>
+    <span class="sr-only">wartet seit </span>{{ time }}
+  </span>
+}
+
+<!-- Auslage zur Tischmitte: Spielstapel-Oberkarte und die 4 Ablagen -->
+@if (!own() && p.state !== 'left') {
+  <span class="spread" role="group" [attr.aria-label]="'Auslage von ' + p.name">
+    <span class="spread-stock" role="img" [attr.aria-label]="stockLabel()">
+      @if (p.stock_top; as top) {
+        @if (p.stock_count > 1) {
+          <app-skipbo-card class="spread-back" [card]="null" />
+        }
+        <app-skipbo-card class="top" [card]="top" [variant]="flat() ? 'flat' : 'fan'" />
+      } @else {
+        <span class="slot"></span>
+      }
+    </span>
+    <span class="spread-discards">
+      @for (pile of p.discards; track $index) {
+        <span
+          appSkipboFan
+          role="img"
+          [attr.aria-label]="discardLabel($index, pile)"
+          [attr.data-discard]="$index"
+          [cards]="pile"
+          [edges]="flat()"
+        ></span>
+      }
+    </span>
+  </span>
+}

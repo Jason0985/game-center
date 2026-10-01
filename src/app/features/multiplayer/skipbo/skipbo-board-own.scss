@@ -1,0 +1,463 @@
+// Eigener Bereich: Spielstapel, 4 Ablagen, Hand. Zweites Stylesheet von SkipboBoard
+// (Budget pro Datei). Handy: Bedienfeld unter dem Tisch, Hand halb dahinter; iPad:
+// Bedienfeld mit Reiter; Laptop: direkt auf dem Tisch, Namensschild darunter.
+:host {
+  --own-w: 44px;
+  --own-h: 62px;
+  --own-strip: 11px;
+  --own-fan-font: 9px;
+  --own-cap-font: 9px;
+  --own-chip: 11px;
+  --own-gap: 14px;
+  --own-discard-gap: 8px;
+  --tag-font: 11px;
+  --hand-w: 44px;
+  --hand-h: 62px;
+  --hand-gap: 4px;
+  --hand-pad: 5px;
+}
+
+:host([data-layout='hoch']) {
+  --own-w: 58px;
+  --own-h: 82px;
+  --own-strip: 18px;
+  --own-fan-font: 15px;
+  --own-cap-font: 11px;
+  --own-chip: 12px;
+  --own-gap: 16px;
+  --own-discard-gap: 10px;
+  --tag-font: 12px;
+  --hand-w: 58px;
+  --hand-h: 82px;
+  --hand-gap: 8px;
+  --hand-pad: 7px;
+}
+
+:host([data-layout='quer']) {
+  --own-w: 50px;
+  --own-h: 70px;
+  --own-strip: 16px;
+  --own-fan-font: 13px;
+  --own-cap-font: 11px;
+  --hand-w: 52px;
+  --hand-h: 72px;
+  --hand-gap: 8px;
+  --hand-pad: 6px;
+}
+
+:host([data-layout='laptop']) {
+  --own-w: 62px;
+  --own-h: 86px;
+  --own-strip: 20px;
+  --own-fan-font: 16px;
+  --own-cap-font: 11px;
+  --own-chip: 12px;
+  --own-gap: 16px;
+  --own-discard-gap: 10px;
+  --tag-font: 12px;
+  --hand-w: 64px;
+  --hand-h: 90px;
+  --hand-gap: 10px;
+  --hand-pad: 7px;
+}
+
+// Bedienfeld (Handy, iPad); die Fläche liegt auf ::before, damit die Hand am Handy
+// dahinter verschwinden kann
+.mine {
+  position: relative;
+  z-index: 5;
+  margin-top: -22px;
+  padding: 10px 16px;
+}
+
+.mine::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  content: '';
+}
+
+.tab {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  z-index: 2;
+  --ring: 28px;
+  --avatar: 24px;
+  --name-size: 13px;
+}
+
+.own-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 128px;
+}
+
+.own-piles {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--own-gap);
+}
+
+// Handy: 5 Karten rechts, stark gebogen, nur die obere Hälfte über dem Bedienfeld
+.hand-wrap {
+  position: absolute;
+  top: -36px;
+  right: 12px;
+  z-index: 0;
+}
+
+:host([data-layout='hoch']) .mine {
+  margin-top: -36px;
+  padding: 20px 24px;
+}
+
+:host([data-layout='hoch']) .mine::before {
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='hoch']) .tab {
+  top: -46px;
+  left: 24px;
+  --tab-h: 47px;
+  --tab-pad: 5px 17px 0 6px;
+  --ring: 34px;
+  --avatar: 30px;
+  --name-size: 15px;
+}
+
+:host(:not([data-layout='phone'])) .own-row {
+  align-items: flex-start;
+  min-height: 0;
+}
+
+:host(:not([data-layout='phone'])) .hand-wrap {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 2;
+  padding-top: 6px;
+}
+
+:host([data-layout='hoch']) .own-row {
+  justify-content: space-between;
+  gap: 20px;
+}
+
+:host([data-layout='hoch']) .hand-wrap {
+  padding-top: 8px;
+}
+
+:host([data-layout='quer']) .mine {
+  margin-top: 10px;
+  padding: 12px 24px;
+}
+
+:host([data-layout='quer']) .mine::before {
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='quer']) .tab {
+  top: -44px;
+  left: 24px;
+  --tab-h: 45px;
+  --tab-pad: 5px 16px 0 6px;
+  --ring: 32px;
+  --avatar: 28px;
+  --name-size: 14px;
+}
+
+:host([data-layout='quer']) .own-row,
+:host([data-layout='laptop']) .own-row {
+  gap: 56px;
+}
+
+// Laptop: auf dem Tisch, Namensschild mittig auf der Unterkante
+:host([data-layout='laptop']) .own-row {
+  position: absolute;
+  top: 71.67%;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
+}
+
+.own-pill {
+  position: absolute;
+  top: calc(100% + 24px);
+  left: 50%;
+  z-index: 6;
+  --ring: 44px;
+  --avatar: 38px;
+  --avatar-font: 17px;
+  --name-size: 16px;
+  --you-size: 13px;
+  transform: translate(-50%, -50%);
+}
+
+// Spielstapel: Rücken + offene Oberkarte + Stapel-Chip
+.my-stock {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+div.my-stock {
+  cursor: default;
+}
+
+.stock-cards {
+  position: relative;
+  width: calc(var(--own-w) + 4px);
+  height: calc(var(--own-h) + 4px);
+}
+
+.stock-cards > * {
+  --card-w: var(--own-w);
+  --card-h: var(--own-h);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.stock-cards .stock-back {
+  top: 2px;
+  left: 2px;
+}
+
+.stock-cards .stock-back--far {
+  top: 4px;
+  left: 4px;
+}
+
+.stock-empty,
+.hand-slot {
+  --card-w: var(--own-w);
+  width: var(--card-w);
+  height: var(--own-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: max(3px, calc(var(--card-w) * 0.145));
+  background: var(--table-slot-bg);
+}
+
+.stock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
+  font-size: var(--own-chip);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.stock-chip .material-symbols-rounded {
+  font-size: calc(var(--own-chip) + 2px);
+}
+
+// Gewählt: Ring in Zielfarbe
+.my-stock.selected .top,
+.hand-card.selected app-skipbo-card {
+  box-shadow:
+    0 0 0 3px var(--table-target),
+    0 12px 22px rgba(200, 56, 109, 0.45);
+}
+
+// Ablagen: senkrechte Fächer
+.mine-discards {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--own-discard-gap);
+  --fan-w: var(--own-w);
+  --fan-h: var(--own-h);
+  --strip: var(--own-strip);
+  --fan-font: var(--own-fan-font);
+  --cap-font: var(--own-cap-font);
+}
+
+.discard-col {
+  position: relative;
+}
+
+.discard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+div.discard {
+  cursor: default;
+}
+
+// Als Quelle gewählt: ganze Ablage hebt sich
+.discard.selected {
+  position: relative;
+  z-index: 2;
+  margin: -4px;
+  padding: 4px;
+  border: 2px solid var(--table-target);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--table-target) 12%, transparent);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.35),
+    0 0 0 4px color-mix(in srgb, var(--table-target) 18%, transparent);
+  transform: translateY(-10px);
+}
+
+// Als Ablageziel: violett gestrichelt; ein gemeinsamer Tag für alle vier
+.discard--target {
+  position: relative;
+  margin: -5px;
+  padding: 5px;
+  border: 2px dashed var(--table-violet);
+  border-radius: 12px;
+  box-shadow: 0 0 0 4px rgba(139, 124, 240, 0.2);
+}
+
+.drop-tag {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--table-violet);
+  color: #0f1115;
+  font-size: var(--tag-font);
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.drop-tag .material-symbols-rounded {
+  font-size: calc(var(--tag-font) + 2px);
+}
+
+:host([data-layout='quer']) .drop-tag {
+  top: -23px;
+}
+
+:host([data-layout='laptop']) .drop-tag {
+  top: -24px;
+}
+
+// Kappe „+N“: 44 px Trefferfläche nach oben, öffnet die ganze Ablage als Leiste
+.cap-toggle {
+  position: absolute;
+  top: calc(var(--own-strip) - 44px);
+  left: 0;
+  z-index: 3;
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cap-list {
+  position: absolute;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 32px));
+  box-sizing: border-box;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  background: var(--color-surface-raised);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+}
+
+.cap-title {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cap-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cap-cards app-skipbo-card {
+  --card-w: 30px;
+  --card-h: 42px;
+}
+
+// Hand: 5 Karten im Bogen, die gewählte rutscht nach oben
+.hand {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--hand-gap);
+  padding: 0 var(--hand-pad);
+}
+
+.hand-card {
+  position: relative;
+  display: flex;
+  flex: none;
+  width: var(--hand-w);
+  height: var(--hand-h);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform-origin: 50% 100%;
+  transition: transform 80ms ease-out;
+}
+
+.hand-card:disabled {
+  cursor: default;
+}
+
+.hand-card.selected {
+  z-index: 2;
+}
+
+.hand-card app-skipbo-card,
+.hand .hand-slot {
+  --card-w: var(--hand-w);
+  --card-h: var(--hand-h);
+  flex: none;
+  height: var(--hand-h);
+}

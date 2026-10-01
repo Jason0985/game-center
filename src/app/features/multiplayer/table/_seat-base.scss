@@ -23,8 +23,8 @@
   cursor: default;
   // Das Leuchten kommt erst, wenn der Zeiger angekommen ist
   transition:
-    box-shadow 0s 240ms,
-    border-color 0s 240ms;
+    box-shadow 0s var(--turn-delay, 240ms),
+    border-color 0s var(--turn-delay, 240ms);
 }
 
 :host([data-variant='row']) {

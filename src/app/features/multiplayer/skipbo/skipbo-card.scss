@@ -1,0 +1,150 @@
+@use '../table/card-base';
+
+// Skip-Bo-Gesichter (Grundlage in table/_card-base.scss). Drei Farbgruppen und der
+// Joker, in allen Farbschemas gleich; die Punkte unten nennen die Gruppe ohne Farbe.
+:host {
+  letter-spacing: -0.03em;
+}
+
+:host([data-group='1']) {
+  --face: #5fd3e6;
+  --ink: #0f1115;
+}
+
+:host([data-group='2']) {
+  --face: #f472b6;
+  --ink: #0f1115;
+}
+
+:host([data-group='3']) {
+  --face: #6d5bd0;
+  --ink: #ffffff;
+}
+
+:host([data-group='J']) {
+  --face: #f5c84b;
+  --ink: #2a1d00;
+}
+
+.material-symbols-rounded {
+  font-variation-settings: 'FILL' 1;
+}
+
+// row: Eckindizes, Wert, Gruppenpunkte
+.corner {
+  font-size: calc(var(--card-w) * 0.21);
+  opacity: 0.75;
+}
+
+:host(.wide) .value {
+  font-size: calc(var(--card-w) * 0.56);
+}
+
+.dots {
+  position: absolute;
+  bottom: calc(var(--card-h) * 0.08);
+  left: 50%;
+  display: flex;
+  gap: round(calc(var(--card-w) * 0.05), 1px);
+  transform: translateX(-50%);
+}
+
+.dots span {
+  width: round(calc(var(--card-w) * 0.07), 1px);
+  height: round(calc(var(--card-w) * 0.07), 1px);
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.joker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--card-w) * 0.045);
+}
+
+.joker-icon {
+  font-size: calc(var(--card-w) * 0.47);
+}
+
+.joker-text {
+  font-size: calc(var(--card-w) * 0.16);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+// fan: Wert oben links bleibt im Streifen sichtbar (Größe je Ablage über --fan-font)
+:host([data-variant='fan']) {
+  border-radius: max(3px, calc(var(--card-w) * 0.145));
+}
+
+.fan-value {
+  top: calc(var(--card-h) * 0.04);
+  font-size: var(--fan-font, calc(var(--card-w) * 0.56));
+}
+
+.fan-index {
+  right: calc(var(--card-w) * 0.1);
+  bottom: calc(var(--card-h) * 0.05);
+  font-size: round(calc(var(--card-w) * 0.28), 1px);
+  opacity: 0.6;
+}
+
+.fan-joker {
+  position: absolute;
+  top: calc(var(--card-h) * 0.05);
+  left: calc(var(--card-w) * 0.08);
+  font-size: calc(var(--card-w) * 0.36);
+}
+
+// flat: nur der Wert
+:host([data-variant='flat']) .value {
+  font-size: round(up, calc(var(--card-w) * 0.8), 1px);
+}
+
+:host([data-variant='flat'].wide) .value {
+  font-size: round(calc(var(--card-w) * 0.72), 1px);
+}
+
+.flat-joker {
+  font-size: calc(var(--card-w) * 0.77);
+}
+
+// edge: Kante einer Karte unter der obersten
+:host([data-variant='edge']) {
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+// Rückseite (Rahmen und Streifen aus card-base)
+.sb {
+  color: #f27ba5;
+  font-size: calc(var(--card-w) * 0.31);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+}
+
+// Joker oben auf einem Aufbaustapel: angenommener Wert
+.badge {
+  position: absolute;
+  top: calc(var(--card-w) * -0.2);
+  right: calc(var(--card-w) * -0.2);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--card-w) * 0.45);
+  height: calc(var(--card-w) * 0.45);
+  box-sizing: border-box;
+  padding: 0 3px;
+  border: 2px solid #f5c84b;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: calc(var(--card-w) * 0.26);
+  font-weight: 900;
+  letter-spacing: normal;
+}
