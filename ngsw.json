@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1790895238994,
+  "timestamp": 1790895431322,
   "index": "/game-center/index.html",
   "assetGroups": [
     {
@@ -654,7 +654,7 @@
     "/game-center/game-center-logo.png": "453eb4b561e2e9c17a0dccb721a870aab4785cb3",
     "/game-center/index.html": "0a0ba3f709dd08377bd2271a08332484bc5fdd29",
     "/game-center/main-6BOMAW6S.js": "b90bf1f57e9518978e6db319a0787731ec3e91f5",
-    "/game-center/manifest.webmanifest": "ba6c1a321ad5308273ee70edbd01dc1e058e766f",
+    "/game-center/manifest.webmanifest": "77f9758ea8bca7e8f02cd493250f515383587a1f",
     "/game-center/styles-RKM7RRKZ.css": "6f057300fafe70abee6fe0ba02ec334081ce5e9d"
   },
   "navigationUrls": [

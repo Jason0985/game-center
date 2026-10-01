@@ -10,6 +10,15 @@
   "apple-mobile-web-app-capable": "yes",
   "apple-mobile-web-app-title": "Game Center",
   "apple-mobile-web-app-status-bar-style": "default",
+  "shortcuts": [
+    {
+      "name": "Ankunftsplaner",
+      "short_name": "Wecker",
+      "description": "Weckzeit für deine Ankunft berechnen",
+      "url": "/game-center/collection/arrival-planner",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
