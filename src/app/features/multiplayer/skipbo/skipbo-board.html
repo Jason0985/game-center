@@ -22,7 +22,7 @@
     <div class="builds" role="group" aria-label="Aufbaustapel">
       @for (b of builds(); track b.index) {
         @if (b.target) {
-          <div class="build build--target">
+          <div class="build">
             <button
               type="button"
               class="build-button"
@@ -32,20 +32,16 @@
               (click)="playTo(b.index)"
             >
               <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
-              <span class="target-chip" aria-hidden="true">→ {{ b.value + 1 }}</span>
             </button>
-            <span class="build-label" aria-hidden="true">Stapel {{ b.index + 1 }}</span>
           </div>
         } @else {
           <div
             class="build"
             role="img"
-            [class.dim]="b.dim"
             [attr.data-build]="b.index"
             [attr.aria-label]="b.label"
           >
             <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
-            <span class="build-label">Stapel {{ b.index + 1 }}</span>
           </div>
         }
       }
@@ -163,21 +159,13 @@
       role="group"
       [attr.aria-label]="handSelected() ? 'Deine Ablagen, zum Ablegen wählbar' : 'Deine Ablagen'"
     >
-      @if (handSelected()) {
-        <span class="drop-tag" aria-hidden="true">
-          <span class="material-symbols-rounded fill">move_to_inbox</span>
-          {{
-            layout() === 'quer' || layout() === 'laptop' ? 'Ablagen · hier ablegen' : 'hier ablegen'
-          }}
-        </span>
-      }
       @for (d of myDiscards(); track d.index) {
         <div class="discard-col">
           @switch (d.mode) {
             @case ('target') {
               <button
                 type="button"
-                class="discard discard--target"
+                class="discard"
                 [attr.data-discard]="d.index"
                 [attr.aria-label]="d.label"
                 [disabled]="busy()"

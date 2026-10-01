@@ -12,6 +12,7 @@ import { Flip7Service } from '../flip7/flip7.service';
 import { SkipboService } from '../skipbo/skipbo.service';
 import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
+import { LobbyGameDialog } from './lobby-game-dialog';
 
 function member(userId: string, ready = false): LobbyMember {
   return {
@@ -240,6 +241,21 @@ describe('Lobby', () => {
     await render('guest');
     expect(fixture.nativeElement.querySelector('.segments')).toBeNull();
     expect(text()).toContain('200 Punkte');
+  });
+
+  it('lets the host switch the game via the dialog', async () => {
+    await render('host');
+    expect(text()).toContain('Flip 7');
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of('skip-bo') });
+
+    (fixture.nativeElement.querySelector('.game-switch') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(dialog.open).toHaveBeenCalledWith(LobbyGameDialog, expect.anything());
+    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'skip-bo', {});
+
+    fixture.destroy();
+    await render('guest');
+    expect(fixture.nativeElement.querySelector('.game-switch')).toBeNull();
   });
 
   it('cannot start without a chosen game', async () => {

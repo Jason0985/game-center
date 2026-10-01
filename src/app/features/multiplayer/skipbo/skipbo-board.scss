@@ -32,7 +32,6 @@
   --build-w: 38px;
   --build-h: 52px;
   --build-gap: 6px;
-  --target-font: 10px;
 
   // Tisch oben verankert, der eigene Bereich überlappt ihn und füllt den Rest nach unten
   display: grid;
@@ -66,7 +65,6 @@
   --build-w: 50px;
   --build-h: 70px;
   --build-gap: 9px;
-  --target-font: 11px;
 }
 
 :host([data-layout='quer']) {
@@ -88,7 +86,6 @@
   --build-w: 54px;
   --build-h: 76px;
   --build-gap: 12px;
-  --target-font: 11px;
 }
 
 :host([data-layout='laptop']) {
@@ -111,7 +108,6 @@
   --build-w: 64px;
   --build-h: 90px;
   --build-gap: 14px;
-  --target-font: 11px;
 }
 
 // Ab 5 Spielern rückt die Mitte hoch (Platz für die seitlichen Auslagen)
@@ -146,57 +142,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
 }
 
-.build--target {
-  gap: 18px;
-}
-
-.build.dim {
-  opacity: 0.38;
-}
-
-.build-label {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-:host([data-layout='phone']) .build-label {
-  display: none;
-}
-
-// Zielwahl wie bei Flip 7: gestrichelter Rand, Halo, Chip „→ N“
 .build-button {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: -5px;
-  padding: 5px;
-  border: 2px dashed var(--table-target);
-  border-radius: 12px;
+  padding: 0;
+  border: 0;
   background: transparent;
-  box-shadow: 0 0 0 4px rgba(242, 123, 165, 0.2);
+  color: inherit;
   cursor: pointer;
-}
-
-.target-chip {
-  position: absolute;
-  bottom: -13px;
-  left: 50%;
-  z-index: 3;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--table-target);
-  color: #0f1115;
-  font-size: var(--target-font);
-  font-weight: 800;
-  line-height: 1.5;
-  white-space: nowrap;
-  transform: translateX(-50%);
 }
 
 .build-cards {

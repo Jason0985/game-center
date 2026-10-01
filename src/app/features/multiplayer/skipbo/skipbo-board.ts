@@ -58,7 +58,7 @@ const CLEAR_MS = 1400;
 
 // Spieltisch: ovale Platte mit Nachziehstapel, 4 Aufbaustapeln und den Plätzen der
 // Mitspieler, darunter (am Laptop darauf) der eigene Bereich. Alles per Antippen:
-// Karte wählen (Hand, Spielstapel, Ablage), dann einen markierten Stapel.
+// Karte wählen (Hand, Spielstapel, Ablage), dann einen Stapel.
 @Component({
   selector: 'app-skipbo-board',
   imports: [NgTemplateOutlet, SkipboCardView, SkipboFan, SkipboSeat, TableTop],
@@ -150,7 +150,6 @@ export class SkipboBoard {
         edges: pile.slice(Math.max(0, value - 3), -1),
         joker: top && isJoker(top) ? value : null,
         target,
-        dim: !!card && !target,
         label: target ? `${where}, ${next} anlegen` : where,
       };
     });

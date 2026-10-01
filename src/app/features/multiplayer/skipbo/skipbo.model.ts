@@ -89,7 +89,7 @@ export const SKIPBO_RULES = [
   'Spielbar sind deine Handkarten, die oberste Karte deines Spielstapels und die oberste Karte jeder Ablage.',
   'Zu Beginn deines Zugs füllst du die Hand auf 5 Karten auf. Spielst du alle 5 aus, ziehst du sofort 5 neue.',
   'Dein Zug endet, wenn du eine Handkarte auf eine deiner vier Ablagen legst.',
-  'Antippen: erst eine Karte wählen, dann einen markierten Stapel. Nochmal antippen hebt die Wahl auf.',
+  'Antippen: erst eine Karte wählen, dann einen Stapel. Nochmal antippen hebt die Wahl auf.',
 ];
 
 export const isJoker = (card: SkipboCard): boolean => card === 'SB';

@@ -1,21 +1,24 @@
 import { Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { AppErrorService } from '../../../services/app-error.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
-import { GAMES, gameOf, LobbyGameSettings } from '../lobby.model';
+import { gameOf, LobbyGameSettings } from '../lobby.model';
+import { LobbyGameDialog, LobbyGameDialogData } from './lobby-game-dialog';
 import { FLIP7_DEFAULT_TARGET, FLIP7_TARGET_OPTIONS } from '../flip7/flip7.model';
 
 // Spielauswahl und Rahmenbedingungen in der Warte-Lobby; ändern darf nur der Host
 @Component({
   selector: 'app-lobby-game-settings',
-  imports: [MatIconModule, NgTemplateOutlet],
+  imports: [MatButtonModule, MatIconModule],
   templateUrl: './lobby-game-settings.html',
   styleUrl: './lobby-game-settings.scss',
 })
 export class LobbyGameSetup {
   private readonly lobbyService = inject(MultiplayerLobbyService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly dialog = inject(MatDialog);
 
   readonly lobbyId = input.required<string>();
   readonly gameKey = input<string | null>(null);
@@ -25,7 +28,6 @@ export class LobbyGameSetup {
   // Gespeichert (die Lobby lädt dann neu)
   readonly changed = output<void>();
 
-  readonly games = GAMES;
   readonly targetOptions = FLIP7_TARGET_OPTIONS;
   readonly saving = signal(false);
   readonly selectedGame = computed(() => gameOf(this.gameKey()));
@@ -39,6 +41,18 @@ export class LobbyGameSetup {
   async selectTarget(target: number | null): Promise<void> {
     if (target === this.target() && this.flip7()) return;
     await this.save('flip-7', target);
+  }
+
+  openGameDialog(): void {
+    this.dialog
+      .open<LobbyGameDialog, LobbyGameDialogData, string>(LobbyGameDialog, {
+        data: { gameKey: this.gameKey() },
+        width: '380px',
+      })
+      .afterClosed()
+      .subscribe((gameKey) => {
+        if (gameKey) void this.selectGame(gameKey);
+      });
   }
 
   async selectGame(gameKey: string): Promise<void> {

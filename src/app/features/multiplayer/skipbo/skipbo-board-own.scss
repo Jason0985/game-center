@@ -10,7 +10,6 @@
   --own-chip: 11px;
   --own-gap: 14px;
   --own-discard-gap: 8px;
-  --tag-font: 11px;
   --hand-w: 44px;
   --hand-h: 62px;
   --hand-gap: 4px;
@@ -26,7 +25,6 @@
   --own-chip: 12px;
   --own-gap: 16px;
   --own-discard-gap: 10px;
-  --tag-font: 12px;
   --hand-w: 58px;
   --hand-h: 82px;
   --hand-gap: 8px;
@@ -54,7 +52,6 @@
   --own-chip: 12px;
   --own-gap: 16px;
   --own-discard-gap: 10px;
-  --tag-font: 12px;
   --hand-w: 64px;
   --hand-h: 90px;
   --hand-gap: 10px;
@@ -328,47 +325,6 @@ div.discard {
     0 10px 22px rgba(0, 0, 0, 0.35),
     0 0 0 4px color-mix(in srgb, var(--table-target) 18%, transparent);
   transform: translateY(-10px);
-}
-
-// Als Ablageziel: violett gestrichelt; ein gemeinsamer Tag für alle vier
-.discard--target {
-  position: relative;
-  margin: -5px;
-  padding: 5px;
-  border: 2px dashed var(--table-violet);
-  border-radius: 12px;
-  box-shadow: 0 0 0 4px rgba(139, 124, 240, 0.2);
-}
-
-.drop-tag {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 10px;
-  border-radius: 999px;
-  background: var(--table-violet);
-  color: #0f1115;
-  font-size: var(--tag-font);
-  font-weight: 800;
-  line-height: 1.6;
-  white-space: nowrap;
-  transform: translateX(-50%);
-}
-
-.drop-tag .material-symbols-rounded {
-  font-size: calc(var(--tag-font) + 2px);
-}
-
-:host([data-layout='quer']) .drop-tag {
-  top: -23px;
-}
-
-:host([data-layout='laptop']) .drop-tag {
-  top: -24px;
 }
 
 // Kappe „+N“: 44 px Trefferfläche nach oben, öffnet die ganze Ablage als Leiste

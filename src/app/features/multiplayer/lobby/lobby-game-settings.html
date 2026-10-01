@@ -1,32 +1,20 @@
 <h2 id="lobby-game-title">Spiel</h2>
 
-<ng-template #tile let-game>
-  <mat-icon class="game-icon" aria-hidden="true">{{ game.icon }}</mat-icon>
-  <span class="game-copy">
-    <strong>{{ game.name }}</strong>
-    <small>{{ game.blurb }}</small>
-  </span>
-  @if (game.key === gameKey()) {
-    <mat-icon class="game-check" aria-hidden="true">check_circle</mat-icon>
-  }
-</ng-template>
-
-@if (isHost()) {
-  @for (game of games; track game.key) {
-    <button
-      type="button"
-      class="game-tile"
-      [class.game-tile--selected]="game.key === gameKey()"
-      [attr.aria-pressed]="game.key === gameKey()"
-      [disabled]="disabled() || saving()"
-      (click)="selectGame(game.key)"
-    >
-      <ng-container [ngTemplateOutlet]="tile" [ngTemplateOutletContext]="{ $implicit: game }" />
-    </button>
-  }
-} @else if (selectedGame(); as game) {
-  <div class="game-tile game-tile--selected">
-    <ng-container [ngTemplateOutlet]="tile" [ngTemplateOutletContext]="{ $implicit: game }" />
+@if (selectedGame() || isHost()) {
+  <div class="game-tile" [class.game-tile--selected]="selectedGame()">
+    <mat-icon class="game-icon" aria-hidden="true">{{ selectedGame()?.icon ?? 'casino' }}</mat-icon>
+    <strong class="game-copy">{{ selectedGame()?.name ?? 'Noch kein Spiel' }}</strong>
+    @if (isHost()) {
+      <button
+        mat-stroked-button
+        type="button"
+        class="game-switch"
+        [disabled]="disabled() || saving()"
+        (click)="openGameDialog()"
+      >
+        {{ selectedGame() ? 'Spiel wechseln' : 'Spiel wählen' }}
+      </button>
+    }
   </div>
 } @else {
   <p class="hint">Der Host wählt noch ein Spiel aus.</p>
