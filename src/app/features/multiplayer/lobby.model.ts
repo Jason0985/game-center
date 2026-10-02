@@ -65,6 +65,7 @@ export const GAMES = [
     icon: 'style',
     blurb: 'Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!',
     maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
   },
   {
     key: 'skip-bo',
@@ -72,6 +73,16 @@ export const GAMES = [
     icon: 'layers',
     blurb: 'Spielstapel leer spielen – Karten von 1 bis 12 in die Mitte legen.',
     maxPlayers: 6,
+    url: null,
+  },
+  // Läuft extern; die Lobby zeigt nur den Link
+  {
+    key: 'monopoly',
+    name: 'Monopoly',
+    icon: 'apartment',
+    blurb: 'Straßen kaufen, Häuser bauen, Miete kassieren – gespielt auf richup.io.',
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    url: 'https://richup.io',
   },
 ] as const;
 
@@ -88,6 +99,7 @@ export function startBlocker(
 ): string | null {
   const game = gameOf(gameKey);
   if (!game) return 'Der Host muss noch ein Spiel auswählen.';
+  if (game.url) return `${game.name} spielt ihr direkt über den Link oben.`;
   return memberCount > game.maxPlayers
     ? `${game.name} geht mit höchstens ${game.maxPlayers} Spielern.`
     : null;

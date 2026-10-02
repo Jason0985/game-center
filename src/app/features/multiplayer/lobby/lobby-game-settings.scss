@@ -96,3 +96,9 @@ h2 {
 .game-switch {
   flex: 0 0 auto;
 }
+
+.game-copy a {
+  color: var(--color-primary-light);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}

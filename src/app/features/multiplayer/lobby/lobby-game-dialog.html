@@ -17,6 +17,12 @@
           <mat-icon aria-hidden="true">group</mat-icon>
           {{ game.players }}
         </small>
+        @if (game.url) {
+          <small class="game-players">
+            <mat-icon aria-hidden="true">link</mat-icon>
+            {{ game.url }}
+          </small>
+        }
       </span>
       @if (game.key === data.gameKey) {
         <mat-icon class="game-check" aria-hidden="true">check_circle</mat-icon>

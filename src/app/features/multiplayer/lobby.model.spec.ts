@@ -67,4 +67,8 @@ describe('startBlocker', () => {
     expect(startBlocker('skip-bo', 6)).toBeNull();
     expect(startBlocker('skip-bo', 7)).toBe('Skip-Bo geht mit höchstens 6 Spielern.');
   });
+
+  it('never starts Monopoly here (played on richup.io)', () => {
+    expect(startBlocker('monopoly', 2)).toBe('Monopoly spielt ihr direkt über den Link oben.');
+  });
 });

@@ -3,7 +3,12 @@
 @if (selectedGame() || isHost()) {
   <div class="game-tile" [class.game-tile--selected]="selectedGame()">
     <mat-icon class="game-icon" aria-hidden="true">{{ selectedGame()?.icon ?? 'casino' }}</mat-icon>
-    <strong class="game-copy">{{ selectedGame()?.name ?? 'Noch kein Spiel' }}</strong>
+    <span class="game-copy">
+      <strong>{{ selectedGame()?.name ?? 'Noch kein Spiel' }}</strong>
+      @if (selectedGame()?.url; as url) {
+        <a [href]="url" target="_blank" rel="noopener">{{ url }}</a>
+      }
+    </span>
     @if (isHost()) {
       <button
         mat-stroked-button
