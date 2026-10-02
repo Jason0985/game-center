@@ -1,0 +1,146 @@
+// Bogen-Tisch (Skip-Bo, Uno) nach den Artboards Handy (390), iPad hoch (820), iPad quer
+// (1180) und Laptop (1440): Tischplatte, Wasserzeichen und Platz darunter (ARC_TABLES in
+// table.model.ts). Alles auf der Platte sitzt in Prozent; Karten und Schrift behalten
+// ihre Design-Pixel. Die Spiele setzen ihre Mitte und Kartengrößen selbst.
+
+:host {
+  // Handy (--head-h: Kopf der Bühne; --below: Platz unter der Tischplatte laut Design)
+  --head-h: 56px;
+  --area-top: 8px;
+  --below: 190px;
+  --table-w: 378;
+  --table-h: 590;
+  --table-margin: 12px;
+  --table-radius: 50% 50% 28px 28px / 42.37% 42.37% 28px 28px;
+  --felt-y: 70%;
+  --rim: 10px;
+  --table-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  --mark-size: 140px;
+  --mark-x: 50%;
+  --mark-y: 73.9%;
+  --mark-spacing: -0.08em;
+  // Zeiger dreht erst, wenn die abgelegte Karte gelandet ist; der Platz leuchtet danach
+  --pointer-delay: 400ms;
+  --turn-delay: 640ms;
+  // Tisch oben verankert, der eigene Bereich überlappt ihn und füllt den Rest nach unten
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+:host([data-layout='hoch']) {
+  --head-h: 64px;
+  --area-top: 12px;
+  --below: 244px;
+  --table-w: 788;
+  --table-h: 860;
+  --table-margin: 32px;
+  --table-radius: 50% 50% 36px 36px / 44.19% 44.19% 36px 36px;
+  --felt-y: 65%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 240px;
+  --mark-y: 74.88%;
+}
+
+:host([data-layout='quer']) {
+  --area-top: 12px;
+  --below: 232px;
+  --table-w: 1140;
+  --table-h: 520;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 55%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 240px;
+  --mark-y: 49.62%;
+}
+
+:host([data-layout='laptop']) {
+  --head-h: 64px;
+  --area-top: 54px;
+  --below: 122px;
+  --table-w: 1220;
+  --table-h: 720;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 50%;
+  --rim: 16px;
+  --table-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  --mark-size: 240px;
+  --mark-y: 43.33%;
+}
+
+// Eigener Bereich (Handy, iPad): Bedienfeld unter dem Tisch mit Namens-Reiter; die
+// Fläche liegt auf ::before, damit die Hand am Handy dahinter verschwinden kann
+.mine {
+  position: relative;
+  z-index: 5;
+  margin-top: -22px;
+  padding: 10px 16px;
+}
+
+.mine::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 24px 24px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  content: '';
+}
+
+.tab {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  z-index: 2;
+  --ring: 28px;
+  --avatar: 24px;
+  --name-size: 13px;
+}
+
+:host([data-layout='hoch']) .mine {
+  margin-top: -36px;
+  padding: 20px 24px;
+}
+
+:host([data-layout='hoch']) .mine::before {
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='hoch']) .tab {
+  top: -46px;
+  left: 24px;
+  --tab-h: 47px;
+  --tab-pad: 5px 17px 0 6px;
+  --ring: 34px;
+  --avatar: 30px;
+  --name-size: 15px;
+}
+
+:host([data-layout='quer']) .mine {
+  margin-top: 10px;
+  padding: 12px 24px;
+}
+
+:host([data-layout='quer']) .mine::before {
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 34px rgba(0, 0, 0, 0.25);
+}
+
+:host([data-layout='quer']) .tab {
+  top: -44px;
+  left: 24px;
+  --tab-h: 45px;
+  --tab-pad: 5px 16px 0 6px;
+  --ring: 32px;
+  --avatar: 28px;
+  --name-size: 14px;
+}

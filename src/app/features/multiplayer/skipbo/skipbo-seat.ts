@@ -1,11 +1,8 @@
 import { Component, computed, input } from '@angular/core';
-import { AVATAR_COLORS } from '../table/table.model';
+import { AVATAR_COLORS, BACK_TILTS, cardCount } from '../table/table.model';
 import { SkipboCardView } from './skipbo-card';
 import { SkipboFan } from './skipbo-fan';
-import { cardCount, cardName, SkipboCard, SkipboPlayer } from './skipbo.model';
-
-// Handanzahl als kleiner Rückenfächer (Werte bleiben geheim)
-const BACK_TILTS = [[0], [-5, 5], [-10, 0, 10]];
+import { cardName, SkipboCard, SkipboPlayer } from './skipbo.model';
 
 // Namensschild am Tisch. Mitspieler (column: Handy/iPad hoch, row: quer/Laptop) mit
 // Stapel-Chip, Handanzahl und darunter ihre Auslage (Spielstapel-Oberkarte, 4 Ablagen);

@@ -47,6 +47,15 @@ describe('gameLabel', () => {
     expect(gameLabel('skip-bo', {})).toBe('Skip-Bo');
   });
 
+  it('lists the active Uno house rules', () => {
+    const off = { stacking: false, sevenZero: false, drawUntilPlayable: false };
+    expect(gameLabel('uno', off)).toBe('Uno');
+    expect(gameLabel('uno', { ...off, sevenZero: true })).toBe('Uno · 7-0');
+    expect(gameLabel('uno', { ...off, stacking: true, sevenZero: true })).toBe(
+      'Uno · Stapeln, 7-0',
+    );
+  });
+
   it('handles lobbies without a game', () => {
     expect(gameLabel(null, null)).toBe('Noch kein Spiel gewählt');
     expect(gameLabel('unknown', { targetScore: 200 })).toBe('Noch kein Spiel gewählt');
@@ -66,6 +75,10 @@ describe('startBlocker', () => {
   it('lets Skip-Bo start with up to 6 players', () => {
     expect(startBlocker('skip-bo', 6)).toBeNull();
     expect(startBlocker('skip-bo', 7)).toBe('Skip-Bo geht mit höchstens 6 Spielern.');
+  });
+
+  it('lets Uno start with the full lobby', () => {
+    expect(startBlocker('uno', 8)).toBeNull();
   });
 
   it('never starts Monopoly here (played on richup.io)', () => {

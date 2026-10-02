@@ -1,0 +1,134 @@
+@use '../table/card-base';
+
+// Uno-Flächen (Karten.dc), in allen Themes gleich; Maße wachsen mit --card-w
+// (Handkarte 54 × 78: Radius 8, Rahmen innen 4,5, Wert 37, Eckindex 12)
+:host {
+  border-color: rgba(0, 0, 0, 0.18);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+:host([data-color='R']) {
+  --face: #d1373b;
+  --ink: #ffffff;
+}
+
+:host([data-color='Y']) {
+  --face: #f2c230;
+  --ink: #1a1300;
+}
+
+:host([data-color='G']) {
+  --face: #43b77a;
+  --ink: #0b1f14;
+}
+
+:host([data-color='B']) {
+  --face: #2a4fc1;
+  --ink: #ffffff;
+}
+
+:host([data-color='W']) {
+  --face: #15171c;
+  --ink: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+}
+
+.inner {
+  position: absolute;
+  inset: calc(var(--card-h) * 0.06) calc(var(--card-w) * 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: max(2px, calc(var(--card-w) * 0.11));
+}
+
+:host([data-color='W']) .inner {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: calc(var(--card-w) * 0.22);
+  font-weight: 900;
+  line-height: 1;
+  opacity: 1;
+}
+
+.corner .material-symbols-rounded {
+  font-size: calc(var(--card-w) * 0.24);
+}
+
+.value {
+  font-size: calc(var(--card-w) * 0.69);
+  line-height: 1;
+}
+
+.value--plus {
+  font-size: calc(var(--card-w) * 0.52);
+}
+
+.symbol {
+  font-size: calc(var(--card-w) * 0.67);
+}
+
+// Farbform im Eckindex: Rot ●, Gelb ▲, Grün ■, Blau ◆
+.shape {
+  width: calc(var(--card-w) * 0.11);
+  height: calc(var(--card-w) * 0.11);
+  background: var(--ink);
+}
+
+:host([data-color='R']) .shape {
+  border-radius: 50%;
+}
+
+:host([data-color='Y']) .shape {
+  width: calc(var(--card-w) * 0.13);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+:host([data-color='G']) .shape {
+  border-radius: 1px;
+}
+
+:host([data-color='B']) .shape {
+  width: calc(var(--card-w) * 0.075);
+  height: calc(var(--card-w) * 0.075);
+  margin: 1px;
+  transform: rotate(45deg);
+}
+
+.wheel {
+  width: calc(var(--card-w) * 0.65);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(#d1373b 0 25%, #f2c230 0 50%, #43b77a 0 75%, #2a4fc1 0);
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.wild4 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--card-w) * 0.06);
+}
+
+.wild4 .wheel {
+  width: calc(var(--card-w) * 0.36);
+}
+
+.plus {
+  font-size: calc(var(--card-w) * 0.375);
+  line-height: 1;
+}
+
+// Rückseite: Rahmen in Markenfarbe, Farbrad klein in der Mitte
+.wheel--back {
+  width: calc(var(--card-w) * 0.41);
+  opacity: 0.9;
+  box-shadow:
+    0 0 0 2px var(--table-card-back),
+    0 0 0 3px rgba(255, 255, 255, 0.25);
+}

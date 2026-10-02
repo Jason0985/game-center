@@ -2,11 +2,7 @@ import {
   canPlay,
   describeEvent,
   fanView,
-  keyCards,
-  KeyedCard,
   rankPlayers,
-  seatSpots,
-  sizeClass,
   SkipboCard,
   SkipboPlayer,
   validPiles,
@@ -46,47 +42,6 @@ describe('fanView', () => {
     expect(fanView(['1', '2', '3'], 4)).toEqual({ cap: 0, cards: ['1', '2', '3'] });
     expect(fanView(['1', '2', '3', '4', '5', '6'], 3)).toEqual({ cap: 3, cards: ['4', '5', '6'] });
     expect(fanView(['1', '2', '3', '4', '5', '6'], 4).cap).toBe(2);
-  });
-});
-
-describe('keyCards', () => {
-  let id = 0;
-  const newKey = () => `k${++id}`;
-
-  it('keeps keys when a card leaves the middle and gives drawn cards new ones', () => {
-    const hand = keyCards([], ['5', '9', 'SB', '2', '5'], newKey);
-    const played = keyCards(hand, ['5', '9', '2', '5'], newKey);
-    expect(played.map((item) => item.key)).toEqual([
-      hand[0].key,
-      hand[1].key,
-      hand[3].key,
-      hand[4].key,
-    ]);
-
-    const drawn: KeyedCard[] = keyCards(played, ['5', '9', '2', '5', '7'], newKey);
-    expect(drawn.slice(0, 4)).toEqual(played);
-    expect(played.map((item) => item.key)).not.toContain(drawn[4].key);
-  });
-});
-
-describe('seatSpots', () => {
-  const near = (actual: { x: number; y: number }, x: number, y: number) => {
-    expect(Math.abs(actual.x - x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(actual.y - y)).toBeLessThanOrEqual(2);
-  };
-
-  it('matches the artboard seats', () => {
-    const phone = seatSpots('phone', 3);
-    near(phone[0], 70.9, 215);
-    near(phone[1], 189.2, 40);
-    near(phone[2], 307.2, 215.4);
-    near(seatSpots('laptop', 5)[0], 65.9, 274.4);
-  });
-});
-
-describe('sizeClass', () => {
-  it('shrinks the seats with more players', () => {
-    expect([2, 3, 4, 5, 6].map(sizeClass)).toEqual(['l', 'l', 'm', 's', 's']);
   });
 });
 

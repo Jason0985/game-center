@@ -1,0 +1,129 @@
+// Mitspieler-Plätze (Aufbau in uno-seat.scss). Drittes Stylesheet von UnoBoard (Budget
+// pro Datei). Größe l: ≤ 3 Spieler, m: 4, s: 5–8.
+.opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  // Handy (Spalte), Größe l
+  --w: 91px;
+  --ring: 48px;
+  --avatar: 42px;
+  --name-size: 13px;
+  --fan-w: 16px;
+  --fan-h: 23px;
+}
+
+:host([data-size='m']) .opp {
+  --w: 80px;
+  --ring: 42px;
+  --avatar: 36px;
+  --name-size: 12px;
+  --fan-w: 14px;
+  --fan-h: 21px;
+}
+
+:host([data-size='s']) .opp {
+  --w: 64px;
+  --ring: 38px;
+  --avatar: 34px;
+  --name-size: 11px;
+  --fan-w: 14px;
+  --fan-h: 21px;
+}
+
+// Ab iPad: größere Schilder, Rücken 22 × 32 (× 1,2 bei ≤ 3, × 1,1 bei 4)
+:host(:not([data-layout='phone'])) .opp {
+  --name-size: 13px;
+  --label-size: 12px;
+  --label-bottom: -23px;
+  --badge-size: 12px;
+  --badge-top: -16px;
+  --hand-size: 12px;
+  --back-w: 11px;
+  --back-h: 15px;
+  --back-ml: -6px;
+  --fan-gap: 8px;
+  --fan-w: 26px;
+  --fan-h: 38px;
+}
+
+:host(:not([data-layout='phone'])[data-size='m']) .opp {
+  --fan-w: 24px;
+  --fan-h: 35px;
+}
+
+:host(:not([data-layout='phone'])[data-size='s']) .opp {
+  --fan-w: 22px;
+  --fan-h: 32px;
+}
+
+:host([data-layout='hoch']) .opp {
+  --w: 130px;
+  --pad: 8px 4px;
+  --radius: 16px;
+  --gap: 4px;
+  --ring: 60px;
+  --avatar: 52px;
+}
+
+:host([data-layout='hoch'][data-size='m']) .opp {
+  --w: 119px;
+  --ring: 55px;
+  --avatar: 49px;
+}
+
+:host([data-layout='hoch'][data-size='s']) .opp {
+  --w: 108px;
+  --ring: 50px;
+  --avatar: 44px;
+}
+
+:host([data-layout='quer']) .opp {
+  --w: 184px;
+  --gap: 7px;
+  --ring: 48px;
+  --avatar: 42px;
+  --info-gap: 3px;
+  --hand-size: 11px;
+  --back-w: 10px;
+  --back-h: 14px;
+}
+
+:host([data-layout='quer'][data-size='m']) .opp {
+  --w: 168px;
+  --ring: 44px;
+  --avatar: 38px;
+}
+
+:host([data-layout='quer'][data-size='s']) .opp {
+  --w: 160px;
+  --ring: 42px;
+  --avatar: 36px;
+}
+
+:host([data-layout='laptop']) .opp {
+  --w: 214px;
+  --gap: 8px;
+  --ring: 57px;
+  --avatar: 51px;
+  --name-size: 14px;
+  --info-gap: 4px;
+  --fan-w: 31px;
+  --fan-h: 46px;
+}
+
+:host([data-layout='laptop'][data-size='m']) .opp {
+  --w: 195px;
+  --ring: 53px;
+  --avatar: 47px;
+  --fan-w: 29px;
+  --fan-h: 42px;
+}
+
+:host([data-layout='laptop'][data-size='s']) .opp {
+  --w: 186px;
+  --ring: 50px;
+  --avatar: 44px;
+  --fan-w: 26px;
+  --fan-h: 38px;
+}

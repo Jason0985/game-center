@@ -47,14 +47,23 @@ export class Flip7GameView {
   // true: das Spiel ist schon vorbei
   readonly leave = output<boolean>();
 
-  readonly isHost = computed(() => this.hostUserId() === this.userId());
   private readonly table = injectTableGame<Flip7Game>({
     service: this.flip7,
     lobbyId: this.lobbyId,
-    isHost: this.isHost,
+    hostUserId: this.hostUserId,
+    userId: this.userId,
+    returned: this.returned,
     title: 'Flip 7',
     skipAfterS: FLIP7_SKIP_AFTER_S,
+    skipMessage:
+      'Wer gerade am Zug ist, bleibt stehen. Eine offene Zielauswahl wird automatisch getroffen.',
+    endMessage: (game) =>
+      game.status === 'playing'
+        ? 'Die laufende Runde wird nicht gewertet.'
+        : 'Danach wird der Endstand angezeigt.',
+    activeSeat: activeSeatOf,
   });
+  readonly isHost = this.table.isHost;
   readonly game = this.table.game;
   readonly loading = this.table.loading;
   readonly busy = this.table.busy;
@@ -62,6 +71,11 @@ export class Flip7GameView {
   readonly waitingSeconds = this.table.waitingSeconds;
   readonly waitingClock = this.table.waitingClock;
   readonly canSkip = this.table.canSkip;
+  readonly activeName = this.table.activeName;
+  readonly playerCount = this.table.playerCount;
+  readonly skip = this.table.skip;
+  readonly endGame = this.table.endGame;
+  readonly backToLobby = this.table.backToLobby;
 
   private readonly roundOverSince = signal<number | null>(null);
   readonly secondsLeft = computed(() => {
@@ -72,14 +86,6 @@ export class Flip7GameView {
   // Rundenende: erst ein paar Sekunden der Tisch (Flip-7-Moment), dann die Übersicht
   readonly showRoundTable = computed(
     () => this.roundOverSince() === null || this.secondsLeft() > FLIP7_NEXT_ROUND_DELAY_S,
-  );
-  readonly activeName = computed(() => {
-    const game = this.game();
-    const seat = game ? activeSeatOf(game) : null;
-    return game?.players.find((player) => player.seat === seat)?.name ?? 'Spieler';
-  });
-  readonly playerCount = computed(
-    () => this.game()?.players.filter((player) => player.state !== 'left').length ?? 0,
   );
   readonly subtitle = computed(() => {
     const game = this.game();
@@ -133,35 +139,6 @@ export class Flip7GameView {
     await this.table.run(() => this.flip7.chooseTarget(game, seat));
   }
 
-  // Überspringt nur, wenn nach der Bestätigung noch derselbe Stand gilt
-  async skip(game: Flip7Game): Promise<void> {
-    const confirmed = await this.table.confirm({
-      title: 'Spieler überspringen?',
-      message:
-        'Wer gerade am Zug ist, bleibt stehen. Eine offene Zielauswahl wird automatisch getroffen.',
-      confirmLabel: 'Überspringen',
-      icon: 'skip_next',
-    });
-    if (confirmed) {
-      await this.table.run(() => this.flip7.skip(game));
-    }
-  }
-
-  async endGame(game: Flip7Game): Promise<void> {
-    const confirmed = await this.table.confirm({
-      title: 'Spiel beenden?',
-      message:
-        game.status === 'playing'
-          ? 'Die laufende Runde wird nicht gewertet.'
-          : 'Danach wird der Endstand angezeigt.',
-      confirmLabel: 'Beenden',
-      icon: 'stop_circle',
-    });
-    if (confirmed) {
-      await this.table.run(() => this.flip7.endGame(game.id));
-    }
-  }
-
   // "Jetzt weiter" (Host sofort, alle nach dem Countdown; Fehler anzeigen) oder
   // Timer bei allen (Fehler ignorieren)
   async nextRound(gameId: string, roundNo: number, manual = true): Promise<void> {
@@ -176,11 +153,5 @@ export class Flip7GameView {
 
   async continueOpen(game: Flip7Game): Promise<void> {
     await this.table.run(() => this.flip7.continueOpen(game.id));
-  }
-
-  async backToLobby(): Promise<void> {
-    if (await this.table.run(() => this.flip7.returnToLobby(this.lobbyId()))) {
-      this.returned.emit();
-    }
   }
 }

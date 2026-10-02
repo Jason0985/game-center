@@ -1,28 +1,10 @@
 @use '../table/table-base';
+@use '../table/arc-table';
 
-// Spieltisch nach den Artboards Handy (390), iPad hoch (820), iPad quer (1180) und
-// Laptop (1440). Alles auf der Tischplatte sitzt in Prozent der Platte; Karten und
-// Schrift behalten ihre Design-Pixel. Weitere Teile: skipbo-board-own.scss (eigener
-// Bereich), skipbo-board-places.scss (Mitspieler).
+// Skip-Bo-Tisch (Platte in table/_arc-table.scss): Nachziehstapel und 4 Aufbaustapel in
+// der Mitte. Weitere Teile: skipbo-board-own.scss (eigener Bereich),
+// skipbo-board-places.scss (Mitspieler).
 :host {
-  // Handy (--head-h: Kopf der Bühne; --below: Platz unter der Tischplatte laut Design)
-  --head-h: 56px;
-  --area-top: 8px;
-  --below: 190px;
-  --table-w: 378;
-  --table-h: 590;
-  --table-margin: 12px;
-  --table-radius: 50% 50% 28px 28px / 42.37% 42.37% 28px 28px;
-  --felt-y: 70%;
-  --rim: 10px;
-  --table-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
-  --mark-size: 140px;
-  --mark-x: 50%;
-  --mark-y: 73.9%;
-  --mark-spacing: -0.08em;
-  // Zeiger dreht erst, wenn die abgelegte Karte gelandet ist; der Platz leuchtet danach
-  --pointer-delay: 400ms;
-  --turn-delay: 640ms;
   --center-dir: row;
   --center-align: flex-start;
   --center-gap: 10px;
@@ -32,29 +14,9 @@
   --build-w: 38px;
   --build-h: 52px;
   --build-gap: 6px;
-
-  // Tisch oben verankert, der eigene Bereich überlappt ihn und füllt den Rest nach unten
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
-  min-height: 0;
-  color: var(--color-text);
-  font-family: var(--font-sans);
 }
 
 :host([data-layout='hoch']) {
-  --head-h: 64px;
-  --area-top: 12px;
-  --below: 244px;
-  --table-w: 788;
-  --table-h: 860;
-  --table-margin: 32px;
-  --table-radius: 50% 50% 36px 36px / 44.19% 44.19% 36px 36px;
-  --felt-y: 65%;
-  --rim: 14px;
-  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
-  --mark-size: 240px;
-  --mark-y: 74.88%;
   // Nachziehstapel über den Aufbaustapeln, damit die Reihe schmal bleibt
   --center-dir: column;
   --center-align: center;
@@ -68,17 +30,6 @@
 }
 
 :host([data-layout='quer']) {
-  --area-top: 12px;
-  --below: 232px;
-  --table-w: 1140;
-  --table-h: 520;
-  --table-margin: 40px;
-  --table-radius: 50%;
-  --felt-y: 55%;
-  --rim: 14px;
-  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
-  --mark-size: 240px;
-  --mark-y: 49.62%;
   --center-gap: 22px;
   --pile-w: 50px;
   --pile-h: 70px;
@@ -89,18 +40,6 @@
 }
 
 :host([data-layout='laptop']) {
-  --head-h: 64px;
-  --area-top: 54px;
-  --below: 122px;
-  --table-w: 1220;
-  --table-h: 720;
-  --table-margin: 40px;
-  --table-radius: 50%;
-  --felt-y: 50%;
-  --rim: 16px;
-  --table-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
-  --mark-size: 240px;
-  --mark-y: 43.33%;
   --center-gap: 22px;
   --pile-w: 60px;
   --pile-h: 84px;

@@ -7,6 +7,7 @@ import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { gameOf, LobbyGameSettings } from '../lobby.model';
 import { LobbyGameDialog, LobbyGameDialogData } from './lobby-game-dialog';
 import { FLIP7_DEFAULT_TARGET, FLIP7_TARGET_OPTIONS } from '../flip7/flip7.model';
+import { UNO_DEFAULT_SETTINGS, UNO_HOUSE_RULES, UNO_RULES, UnoSettings } from '../uno/uno.model';
 
 // Spielauswahl und Rahmenbedingungen in der Warte-Lobby; ändern darf nur der Host
 @Component({
@@ -29,18 +30,36 @@ export class LobbyGameSetup {
   readonly changed = output<void>();
 
   readonly targetOptions = FLIP7_TARGET_OPTIONS;
+  readonly houseRules = UNO_HOUSE_RULES;
+  readonly unoRulesText = UNO_RULES;
   readonly saving = signal(false);
   readonly selectedGame = computed(() => gameOf(this.gameKey()));
   readonly flip7 = computed(() => this.gameKey() === 'flip-7');
+  readonly uno = computed(() => this.gameKey() === 'uno');
   // Auswahl sofort anzeigen, bei Fehler zurücksetzen
   readonly target = linkedSignal<number | null>(() => {
     const target = this.settings()?.targetScore;
     return target === undefined ? FLIP7_DEFAULT_TARGET : target;
   });
+  readonly unoRules = linkedSignal<UnoSettings>(() => {
+    const settings = this.settings();
+    return {
+      stacking: settings?.stacking ?? UNO_DEFAULT_SETTINGS.stacking,
+      sevenZero: settings?.sevenZero ?? UNO_DEFAULT_SETTINGS.sevenZero,
+      drawUntilPlayable: settings?.drawUntilPlayable ?? UNO_DEFAULT_SETTINGS.drawUntilPlayable,
+    };
+  });
+  readonly activeHouseRules = computed(() =>
+    UNO_HOUSE_RULES.filter((rule) => this.unoRules()[rule.key]),
+  );
 
   async selectTarget(target: number | null): Promise<void> {
     if (target === this.target() && this.flip7()) return;
-    await this.save('flip-7', target);
+    await this.save('flip-7', { target });
+  }
+
+  async toggleHouseRule(key: keyof UnoSettings): Promise<void> {
+    await this.save('uno', { unoRules: { ...this.unoRules(), [key]: !this.unoRules()[key] } });
   }
 
   openGameDialog(): void {
@@ -57,28 +76,40 @@ export class LobbyGameSetup {
 
   async selectGame(gameKey: string): Promise<void> {
     if (gameKey !== this.gameKey()) {
-      await this.save(gameKey, this.target());
+      await this.save(gameKey, {});
     }
   }
 
-  // target gilt nur für Flip 7; Skip-Bo hat keine Einstellungen
-  private async save(gameKey: string, target: number | null): Promise<void> {
+  // Einstellungen des Spiels: Flip 7 das Punkteziel, Uno die Hausregeln, sonst keine.
+  // Auswahl sofort anzeigen, bei Fehler zurücksetzen.
+  private async save(
+    gameKey: string,
+    change: { target?: number | null; unoRules?: UnoSettings },
+  ): Promise<void> {
     if (!this.isHost() || this.saving()) return;
 
-    const previous = this.target();
-    this.target.set(target);
+    const previous = { target: this.target(), unoRules: this.unoRules() };
+    if (change.target !== undefined) this.target.set(change.target);
+    if (change.unoRules) this.unoRules.set(change.unoRules);
     this.saving.set(true);
     const result = await this.lobbyService.setGame(
       this.lobbyId(),
       gameKey,
-      gameKey === 'flip-7' ? { targetScore: target } : {},
+      this.settingsFor(gameKey),
     );
     this.saving.set(false);
 
     if (!result.ok) {
-      this.target.set(previous);
+      this.target.set(previous.target);
+      this.unoRules.set(previous.unoRules);
       this.appErrors.report(result.message, { title: 'Lobby' });
     }
     this.changed.emit();
+  }
+
+  private settingsFor(gameKey: string): LobbyGameSettings {
+    if (gameKey === 'flip-7') return { targetScore: this.target() };
+    if (gameKey === 'uno') return { ...this.unoRules() };
+    return {};
   }
 }

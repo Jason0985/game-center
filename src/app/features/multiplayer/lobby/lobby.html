@@ -1,5 +1,5 @@
 <div class="lobby-root ui-page-root" [class.ui-page-root--spacious]="!started()">
-  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game) -->
+  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game, uno-game) -->
   @if (!started()) {
     <header class="lobby-header ui-hero ui-header-nav">
       <a
@@ -30,6 +30,14 @@
     @if (started()) {
       @if (current.game_key === 'skip-bo') {
         <app-skipbo-game
+          [lobbyId]="lobbyId"
+          [hostUserId]="current.host_user_id"
+          [userId]="userId()!"
+          (returned)="reload()"
+          (leave)="leave($event)"
+        />
+      } @else if (current.game_key === 'uno') {
+        <app-uno-game
           [lobbyId]="lobbyId"
           [hostUserId]="current.host_user_id"
           [userId]="userId()!"

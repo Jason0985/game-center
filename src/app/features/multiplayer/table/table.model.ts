@@ -3,7 +3,8 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
-// Gemeinsame Tisch-Logik der Kartenspiele (Flip 7, Skip-Bo): Layouts, Sitzbogen, Uhrzeit
+// Gemeinsame Tisch-Logik der Kartenspiele (Flip 7, Skip-Bo, Uno): Layouts, Sitzbogen, Uhrzeit,
+// Handkarten-Keys
 
 // Spieltisch: vier Layouts (Handy, iPad hoch, iPad quer, Laptop). Maße in Design-Pixeln
 // der Tischplatte; die Anzeige rechnet sie in Prozent der Platte um.
@@ -101,6 +102,53 @@ export function arcSpots(table: TableGeometry, count: number, gap: number | null
       x: points[i - 1][0] + (points[i][0] - points[i - 1][0]) * ratio,
       y: points[i - 1][1] + (points[i][1] - points[i - 1][1]) * ratio,
     };
+  });
+}
+
+// Tischgeometrie der Bogen-Tische (Skip-Bo, Uno; Design-Pixel der Platte). Laptop: voller
+// Kreis, Plätze weiter innen als bei Flip 7 und immer 28 % Lücke um mich (Platz für die Auslage)
+export const ARC_TABLES: Record<TableLayout, TableGeometry & { gap: number | null }> = {
+  phone: { w: 378, h: 590, cx: 189, cy: 495.5, a: 150, b: 455.5, from: 158, to: 22, gap: null },
+  hoch: { w: 788, h: 860, cx: 394, cy: 752, a: 330, b: 700, from: 176, to: 4, gap: null },
+  quer: { w: 1140, h: 520, cx: 570, cy: 262, a: 488, b: 238, from: 212, to: -32, gap: null },
+  laptop: { w: 1220, h: 720, cx: 610, cy: 360, a: 560, b: 362, from: 270, to: -90, gap: 0.28 },
+};
+
+export function seatSpots(layout: TableLayout, count: number): SeatSpot[] {
+  const table = ARC_TABLES[layout];
+  return arcSpots(table, count, table.gap);
+}
+
+// Mitspieler-Schilder: ≤ 3 Spieler groß, 4 mittel, ab 5 klein
+export function sizeClass(seatCount: number): 'l' | 'm' | 's' {
+  return seatCount <= 3 ? 'l' : seatCount === 4 ? 'm' : 's';
+}
+
+// Handanzahl als kleiner Rückenfächer (Werte bleiben geheim)
+export const BACK_TILTS = [[0], [-5, 5], [-10, 0, 10]];
+
+// "1 Karte" bzw. "5 Karten"
+export const cardCount = (n: number): string => (n === 1 ? '1 Karte' : `${n} Karten`);
+
+export interface KeyedCard<C> {
+  card: C;
+  // Stabil pro Handkarte, damit nur neu gezogene Karten fliegen
+  key: string;
+}
+
+// Der Server nimmt Handkarten heraus und fügt neue ein: Karten in gleicher Reihenfolge
+// wiederfinden, alles Übrige bekommt einen neuen Key
+export function keyCards<C>(
+  prev: readonly KeyedCard<C>[],
+  next: readonly C[],
+  newKey: () => string,
+): KeyedCard<C>[] {
+  let from = 0;
+  return next.map((card) => {
+    const found = prev.findIndex((item, i) => i >= from && item.card === card);
+    if (found < 0) return { card, key: newKey() };
+    from = found + 1;
+    return prev[found];
   });
 }
 

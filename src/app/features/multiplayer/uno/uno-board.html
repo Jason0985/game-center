@@ -1,0 +1,212 @@
+@let g = game();
+@let t = table();
+@let d = discard();
+<div
+  class="table-area"
+  appTableTop
+  mark="UNO"
+  [w]="t.w"
+  [h]="t.h"
+  [center]="center()"
+  [target]="pointerTarget()"
+>
+  <div class="center" [style.left.%]="centerPos().x" [style.top.%]="centerPos().y">
+    <!-- Spielrichtung: zwei Bogenpfeile, spiegeln sich beim Richtungswechsel -->
+    <svg
+      class="direction"
+      [class.direction--ccw]="g.direction === -1"
+      viewBox="0 0 178 126"
+      role="img"
+      [attr.aria-label]="
+        'Spielrichtung: ' + (g.direction === 1 ? 'im Uhrzeigersinn' : 'gegen den Uhrzeigersinn')
+      "
+    >
+      <path d="M14.8 44.9 A79 53 0 0 1 157.4 36.5" />
+      <polygon points="161.7,40.7 153.2,40.8 161.6,32.2" />
+      <path d="M163.2 81.1 A79 53 0 0 1 20.6 89.5" />
+      <polygon points="16.3,85.3 24.8,85.2 16.4,93.8" />
+    </svg>
+
+    <div class="piles">
+      <button
+        type="button"
+        class="draw"
+        [class.glow]="drawPile().glow"
+        [attr.aria-label]="drawPile().label"
+        [disabled]="busy() || !drawPile().enabled"
+        (click)="tapPile()"
+      >
+        <span class="stack draw-stack">
+          <app-uno-card class="back back--3" [card]="null" />
+          <app-uno-card class="back back--2" [card]="null" />
+          <app-uno-card class="back back--1" [card]="null" />
+        </span>
+      </button>
+
+      <div class="discard" role="img" [attr.aria-label]="d.label">
+        @for (item of d.cards; track $index) {
+          <app-uno-card
+            [class.top]="item.top"
+            [attr.data-glow]="item.top ? d.glow : null"
+            [card]="item.card"
+            [style.rotate.deg]="item.tilt"
+          />
+        }
+      </div>
+    </div>
+
+    @if (g.color; as color) {
+      <span
+        class="current"
+        role="img"
+        [attr.aria-label]="'Aktuelle Farbe: ' + colorNames[color]"
+        [attr.data-color]="color"
+        ><span class="shape"></span
+      ></span>
+    }
+
+    @if (choice()?.kind === 'color') {
+      <div class="picker" role="group" aria-label="Farbe wählen">
+        @for (color of colors; track color) {
+          <button
+            type="button"
+            [attr.data-color]="color"
+            [attr.aria-label]="colorNames[color] + ' wählen'"
+            [disabled]="busy()"
+            (click)="pickColor(color)"
+          >
+            <span class="shape"></span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @for (view of seats(); track view.player.seat) {
+    @if (view.target) {
+      <button
+        type="button"
+        appUnoSeat
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [dealer]="view.player.seat === g.dealer_seat"
+        [fan]="layout() !== 'phone' || g.seat_count < 6"
+        [swapTarget]="true"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+        [disabled]="busy()"
+        (click)="pickTarget(view.player.seat)"
+      ></button>
+    } @else {
+      <div
+        appUnoSeat
+        role="group"
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [dealer]="view.player.seat === g.dealer_seat"
+        [turn]="view.turn"
+        [winner]="view.winner"
+        [celebrate]="view.celebrate"
+        [waiting]="view.waiting"
+        [skipped]="view.skipped"
+        [pending]="view.pending"
+        [fan]="layout() !== 'phone' || g.seat_count < 6"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+      ></div>
+    }
+  }
+
+  <!-- Laptop: Hand liegt auf dem Tisch, das Namensschild darunter -->
+  @if (layout() === 'laptop' && me(); as m) {
+    <div class="own-row">
+      <ng-container *ngTemplateOutlet="ownTpl" />
+    </div>
+    <div
+      appUnoSeat
+      role="group"
+      class="own-pill"
+      variant="pill"
+      [player]="m"
+      [dealer]="m.seat === g.dealer_seat"
+      [turn]="myTurn()"
+      [winner]="g.winner_seat === m.seat"
+      [celebrate]="winSeatIsMe()"
+    ></div>
+  }
+</div>
+
+@if (layout() !== 'laptop' && me(); as m) {
+  <section class="mine" aria-label="Dein Platz">
+    <div
+      appUnoSeat
+      role="group"
+      class="tab"
+      variant="tab"
+      [player]="m"
+      [dealer]="m.seat === g.dealer_seat"
+      [turn]="myTurn()"
+      [winner]="g.winner_seat === m.seat"
+      [celebrate]="winSeatIsMe()"
+    ></div>
+    <div class="own-row">
+      <ng-container *ngTemplateOutlet="ownTpl" />
+    </div>
+  </section>
+}
+
+<p class="sr-only" aria-live="polite">{{ status() }}</p>
+
+<!-- Eigene Hand im Bogen (spielbare gehoben, andere gedimmt) und Uno-Knopf -->
+<ng-template #ownTpl>
+  @let h = hand();
+  <div class="hand-wrap">
+    <div #scroller class="hand-scroll" [class.scrolls]="h.scroll">
+      <div
+        class="hand"
+        role="group"
+        [attr.aria-label]="'Deine Karten, ' + h.cards.length"
+        [style.--overlap.px]="h.overlap"
+      >
+        @for (item of h.cards; track item.key) {
+          <button
+            #cardButton
+            type="button"
+            class="hand-card"
+            [class.dim]="item.dim"
+            [class.picked]="item.picked"
+            [attr.data-key]="item.key"
+            [attr.aria-label]="item.label"
+            [style.transform]="item.transform"
+            [disabled]="busy() || !item.playable"
+            (click)="tapCard(item.card, cardButton)"
+          >
+            <app-uno-card [card]="item.card" />
+          </button>
+        }
+      </div>
+    </div>
+    @if (h.scroll) {
+      <button
+        type="button"
+        class="more"
+        aria-label="Weitere Karten zeigen"
+        (click)="scrollHand(scroller)"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+      </button>
+    }
+  </div>
+  <button
+    type="button"
+    class="uno"
+    [class.lit]="unoLit()"
+    aria-label="Uno rufen"
+    [disabled]="busy() || !unoLit()"
+    (click)="callUno.emit()"
+  >
+    UNO!
+  </button>
+</ng-template>

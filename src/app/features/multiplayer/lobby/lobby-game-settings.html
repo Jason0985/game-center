@@ -70,3 +70,45 @@
     </ul>
   </details>
 }
+
+<!-- Uno: Hausregeln (der Host schaltet sie, die anderen sehen die aktiven) -->
+@if (uno()) {
+  <p class="label" id="lobby-rules-label">Hausregeln</p>
+  @if (isHost()) {
+    <div class="switches" role="group" aria-labelledby="lobby-rules-label">
+      @for (rule of houseRules; track rule.key) {
+        <button
+          type="button"
+          role="switch"
+          class="switch-row"
+          [attr.aria-checked]="unoRules()[rule.key]"
+          [disabled]="disabled() || saving()"
+          (click)="toggleHouseRule(rule.key)"
+        >
+          <span>{{ rule.label }}</span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  } @else {
+    <p class="value">
+      @for (rule of activeHouseRules(); track rule.key; let last = $last) {
+        {{ rule.label }}{{ last ? '' : ' · ' }}
+      } @empty {
+        Standardregeln
+      }
+    </p>
+  }
+
+  <details class="rules">
+    <summary>Kurzregeln</summary>
+    <ul>
+      @for (rule of unoRulesText; track $index) {
+        <li>{{ rule }}</li>
+      }
+      @for (rule of activeHouseRules(); track rule.key) {
+        <li>{{ rule.rule }}</li>
+      }
+    </ul>
+  </details>
+}

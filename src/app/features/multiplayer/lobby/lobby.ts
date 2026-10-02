@@ -24,6 +24,7 @@ import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog'
 import { LobbyGameSetup } from './lobby-game-settings';
 import { Flip7GameView } from '../flip7/flip7-game';
 import { SkipboGameView } from '../skipbo/skipbo-game';
+import { UnoGameView } from '../uno/uno-game';
 
 @Component({
   selector: 'app-lobby',
@@ -35,6 +36,7 @@ import { SkipboGameView } from '../skipbo/skipbo-game';
     LobbyGameSetup,
     Flip7GameView,
     SkipboGameView,
+    UnoGameView,
   ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',

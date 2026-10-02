@@ -14,25 +14,29 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { flyFrom, reducedMotion } from '../table/table-motion';
-import { formatClock, injectTableLayout, seatsAfter } from '../table/table.model';
+import {
+  ARC_TABLES,
+  cardCount,
+  formatClock,
+  injectTableLayout,
+  keyCards,
+  KeyedCard,
+  seatsAfter,
+  seatSpots,
+  sizeClass,
+} from '../table/table.model';
 import { TableTop } from '../table/table-top';
 import { SkipboCardView } from './skipbo-card';
 import { SkipboFan } from './skipbo-fan';
 import { SkipboSeat } from './skipbo-seat';
 import {
   canPlay,
-  cardCount,
   cardName,
   fanView,
   HAND_ARC,
   isJoker,
-  keyCards,
-  KeyedCard,
   LAPTOP_SMALL_POINTER_Y,
   POINTER,
-  seatSpots,
-  SKIPBO_TABLES,
-  sizeClass,
   SkipboCard,
   SkipboEvent,
   SkipboGame,
@@ -85,7 +89,7 @@ export class SkipboBoard {
   readonly discard = output<SkipboDiscard>();
 
   readonly layout = injectTableLayout();
-  readonly table = computed(() => SKIPBO_TABLES[this.layout()]);
+  readonly table = computed(() => ARC_TABLES[this.layout()]);
   readonly sizeClass = computed(() => sizeClass(this.game().seat_count));
   // Erst nach dem ersten Rendern animieren (sonst fliegt beim Laden alles)
   readonly live = signal(false);
@@ -118,7 +122,7 @@ export class SkipboBoard {
   });
   private keyId = 0;
   // Stabile Keys: nur neu gezogene Karten fliegen
-  private readonly handKeys = linkedSignal<SkipboCard[], KeyedCard[]>({
+  private readonly handKeys = linkedSignal<SkipboCard[], KeyedCard<SkipboCard>[]>({
     source: () => this.game().hand,
     computation: (hand, previous) =>
       keyCards(previous?.value ?? [], hand, () => `h${++this.keyId}`),

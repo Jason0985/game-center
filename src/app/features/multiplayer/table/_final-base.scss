@@ -1,0 +1,177 @@
+// Endstand-Grundlage (Skip-Bo, Uno): Banner, Rangliste, Host-Aktion (Aufbau wie
+// Flip7Final). Die Werte-Spalten der Rangliste liefert das Spiel.
+:host {
+  display: block;
+}
+
+.final {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: min(100%, 358px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 28px 24px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: var(--table-seat-shadow);
+}
+
+@media (min-width: 600px) {
+  .final {
+    width: min(100%, 520px);
+  }
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+// Sieger-Avatar mit Goldglühen (Ring 84, Avatar 74)
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 74px;
+  margin: 5px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px var(--table-gold),
+    0 0 21px var(--table-gold);
+  color: #ffffff;
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.kicker {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.sub,
+.hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--color-surface-raised);
+}
+
+.ranking li.mine {
+  background: var(--table-chip-bg);
+}
+
+.ranking li.top {
+  background: rgba(245, 200, 75, 0.18);
+}
+
+.ranking li.gone {
+  opacity: 0.6;
+}
+
+.rank {
+  width: 24px;
+  color: var(--color-text-muted);
+  font-weight: 800;
+  text-align: center;
+}
+
+.name {
+  display: flex;
+  flex-grow: 1;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.name strong {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.top .rank {
+  color: var(--table-gold);
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: #ffffff;
+  font: 700 15px var(--font-sans);
+  cursor: pointer;
+}
+
+.back .material-symbols-rounded {
+  font-size: 20px;
+  font-variation-settings: 'FILL' 1;
+}
+
+.back:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.back:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+.hint {
+  font-size: 13px;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

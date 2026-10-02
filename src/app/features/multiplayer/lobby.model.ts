@@ -1,11 +1,15 @@
 import { Profile } from '../profile/profile.model';
+import { UNO_HOUSE_RULES } from './uno/uno.model';
 
 export type LobbyStatus = 'open' | 'started';
 
 // Rahmenbedingungen des Spiels (set_lobby_game). Flip 7: targetScore null = offen ohne
-// Punkteziel; Skip-Bo hat keine Einstellungen ({})
+// Punkteziel; Uno: die drei Hausregeln; Skip-Bo hat keine Einstellungen ({})
 export interface LobbyGameSettings {
   targetScore?: number | null;
+  stacking?: boolean;
+  sevenZero?: boolean;
+  drawUntilPlayable?: boolean;
 }
 
 // Gleiche Grenzen wie in der DB (_add_lobby_member / start_lobby)
@@ -75,6 +79,14 @@ export const GAMES = [
     maxPlayers: 6,
     url: null,
   },
+  {
+    key: 'uno',
+    name: 'Uno',
+    icon: 'view_carousel',
+    blurb: 'Farbe oder Zahl bedienen – wer zuerst alle Karten los ist, gewinnt.',
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
+  },
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
@@ -105,7 +117,7 @@ export function startBlocker(
     : null;
 }
 
-// z. B. "Flip 7 · bis 200 Punkte" oder "Flip 7 · Offen"
+// z. B. "Flip 7 · bis 200 Punkte", "Flip 7 · Offen" oder "Uno · Stapeln, 7-0"
 export function gameLabel(
   gameKey: string | null | undefined,
   settings: LobbyGameSettings | null | undefined,
@@ -115,6 +127,10 @@ export function gameLabel(
     return 'Noch kein Spiel gewählt';
   }
 
+  if (gameKey === 'uno') {
+    const rules = UNO_HOUSE_RULES.filter((rule) => settings?.[rule.key]).map((rule) => rule.short);
+    return rules.length ? `${name} · ${rules.join(', ')}` : name;
+  }
   if (gameKey !== 'flip-7') return name;
 
   const target = settings?.targetScore;

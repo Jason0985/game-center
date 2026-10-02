@@ -18,6 +18,7 @@ describe('LobbyGameDialog', () => {
     expect(tiles.map((tile) => tile.textContent)).toEqual([
       expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('2–6 Spieler'),
+      expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('https://richup.io'),
     ]);
     expect(tiles[1].getAttribute('aria-pressed')).toBe('true');

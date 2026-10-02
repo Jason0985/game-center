@@ -10,6 +10,7 @@ import { AppErrorService } from '../../../services/app-error.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { Flip7Service } from '../flip7/flip7.service';
 import { SkipboService } from '../skipbo/skipbo.service';
+import { UnoService } from '../uno/uno.service';
 import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
 import { LobbyGameDialog } from './lobby-game-dialog';
@@ -59,6 +60,7 @@ describe('Lobby', () => {
   };
   let flip7: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
   let skipbo: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
+  let uno: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
 
   async function render(userId: string, lobby: LobbyDetail | null = lobbyDetail()) {
     user.set({ id: userId });
@@ -94,6 +96,10 @@ describe('Lobby', () => {
       load: vi.fn().mockResolvedValue({ ok: true, value: null }),
       subscribe: vi.fn().mockReturnValue(() => {}),
     };
+    uno = {
+      load: vi.fn().mockResolvedValue({ ok: true, value: null }),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
 
     await TestBed.configureTestingModule({
       imports: [Lobby],
@@ -107,6 +113,7 @@ describe('Lobby', () => {
         { provide: MultiplayerLobbyService, useValue: lobbyService },
         { provide: Flip7Service, useValue: flip7 },
         { provide: SkipboService, useValue: skipbo },
+        { provide: UnoService, useValue: uno },
         { provide: MatDialog, useValue: dialog },
         { provide: ToastService, useValue: toast },
         { provide: AppErrorService, useValue: appErrors },
@@ -217,6 +224,49 @@ describe('Lobby', () => {
     expect(text()).toContain('Skip-Bo');
     expect(skipbo.load).toHaveBeenCalledWith('lobby-1');
     expect(flip7.load).not.toHaveBeenCalled();
+  });
+
+  it('shows the Uno table for a started Uno lobby', async () => {
+    await render('guest', lobbyDetail({ status: 'started', game_key: 'uno' }));
+
+    expect(fixture.nativeElement.querySelector('app-uno-game')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-flip7-game')).toBeNull();
+    expect(uno.load).toHaveBeenCalledWith('lobby-1');
+    expect(flip7.load).not.toHaveBeenCalled();
+  });
+
+  it('saves the Uno house rules when picking Uno and toggling a rule', async () => {
+    const off = { stacking: false, sevenZero: false, drawUntilPlayable: false };
+    await render('host');
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of('uno') });
+    (fixture.nativeElement.querySelector('.game-switch') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'uno', off);
+
+    fixture.destroy();
+    await render('host', lobbyDetail({ game_key: 'uno', game_settings: off }));
+    const switches = [
+      ...fixture.nativeElement.querySelectorAll('[role="switch"]'),
+    ] as HTMLButtonElement[];
+    expect(switches.map((button) => button.textContent?.trim())).toEqual([
+      '+2/+4 stapeln',
+      '7 tauscht, 0 dreht',
+      'Ziehen, bis es passt',
+    ]);
+    switches[0].click();
+    await fixture.whenStable();
+    expect(lobbyService.setGame).toHaveBeenLastCalledWith('lobby-1', 'uno', {
+      ...off,
+      stacking: true,
+    });
+
+    fixture.destroy();
+    await render(
+      'guest',
+      lobbyDetail({ game_key: 'uno', game_settings: { ...off, sevenZero: true } }),
+    );
+    expect(fixture.nativeElement.querySelector('[role="switch"]')).toBeNull();
+    expect(text()).toContain('7 tauscht, 0 dreht');
   });
 
   it('lets only the host change the game settings', async () => {

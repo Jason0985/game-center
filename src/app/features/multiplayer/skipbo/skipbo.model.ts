@@ -2,7 +2,7 @@
 // (supabase/migrations/20261001130000_skipbo.sql); hier wird nur gespiegelt,
 // was für Anzeige und Zielwahl nötig ist.
 
-import { arcSpots, SeatSpot, TableGeometry, TableLayout } from '../table/table.model';
+import { cardCount, TableLayout } from '../table/table.model';
 
 // 1–12 und 'SB' (Joker)
 export type SkipboCard =
@@ -112,9 +112,6 @@ export function cardGroup(card: SkipboCard): 1 | 2 | 3 | 'J' {
 // "7" bzw. "Joker"
 export const cardName = (card: SkipboCard): string => (isJoker(card) ? 'Joker' : card);
 
-// "1 Karte" bzw. "5 Karten"
-export const cardCount = (n: number): string => (n === 1 ? '1 Karte' : `${n} Karten`);
-
 export function cardLabel(card: SkipboCard): string {
   return isJoker(card) ? 'Joker' : `Zahl ${card}`;
 }
@@ -122,33 +119,6 @@ export function cardLabel(card: SkipboCard): string {
 // Gefächerte Ablage: nur die obersten max Karten, darüber eine Kappe „+N“
 export function fanView<T>(cards: readonly T[], max: number): { cap: number; cards: T[] } {
   return { cap: Math.max(0, cards.length - max), cards: cards.slice(-max) };
-}
-
-export interface KeyedCard {
-  card: SkipboCard;
-  // Stabil pro Handkarte, damit nur neu gezogene Karten fliegen
-  key: string;
-}
-
-// Der Server nimmt Handkarten per Index heraus und hängt neue hinten an: Karten in
-// gleicher Reihenfolge wiederfinden, alles Übrige bekommt einen neuen Key
-export function keyCards(
-  prev: readonly KeyedCard[],
-  next: readonly SkipboCard[],
-  newKey: () => string,
-): KeyedCard[] {
-  let from = 0;
-  return next.map((card) => {
-    const found = prev.findIndex((item, i) => i >= from && item.card === card);
-    if (found < 0) return { card, key: newKey() };
-    from = found + 1;
-    return prev[found];
-  });
-}
-
-// Mitspieler-Schilder: ≤ 3 Spieler groß, 4 mittel, ab 5 klein
-export function sizeClass(seatCount: number): 'l' | 'm' | 's' {
-  return seatCount <= 3 ? 'l' : seatCount === 4 ? 'm' : 's';
 }
 
 // Nach verbleibenden Spielstapel-Karten (weniger ist besser). Gleich viele = gleicher
@@ -243,20 +213,6 @@ export function eventIcon(event: SkipboEvent): SkipboIcon {
     case 'end':
       return { icon: 'stop_circle', color: MUTED };
   }
-}
-
-// Tischgeometrie je Layout (Design-Pixel der Platte). Laptop: voller Kreis, Plätze
-// weiter innen als bei Flip 7 und immer 28 % Lücke um mich (Platz für die Auslage)
-export const SKIPBO_TABLES: Record<TableLayout, TableGeometry & { gap: number | null }> = {
-  phone: { w: 378, h: 590, cx: 189, cy: 495.5, a: 150, b: 455.5, from: 158, to: 22, gap: null },
-  hoch: { w: 788, h: 860, cx: 394, cy: 752, a: 330, b: 700, from: 176, to: 4, gap: null },
-  quer: { w: 1140, h: 520, cx: 570, cy: 262, a: 488, b: 238, from: 212, to: -32, gap: null },
-  laptop: { w: 1220, h: 720, cx: 610, cy: 360, a: 560, b: 362, from: 270, to: -90, gap: 0.28 },
-};
-
-export function seatSpots(layout: TableLayout, count: number): SeatSpot[] {
-  const table = SKIPBO_TABLES[layout];
-  return arcSpots(table, count, table.gap);
 }
 
 // Nachziehstapel (Ring des Zug-Zeigers) und wohin der Zeiger zeigt, wenn ich dran bin

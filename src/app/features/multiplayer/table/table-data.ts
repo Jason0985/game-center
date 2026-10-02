@@ -3,7 +3,7 @@ import { ActionResult, describeSupabaseError } from '../../../services/supabase-
 import { displayNameOf } from '../lobby.model';
 import { LobbyResult, lobbyFailure, MultiplayerLobbyService } from '../multiplayer-lobby.service';
 
-// Gemeinsame Datenzugriffe der Kartenspiele (Flip 7, Skip-Bo)
+// Gemeinsame Datenzugriffe der Kartenspiele (Flip 7, Skip-Bo, Uno)
 
 // Stand, auf den sich ein Zug bezieht (waiting_since): Hat sich das Spiel
 // inzwischen weiterbewegt, ignoriert die Datenbank den Zug

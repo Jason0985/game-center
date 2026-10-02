@@ -32,7 +32,7 @@ export class CardFlyIn {
 export function flyFrom(
   card: HTMLElement,
   from: Element | DOMRect,
-  { flip = true, delay = 0 } = {},
+  { flip = true, delay = 0, duration = 400 } = {},
 ): Promise<void> {
   const start = from instanceof Element ? from.getBoundingClientRect() : from;
   const to = card.getBoundingClientRect();
@@ -53,7 +53,7 @@ export function flyFrom(
         },
         { translate: '0 0', scale: '1' },
       ],
-      { duration: 400, delay, easing: 'ease-out', fill: 'backwards' },
+      { duration, delay, easing: 'ease-out', fill: 'backwards' },
     )
     .finished.then(
       () => undefined,
