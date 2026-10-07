@@ -10,7 +10,7 @@
   --own-cap-font: 11px;
   --own-chip: 12px;
   --own-gap: 8px;
-  --own-discard-gap: 8px;
+  --own-discard-gap: 6px;
   --hand-w: clamp(44px, calc((100vw - 72px) / 5), 62px);
   --hand-h: round(calc(var(--hand-w) * 1.42), 1px);
   --hand-gap: 8px;
@@ -24,7 +24,7 @@
   --own-fan-font: 15px;
   --own-cap-font: 11px;
   --own-chip: 12px;
-  --own-gap: 16px;
+  --own-gap: 32px;
   --own-discard-gap: 10px;
   --hand-w: 58px;
   --hand-h: 82px;
@@ -38,6 +38,7 @@
   --own-strip: 16px;
   --own-fan-font: 13px;
   --own-cap-font: 11px;
+  --own-gap: 28px;
   --hand-w: 52px;
   --hand-h: 72px;
   --hand-gap: 8px;
@@ -51,7 +52,7 @@
   --own-fan-font: 16px;
   --own-cap-font: 11px;
   --own-chip: 12px;
-  --own-gap: 16px;
+  --own-gap: 32px;
   --own-discard-gap: 10px;
   --hand-w: 64px;
   --hand-h: 90px;

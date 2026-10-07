@@ -119,15 +119,8 @@
   padding-top: 12px;
 }
 
+// Ablagen eng beieinander rechts, der freie Platz trennt sie vom Spielstapel
 .own-phone .own-piles {
-  justify-content: space-between;
-}
-
-.own-phone .own-col--discards {
-  flex-grow: 1;
-}
-
-.own-phone .mine-discards {
   justify-content: space-between;
 }
 
