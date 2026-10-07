@@ -65,7 +65,7 @@
         @if (p.stock_count > 1) {
           <app-skipbo-card class="spread-back" [card]="null" />
         }
-        <app-skipbo-card class="top" [card]="top" variant="flat" />
+        <app-skipbo-card class="top" [card]="top" [variant]="flat() ? 'flat' : 'row'" />
       } @else {
         <span class="slot"></span>
       }

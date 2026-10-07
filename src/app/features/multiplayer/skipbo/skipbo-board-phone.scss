@@ -31,6 +31,65 @@
   border-top: 1px solid var(--color-border-subtle);
 }
 
+// Ab 5 Spielern: Seiten zum Wischen (Scroll-Snap), Punkte darunter
+.opps-carousel {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opp-pages {
+  position: relative;
+  display: flex;
+  // Breite nur von außen: sonst machen die Seiten nebeneinander die ganze Ansicht breit
+  contain: inline-size;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.opp-pages::-webkit-scrollbar {
+  display: none;
+}
+
+.opp-pages > .opps {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  scroll-snap-align: start;
+}
+
+.page-dots {
+  display: flex;
+  justify-content: center;
+}
+
+.page-dots button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.page-dots button::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border);
+  content: '';
+  transition: background-color 160ms;
+}
+
+.page-dots button.on::before {
+  background: var(--table-turn);
+}
+
 // Mitte: Nachziehstapel und Aufbaustapel, klar abgesetzt wie eine kleine Tischplatte
 .mid {
   display: flex;

@@ -4,7 +4,7 @@ import { cardGroup, cardLabel, SkipboCard } from './skipbo.model';
 // Eine Karte; card null = Rückseite. Größe kommt vom Elternteil über --card-w/--card-h.
 // row: eigene Karten, Aufbaustapel (Wert mittig, Eckindizes, Gruppenpunkte); fan:
 // verdeckte Karten im Ablage-Fächer (nur die Zahl oben links im Streifen); flat: nur der
-// Wert mittig (oberste Ablagekarte, kleine Karten); edge: nur die Fläche (Kante).
+// Wert mittig (kleine Karten); edge: nur die Fläche (Kante einer Karte darunter).
 @Component({
   selector: 'app-skipbo-card',
   template: `

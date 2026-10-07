@@ -217,6 +217,51 @@ describe('SkipboGameView', () => {
     );
   });
 
+  it('pages the other players on the phone and follows the turn only across pages', async () => {
+    const scrollTo = vi.fn();
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      value: scrollTo,
+      configurable: true,
+    });
+    const names = ['Host', 'Gast', 'Dritte', 'Vierte', 'Fünfte', 'Sechste'];
+    const sixPlayers = (turnSeat: number, since: string) =>
+      makeGame({
+        seat_count: 6,
+        turn_seat: turnSeat,
+        waiting_since: since,
+        players: names.map((name, seat) => player(seat, { user_id: `user-${seat}`, name })),
+      });
+    const turnTo = async (turnSeat: number, since: string) => {
+      skipbo['load'].mockResolvedValue({ ok: true, value: sixPlayers(turnSeat, since) });
+      skipbo['subscribe'].mock.calls[0][1]();
+      await vi.waitFor(() => expect(component.game()?.turn_seat).toBe(turnSeat));
+      fixture.detectChanges();
+    };
+
+    try {
+      // Jsdom kennt keine Layouts: das ist die Handy-Ansicht
+      await render('user-0', sixPlayers(4, '2026-09-30T12:00:00Z'));
+      const pages = [...el().querySelectorAll('.opp-pages > .opps')];
+      expect(pages.map((page) => page.querySelectorAll('[appskipboseat]').length)).toEqual([3, 2]);
+      expect(labels('Mitspieler Seite')).toEqual(['Mitspieler Seite 1', 'Mitspieler Seite 2']);
+      // Der Spieler am Zug steht auf Seite 2: dorthin wischen
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+
+      // Zug bleibt auf Seite 2 bzw. geht an mich: nicht wegspringen
+      await turnTo(5, '2026-09-30T12:00:05Z');
+      await turnTo(0, '2026-09-30T12:00:10Z');
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+
+      // Zug wandert auf Seite 1: mitgehen
+      await turnTo(1, '2026-09-30T12:00:15Z');
+      expect(scrollTo).toHaveBeenCalledTimes(2);
+    } finally {
+      if (original) Object.defineProperty(HTMLElement.prototype, 'scrollTo', original);
+      else delete (HTMLElement.prototype as { scrollTo?: unknown }).scrollTo;
+    }
+  });
+
   it('shows the last discard in the header, not the next player refilling', async () => {
     const at = '2026-09-30T12:00:00Z';
     await render(

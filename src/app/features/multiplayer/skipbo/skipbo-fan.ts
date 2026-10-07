@@ -2,10 +2,10 @@ import { Component, computed, input } from '@angular/core';
 import { SkipboCardView } from './skipbo-card';
 import { fanView, SkipboCard } from './skipbo.model';
 
-// Ablage als senkrechter Fächer (unten → oben, die oberste Karte ganz sichtbar mit
-// großer Zahl). Von jeder Karte darunter bleibt ein Streifen (--strip) mit ihrer Zahl;
+// Ablage als senkrechter Fächer (unten → oben, die oberste Karte ganz sichtbar wie jede
+// andere Karte). Von jeder Karte darunter bleibt ein Streifen (--strip) mit ihrer Zahl;
 // mehr als max Karten fasst eine Kappe „+N“ zusammen. Kanten-Modus (Handy-Mitspieler):
-// bis zu zwei schmale Kanten. Maße: --fan-w, --fan-h, --strip vom Elternteil.
+// bis zu zwei schmale Kanten, oberste Karte flach. Maße: --fan-w, --fan-h, --strip.
 @Component({
   selector: '[appSkipboFan]',
   imports: [SkipboCardView],
@@ -20,7 +20,7 @@ import { fanView, SkipboCard } from './skipbo.model';
       @for (card of view.cards; track $index; let last = $last) {
         <app-skipbo-card
           [card]="card"
-          [variant]="last ? 'flat' : edges() ? 'edge' : 'fan'"
+          [variant]="edges() ? (last ? 'flat' : 'edge') : last ? 'row' : 'fan'"
           [class.fan-top]="last"
         />
       }

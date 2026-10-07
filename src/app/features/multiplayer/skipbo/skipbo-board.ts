@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  afterRenderEffect,
   Component,
   computed,
   effect,
@@ -11,6 +12,7 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { flyFrom, reducedMotion } from '../table/table-motion';
@@ -59,6 +61,9 @@ export interface SkipboDiscard {
 // (Goldrand 600 ms nach 400 ms, Gleiten 360 ms) ist danach vorbei
 const STEP_MS = 400;
 const CLEAR_MS = 1400;
+// Handy ab 5 Spielern: Mitspieler auf Seiten zu höchstens 3 zum Wischen, sonst müsste
+// man scrollen
+const PHONE_PAGE_SIZE = 3;
 
 // Spieltisch: ovale Platte mit Nachziehstapel, 4 Aufbaustapeln und den Plätzen der
 // Mitspieler, darunter (am Laptop darauf) der eigene Bereich. Alles per Antippen:
@@ -263,6 +268,29 @@ export class SkipboBoard {
     });
   });
 
+  // Handy: Mitspieler-Seiten (Karussell); ohne Seiten genau eine
+  readonly oppPages = computed(() => {
+    const views = this.seats();
+    const size =
+      this.layout() === 'phone' && this.game().seat_count > 4
+        ? PHONE_PAGE_SIZE
+        : Math.max(1, views.length);
+    return Array.from({ length: Math.ceil(views.length / size) }, (_, i) =>
+      views.slice(i * size, (i + 1) * size),
+    );
+  });
+  // Angezeigte Seite (folgt dem Wischen)
+  readonly oppPage = signal(0);
+  private readonly oppScroller = viewChild<ElementRef<HTMLElement>>('oppScroller');
+  // Seite mit dem Mitspieler am Zug; null, wenn ich bzw. niemand dran ist
+  private readonly turnPage = computed(() => {
+    const seat = this.turnSeat();
+    const index = this.oppPages().findIndex((page) =>
+      page.some((view) => view.player.seat === seat),
+    );
+    return index < 0 ? null : index;
+  });
+
   // Zug-Zeiger vom Nachziehstapel zur Auslage des Spielers am Zug
   readonly pointerCenter = computed(() => {
     const pointer = POINTER[this.layout()];
@@ -314,6 +342,16 @@ export class SkipboBoard {
   constructor() {
     afterNextRender(() => this.live.set(true));
 
+    // Das Karussell folgt dem Zug nur, wenn er auf eine andere Seite wandert als beim
+    // letzten Mitspieler-Zug; wer gerade selbst durchblättert, wird sonst nicht weggerissen
+    let lastTurnPage: number | null = null;
+    afterRenderEffect(() => {
+      const page = this.turnPage();
+      if (page === null || page === lastTurnPage) return;
+      lastTurnPage = page;
+      untracked(() => this.showPage(page));
+    });
+
     effect(() => {
       const game = this.game();
       const key = `${game.waiting_since}|${JSON.stringify(game.last_events)}`;
@@ -344,6 +382,22 @@ export class SkipboBoard {
     const current = this.selected();
     this.selected.set(
       current?.kind === source.kind && current.index === source.index ? null : source,
+    );
+  }
+
+  showPage(index: number): void {
+    const scroller = this.oppScroller()?.nativeElement;
+    const page = scroller?.children[index] as HTMLElement | undefined;
+    if (!scroller || !page || typeof scroller.scrollTo !== 'function') return;
+    scroller.scrollTo({ left: page.offsetLeft, behavior: reducedMotion() ? 'auto' : 'smooth' });
+  }
+
+  // Beim Wischen: die Seite, die gerade am nächsten am Rand liegt
+  onOppScroll(scroller: HTMLElement): void {
+    const pages = [...scroller.children] as HTMLElement[];
+    const distance = (page: HTMLElement) => Math.abs(page.offsetLeft - scroller.scrollLeft);
+    this.oppPage.set(
+      pages.reduce((best, page, i) => (distance(page) < distance(pages[best]) ? i : best), 0),
     );
   }
 

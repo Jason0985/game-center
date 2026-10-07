@@ -4,20 +4,47 @@
   <!-- Handy: Mitspieler als Liste, die Mitte als eigenes Feld, darunter Stapel und
        Ablagen, die Hand ganz unten -->
   <div class="phone">
-    <div class="opps">
-      @for (view of seats(); track view.player.seat) {
-        <div
-          appSkipboSeat
-          role="group"
-          variant="line"
-          [player]="view.player"
-          [dealer]="view.player.seat === g.dealer_seat"
-          [turn]="view.turn"
-          [winner]="view.winner"
-          [celebrate]="view.celebrate"
-          [waiting]="view.waiting"
-          [flat]="true"
-        ></div>
+    <!-- Ab 5 Spielern Seiten zum Wischen, darunter Punkte (der weiße ist die aktuelle) -->
+    @let pages = oppPages();
+    <div class="opps-carousel">
+      <div #oppScroller class="opp-pages" (scroll)="onOppScroll(oppScroller)">
+        @for (page of pages; track $index; let i = $index) {
+          <div
+            class="opps"
+            role="group"
+            [attr.aria-label]="
+              pages.length > 1 ? 'Mitspieler, Seite ' + (i + 1) + ' von ' + pages.length : null
+            "
+          >
+            @for (view of page; track view.player.seat) {
+              <div
+                appSkipboSeat
+                role="group"
+                variant="line"
+                [player]="view.player"
+                [dealer]="view.player.seat === g.dealer_seat"
+                [turn]="view.turn"
+                [winner]="view.winner"
+                [celebrate]="view.celebrate"
+                [waiting]="view.waiting"
+                [flat]="true"
+              ></div>
+            }
+          </div>
+        }
+      </div>
+      @if (pages.length > 1) {
+        <div class="page-dots">
+          @for (page of pages; track $index; let i = $index) {
+            <button
+              type="button"
+              [class.on]="i === oppPage()"
+              [attr.aria-label]="'Mitspieler Seite ' + (i + 1)"
+              [attr.aria-current]="i === oppPage() || null"
+              (click)="showPage(i)"
+            ></button>
+          }
+        </div>
       }
     </div>
 
