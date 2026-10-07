@@ -49,14 +49,22 @@
     </div>
 
     <section class="mid" aria-label="Tischmitte">
-      <ng-container *ngTemplateOutlet="centerTpl" />
+      <span class="own-label">Mitte</span>
+      <div class="mid-row">
+        <ng-container *ngTemplateOutlet="centerTpl" />
+      </div>
     </section>
 
+    <!-- Eigene Karten unten zusammen: Stapel und Ablagen direkt über der Hand -->
     @if (me()) {
       <section class="own-phone" aria-label="Dein Platz">
         <ng-container *ngTemplateOutlet="pilesTpl" />
       </section>
       <section class="hand-tray" aria-label="Deine Hand">
+        <div class="tray-head">
+          <span class="own-label">Deine Hand</span>
+          <span class="tray-count">{{ cardCount(game().hand.length) }}</span>
+        </div>
         <ng-container *ngTemplateOutlet="handTpl" />
       </section>
     }

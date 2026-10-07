@@ -94,10 +94,9 @@
 .mid {
   display: flex;
   flex: none;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--center-gap);
-  padding: 14px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 14px;
   border: 1px solid var(--table-rim);
   border-radius: 20px;
   background: var(--table-center);
@@ -106,9 +105,18 @@
     var(--table-seat-shadow);
 }
 
-// Stapel und Ablagen
+.mid-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--center-gap);
+}
+
+// Stapel und Ablagen: nach unten zur Hand gerückt, damit klar ist, was mir gehört
 .own-phone {
   flex: none;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .own-phone .own-piles {
@@ -128,7 +136,7 @@
   position: relative;
   z-index: 2;
   flex: none;
-  margin: auto -16px 0;
+  margin: 0 -16px;
   padding: 12px 16px calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--color-border-subtle);
   border-radius: 24px 24px 0 0;
@@ -136,8 +144,20 @@
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
 }
 
+.tray-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tray-count {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .hand-tray .hand-wrap {
-  padding-top: 12px;
+  padding-top: 14px;
 }
 
 .hand-tray .hand {

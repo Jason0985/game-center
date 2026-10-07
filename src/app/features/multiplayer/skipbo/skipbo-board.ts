@@ -249,6 +249,7 @@ export class SkipboBoard {
     () => this.winSeat() !== undefined && this.winSeat() === this.me()?.seat,
   );
   readonly isJoker = isJoker;
+  readonly cardCount = cardCount;
   readonly seats = computed(() => {
     const game = this.game();
     const table = this.table();
