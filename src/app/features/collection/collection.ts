@@ -10,10 +10,17 @@ interface CollectionItem {
   category: string;
   description: string;
   icon: string;
+  // Kachelfarbe (Token aus _tokens.scss) und Abschnitt in der Liste
+  tile: string;
+  group: CollectionGroup;
   path: string;
   // Nur für diese Rollen (und Admins) sichtbar, die Route ist zusätzlich per roleGuard geschützt
   roles?: ProfileRole[];
 }
+
+type CollectionGroup = 'Punkte & Tabellen' | 'Racing' | 'Werkzeuge';
+
+const GROUP_ORDER: CollectionGroup[] = ['Punkte & Tabellen', 'Racing', 'Werkzeuge'];
 
 @Component({
   selector: 'app-collection',
@@ -28,6 +35,8 @@ export class Collection {
   readonly items: CollectionItem[] = [
     {
       title: 'Ranking',
+      tile: 'var(--tile-blue)',
+      group: 'Punkte & Tabellen',
       category: 'Punktespiel',
       description: 'Spieler hinzufügen und eine neue Ranglistenrunde starten.',
       icon: 'leaderboard',
@@ -35,6 +44,8 @@ export class Collection {
     },
     {
       title: 'Paddle Tabelle',
+      tile: 'var(--tile-green)',
+      group: 'Punkte & Tabellen',
       category: 'Paddle Übersicht',
       description: 'Übersicht über Gewinne und Verluste',
       icon: 'sports_tennis',
@@ -42,6 +53,8 @@ export class Collection {
     },
     {
       title: 'Ankunftsplaner',
+      tile: 'var(--tile-orange)',
+      group: 'Werkzeuge',
       category: 'Tagesplanung',
       description: 'Berechne Aufsteh- und Abfahrtszeit für deinen Termin.',
       icon: 'alarm',
@@ -49,6 +62,8 @@ export class Collection {
     },
     {
       title: 'F1 Strategie',
+      tile: 'var(--tile-pink)',
+      group: 'Racing',
       category: 'Rennstrategie',
       description: 'Strecken und Strategien für deine F1-Rennen.',
       icon: 'sports_motorsports',
@@ -56,6 +71,8 @@ export class Collection {
     },
     {
       title: 'Rennergebnisse',
+      tile: 'var(--tile-purple)',
+      group: 'Racing',
       category: 'Liga-Import',
       description:
         'Ergebnis-Screenshots auslesen und als JSON für Racing League Tools exportieren.',
@@ -80,6 +97,14 @@ export class Collection {
       `${item.title} ${item.category} ${item.description}`.toLowerCase().includes(searchTerm),
     );
   });
+
+  /** Gefilterte Einträge nach Abschnitt, leere Abschnitte entfallen. */
+  readonly groups = computed(() =>
+    GROUP_ORDER.map((title) => ({
+      title,
+      items: this.filteredItems().filter((item) => item.group === title),
+    })).filter((group) => group.items.length),
+  );
 
   updateSearch(event: Event): void {
     this.searchTerm.set((event.target as HTMLInputElement).value);

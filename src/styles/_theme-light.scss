@@ -1,19 +1,23 @@
 // Helles Farbschema: überschreibt die Tokens aus _tokens.scss, sobald
-// <html data-theme="light"> gesetzt ist. Gleiche Markenfarben (Magenta, Violett),
-// Akzent-Text abgedunkelt, damit er auf Weiß >= 4.5:1 erreicht.
+// <html data-theme="light"> gesetzt ist. Kontraste gegen Weiß: Text 16.8:1,
+// muted 6.0:1, Akzent 5.9:1, Erfolg 5.4:1, Fehler 5.4:1.
 html[data-theme='light'] {
   color-scheme: light;
 
-  --color-background: #f4f5f7;
+  --color-background: #f2f2f7;
   --color-surface: #ffffff;
-  --color-surface-raised: #f0f1f4;
-  --color-border: rgba(15, 17, 21, 0.12);
-  --color-border-subtle: rgba(15, 17, 21, 0.08);
-  --color-border-strong: rgba(15, 17, 21, 0.22);
+  --color-surface-raised: #e5e5ea;
+  --color-border: rgba(60, 60, 67, 0.16);
+  --color-border-subtle: rgba(60, 60, 67, 0.1);
+  --color-border-strong: rgba(60, 60, 67, 0.26);
 
-  --color-text: #16181d;
-  --color-text-muted: #525864;
-  --color-text-subtle: #676d78;
+  --color-text: #1d1d1f;
+  --color-text-muted: #636366;
+  --color-text-subtle: #6c6c70;
+
+  // Füllung für Suchfelder und Segment-Umschalter, aktives Segment
+  --color-fill: rgba(118, 118, 128, 0.12);
+  --color-segment-active: #ffffff;
 
   --table-center: #ece9f3;
   --table-edge: #e6e3ee;
@@ -43,35 +47,35 @@ html[data-theme='light'] {
   --table-seat-shadow: 0 4px 14px rgba(40, 30, 70, 0.12);
   --table-card-shadow: 0 2px 6px rgba(15, 17, 21, 0.25);
 
-  --color-primary: #c8386d;
-  --color-primary-hover: #b32f60;
-  --color-primary-light: #b02d5f;
-  --color-primary-soft: rgba(200, 56, 109, 0.1);
+  --color-primary: #c2185b;
+  --color-primary-hover: #ad1452;
+  --color-primary-light: #c2185b;
+  --color-primary-soft: rgba(194, 24, 91, 0.09);
   --color-primary-text: #ffffff;
   --color-on-primary-light: #ffffff;
 
   --color-secondary: #6d5dd3;
-  --color-success-light: #1a8a5a;
+  --color-success-light: #1f7a35;
   --color-danger: #d93a40;
   --color-danger-strong: #d2383e;
-  --color-danger-light: #c4343a;
+  --color-danger-light: #d70015;
   --color-warning: #a86a12;
   --color-warning-border: rgba(168, 106, 18, 0.45);
 
-  --color-neutral-muted: #6b717c;
-  --color-neutral-line: #e3e5ea;
+  --color-neutral-muted: #6c6c70;
+  --color-neutral-line: #e5e5ea;
   --color-neutral-card: #ffffff;
-  --color-neutral-raised: #f0f1f4;
-  --color-neutral-input: #eceef2;
+  --color-neutral-raised: #e5e5ea;
+  --color-neutral-input: #e5e5ea;
   --color-neutral-plum-muted: #6f6a78;
   --color-rank-badge: #a397f4;
-  --color-navigation-surface: rgba(255, 255, 255, 0.94);
+  --color-navigation-surface: rgba(249, 249, 251, 0.94);
   --color-navigation-highlight: rgba(15, 17, 21, 0.06);
-  --color-notification: #e5484d;
+  --color-notification: #c2185b;
   --color-success-text: #146c47;
   --color-danger-text: #a4262c;
-  --color-danger-alert: #c4343a;
-  --color-danger-dialog: #c4343a;
+  --color-danger-alert: #d70015;
+  --color-danger-dialog: #d70015;
 
   --color-chart-cyan: #2f7fd8;
   --color-chart-blue: #3b95e0;
@@ -100,9 +104,9 @@ html[data-theme='light'] {
   --color-white-58: rgba(15, 17, 21, 0.4);
   --color-white-62: rgba(15, 17, 21, 0.45);
 
-  --color-primary-light-22: rgba(176, 45, 95, 0.22);
-  --color-primary-light-28: rgba(176, 45, 95, 0.28);
-  --color-primary-light-48: rgba(176, 45, 95, 0.48);
+  --color-primary-light-22: rgba(194, 24, 91, 0.22);
+  --color-primary-light-28: rgba(194, 24, 91, 0.28);
+  --color-primary-light-48: rgba(194, 24, 91, 0.48);
   --color-secondary-shadow: rgba(15, 17, 21, 0.12);
   --color-success-12: rgba(26, 138, 90, 0.1);
   --color-success-45: rgba(26, 138, 90, 0.45);

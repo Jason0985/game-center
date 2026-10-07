@@ -1,54 +1,49 @@
-<div class="collection-root ui-page-root">
-  <header class="ui-hero collection-header">
-    <div class="collection-heading">
-      <div>
-        <h1 class="ui-title">Meine <span class="ui-accent">Spiele</span></h1>
-        <p class="ui-subtitle">Deine Sammlung für den nächsten Spieleabend.</p>
-      </div>
-    </div>
-  </header>
+<div class="ui-page-root">
+  <div class="ui-page collection-page">
+    <header class="ui-page-head">
+      <h1 class="ui-large-title">Sammlung</h1>
+    </header>
 
-  <div class="collection-content">
-    <label class="collection-search ui-surface">
+    <label class="ui-search">
+      <mat-icon aria-hidden="true">search</mat-icon>
       <input
         type="search"
-        placeholder="Spiele durchsuchen"
+        placeholder="Suchen"
         [value]="searchTerm()"
         (input)="updateSearch($event)"
         aria-label="Spiele durchsuchen"
       />
-      <mat-icon aria-hidden="true">search</mat-icon>
     </label>
 
-    <section class="game-list" aria-label="Meine Spiele">
-      @for (item of filteredItems(); track item.title) {
-        <article class="game-card ui-surface" [routerLink]="item.path" tabindex="0" role="link">
-          <div class="game-icon" aria-hidden="true">
-            <mat-icon>{{ item.icon }}</mat-icon>
-          </div>
-          <div class="game-details">
-            <p class="game-category">{{ item.category }}</p>
-            <h2>{{ item.title }}</h2>
-            <p class="game-description">{{ item.description }}</p>
-            @if (item.roleTags.length) {
-              <div class="game-roles" aria-label="Sichtbar für">
-                @for (tag of item.roleTags; track tag.role) {
-                  <span class="role-chip" [attr.data-role]="tag.role">
-                    <mat-icon aria-hidden="true">{{ tag.icon }}</mat-icon>
-                    {{ tag.label }}
-                  </span>
-                }
-              </div>
-            }
-          </div>
-          <mat-icon class="game-arrow" aria-hidden="true">chevron_right</mat-icon>
-        </article>
-      } @empty {
-        <div class="empty-state ui-surface">
-          <mat-icon aria-hidden="true">search_off</mat-icon>
-          <p>Keine Spiele gefunden.</p>
+    @for (group of groups(); track group.title) {
+      <section class="ui-section" [attr.aria-label]="group.title">
+        <h2 class="ui-section-title">{{ group.title }}</h2>
+        <div class="ui-group collection-group">
+          @for (item of group.items; track item.title) {
+            <a class="ui-row collection-row" [routerLink]="item.path">
+              <span class="ui-row-icon ui-row-icon--large" [style.--tile]="item.tile">
+                <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="collection-title">
+                  <span class="ui-row-title">{{ item.title }}</span>
+                  @for (tag of item.roleTags; track tag.role) {
+                    <span class="collection-tag" [attr.data-role]="tag.role">{{ tag.label }}</span>
+                  }
+                </span>
+                <span class="ui-row-sub collection-sub">{{ item.description }}</span>
+              </span>
+              <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </a>
+          }
         </div>
-      }
-    </section>
+      </section>
+    } @empty {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">search_off</mat-icon>
+        <h2>Keine Treffer</h2>
+        <p>Versuche einen anderen Suchbegriff.</p>
+      </div>
+    }
   </div>
 </div>

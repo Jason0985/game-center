@@ -1,150 +1,151 @@
-<div class="notifications-root ui-page-root ui-page-root--spacious">
-  <header class="ui-hero notifications-header">
-    <a class="notifications-back" routerLink="/" aria-label="Zur Startseite">
-      <mat-icon aria-hidden="true">chevron_left</mat-icon>
-    </a>
-    <p class="notifications-kicker">Game Center</p>
-    <h1 class="ui-title">Benachrichtigungen</h1>
-    <p class="ui-subtitle">Einladungen, Anfragen und Neuigkeiten an einem Ort.</p>
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Home
+      </a>
+      <h1 class="ui-large-title">Mitteilungen</h1>
+    </header>
+
     @if (session.isAdmin()) {
-      <button
-        mat-stroked-button
-        type="button"
-        class="system-notification-button"
-        (click)="openSystemNotificationDialog()"
-      >
-        <mat-icon aria-hidden="true">campaign</mat-icon>
-        Systembenachrichtigung senden
-      </button>
+      <div class="ui-group ui-group--icons">
+        <button type="button" class="ui-row" (click)="openSystemNotificationDialog()">
+          <span class="ui-row-icon" style="--tile: var(--tile-purple)">
+            <mat-icon aria-hidden="true">campaign</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Systembenachrichtigung senden</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+        </button>
+      </div>
     }
-  </header>
 
-  @if (!session.isLoggedIn()) {
-    <section class="notifications-empty ui-surface">
-      <mat-icon aria-hidden="true">lock</mat-icon>
-      <h2>Anmelden erforderlich</h2>
-      <p>Melde dich an, um deine Benachrichtigungen zu sehen.</p>
-      <a mat-flat-button color="primary" routerLink="/profile/auth">Anmelden</a>
-    </section>
-  } @else if (loading()) {
-    <section class="notifications-empty ui-surface">
-      <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
-      <p>Benachrichtigungen werden geladen ...</p>
-    </section>
-  } @else if (!notifications().length) {
-    <section class="notifications-empty ui-surface">
-      <mat-icon aria-hidden="true">notifications_none</mat-icon>
-      <h2>Alles ruhig</h2>
-      <p>Du hast im Moment keine neuen Benachrichtigungen.</p>
-    </section>
-  } @else {
-    <section class="notification-list" aria-label="Deine Benachrichtigungen">
-      @for (notification of notifications(); track notification.id) {
-        @let config = typeConfig(notification.type);
-        @let swipeable = isSwipeable(notification);
-        <div
-          class="notification-swipe-shell"
-          [class.notification-swipe-shell--ready]="isSwipeReady(notification.id)"
-        >
-          @if (swipeable) {
-            <div class="swipe-delete-action swipe-delete-action--left" aria-hidden="true">
-              <mat-icon>delete</mat-icon>
-              <span>Löschen</span>
-            </div>
-            <div class="swipe-delete-action swipe-delete-action--right" aria-hidden="true">
-              <mat-icon>delete</mat-icon>
-              <span>Löschen</span>
-            </div>
-            <span class="swipe-threshold swipe-threshold--left" aria-hidden="true"></span>
-            <span class="swipe-threshold swipe-threshold--right" aria-hidden="true"></span>
-          }
-          <article
-            class="notification-card ui-surface"
-            [attr.data-tone]="config.tone"
-            [attr.data-category]="config.category"
-            [class.notification-card--dragging]="!isSwipeRemoving(notification.id)"
-            [class.notification-card--removing]="isSwipeRemoving(notification.id)"
-            [style.transform]="'translateX(' + getSwipeOffset(notification.id) + 'px)'"
-            (touchstart)="startSwipe($event, notification)"
-            (touchmove)="moveSwipe($event, notification)"
-            (touchend)="finishSwipe($event, notification)"
+    @if (!session.isLoggedIn()) {
+      <section class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">lock</mat-icon>
+        <h2>Anmelden erforderlich</h2>
+        <p>Melde dich an, um deine Benachrichtigungen zu sehen.</p>
+        <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
+      </section>
+    } @else if (loading()) {
+      <section class="ui-group ui-empty" role="status">
+        <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+        <p>Benachrichtigungen werden geladen …</p>
+      </section>
+    } @else if (!notifications().length) {
+      <section class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">notifications_none</mat-icon>
+        <h2>Alles ruhig</h2>
+        <p>Du hast im Moment keine neuen Benachrichtigungen.</p>
+      </section>
+    } @else {
+      <section class="ui-group notification-list" aria-label="Deine Benachrichtigungen">
+        @for (notification of notifications(); track notification.id) {
+          @let config = typeConfig(notification.type);
+          @let swipeable = isSwipeable(notification);
+          <div
+            class="notification-swipe-shell"
+            [class.notification-swipe-shell--ready]="isSwipeReady(notification.id)"
           >
-            <div class="notification-card-topline">
-              <span class="notification-type-icon" aria-hidden="true">
-                <mat-icon>{{ config.icon }}</mat-icon>
-              </span>
-              <div class="notification-copy">
-                <div class="notification-meta">
-                  <span class="notification-category">{{ config.label }}</span>
-                  <span>{{ formatTime(notification.created_at) }}</span>
-                </div>
-                <h2>{{ notification.title }}</h2>
-                <p>{{ notification.message }}</p>
+            @if (swipeable) {
+              <div class="swipe-delete-action swipe-delete-action--left" aria-hidden="true">
+                <mat-icon>delete</mat-icon>
+                <span>Löschen</span>
               </div>
-              @if (swipeable) {
-                <button
-                  mat-icon-button
-                  type="button"
-                  aria-label="Benachrichtigung entfernen"
-                  matTooltip="Entfernen"
-                  (click)="removeNotification(notification.id)"
-                >
-                  <mat-icon aria-hidden="true">close</mat-icon>
-                </button>
-              }
-            </div>
-
-            @switch (config.actions) {
-              @case ('friend-request') {
-                <div class="notification-actions">
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    [disabled]="respondingIds().has(notification.id)"
-                    (click)="respondToFriendRequest(notification, false)"
-                  >
-                    Ablehnen
-                  </button>
-                  <button
-                    mat-flat-button
-                    color="primary"
-                    type="button"
-                    [disabled]="respondingIds().has(notification.id)"
-                    (click)="respondToFriendRequest(notification, true)"
-                  >
-                    Annehmen
-                  </button>
-                </div>
-              }
-              @case ('game-invite') {
-                <div class="notification-actions">
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    [disabled]="respondingIds().has(notification.id)"
-                    (click)="respondToGameInvite(notification, false)"
-                  >
-                    Ablehnen
-                  </button>
-                  <button
-                    mat-flat-button
-                    color="primary"
-                    type="button"
-                    [disabled]="respondingIds().has(notification.id)"
-                    (click)="respondToGameInvite(notification, true)"
-                  >
-                    Teilnehmen
-                  </button>
-                </div>
-              }
+              <div class="swipe-delete-action swipe-delete-action--right" aria-hidden="true">
+                <mat-icon>delete</mat-icon>
+                <span>Löschen</span>
+              </div>
+              <span class="swipe-threshold swipe-threshold--left" aria-hidden="true"></span>
+              <span class="swipe-threshold swipe-threshold--right" aria-hidden="true"></span>
             }
-          </article>
-        </div>
-      }
-    </section>
-  }
+            <article
+              class="notification-card"
+              [attr.data-tone]="config.tone"
+              [attr.data-category]="config.category"
+              [class.notification-card--dragging]="!isSwipeRemoving(notification.id)"
+              [class.notification-card--removing]="isSwipeRemoving(notification.id)"
+              [style.transform]="'translateX(' + getSwipeOffset(notification.id) + 'px)'"
+              (touchstart)="startSwipe($event, notification)"
+              (touchmove)="moveSwipe($event, notification)"
+              (touchend)="finishSwipe($event, notification)"
+            >
+              <div class="notification-card-topline">
+                <span class="notification-type-icon" aria-hidden="true">
+                  <mat-icon>{{ config.icon }}</mat-icon>
+                </span>
+                <div class="notification-copy">
+                  <div class="notification-meta">
+                    <span class="notification-category">{{ config.label }}</span>
+                    <span>{{ formatTime(notification.created_at) }}</span>
+                  </div>
+                  <h2>{{ notification.title }}</h2>
+                  <p>{{ notification.message }}</p>
+                </div>
+                @if (swipeable) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Benachrichtigung entfernen"
+                    matTooltip="Entfernen"
+                    (click)="removeNotification(notification.id)"
+                  >
+                    <mat-icon aria-hidden="true">close</mat-icon>
+                  </button>
+                }
+              </div>
 
-  <p class="notifications-hint">
-    Wische eine Nachricht nach links oder rechts, um sie auszublenden.
-  </p>
+              @switch (config.actions) {
+                @case ('friend-request') {
+                  <div class="notification-actions">
+                    <button
+                      class="ui-pill-btn ui-pill-btn--neutral"
+                      type="button"
+                      [disabled]="respondingIds().has(notification.id)"
+                      (click)="respondToFriendRequest(notification, false)"
+                    >
+                      Ablehnen
+                    </button>
+                    <button
+                      class="ui-pill-btn ui-pill-btn--filled"
+                      type="button"
+                      [disabled]="respondingIds().has(notification.id)"
+                      (click)="respondToFriendRequest(notification, true)"
+                    >
+                      Annehmen
+                    </button>
+                  </div>
+                }
+                @case ('game-invite') {
+                  <div class="notification-actions">
+                    <button
+                      class="ui-pill-btn ui-pill-btn--neutral"
+                      type="button"
+                      [disabled]="respondingIds().has(notification.id)"
+                      (click)="respondToGameInvite(notification, false)"
+                    >
+                      Ablehnen
+                    </button>
+                    <button
+                      class="ui-pill-btn ui-pill-btn--filled"
+                      type="button"
+                      [disabled]="respondingIds().has(notification.id)"
+                      (click)="respondToGameInvite(notification, true)"
+                    >
+                      Teilnehmen
+                    </button>
+                  </div>
+                }
+              }
+            </article>
+          </div>
+        }
+      </section>
+    }
+
+    <p class="ui-section-footer notifications-hint">
+      Wische eine Nachricht zur Seite, um sie auszublenden.
+    </p>
+  </div>
 </div>

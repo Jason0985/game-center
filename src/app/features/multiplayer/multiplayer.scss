@@ -1,288 +1,102 @@
-.multiplayer-header,
-.multiplayer-content {
-  width: min(100%, var(--content-width));
-  box-sizing: border-box;
+.lobby-total {
+  font-weight: 500;
 }
 
-.multiplayer-header {
-  margin-bottom: 24px;
-}
-
-.multiplayer-kicker {
-  margin: 0 0 5px;
-  color: var(--color-text-subtle);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.multiplayer-header .ui-title {
-  margin-top: 0;
-}
-
-.multiplayer-content {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.lobby-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 2px;
-}
-
-.lobby-toolbar h2,
-.lobby-message h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.lobby-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  gap: 7px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: var(--radius-small);
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.lobby-button:disabled,
-.lobby-secondary-action:disabled {
-  cursor: default;
-  opacity: 0.65;
-}
-
-.lobby-button mat-icon {
-  width: 19px;
-  height: 19px;
-  font-size: 19px;
-}
-
-.lobby-button:focus-visible,
-.lobby-secondary-action:focus-visible,
-.my-lobby-banner:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
-}
-
-.lobby-message {
-  display: flex;
-  min-height: 150px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 22px;
-  text-align: center;
-}
-
-.lobby-message > mat-icon {
-  color: var(--color-primary-light);
-}
-
-.lobby-message p {
-  max-width: 360px;
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.lobby-list {
-  display: grid;
-  gap: 10px;
-}
-
-.lobby-card {
-  min-width: 0;
-  padding: 16px;
-}
-
-.lobby-card-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.lobby-card-title {
-  min-width: 0;
-}
-
-.lobby-label {
-  display: block;
-  margin: 0 0 3px;
-  color: var(--color-text-subtle);
-  font-size: 11px;
-}
-
-.lobby-card-heading h3 {
-  margin: 0;
-  overflow: hidden;
-  font-size: 18px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lobby-member-count {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.lobby-member-count mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
-}
-
-.lobby-game {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 12px 0 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.lobby-game mat-icon {
-  width: 18px;
-  height: 18px;
-  color: var(--color-primary-light);
-  font-size: 18px;
-}
-
-// Aktionen einer Lobby-Karte unten rechts
-.lobby-card-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.lobby-secondary-action {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 12px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.lobby-secondary-action:hover:not(:disabled) {
-  color: var(--color-text);
-}
-
-// Hinweis oben, wenn man schon in einer Lobby ist
-.my-lobby-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-color: var(--color-primary-light-28);
-  background: var(--color-primary-soft);
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.my-lobby-banner > mat-icon:first-child {
-  color: var(--color-primary-light);
-}
-
-.my-lobby-banner > span {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.my-lobby-banner strong {
+.lobby-error {
+  margin: -12px 16px 0;
+  color: var(--color-danger-light);
   font-size: 14px;
 }
 
-.my-lobby-banner small {
-  color: var(--color-text-muted);
-  font-size: 12px;
+.lobby-list {
+  --ui-row-inset: 68px;
 }
 
-.my-lobby-arrow {
-  color: var(--color-text-subtle);
+.lobby-card {
+  position: relative;
+}
+
+.lobby-card + .lobby-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 68px;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+.lobby-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 10px 12px 10px 16px;
+}
+
+.lobby-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.lobby-member-count {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-card-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
 }
 
 .lobby-join-form {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 0 12px 14px 68px;
+}
+
+.lobby-code-field {
+  display: flex;
+  flex: 1 1 140px;
   flex-direction: column;
-  margin-top: 14px;
+  gap: 4px;
+}
+
+.lobby-code-field span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .lobby-code-field input {
-  width: 100%;
-  min-height: 42px;
+  height: 40px;
   box-sizing: border-box;
   padding: 0 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-small);
-  outline: 0;
-  background: var(--color-white-04);
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-fill);
   color: var(--color-text);
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-  font-size: 16px;
-  font-weight: 700;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
   letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
-.lobby-code-field input::placeholder {
-  color: var(--color-text-subtle);
-  font-weight: 400;
+.lobby-code-field input:focus {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 0;
 }
 
-.lobby-code-field input:focus-visible {
-  border-color: var(--color-primary-light);
-}
-
-.lobby-error {
-  margin: 0;
-  color: var(--color-danger-alert);
-  font-size: 13px;
-}
-
-@media (max-width: 420px) {
-  .lobby-toolbar {
-    align-items: flex-start;
-  }
-
-  .lobby-toolbar h2 {
-    font-size: 16px;
-  }
-
-  .lobby-button {
-    min-height: 40px;
-    gap: 5px;
-    padding-inline: 9px;
-    font-size: 12px;
-  }
+.lobby-join-form .ui-pill-btn {
+  min-height: 40px;
 }

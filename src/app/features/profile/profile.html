@@ -1,174 +1,126 @@
-<div class="profile-root ui-page-root ui-page-root--spacious">
-  <header class="ui-hero profile-header ui-surface">
-    <div class="profile-header-inner">
-      <div class="profile-header-mark" aria-hidden="true">
-        <mat-icon>person</mat-icon>
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <h1 class="ui-large-title">Profil</h1>
+    </header>
+
+    @if (!session.isLoggedIn()) {
+      <div class="ui-group">
+        <div class="ui-row profile-guest">
+          <span class="ui-avatar-initials profile-avatar profile-avatar--guest" aria-hidden="true">
+            <mat-icon>person</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title profile-name">Nicht angemeldet</span>
+            <span class="ui-row-sub">Speichere Profile, Spielstände und spiele mit Freunden.</span>
+          </span>
+        </div>
       </div>
-      <div class="profile-header-copy">
-        @if (session.isLoggedIn()) {
-          <p class="profile-kicker">Dein Profil</p>
-          <div class="profile-identity">
-            <h1 class="ui-title">{{ session.displayName() }}</h1>
-            <span class="profile-username">&#64;{{ session.username() }}</span>
-          </div>
-        } @else {
-          <p class="profile-kicker">Willkommen</p>
-          <h1 class="ui-title">Dein <span class="ui-accent">Profil</span></h1>
-          <p class="ui-subtitle">Verwalte deine persönlichen Einstellungen.</p>
-        }
+      <div class="profile-guest-actions">
+        <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
+        <a class="ui-btn ui-btn--secondary" routerLink="/profile/auth">Registrieren</a>
       </div>
-      @if (session.isLoggedIn()) {
+    } @else {
+      <div class="ui-group">
         <button
           type="button"
-          class="profile-edit-button"
+          class="ui-row profile-identity"
           aria-label="Anzeigename ändern"
-          matTooltip="Anzeigename ändern"
           (click)="editDisplayName()"
         >
-          <mat-icon aria-hidden="true">edit</mat-icon>
+          <span
+            class="ui-avatar-initials profile-avatar"
+            [style.--avatar]="session.username() | avatarColor"
+            aria-hidden="true"
+            >{{ session.displayName() | initials }}</span
+          >
+          <span class="ui-row-text">
+            <span class="ui-row-title profile-name">{{ session.displayName() }}</span>
+            <span class="ui-row-sub">&#64;{{ session.username() }} · Anzeigename ändern</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
         </button>
-      }
-    </div>
-  </header>
-
-  @if (!session.isLoggedIn()) {
-    <section class="profile-card ui-surface">
-      <div class="profile-card-heading">
-        <mat-icon aria-hidden="true">account_circle</mat-icon>
-        <div>
-          <h2>Noch nicht angemeldet?</h2>
-          <p>Speichere deine Spielerprofile und Spielstände.</p>
-        </div>
-      </div>
-      <div class="profile-actions">
-        <button mat-flat-button color="primary" routerLink="/profile/auth">Anmelden</button>
-        <button mat-stroked-button routerLink="/profile/auth">Registrieren</button>
-      </div>
-    </section>
-  }
-
-  @if (session.isLoggedIn()) {
-    <section class="profile-card profile-overview-card ui-surface" aria-labelledby="overview-title">
-      <div class="profile-card-heading">
-        <mat-icon aria-hidden="true">insights</mat-icon>
-        <div>
-          <h2 id="overview-title">Deine Spielübersicht</h2>
-          <p>Deine bisherigen Game Center-Momente auf einen Blick.</p>
-        </div>
-      </div>
-
-      <div class="profile-stat-grid">
-        <div class="profile-stat profile-stat--planned" title="In Planung">
-          <span class="ui-skeleton ui-skeleton--value profile-stat-skeleton" aria-hidden="true"></span>
-          <span>Spieleabende</span>
-        </div>
-        <div class="profile-stat profile-stat--planned" title="In Planung">
-          <span class="ui-skeleton ui-skeleton--value profile-stat-skeleton" aria-hidden="true"></span>
-          <span>Spiele aktiv</span>
-        </div>
-        <div class="profile-stat">
-          <strong>{{ friendsLoading() ? '-' : friends().length }}</strong>
-          <span>Freunde</span>
-        </div>
-      </div>
-    </section>
-
-    <section
-      class="profile-card activity-card ui-surface ui-placeholder"
-      aria-labelledby="activity-title"
-    >
-      <div class="profile-card-heading">
-        <mat-icon aria-hidden="true">history</mat-icon>
-        <div>
-          <h2 id="activity-title">Letzte Aktivitäten</h2>
-          <p>Ein kleiner Rückblick auf deine letzten Runden.</p>
-        </div>
-        <span class="ui-placeholder-note profile-planned">
-          <mat-icon aria-hidden="true">schedule</mat-icon>In Planung
-        </span>
-      </div>
-
-      <div class="activity-list" aria-hidden="true">
-        @for (width of [62, 48]; track $index) {
-          <div class="activity-row">
-            <span class="ui-skeleton ui-skeleton--block activity-skeleton-icon"></span>
-            <div class="activity-copy">
-              <span class="ui-skeleton ui-skeleton--title" [style.width.%]="width"></span>
-              <span class="ui-skeleton" [style.width.%]="width - 20"></span>
-            </div>
+        <div class="ui-stat-row profile-stats">
+          <div class="ui-stat" title="In Planung">
+            <strong class="ui-stat-empty" aria-hidden="true">–</strong>
+            <span>Spieleabende</span>
           </div>
-        }
-      </div>
-    </section>
-
-    <section class="profile-card friends-card ui-surface" aria-labelledby="friends-title">
-      <div class="profile-card-heading">
-        <mat-icon aria-hidden="true">group</mat-icon>
-        <div>
-          <h2 id="friends-title">Freunde</h2>
-          <p>Deine Freunde auf einen Blick.</p>
+          <div class="ui-stat" title="In Planung">
+            <strong class="ui-stat-empty" aria-hidden="true">–</strong>
+            <span>Spiele aktiv</span>
+          </div>
+          <div class="ui-stat">
+            <strong>{{ friendsLoading() ? '–' : friends().length }}</strong>
+            <span>Freunde</span>
+          </div>
         </div>
       </div>
 
-      <div class="user-toolbar">
-        <label class="user-search">
-          <mat-icon aria-hidden="true">search</mat-icon>
-          <input
-            type="search"
-            placeholder="Freunde durchsuchen"
-            [value]="friendFilter()"
-            (input)="friendFilter.set($any($event.target).value)"
-            aria-label="Freunde durchsuchen"
-          />
-        </label>
-        <button
-          type="button"
-          class="user-toolbar-button"
-          aria-label="Freunde hinzufügen"
-          matTooltip="Freunde hinzufügen"
-          (click)="openAddFriends()"
-        >
-          <mat-icon aria-hidden="true">person_add</mat-icon>
-        </button>
-      </div>
+      <section class="ui-section" aria-labelledby="friends-title">
+        <h2 id="friends-title" class="ui-section-title">Freunde</h2>
+        <div class="friends-toolbar">
+          <label class="ui-search">
+            <mat-icon aria-hidden="true">search</mat-icon>
+            <input
+              type="search"
+              placeholder="Freunde durchsuchen"
+              [value]="friendFilter()"
+              (input)="friendFilter.set($any($event.target).value)"
+              aria-label="Freunde durchsuchen"
+            />
+          </label>
+          <button
+            type="button"
+            class="ui-pill-btn friends-add"
+            aria-label="Freunde hinzufügen"
+            matTooltip="Freunde hinzufügen"
+            (click)="openAddFriends()"
+          >
+            <mat-icon aria-hidden="true">person_add</mat-icon>
+          </button>
+        </div>
 
-      <div class="user-list" aria-live="polite">
-        @if (friendsLoading()) {
-          <p class="user-list-message">Freunde werden geladen ...</p>
-        } @else if (!friends().length) {
-          <p class="user-list-message">Noch keine Freunde. Füge über das Icon oben neue hinzu.</p>
-        } @else if (!filteredFriends().length) {
-          <p class="user-list-message">Keine Freunde gefunden.</p>
-        } @else {
-          @for (friend of filteredFriends(); track friend.friendshipId) {
-            <div class="user-row">
-              <div class="user-row-details">
-                <strong>{{ friend.profile.display_name || friend.profile.username }}</strong>
-                <span>&#64;{{ friend.profile.username }}</span>
+        <div class="ui-group ui-group--avatars" aria-live="polite">
+          @if (friendsLoading()) {
+            <p class="friends-message">Freunde werden geladen …</p>
+          } @else if (!friends().length) {
+            <p class="friends-message">Noch keine Freunde. Füge über das Plus neue hinzu.</p>
+          } @else if (!filteredFriends().length) {
+            <p class="friends-message">Keine Freunde gefunden.</p>
+          } @else {
+            @for (friend of filteredFriends(); track friend.friendshipId) {
+              @let name = friend.profile.display_name || friend.profile.username;
+              <div class="ui-row friend-row">
+                <span
+                  class="ui-avatar-initials"
+                  [style.--avatar]="friend.profile.username | avatarColor"
+                  aria-hidden="true"
+                  >{{ name | initials }}</span
+                >
+                <span class="ui-row-text">
+                  <span class="ui-row-title">{{ name }}</span>
+                  <span class="ui-row-sub">&#64;{{ friend.profile.username }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="ui-icon-button"
+                  [attr.aria-label]="'@' + friend.profile.username + ' aus Freunden entfernen'"
+                  matTooltip="Freund entfernen"
+                  (click)="removeFriend(friend)"
+                >
+                  <mat-icon aria-hidden="true">person_remove</mat-icon>
+                </button>
               </div>
-              <button
-                mat-icon-button
-                type="button"
-                class="friend-remove-button"
-                [attr.aria-label]="'@' + friend.profile.username + ' aus Freunden entfernen'"
-                matTooltip="Freund entfernen"
-                (click)="removeFriend(friend)"
-              >
-                <mat-icon aria-hidden="true">person_remove</mat-icon>
-              </button>
-            </div>
+            }
           }
-        }
+        </div>
+      </section>
+
+      <div class="ui-group">
+        <button type="button" class="ui-row profile-logout" (click)="logout()">Abmelden</button>
       </div>
-    </section>
-  }
+    }
 
-  @if (session.isLoggedIn()) {
-    <button mat-flat-button class="profile-logout-button" type="button" (click)="logout()">
-      <mat-icon aria-hidden="true">logout</mat-icon>
-      Abmelden
-    </button>
-  }
-
-  <footer class="profile-footer">&#169; 2026 Game Center</footer>
+    <footer class="profile-footer">&#169; 2026 Game Center</footer>
+  </div>
 </div>

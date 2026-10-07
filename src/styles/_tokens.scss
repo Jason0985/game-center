@@ -1,56 +1,71 @@
-// Design-Tokens des dunklen Standard-Schemas. Grau und Hell überschreiben sie in
-// _theme-graphite.scss und _theme-light.scss (data-theme auf <html>).
-// Neutrale, leicht kühle Dunkeltöne mit Magenta aus dem Logo als
-// einziger Markenfarbe. Kontraste geprüft (Text >= 4.5:1 auf Surface und Raised).
+// Design-Tokens des dunklen (grauen) Standard-Schemas. Hell überschreibt sie in
+// _theme-light.scss (data-theme="light" auf <html>).
+// Neutrale Grautöne nach Apple/One-UI-Vorbild mit Magenta als einziger Markenfarbe.
+// Kontraste gegen --color-surface: Text 12.8:1, muted 6.3:1, subtle 4.9:1,
+// primary-light 5.2:1, Weiß auf --color-primary 5.2:1.
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable', system-ui, 'Segoe UI',
+    Roboto, sans-serif;
 
-  --color-background: #0f1115;
-  --color-surface: #171a20;
-  --color-surface-raised: #1f232a;
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-subtle: rgba(255, 255, 255, 0.07);
-  --color-border-strong: rgba(255, 255, 255, 0.2);
+  --color-background: #1c1c1e;
+  --color-surface: #2c2c2e;
+  --color-surface-raised: #3a3a3c;
+  --color-border: rgba(235, 235, 245, 0.14);
+  --color-border-subtle: rgba(235, 235, 245, 0.08);
+  --color-border-strong: rgba(235, 235, 245, 0.24);
 
-  --color-text: #eceef2;
-  --color-text-muted: #a7adb8;
-  --color-text-subtle: #868d99;
+  --color-text: #f5f5f7;
+  --color-text-muted: #aeaeb2;
+  --color-text-subtle: #98989f;
+
+  // Füllung für Suchfelder und Segment-Umschalter, aktives Segment
+  --color-fill: rgba(118, 118, 128, 0.24);
+  --color-segment-active: #636366;
 
   // Primary: Flächen (Buttons, weißer Text 4.9:1) / Light: Akzent-Text und Icons auf dunkel
-  --color-primary: #c8386d;
-  --color-primary-hover: #d64479;
-  --color-primary-light: #f27ba5;
-  --color-primary-soft: rgba(242, 123, 165, 0.12);
+  --color-primary: #c9305f;
+  --color-primary-hover: #d63a6c;
+  --color-primary-light: #ff6b98;
+  --color-primary-soft: rgba(255, 107, 152, 0.16);
   --color-primary-text: #ffffff;
   // Text auf Flächen in --color-primary-light (Material on-primary)
   --color-on-primary-light: #2b0716;
 
   --color-secondary: #8b7cf0;
-  --color-success-light: #5fcf9b;
+  --color-success-light: #30d158;
   --color-danger: #e5484d;
   // Fläche für destruktive Buttons (weißer Text 4.8:1)
   --color-danger-strong: #d2383e;
-  --color-danger-light: #ff8a8f;
+  --color-danger-light: #ff6961;
   --color-warning: #e9b44c;
   --color-warning-border: rgba(233, 180, 76, 0.45);
 
   --gradient-accent: var(--color-primary-light);
 
+  // Icon-Kacheln in Listen (weißes Icon >= 3:1), in beiden Schemas gleich
+  --tile-blue: #0a6cdb;
+  --tile-green: #1f7a35;
+  --tile-pink: #c9305f;
+  --tile-purple: #8944ab;
+  --tile-orange: #b25000;
+  --tile-gray: #636366;
+
   --color-white: #ffffff;
-  --color-neutral-muted: #8a909b;
-  --color-neutral-line: #262a31;
-  --color-neutral-card: #1c1f26;
-  --color-neutral-raised: #1f232a;
-  --color-neutral-input: #20242b;
+  --color-neutral-muted: #98989f;
+  --color-neutral-line: #3a3a3c;
+  --color-neutral-card: #2c2c2e;
+  --color-neutral-raised: #3a3a3c;
+  --color-neutral-input: #3a3a3c;
   --color-neutral-plum-muted: #8f8a96;
   --color-rank-badge: #8b7cf0;
-  --color-navigation-surface: rgba(23, 26, 32, 0.94);
-  --color-navigation-highlight: rgba(255, 255, 255, 0.07);
-  --color-notification: #e5484d;
+  --color-navigation-surface: rgba(28, 28, 30, 0.92);
+  --color-navigation-highlight: rgba(255, 255, 255, 0.08);
+  --color-notification: #c9305f;
   --color-success-text: #9fe3c2;
   --color-danger-text: #ffb3b5;
-  --color-danger-alert: #ff8a8f;
-  --color-danger-dialog: #ff8a8f;
+  --color-danger-alert: #ff6961;
+  --color-danger-dialog: #ff6961;
 
   --color-chart-cyan: #5aa9ff;
   --color-chart-blue: #7cc2ff;
@@ -83,41 +98,42 @@
   --color-primary-20: rgba(200, 56, 109, 0.2);
   --color-primary-28: rgba(200, 56, 109, 0.28);
   --color-primary-38: rgba(200, 56, 109, 0.38);
-  --color-primary-light-22: rgba(242, 123, 165, 0.22);
-  --color-primary-light-28: rgba(242, 123, 165, 0.28);
-  --color-primary-light-48: rgba(242, 123, 165, 0.48);
+  --color-primary-light-22: rgba(255, 107, 152, 0.22);
+  --color-primary-light-28: rgba(255, 107, 152, 0.28);
+  --color-primary-light-48: rgba(255, 107, 152, 0.48);
   --color-secondary-shadow: rgba(0, 0, 0, 0.3);
-  --color-success-12: rgba(95, 207, 155, 0.12);
-  --color-success-45: rgba(95, 207, 155, 0.45);
-  --color-success-light-28: rgba(95, 207, 155, 0.28);
+  --color-success-12: rgba(48, 209, 88, 0.14);
+  --color-success-45: rgba(48, 209, 88, 0.45);
+  --color-success-light-28: rgba(48, 209, 88, 0.28);
   --color-danger-12: rgba(229, 72, 77, 0.12);
   --color-danger-45: rgba(229, 72, 77, 0.45);
-  --color-danger-light-28: rgba(255, 138, 143, 0.28);
+  --color-danger-light-28: rgba(255, 105, 97, 0.28);
 
-  --color-overlay-dim: rgba(5, 6, 8, 0.62);
+  --color-overlay-dim: rgba(0, 0, 0, 0.5);
   --color-overlay-heavy: rgba(0, 0, 0, 0.5);
-  --color-dialog-surface: #1b1e24;
-  --color-shadow-navigation: rgba(0, 0, 0, 0.4);
+  --color-dialog-surface: #2c2c2e;
+  --color-shadow-navigation: rgba(0, 0, 0, 0.32);
   --color-shadow-card: rgba(0, 0, 0, 0.3);
-  --color-shadow-surface: rgba(0, 0, 0, 0.25);
+  --color-shadow-surface: rgba(0, 0, 0, 0.2);
 
   --shadow-surface: 0 1px 2px var(--color-shadow-surface);
   --shadow-navigation: 0 8px 24px var(--color-shadow-navigation);
   --shadow-overlay: 0 16px 48px var(--color-overlay-heavy);
 
   // Platzhalter (Skeleton) für Bereiche, die noch keine echten Daten haben
-  --color-skeleton: rgba(255, 255, 255, 0.07);
-  --color-skeleton-shine: rgba(255, 255, 255, 0.11);
+  --color-skeleton: rgba(255, 255, 255, 0.08);
+  --color-skeleton-shine: rgba(255, 255, 255, 0.12);
 
   --radius-small: 8px;
   --radius-medium: 12px;
   --radius-large: 14px;
+  --radius-xl: 20px;
   --radius-pill: 999px;
 
-  --top-bar-height: 49px;
+  --top-bar-height: 52px;
   --bottom-nav-space: 88px;
 
-  --content-width: 680px;
+  --content-width: 640px;
   --page-padding-mobile: 16px;
   --page-padding-desktop: 24px;
 
@@ -126,32 +142,32 @@
 
   // Spieltisch aller Kartenspiele (--table-*); --f7-* nur Flip 7. Zahlen-, Freeze- und
   // Flip-3-Farben sind in allen Schemas gleich
-  --table-center: #20252f;
-  --table-edge: #1b1f28;
-  --table-rim: #2a303b;
-  --table-rim-line: rgba(255, 255, 255, 0.06);
-  --table-card-back: #2a1d3a;
-  --table-back-frame: #c8386d;
-  --f7-mod-bg: #262045;
+  --table-center: #30343b;
+  --table-edge: #2a2d33;
+  --table-rim: #383c44;
+  --table-rim-line: rgba(255, 255, 255, 0.07);
+  --table-card-back: #34233f;
+  --table-back-frame: #d24a7c;
+  --f7-mod-bg: #2f2a4d;
   --f7-mod-border: #8b7cf0;
-  --f7-mod-text: #d8d2ff;
-  --f7-bust-bg: #454a55;
-  --f7-bust-text: #c3c8d1;
-  --table-danger: #ff5d6c;
-  --table-chip-bg: rgba(242, 123, 165, 0.16);
-  --table-chip-text: #f7a1c0;
-  --f7-chip-bust-bg: rgba(255, 93, 108, 0.16);
-  --f7-chip-bust-text: #ff8f9a;
+  --f7-mod-text: #dcd6ff;
+  --f7-bust-bg: #50555f;
+  --f7-bust-text: #cdd1d8;
+  --table-danger: #ff6b78;
+  --table-chip-bg: rgba(242, 123, 165, 0.18);
+  --table-chip-text: #f8a8c5;
+  --f7-chip-bust-bg: rgba(255, 107, 120, 0.18);
+  --f7-chip-bust-text: #ff9aa4;
   --table-gold: #f5c84b;
   --f7-ring-on: #f27ba5;
-  --f7-ring-off: rgba(255, 255, 255, 0.12);
-  --table-slot-border: rgba(255, 255, 255, 0.18);
-  --table-slot-bg: rgba(255, 255, 255, 0.025);
+  --f7-ring-off: rgba(255, 255, 255, 0.14);
+  --table-slot-border: rgba(255, 255, 255, 0.2);
+  --table-slot-bg: rgba(255, 255, 255, 0.03);
   --table-violet: #8b7cf0;
   // Skip-Bo: Ziele beim Anlegen und Rand am Zug
   --table-target: #f27ba5;
   --table-turn: #ffffff;
   --f7-ice-text: #7dd3fc;
-  --table-seat-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  --table-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --table-seat-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  --table-card-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }

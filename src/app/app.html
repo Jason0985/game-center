@@ -1,15 +1,21 @@
 <div class="app-shell">
   <header class="top-bar">
-    <span class="top-bar-title">
+    <a class="top-bar-title" routerLink="/" aria-label="Game Center, zur Startseite">
       <img src="icons/app-icon.svg" alt="" aria-hidden="true" />
       Game Center
-    </span>
+    </a>
 
     <div class="header-actions">
-      <button
-        mat-icon-button
-        class="header-icon-button notification-button"
+      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen -->
+      @if (onProfile()) {
+        <a class="header-icon-button" routerLink="/settings" aria-label="Einstellungen">
+          <mat-icon aria-hidden="true">settings</mat-icon>
+        </a>
+      }
+      <a
+        class="header-icon-button"
         routerLink="/notifications"
+        routerLinkActive="header-icon-button--active"
         [attr.aria-label]="
           notifications.unreadCount()
             ? 'Benachrichtigungen, ' + notifications.unreadCount() + ' neu'
@@ -20,15 +26,7 @@
         @if (notifications.unreadCount(); as count) {
           <span class="notification-badge" aria-hidden="true">{{ count > 9 ? '9+' : count }}</span>
         }
-      </button>
-      <button
-        mat-icon-button
-        class="header-icon-button"
-        routerLink="/settings"
-        aria-label="Einstellungen"
-      >
-        <mat-icon aria-hidden="true">settings</mat-icon>
-      </button>
+      </a>
     </div>
   </header>
 
@@ -44,7 +42,7 @@
       routerLink="/"
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
-      aria-label="Home"
+      ariaCurrentWhenActive="page"
     >
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
@@ -55,7 +53,7 @@
         class="bottom-nav-link"
         routerLink="/multiplayer"
         routerLinkActive="active"
-        aria-label="Multiplayer"
+        ariaCurrentWhenActive="page"
       >
         <mat-icon aria-hidden="true">groups</mat-icon>
         <span>Multiplayer</span>
@@ -65,12 +63,17 @@
       class="bottom-nav-link"
       routerLink="/collection"
       routerLinkActive="active"
-      aria-label="Sammlung"
+      ariaCurrentWhenActive="page"
     >
       <mat-icon aria-hidden="true">apps</mat-icon>
       <span>Sammlung</span>
     </a>
-    <a class="bottom-nav-link" routerLink="/profile" routerLinkActive="active" aria-label="Profil">
+    <a
+      class="bottom-nav-link"
+      routerLink="/profile"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+    >
       <mat-icon aria-hidden="true">person</mat-icon>
       <span>Profil</span>
     </a>

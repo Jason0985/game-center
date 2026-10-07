@@ -6,60 +6,57 @@
 
 h2 {
   margin: 0 0 10px;
-  font-size: 16px;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .label {
-  margin: 14px 0 6px;
-  color: var(--color-text-subtle);
-  font-size: 11px;
+  margin: 16px 0 6px;
+  color: var(--color-text-muted);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .value {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .hint {
   margin: 6px 0 0;
   color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 // Segmentierte Auswahl ohne Material, damit sie auf dem Handy in eine Zeile passt
 .segments {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-small);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--color-fill);
 }
 
 .segments button {
-  min-height: 40px;
+  min-height: 32px;
   padding: 0 4px;
   border: 0;
-  border-left: 1px solid var(--color-border);
+  border-radius: 7px;
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 
-.segments button:first-child {
-  border-left: 0;
-}
-
 .segments button[aria-pressed='true'] {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+  background: var(--color-segment-active);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  font-weight: 600;
 }
 
 .segments button:disabled {
@@ -72,13 +69,14 @@ h2 {
 }
 
 .rules {
-  margin-top: 12px;
-  font-size: 13px;
+  margin-top: 14px;
+  font-size: 14px;
 }
 
 .rules summary {
+  min-height: 32px;
   color: var(--color-primary-light);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -91,6 +89,13 @@ h2 {
 
 .game-tile {
   padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-fill);
+}
+
+.game-tile--selected {
+  background: var(--color-primary-soft);
 }
 
 .game-switch {
@@ -107,8 +112,8 @@ h2 {
 .switches {
   display: grid;
   overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-small);
+  border-radius: 12px;
+  background: var(--color-fill);
 }
 
 .switch-row {
@@ -116,15 +121,15 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 12px;
   border: 0;
   border-top: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 400;
   text-align: left;
   cursor: pointer;
 }
@@ -145,10 +150,10 @@ h2 {
 .switch {
   position: relative;
   flex: none;
-  width: 36px;
-  height: 20px;
+  width: 51px;
+  height: 31px;
   border-radius: 999px;
-  background: var(--color-border);
+  background: var(--color-fill);
   transition: background 120ms ease;
 }
 
@@ -156,18 +161,19 @@ h2 {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
   background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   content: '';
   transition: translate 120ms ease;
 }
 
 .switch-row[aria-checked='true'] .switch {
-  background: var(--color-primary);
+  background: var(--color-success-light);
 }
 
 .switch-row[aria-checked='true'] .switch::after {
-  translate: 16px 0;
+  translate: 20px 0;
 }

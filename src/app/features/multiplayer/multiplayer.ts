@@ -5,10 +5,11 @@ import { SessionService } from '../../services/session.service';
 import { AppErrorService } from '../../services/app-error.service';
 import { MultiplayerLobbyService } from './multiplayer-lobby.service';
 import { gameLabel, LOBBY_MAX_MEMBERS, LobbySummary } from './lobby.model';
+import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
 
 @Component({
   selector: 'app-multiplayer',
-  imports: [MatIcon, RouterLink],
+  imports: [MatIcon, RouterLink, InitialsPipe, AvatarColorPipe],
   templateUrl: './multiplayer.html',
   styleUrl: './multiplayer.scss',
 })

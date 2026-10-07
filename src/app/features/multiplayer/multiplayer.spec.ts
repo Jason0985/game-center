@@ -135,7 +135,7 @@ describe('Multiplayer', () => {
     fixture.detectChanges();
 
     const join = fixture.nativeElement.querySelector('.lobby-card-actions .lobby-button');
-    expect(join.textContent.trim()).toBe('Lobby ist voll');
+    expect(join.textContent.trim()).toBe('Voll');
     expect(join.disabled).toBe(true);
   });
 

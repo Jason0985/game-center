@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
@@ -13,10 +12,11 @@ import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-d
 import { Profile as UserProfile } from './profile.model';
 import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog';
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
+import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
 
 @Component({
   selector: 'app-profile',
-  imports: [MatIcon, MatButton, MatTooltip, RouterLink],
+  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -120,7 +120,10 @@ export class Profile {
         this.relations.update((relations) =>
           relations.filter((relation) => relation.friendshipId !== friend.friendshipId),
         );
-        this.toastService.success('Freund entfernt', `${name} ist nicht mehr in deiner Freundesliste.`);
+        this.toastService.success(
+          'Freund entfernt',
+          `${name} ist nicht mehr in deiner Freundesliste.`,
+        );
       });
   }
 

@@ -26,6 +26,8 @@ import { Flip7GameView } from '../flip7/flip7-game';
 import { SkipboGameView } from '../skipbo/skipbo-game';
 import { UnoGameView } from '../uno/uno-game';
 
+import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
+
 @Component({
   selector: 'app-lobby',
   imports: [
@@ -37,6 +39,8 @@ import { UnoGameView } from '../uno/uno-game';
     Flip7GameView,
     SkipboGameView,
     UnoGameView,
+    InitialsPipe,
+    AvatarColorPipe,
   ],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',
