@@ -317,25 +317,27 @@
     <div
       class="hand"
       role="group"
-      [attr.aria-label]="'Deine Handkarten, ' + h.cards.length"
+      [attr.aria-label]="'Deine Handkarten, ' + h.count"
       [style.padding-bottom.px]="h.sag"
     >
-      @for (item of h.cards; track item.key) {
-        <button
-          type="button"
-          class="hand-card"
-          [class.selected]="item.selected"
-          [attr.data-hand]="item.index"
-          [attr.aria-label]="item.label"
-          [style.transform]="item.transform"
-          [disabled]="busy() || !myTurn()"
-          (click)="select({ kind: 'hand', index: item.index })"
-        >
-          <app-skipbo-card [card]="item.card" />
-        </button>
-      }
-      @for (slot of h.empty; track $index) {
-        <span class="hand-slot" aria-hidden="true"></span>
+      @for (slot of h.slots; track slot.key) {
+        @if (slot.card; as item) {
+          <button
+            type="button"
+            class="hand-card"
+            [class.selected]="item.selected"
+            [attr.data-hand]="item.index"
+            [attr.data-key]="item.key"
+            [attr.aria-label]="item.label"
+            [style.transform]="item.transform"
+            [disabled]="busy() || !myTurn()"
+            (click)="select({ kind: 'hand', index: item.index })"
+          >
+            <app-skipbo-card [card]="item.card" />
+          </button>
+        } @else {
+          <span class="hand-slot" aria-hidden="true"></span>
+        }
       }
     </div>
   </div>

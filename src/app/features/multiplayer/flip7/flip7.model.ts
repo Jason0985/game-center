@@ -324,71 +324,91 @@ export function eventIcon(event: Flip7Event): Flip7Icon {
   }
 }
 
-// Tischgeometrie je Layout (Design-Pixel der Platte); Kartenfächer liegen zwischen
-// Platz und Ellipsenmitte (fan: Anteil des Wegs in x/y)
-export const FLIP7_TABLES: Record<TableLayout, TableGeometry & { fan: readonly [number, number] }> =
-  {
-    phone: {
-      w: 378,
-      h: 560,
-      cx: 189,
-      cy: 509.4,
-      a: 151,
-      b: 443.4,
-      from: 158,
-      to: 22,
-      fan: [0.61, 0.69],
-    },
-    hoch: {
-      w: 788,
-      h: 800,
-      cx: 394,
-      cy: 794.5,
-      a: 338.6,
-      b: 747.3,
-      from: 172,
-      to: 8,
-      fan: [0.62, 0.71],
-    },
-    quer: {
-      w: 1140,
-      h: 520,
-      cx: 570,
-      cy: 260,
-      a: 504.6,
-      b: 236,
-      from: 212,
-      to: -32,
-      fan: [0.59, 0.58],
-    },
-    // Ganzer Tischrand, ich sitze unten (270°)
-    laptop: {
-      w: 1220,
-      h: 720,
-      cx: 610,
-      cy: 360,
-      a: 610,
-      b: 360,
-      from: 270,
-      to: -90,
-      fan: [0.65, 0.62],
-    },
-  };
+// Tischgeometrie je Layout (Design-Pixel der Platte). seat: ungefähre Breite/Höhe der
+// Mitspieler-Schilder (Spalte bis iPad hoch, Pille ab iPad quer); fanReach: vom
+// Schildrand bis etwa zur Fächermitte (nur für den Zug-Zeiger)
+export const FLIP7_TABLES: Record<
+  TableLayout,
+  TableGeometry & { seat: readonly [number, number]; fanReach: number }
+> = {
+  phone: {
+    w: 378,
+    h: 560,
+    cx: 189,
+    cy: 509.4,
+    a: 151,
+    b: 443.4,
+    from: 158,
+    to: 22,
+    seat: [72, 92],
+    fanReach: 28,
+  },
+  hoch: {
+    w: 788,
+    h: 800,
+    cx: 394,
+    cy: 794.5,
+    a: 338.6,
+    b: 747.3,
+    from: 172,
+    to: 8,
+    seat: [108, 116],
+    fanReach: 38,
+  },
+  quer: {
+    w: 1140,
+    h: 520,
+    cx: 570,
+    cy: 260,
+    a: 504.6,
+    b: 236,
+    from: 212,
+    to: -32,
+    seat: [168, 60],
+    fanReach: 42,
+  },
+  // Ganzer Tischrand, ich sitze unten (270°)
+  laptop: {
+    w: 1220,
+    h: 720,
+    cx: 610,
+    cy: 360,
+    a: 610,
+    b: 360,
+    from: 270,
+    to: -90,
+    seat: [196, 68],
+    fanReach: 46,
+  },
+};
 
-// Plätze der Mitspieler auf dem Bogen, dazu je Platz die Lage des Kartenfächers.
+// Plätze der Mitspieler auf dem Bogen, dazu je Platz die Seite des Schilds, an der der
+// Kartenfächer hängt: Richtung zur Tischmitte, auf den Schildrand gestreckt (größere
+// Komponente 1; [0, 1] = mittig unten, [1, 1] = Ecke unten rechts).
 // Laptop: neben mir mindestens ein Stück frei (Platz für meine Karten).
 export function seatSpots(
   layout: TableLayout,
   count: number,
-): { x: number; y: number; fanX: number; fanY: number }[] {
+): { x: number; y: number; dirX: number; dirY: number; fanX: number; fanY: number }[] {
   const table = FLIP7_TABLES[layout];
+  const [seatW, seatH] = table.seat;
   const gap = layout === 'laptop' ? (count + 1 >= 7 ? 0.2 : 0.17) : null;
-  return arcSpots(table, count, gap).map(({ x, y }) => ({
-    x,
-    y,
-    fanX: table.cx + table.fan[0] * (x - table.cx),
-    fanY: table.cy + table.fan[1] * (y - table.cy),
-  }));
+  return arcSpots(table, count, gap).map(({ x, y }) => {
+    // In Schild-Einheiten: ein breites Schild ist seitlich schneller zu Ende
+    const dx = (table.cx - x) / seatW;
+    const dy = (table.cy - y) / seatH;
+    const edge = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
+    const dirX = dx / edge;
+    const dirY = dy / edge;
+    return {
+      x,
+      y,
+      dirX,
+      dirY,
+      fanX: x + dirX * (seatW / 2 + table.fanReach),
+      fanY: y + dirY * (seatH / 2 + table.fanReach),
+    };
+  });
 }
 
 export const PLAYER_STATE_LABELS: Record<Flip7PlayerState, string> = {

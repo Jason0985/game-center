@@ -1,4 +1,12 @@
-import { eventAge, formatClock, keyCards, KeyedCard, seatSpots, sizeClass } from './table.model';
+import {
+  eventAge,
+  formatClock,
+  keyCards,
+  KeyedCard,
+  seatSpots,
+  sizeClass,
+  slotCards,
+} from './table.model';
 
 describe('formatClock', () => {
   it('shows minutes and padded seconds', () => {
@@ -22,6 +30,23 @@ describe('eventAge', () => {
   it('is empty without a valid time', () => {
     expect(eventAge(105_000, 100_000, latest, undefined)).toBe('');
     expect(eventAge(105_000, 100_000, undefined, latest)).toBe('');
+  });
+});
+
+describe('slotCards', () => {
+  const card = (key: string) => ({ key });
+  const keys = (slots: ({ key: string } | null)[]) => slots.map((slot) => slot?.key ?? '-');
+
+  it('leaves a gap where a card was taken and fills gaps from the left', () => {
+    const full = slotCards([], ['a', 'b', 'c', 'd', 'e'].map(card), 5);
+    expect(keys(full)).toEqual(['a', 'b', 'c', 'd', 'e']);
+
+    const played = slotCards(full, ['a', 'c', 'e'].map(card), 5);
+    expect(keys(played)).toEqual(['a', '-', 'c', '-', 'e']);
+
+    // Nachziehen: neue Karten in die Lücken, die alten bleiben, wo sie sind
+    const drawn = slotCards(played, ['a', 'c', 'e', 'f', 'g'].map(card), 5);
+    expect(keys(drawn)).toEqual(['a', 'f', 'c', 'g', 'e']);
   });
 });
 

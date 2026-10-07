@@ -1,5 +1,5 @@
 @let p = player();
-@if (p.state === 'flip7' && variant() !== 'mine') {
+@if (p.state === 'flip7' && !own()) {
   <span class="badge-flip7" aria-hidden="true">FLIP 7</span>
 }
 <span class="avatar-wrap">
@@ -62,7 +62,7 @@
   </span>
   @if (p.state === 'left') {
     <span class="gone">hat verlassen</span>
-  } @else {
+  } @else if (variant() !== 'tab') {
     <span class="stats">
       <span class="total">
         <span class="material-symbols-rounded fill star" aria-hidden="true">star</span>
@@ -88,7 +88,7 @@
 </span>
 
 @if (choice(); as card) {
-  @if (variant() === 'mine') {
+  @if (own()) {
     <span class="me-chip" aria-hidden="true">Ich</span>
   } @else {
     <span class="choice-label" aria-hidden="true">{{ choiceLabels[card] }}</span>
@@ -99,3 +99,6 @@
     <span class="sr-only">wartet seit </span>{{ time }}
   </span>
 }
+
+<!-- Kartenfächer vom Tisch (am Schildrand Richtung Tischmitte) -->
+<ng-content />

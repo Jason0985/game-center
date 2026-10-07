@@ -214,17 +214,23 @@ describe('seatSpots', () => {
       ],
       2,
     );
-    const fans = seatSpots('laptop', 4).map((spot) => ({ x: spot.fanX, y: spot.fanY }));
-    near(
-      fans,
-      [
-        [247.8, 450.2],
-        [411.8, 164.5],
-        [807.5, 164.3],
-        [972.5, 449.8],
-      ],
-      3,
-    );
+  });
+
+  it('hangs each fan on the seat side facing the table centre', () => {
+    const sides = (layout: 'phone' | 'laptop', count: number) =>
+      seatSpots(layout, count).map((spot) => [+spot.dirX.toFixed(1), +spot.dirY.toFixed(1)]);
+    // Handy: beide Plätze oben, Fächer darunter, leicht zur Mitte
+    expect(sides('phone', 2)).toEqual([
+      [0.4, 1],
+      [-0.4, 1],
+    ]);
+    // Laptop: seitliche Plätze außen (Fächer daneben, etwas höher), obere darunter
+    expect(sides('laptop', 4)).toEqual([
+      [1, -0.7],
+      [0.3, 1],
+      [-0.3, 1],
+      [-1, -0.7],
+    ]);
   });
 
   it('matches the phone and iPad landscape artboards', () => {

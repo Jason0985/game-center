@@ -26,6 +26,7 @@ import {
   seatsAfter,
   seatSpots,
   sizeClass,
+  slotCards,
 } from '../table/table.model';
 import { TableTop } from '../table/table-top';
 import { SkipboCardView } from './skipbo-card';
@@ -64,6 +65,7 @@ const CLEAR_MS = 1400;
 // Handy ab 5 Spielern: Mitspieler auf Seiten zu höchstens 3 zum Wischen, sonst müsste
 // man scrollen
 const PHONE_PAGE_SIZE = 3;
+const HAND_SIZE = 5;
 
 // Spieltisch: ovale Platte mit Nachziehstapel, 4 Aufbaustapeln und den Plätzen der
 // Mitspieler, darunter (am Laptop darauf) der eigene Bereich. Alles per Antippen:
@@ -218,24 +220,39 @@ export class SkipboBoard {
       };
     });
   });
+  // Feste Plätze: eine ausgespielte Karte hinterlässt eine Lücke, statt dass alles nachrückt
+  private readonly handSlots = linkedSignal<
+    KeyedCard<SkipboCard>[],
+    (KeyedCard<SkipboCard> | null)[]
+  >({
+    source: this.handKeys,
+    computation: (cards, previous) => slotCards(previous?.value ?? [], cards, HAND_SIZE),
+  });
   readonly hand = computed(() => {
     const cards = this.handKeys();
+    const slots = this.handSlots();
     const arc = HAND_ARC[this.layout()];
     const source = this.selected();
-    const middle = (cards.length - 1) / 2;
+    const middle = (slots.length - 1) / 2;
     return {
-      cards: cards.map((item, index) => {
-        const offset = index - middle;
+      count: cards.length,
+      slots: slots.map((item, slot) => {
+        if (!item) return { key: `empty-${slot}`, card: null };
+        // index: Lage in game.hand (für den Zug), slot: Platz in der Reihe
+        const index = cards.indexOf(item);
+        const offset = slot - middle;
         const selected = source?.kind === 'hand' && source.index === index;
         return {
-          ...item,
-          index,
-          selected,
-          transform: `translateY(${arc.k * offset * offset - (selected ? arc.lift : 0)}px) rotate(${offset * arc.deg}deg)`,
-          label: `Handkarte ${cardName(item.card)} ${selected ? 'abwählen' : 'wählen'}`,
+          key: item.key,
+          card: {
+            ...item,
+            index,
+            selected,
+            transform: `translateY(${arc.k * offset * offset - (selected ? arc.lift : 0)}px) rotate(${offset * arc.deg}deg)`,
+            label: `Handkarte ${cardName(item.card)} ${selected ? 'abwählen' : 'wählen'}`,
+          },
         };
       }),
-      empty: Array.from({ length: Math.max(0, 5 - cards.length) }),
       // Platz für die am Rand abgesenkten Karten
       sag: arc.k * middle * middle,
     };
@@ -483,10 +500,10 @@ export class SkipboBoard {
         fly(target, mine ? (from ?? this.find('.hand')) : seatPart(event.seat!, '.backs'));
         delay += STEP_MS;
       } else if (event.t === 'draw' && mine && event.n) {
+        // Nachgezogene Karten hängt der Server hinten an; sie liegen in den Lücken
         const stack = this.find('.draw-stack');
-        const cards = [...this.host.nativeElement.querySelectorAll('.hand-card app-skipbo-card')];
-        for (const card of cards.slice(-event.n)) {
-          fly(card, stack, true);
+        for (const { key } of this.handKeys().slice(-event.n)) {
+          fly(this.find(`.hand-card[data-key="${key}"] app-skipbo-card`), stack, true);
           delay += 100;
         }
       }

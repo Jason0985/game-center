@@ -211,6 +211,76 @@
   font-weight: 800;
 }
 
+// Handy, iPad hoch: Name als Reiter oben links am Bedienfeld (wie Skip-Bo und Uno)
+.my-tab {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  z-index: 2;
+  --ring: 28px;
+  --avatar: 24px;
+  --name-size: 13px;
+}
+
+:host([data-layout='hoch']) .my-tab {
+  top: -46px;
+  left: 24px;
+  --tab-h: 47px;
+  --tab-pad: 5px 17px 0 6px;
+  --ring: 34px;
+  --avatar: 30px;
+  --name-size: 15px;
+}
+
+// Punkte im Bedienfeld: gesamt und was diese Runde (bisher) bringt
+.points {
+  display: flex;
+  gap: 20px;
+}
+
+.points-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.points-label {
+  color: var(--color-text-muted);
+  font-size: var(--mod-label);
+  font-weight: 600;
+}
+
+.points-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--points-size, 20px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.points-value .material-symbols-rounded {
+  font-size: 0.85em;
+}
+
+.points-value .star {
+  color: var(--table-gold);
+}
+
+.points-value--round {
+  color: var(--table-chip-text);
+}
+
+.points-value--round.bust {
+  color: var(--color-text-muted);
+}
+
+:host([data-layout='hoch']) .points {
+  --points-size: 24px;
+  gap: 28px;
+}
+
 // Eigenes Namensschild
 .my-seat {
   --ring: 40px;

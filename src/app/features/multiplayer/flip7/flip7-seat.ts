@@ -29,7 +29,9 @@ const CHOICE_ARIA: Record<Flip7ActionCard, (name: string) => string> = {
 };
 
 // Namensschild am Tisch: Avatar mit Flip-7-Ring, Tokens, Name, ★ Gesamt und Rundenchip.
-// Als <button> während der Zielwahl, sonst <div>. Größen kommen vom Tisch (CSS-Variablen).
+// Eigener Platz als Pille (mine) bzw. als Reiter am Bedienfeld (tab: nur Avatar und Name,
+// die Punkte stehen darunter im Bedienfeld). Als <button> während der Zielwahl, sonst
+// <div>. Größen kommen vom Tisch (CSS-Variablen).
 @Component({
   selector: '[appFlip7Seat]',
   templateUrl: './flip7-seat.html',
@@ -41,13 +43,15 @@ const CHOICE_ARIA: Record<Flip7ActionCard, (name: string) => string> = {
     '[attr.data-choice]': 'choice()',
     '[class.is-turn]': 'turn()',
     '[class.is-dimmed]': 'dimmed()',
+    '[class.is-own]': 'own()',
+    '[class.has-waiting]': 'waiting() !== null',
     '[attr.aria-label]': 'label()',
   },
 })
 export class Flip7Seat {
   readonly player = input.required<Flip7Player>();
   // column: Mitspieler Handy/iPad hoch; row: Mitspieler quer/Laptop; mine: eigenes Schild
-  readonly variant = input<'column' | 'row' | 'mine'>('column');
+  readonly variant = input<'column' | 'row' | 'mine' | 'tab'>('column');
   readonly dealer = input(false);
   readonly turn = input(false);
   // Noch zu ziehende Karten, solange dieser Platz Flip 3 abarbeitet
@@ -75,12 +79,13 @@ export class Flip7Seat {
   readonly chipText = computed(() =>
     this.player().state === 'busted' ? '0' : `+${this.points()}`,
   );
+  readonly own = computed(() => this.variant() === 'mine' || this.variant() === 'tab');
   readonly label = computed(() => {
     const player = this.player();
     const choice = this.choice();
-    if (!choice) return this.variant() === 'mine' ? null : player.name;
+    if (!choice) return this.own() ? null : player.name;
     const points = `${this.points()} Rundenpunkte`;
-    return this.variant() === 'mine'
+    return this.own()
       ? `Dich selbst wählen, ${points}`
       : `${CHOICE_ARIA[choice](player.name)}, ${points}`;
   });

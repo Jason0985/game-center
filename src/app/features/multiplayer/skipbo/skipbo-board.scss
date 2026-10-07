@@ -94,14 +94,6 @@
   height: var(--build-h);
 }
 
-// Hilfe: Aufbaustapel, auf die die gewählte Karte passt (gestrichelt, die Wahl selbst
-// hat einen durchgezogenen Ring)
-.build-button .build-cards {
-  border-radius: max(3px, calc(var(--build-w) * 0.145));
-  outline: 2px dashed var(--table-target);
-  outline-offset: 4px;
-}
-
 .build-cards app-skipbo-card {
   --card-w: var(--build-w);
   --card-h: var(--build-h);

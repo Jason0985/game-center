@@ -74,9 +74,9 @@ const BUST_TILT = [-10, 6, -4, 5, -8, 7, -3];
 const OWN_BUST_TILT = [-3, 4, -5, 4, -3, 5, -4];
 
 const CHOOSER_TITLES: Record<Flip7ActionCard, string> = {
-  FREEZE: 'Wen frierst du ein?',
-  FLIP3: 'Wer muss 3 Karten ziehen?',
-  SC: 'Wem gibst du die Second Chance?',
+  FREEZE: 'Freeze: Wen frierst du ein?',
+  FLIP3: 'Flip 3: Wer zieht 3 Karten?',
+  SC: 'Second Chance: Wem gibst du sie?',
 };
 const TURN_HINT = 'Stapel antippen zum Ziehen – oder stehen bleiben';
 
@@ -200,10 +200,9 @@ export class Flip7Board {
       const distinct = distinctNumbers(player.cards);
       return {
         player,
+        spot,
         x: (spot.x / table.w) * 100,
         y: (spot.y / table.h) * 100,
-        fanX: (spot.fanX / table.w) * 100,
-        fanY: (spot.fanY / table.h) * 100,
         fan,
         dots:
           busted || player.state === 'flip7' || player.state === 'left'
@@ -253,6 +252,9 @@ export class Flip7Board {
       scBreak: this.eventSeats().secondChance.has(me.seat),
       bonus: this.game().status === 'round_over' && me.state === 'flip7',
       points: flip7Score(me.cards, me.state),
+      // Rundenpunkte für das Bedienfeld (Handy, iPad hoch); gesichert: stehen, eingefroren, Flip 7
+      roundText: me.state === 'busted' ? '0' : `+${flip7Score(me.cards, me.state)}`,
+      locked: me.state === 'stayed' || me.state === 'frozen' || me.state === 'flip7',
     };
   });
 
@@ -284,14 +286,26 @@ export class Flip7Board {
       ? `${name(seat)} wählt ein Ziel für ${ACTION_NAMES[game.pending_card]}`
       : `${name(seat)} ist am Zug`;
   });
-  // Hinweis im Kopf der Bühne: was ich gerade tun kann bzw. wie es um mich steht (wer
-  // sonst am Zug ist, zeigt der Zeiger)
-  readonly hint = computed(() => {
+  // Zielwahl: farbiger Hinweis direkt über dem Stapel (mit mir selbst, wenn erlaubt)
+  readonly chooser = computed(() => {
     const card = this.choosing();
-    if (card) return `${CHOOSER_TITLES[card]} Tippe einen Platz an`;
+    const me = this.me();
+    if (!card || !me) return null;
+    const self = this.candidates().has(me.seat) ? ' – auch dich selbst' : '';
+    return { card, title: CHOOSER_TITLES[card], sub: `Tippe einen Spieler an${self}` };
+  });
+  // Hinweis im Kopf der Bühne: was ich gerade tun kann bzw. wie es um mich steht (wer
+  // sonst am Zug ist, zeigt der Zeiger; die Zielwahl steht in der Mitte)
+  readonly hint = computed(() => {
+    if (this.choosing()) return null;
     if (this.myTurn()) return TURN_HINT;
     const ownStatus = this.activeSeat() === null || this.me()?.state !== 'active';
     return ownStatus ? this.statusText() || null : null;
+  });
+  // Für Screenreader: Hinweis, Zielwahl oder wer gerade dran ist
+  readonly srStatus = computed(() => {
+    const chooser = this.chooser();
+    return this.hint() ?? (chooser ? `${chooser.title} ${chooser.sub}` : this.statusText());
   });
 
   // Mitte: Ablage (quer/Laptop) mit offener Aktionskarte obenauf
@@ -311,11 +325,9 @@ export class Flip7Board {
       return null;
     }
     const center = this.pointerCenter();
-    const table = this.table();
     if (seat === this.me()?.seat) return { x: center.meX, y: center.meY, before: 0 };
-    const spot = this.seats().find((view) => view.player.seat === seat);
-    if (!spot) return null;
-    return { x: (spot.fanX / 100) * table.w, y: (spot.fanY / 100) * table.h, before: 30 };
+    const spot = this.seats().find((view) => view.player.seat === seat)?.spot;
+    return spot ? { x: spot.fanX, y: spot.fanY, before: 30 } : null;
   });
 
   // Freeze/Flip 3 fliegt von der Mitte zum Ziel

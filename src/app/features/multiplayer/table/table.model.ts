@@ -152,6 +152,26 @@ export function keyCards<C>(
   });
 }
 
+// Feste Plätze für die Hand: Karten behalten ihren Platz, eine ausgespielte hinterlässt
+// eine Lücke (null), statt dass alles nachrückt; neue Karten füllen Lücken von links
+export function slotCards<T extends { key: string }>(
+  prev: readonly (T | null)[],
+  cards: readonly T[],
+  size: number,
+): (T | null)[] {
+  const byKey = new Map(cards.map((item) => [item.key, item]));
+  const slots = prev.map((item) => (item && byKey.get(item.key)) ?? null);
+  while (slots.length < size) slots.push(null);
+  const placed = new Set(slots.map((item) => item?.key));
+  for (const item of cards) {
+    if (placed.has(item.key)) continue;
+    const free = slots.indexOf(null);
+    if (free < 0) slots.push(item);
+    else slots[free] = item;
+  }
+  return slots;
+}
+
 // Reihum ab dem Platz nach mir; verlassene Spieler behalten ihren Platz
 export function seatsAfter<T extends { seat: number }>(
   players: readonly T[],

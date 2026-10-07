@@ -45,62 +45,29 @@
         </div>
       }
     </div>
-    <!-- Nur am eigenen Zug sichtbar; der Platz bleibt, damit der Stapel nicht springt -->
-    <button
-      type="button"
-      class="stay"
-      [class.off]="!myTurn()"
-      [disabled]="busy() || !myTurn()"
-      (click)="stay.emit()"
-    >
-      <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
-      Stehen bleiben
-    </button>
+    <!-- Unter dem Stapel: „Stehen bleiben“ am eigenen Zug, bei der Zielwahl der Hinweis an
+         derselben Stelle (der Button hält den Platz, damit der Stapel nicht springt) -->
+    <div class="center-foot">
+      <button
+        type="button"
+        class="stay"
+        [class.off]="!myTurn()"
+        [disabled]="busy() || !myTurn()"
+        (click)="stay.emit()"
+      >
+        <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
+        Stehen bleiben
+      </button>
+      @if (chooser(); as c) {
+        <div class="choose" [attr.data-card]="c.card" aria-hidden="true">
+          <span class="choose-title">{{ c.title }}</span>
+          <span class="choose-sub">{{ c.sub }}</span>
+        </div>
+      }
+    </div>
   </div>
 
   @for (view of seats(); track view.player.seat) {
-    @if (view.player.state !== 'left') {
-      <div
-        class="fan"
-        [attr.data-state]="view.player.state"
-        [style.left.%]="view.fanX"
-        [style.top.%]="view.fanY"
-      >
-        @if (view.fan.length) {
-          <div class="fan-cards">
-            @for (item of view.fan; track item.key) {
-              <app-flip7-card
-                [card]="item.card"
-                [variant]="layout() === 'phone' ? 'flat' : 'fan'"
-                [highlight]="item.highlight"
-                [style.transform]="item.transform"
-                (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
-              />
-            }
-            @if (view.player.state === 'frozen') {
-              <span class="veil" aria-hidden="true"></span>
-            }
-          </div>
-        }
-        @if (view.dots || view.mods) {
-          <div class="fan-meta">
-            @if (view.dots; as dots) {
-              <span class="dots" aria-hidden="true">
-                @for (on of dots; track $index) {
-                  <span [class.on]="on"></span>
-                }
-              </span>
-            }
-            @if (view.mods) {
-              <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
-                view.mods
-              }}</span>
-            }
-          </div>
-        }
-      </div>
-    }
-
     @if (view.choice) {
       <button
         type="button"
@@ -117,7 +84,9 @@
         [style.top.%]="view.y"
         [disabled]="busy()"
         (click)="pick(view.player.seat)"
-      ></button>
+      >
+        <ng-container *ngTemplateOutlet="fanTpl; context: { $implicit: view }" />
+      </button>
     } @else {
       <div
         appFlip7Seat
@@ -135,7 +104,9 @@
         [bonus]="view.bonus"
         [style.left.%]="view.x"
         [style.top.%]="view.y"
-      ></div>
+      >
+        <ng-container *ngTemplateOutlet="fanTpl; context: { $implicit: view }" />
+      </div>
     }
   }
 
@@ -173,11 +144,33 @@
       </div>
       <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
     } @else {
+      <!-- Handy, iPad hoch: Name als Reiter am Feld, darunter Zahlen, Punkte und Modifikatoren -->
+      <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m, variant: 'tab' }" />
       <div class="sheet-row sheet-row--center">
         <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
       </div>
       <div class="sheet-row sheet-row--between">
-        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+        <div class="points">
+          <span class="points-item">
+            <span class="points-label">Gesamt</span>
+            <span class="points-value">
+              <span class="material-symbols-rounded fill star" aria-hidden="true">star</span>
+              {{ m.player.total_score }}
+            </span>
+          </span>
+          <span class="points-item">
+            <span class="points-label">Diese Runde</span>
+            <span
+              class="points-value points-value--round"
+              [class.bust]="m.player.state === 'busted'"
+            >
+              @if (m.locked) {
+                <span class="material-symbols-rounded fill" aria-hidden="true">lock</span>
+              }
+              {{ m.roundText }}
+            </span>
+          </span>
+        </div>
         <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
       </div>
     }
@@ -185,7 +178,7 @@
   </section>
 }
 
-<p class="sr-only" aria-live="polite">{{ hint() ?? statusText() }}</p>
+<p class="sr-only" aria-live="polite">{{ srStatus() }}</p>
 
 <!-- Eingefroren: Frost legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
 <ng-template #iceTpl let-m>
@@ -246,13 +239,15 @@
   </div>
 </ng-template>
 
-<ng-template #seatTpl let-m>
+<!-- Eigener Platz: Pille (mine) bzw. Reiter am Bedienfeld (tab) -->
+<ng-template #seatTpl let-m let-variant="variant">
   @if (m.choice) {
     <button
       type="button"
       appFlip7Seat
-      variant="mine"
-      class="my-seat"
+      [variant]="variant ?? 'mine'"
+      [class.my-seat]="!variant"
+      [class.my-tab]="variant === 'tab'"
       [player]="m.player"
       [dealer]="m.player.seat === g.dealer_seat"
       [turn]="m.player.seat === activeSeat()"
@@ -265,8 +260,9 @@
   } @else {
     <div
       appFlip7Seat
-      variant="mine"
-      class="my-seat"
+      [variant]="variant ?? 'mine'"
+      [class.my-seat]="!variant"
+      [class.my-tab]="variant === 'tab'"
       [player]="m.player"
       [dealer]="m.player.seat === g.dealer_seat"
       [turn]="m.player.seat === activeSeat()"
@@ -275,5 +271,51 @@
       [scBreak]="m.scBreak"
       [bonus]="m.bonus"
     ></div>
+  }
+</ng-template>
+
+<!-- Kartenfächer eines Mitspielers: hängt an der Seite seines Schilds, die zur Tischmitte
+     zeigt (Richtung aus seatSpots) -->
+<ng-template #fanTpl let-view>
+  @if (view.player.state !== 'left') {
+    <div
+      class="fan"
+      [class.fan--below]="view.spot.dirY === 1"
+      [style.--dir-x]="view.spot.dirX"
+      [style.--dir-y]="view.spot.dirY"
+    >
+      @if (view.fan.length) {
+        <div class="fan-cards">
+          @for (item of view.fan; track item.key) {
+            <app-flip7-card
+              [card]="item.card"
+              [variant]="layout() === 'phone' ? 'flat' : 'fan'"
+              [highlight]="item.highlight"
+              [style.transform]="item.transform"
+              (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
+            />
+          }
+          @if (view.player.state === 'frozen') {
+            <span class="veil" aria-hidden="true"></span>
+          }
+        </div>
+      }
+      @if (view.dots || view.mods) {
+        <div class="fan-meta">
+          @if (view.dots; as dots) {
+            <span class="dots" aria-hidden="true">
+              @for (on of dots; track $index) {
+                <span [class.on]="on"></span>
+              }
+            </span>
+          }
+          @if (view.mods) {
+            <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
+              view.mods
+            }}</span>
+          }
+        </div>
+      }
+    </div>
   }
 </ng-template>
