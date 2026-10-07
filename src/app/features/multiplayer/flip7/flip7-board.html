@@ -13,11 +13,20 @@
   <div class="center">
     <div class="piles">
       <div class="pile">
-        <div class="stack" #stack>
-          <app-flip7-card class="back back--3" [card]="null" />
-          <app-flip7-card class="back back--2" [card]="null" />
-          <app-flip7-card class="back back--1" [card]="null" />
-        </div>
+        <button
+          type="button"
+          class="draw"
+          [class.glow]="myTurn()"
+          [attr.aria-label]="'Karte ziehen, ' + g.draw_count + ' im Stapel'"
+          [disabled]="busy() || !myTurn()"
+          (click)="tapPile()"
+        >
+          <span class="stack" #stack>
+            <app-flip7-card class="back back--3" [card]="null" />
+            <app-flip7-card class="back back--2" [card]="null" />
+            <app-flip7-card class="back back--1" [card]="null" />
+          </span>
+        </button>
         <span class="pile-label">{{ g.draw_count }} Karten</span>
       </div>
       @if (layout() === 'quer' || layout() === 'laptop') {
@@ -36,20 +45,16 @@
         </div>
       }
     </div>
+    <!-- Nur am eigenen Zug sichtbar; der Platz bleibt, damit der Stapel nicht springt -->
     <button
       type="button"
-      class="event-chip"
-      [attr.aria-label]="'Letztes Ereignis: ' + lastEvent().text + '. Verlauf öffnen'"
-      (click)="openHistory()"
+      class="stay"
+      [class.off]="!myTurn()"
+      [disabled]="busy() || !myTurn()"
+      (click)="stay.emit()"
     >
-      <span
-        class="material-symbols-rounded fill"
-        aria-hidden="true"
-        [style.color]="lastEvent().color"
-        >{{ lastEvent().icon }}</span
-      >
-      <span class="event-text">{{ lastEvent().text }}</span>
-      <span class="material-symbols-rounded chevron" aria-hidden="true">expand_more</span>
+      <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
+      Stehen bleiben
     </button>
   </div>
 
@@ -151,56 +156,36 @@
       <div class="laptop-mods">
         <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
       </div>
+      <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
     </div>
     <div class="laptop-seat">
       <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
-    </div>
-    <div class="laptop-actions">
-      <ng-container *ngTemplateOutlet="actionsTpl" />
-      <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
     </div>
   }
 </div>
 
 @if (layout() !== 'laptop' && mine(); as m) {
   <section class="sheet" aria-label="Dein Platz">
-    @switch (layout()) {
-      @case ('hoch') {
-        <div class="sheet-row sheet-row--between">
-          <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
-          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
-        </div>
-        <div class="sheet-row">
-          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
-          <div class="grow">
-            <ng-container *ngTemplateOutlet="actionsTpl" />
-          </div>
-        </div>
-      }
-      @case ('quer') {
-        <div class="sheet-col">
-          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
-          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
-        </div>
+    @if (layout() === 'quer') {
+      <div class="sheet-col">
+        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
+      <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+    } @else {
+      <div class="sheet-row sheet-row--center">
         <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
-        <div class="quer-actions">
-          <ng-container *ngTemplateOutlet="actionsTpl" />
-        </div>
-      }
-      @default {
-        <div class="sheet-row sheet-row--center">
-          <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
-        </div>
-        <div class="sheet-row sheet-row--between">
-          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
-          <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
-        </div>
-        <ng-container *ngTemplateOutlet="actionsTpl" />
-      }
+      </div>
+      <div class="sheet-row sheet-row--between">
+        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
     }
     <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
   </section>
 }
+
+<p class="sr-only" aria-live="polite">{{ hint() ?? statusText() }}</p>
 
 <!-- Eingefroren: Frost legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
 <ng-template #iceTpl let-m>
@@ -290,41 +275,5 @@
       [scBreak]="m.scBreak"
       [bonus]="m.bonus"
     ></div>
-  }
-</ng-template>
-
-<ng-template #actionsTpl>
-  @if (choosing(); as card) {
-    <div class="prompt" role="status" [attr.data-card]="card">
-      <app-flip7-card class="prompt-card" [card]="card" variant="flat" />
-      <span class="prompt-text">
-        <span class="prompt-title">{{ chooserTitle() }}</span>
-        <span class="prompt-hint">{{ chooserHint() }}</span>
-      </span>
-    </div>
-  } @else {
-    <div class="actions">
-      <div class="buttons">
-        <button
-          type="button"
-          class="btn btn--stay"
-          [disabled]="busy() || !myTurn()"
-          (click)="stay.emit()"
-        >
-          <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
-          Stehen bleiben
-        </button>
-        <button
-          type="button"
-          class="btn btn--hit"
-          [disabled]="busy() || !myTurn()"
-          (click)="hit.emit()"
-        >
-          <span class="material-symbols-rounded fill" aria-hidden="true">style</span>
-          Karte ziehen
-        </button>
-      </div>
-      <p class="status" aria-live="polite">{{ statusText() }}</p>
-    </div>
   }
 </ng-template>

@@ -3,6 +3,7 @@ import {
   cardName,
   describeEvent,
   handLayout,
+  handTransfers,
   HAND_SPEC,
   rankPlayers,
   UnoCard,
@@ -213,5 +214,33 @@ describe('unoButtonLit', () => {
   it('lights with one uncalled card, not after calling', () => {
     expect(unoButtonLit(game({ hand: ['R1'], turn_seat: 1 }), me, false)).toBe(true);
     expect(unoButtonLit(game({ hand: ['R1'] }), { ...me, uno_called: true }, false)).toBe(false);
+  });
+});
+
+describe('handTransfers', () => {
+  const players = [player(0), player(1), player(2, { state: 'left' }), player(3)];
+
+  it('swaps both hands for a 7', () => {
+    expect(handTransfers({ t: 'swap', seat: 0, target: 3 }, players, 4)).toEqual([
+      [0, 3],
+      [3, 0],
+    ]);
+  });
+
+  it('passes every active hand to the next active seat in play direction for a 0', () => {
+    expect(handTransfers({ t: 'rotate', dir: 1 }, players, 4)).toEqual([
+      [0, 1],
+      [1, 3],
+      [3, 0],
+    ]);
+    expect(handTransfers({ t: 'rotate', dir: -1 }, players, 4)).toEqual([
+      [0, 3],
+      [1, 0],
+      [3, 1],
+    ]);
+  });
+
+  it('ignores other events', () => {
+    expect(handTransfers({ t: 'play', seat: 0, card: 'R7' }, players, 4)).toEqual([]);
   });
 });

@@ -364,6 +364,30 @@ export function eventIcon(event: UnoEvent): { icon: string; color: string } {
   }
 }
 
+// Wer seine Hand wem gibt (7 tauscht, 0 dreht), als [von, an]. Bei der 0 wie
+// _uno_next_seat in der DB: an den nächsten aktiven Platz in Spielrichtung
+export function handTransfers(
+  event: UnoEvent,
+  players: readonly Pick<UnoPlayer, 'seat' | 'state'>[],
+  seatCount: number,
+): [number, number][] {
+  if (event.t === 'swap' && event.seat !== undefined && event.target !== undefined) {
+    return [
+      [event.seat, event.target],
+      [event.target, event.seat],
+    ];
+  }
+  if (event.t !== 'rotate') return [];
+
+  const dir = event.dir ?? 1;
+  const active = players.filter((player) => player.state === 'active').map(({ seat }) => seat);
+  return active.map((from) => {
+    const distance = (seat: number) =>
+      ((((seat - from) * dir) % seatCount) + seatCount) % seatCount || seatCount;
+    return [from, active.reduce((best, seat) => (distance(seat) < distance(best) ? seat : best))];
+  });
+}
+
 // Tischmitte (Ring des Zug-Zeigers) in Design-Pixeln von ARC_TABLES und wohin der Zeiger
 // zeigt, wenn ich dran bin (auf meine Hand); before: Abstand vor einem Mitspieler-Schild
 export const UNO_POINTER: Record<

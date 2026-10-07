@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { GameStage } from '../table/game-stage';
 import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
 import { UnoBoard, UnoPlay } from './uno-board';
@@ -60,6 +60,9 @@ export class UnoGameView {
   readonly skip = this.table.skip;
   readonly endGame = this.table.endGame;
   readonly backToLobby = this.table.backToLobby;
+  // Hinweis des Tisches (z. B. Tauschpartner wählen) steht im Kopf der Bühne
+  private readonly board = viewChild(UnoBoard);
+  readonly hint = computed(() => this.board()?.hint() ?? null);
   readonly showFinal = injectFinalDelay(
     computed(() => this.game()?.status ?? null),
     FINAL_DELAY_MS,

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FriendsService } from '../../../services/friends.service';
 import { AppErrorService } from '../../../services/app-error.service';
+import { ToastService } from '../../../services/toast.service';
 import { Profile } from '../../profile/profile.model';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { displayNameOf } from '../lobby.model';
@@ -44,6 +45,7 @@ export class LobbyInviteDialog {
   private readonly friendsService = inject(FriendsService);
   private readonly lobbyService = inject(MultiplayerLobbyService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly toastService = inject(ToastService);
   private readonly data = inject<LobbyInviteDialogData>(MAT_DIALOG_DATA);
 
   readonly search = signal('');
@@ -98,6 +100,7 @@ export class LobbyInviteDialog {
 
     if (result.ok) {
       this.invitedIds.update((ids) => new Set(ids).add(id));
+      this.toastService.success('Einladung gesendet', `${row.name} kann jetzt beitreten.`);
     } else {
       this.errorMessage.set(result.message);
       this.appErrors.report(result.message, { toast: false });

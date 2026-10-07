@@ -35,12 +35,13 @@ import {
   COLOR_NAMES,
   handLayout,
   HAND_SPEC,
+  handTransfers,
   isWild,
+  UNO_HOUSE_RULES,
   UNO_POINTER,
   UnoCard,
   UnoColor,
   unoButtonLit,
-  UnoEvent,
   UnoGame,
 } from './uno.model';
 
@@ -53,6 +54,12 @@ export interface UnoPlay {
 // Karte fliegt 320 ms zur Ablage, Ziehen 100 ms versetzt (Spezifikation)
 const FLY_MS = 320;
 const DRAW_STAGGER_MS = 100;
+// 7 tauscht, 0 dreht: je Hand 3 Rücken, langsamer, damit man sieht, wer wem gibt
+const HAND_FLY_MS = 700;
+const HAND_STAGGER_MS = 90;
+const HAND_FLY_CARDS = 3;
+const HAND_FLY_W = 28;
+const HAND_FLY_H = 40;
 
 // Ablage: oberste Karte und zwei darunter, verdreht (unterste zuerst)
 const DISCARD_TILTS = [-14, 9, 4];
@@ -97,6 +104,10 @@ export class UnoBoard {
   readonly live = signal(false);
   readonly colors: UnoColor[] = ['R', 'Y', 'B', 'G'];
   readonly colorNames = COLOR_NAMES;
+  // Weitergegebene Hände: Rücken, die von Platz zu Platz fliegen (fest am Ziel, fliegen
+  // per flyFrom von der Quelle ein und verschwinden danach)
+  readonly handFlights = signal<{ id: number; from: DOMRect; to: DOMRect; delay: number }[]>([]);
+  private flightId = 0;
 
   readonly me = computed(
     () => this.game().players.find((player) => player.user_id === this.userId()) ?? null,
@@ -195,6 +206,16 @@ export class UnoBoard {
     };
   });
   readonly unoLit = computed(() => unoButtonLit(this.game(), this.me(), this.myTurn()));
+  readonly houseRules = computed(() =>
+    UNO_HOUSE_RULES.filter((rule) => this.game().settings[rule.key]),
+  );
+  // Sichtbarer Hinweis (im Kopf der Bühne) für Zustände, die man sonst leicht übersieht
+  readonly hint = computed(() => {
+    if (!this.myTurn()) return null;
+    if (this.choice()?.kind === 'target') return 'Wähle, mit wem du die Karten tauschst';
+    if (this.game().drew) return 'Gezogene Karte spielen oder Stapel antippen zum Behalten';
+    return null;
+  });
 
   // Mitspieler am Tisch (Prozent der Platte)
   private readonly lastSkipped = computed(
@@ -254,9 +275,9 @@ export class UnoBoard {
       const name = game.players.find((player) => player.seat === game.turn_seat)?.name;
       return `${color}${name ?? 'Jemand'} ist am Zug.`;
     }
-    const choice = this.choice();
-    if (choice?.kind === 'color') return 'Wähle eine Farbe.';
-    if (choice?.kind === 'target') return 'Wähle, mit wem du die Karten tauschst.';
+    if (this.choice()?.kind === 'color') return 'Wähle eine Farbe.';
+    const hint = this.hint();
+    if (hint) return `${hint}.`;
     if (this.pending() && !this.hand().cards.some((card) => card.playable)) {
       return `${color}Du musst ${cardCount(this.pending())} ziehen.`;
     }
@@ -285,7 +306,7 @@ export class UnoBoard {
       if (first || reducedMotion()) return;
 
       const mySeat = untracked(this.me)?.seat;
-      afterNextRender(() => this.animate(game.last_events, mySeat, from, fresh), {
+      afterNextRender(() => this.animate(game, mySeat, from, fresh), {
         injector: this.injector,
       });
     });
@@ -346,13 +367,15 @@ export class UnoBoard {
     return this.host.nativeElement.querySelector<HTMLElement>(selector);
   }
 
-  // Gespielte Karte fliegt zur Ablage (offen), danach meine neuen Karten vom Stapel
+  // Gespielte Karte fliegt zur Ablage (offen), danach weitergegebene Hände von Platz zu
+  // Platz bzw. meine neuen Karten vom Stapel
   private animate(
-    events: UnoEvent[],
+    game: UnoGame,
     mySeat: number | undefined,
     from: DOMRect | null,
     fresh: string[],
   ): void {
+    const events = game.last_events;
     let delay = 0;
     const fly = (card: Element | null, source: Element | DOMRect | null, flip = false) => {
       if (card instanceof HTMLElement && source && typeof card.animate === 'function') {
@@ -371,16 +394,67 @@ export class UnoBoard {
       delay += FLY_MS;
     }
 
-    // Nach Tausch/Drehen ist die ganze Hand neu, aber nicht gezogen: kein Flug vom Stapel
-    const handMoved = events.some(
-      (event) =>
-        event.t === 'rotate' ||
-        (event.t === 'swap' && (event.seat === mySeat || event.target === mySeat)),
+    const transfers = events.flatMap((event) =>
+      handTransfers(event, game.players, game.seat_count),
     );
+    this.flyHands(transfers, mySeat, delay);
+
+    // Nach Tausch/Drehen ist die ganze Hand neu, aber nicht gezogen: kein Flug vom Stapel
+    const handMoved = transfers.some(([giver, taker]) => giver === mySeat || taker === mySeat);
     const stack = this.find('.draw-stack');
     for (const key of handMoved ? [] : fresh) {
       fly(this.find(`[data-key="${key}"] app-uno-card`), stack, true);
       delay += DRAW_STAGGER_MS;
     }
+  }
+
+  private flyHands(transfers: [number, number][], mySeat: number | undefined, delay: number): void {
+    // Meine Hand unten, Mitspieler an ihrem Rückenfächer (bzw. Schild)
+    const seatRect = (seat: number) =>
+      (seat === mySeat
+        ? this.find('.hand')
+        : (this.find(`[data-seat="${seat}"] .fan`) ?? this.find(`[data-seat="${seat}"]`))
+      )?.getBoundingClientRect();
+    const card = (rect: DOMRect) =>
+      new DOMRect(
+        rect.x + (rect.width - HAND_FLY_W) / 2,
+        rect.y + (rect.height - HAND_FLY_H) / 2,
+        HAND_FLY_W,
+        HAND_FLY_H,
+      );
+
+    const flights = transfers.flatMap(([giver, taker]) => {
+      const from = seatRect(giver);
+      const to = seatRect(taker);
+      if (!from || !to) return [];
+      return Array.from({ length: HAND_FLY_CARDS }, (_, i) => ({
+        id: ++this.flightId,
+        from: card(from),
+        to: card(to),
+        delay: delay + i * HAND_STAGGER_MS,
+      }));
+    });
+    if (!flights.length) return;
+
+    this.handFlights.set(flights);
+    afterNextRender(
+      () => {
+        const elements = this.host.nativeElement.querySelectorAll<HTMLElement>('.hand-flight');
+        const done = flights.map((flight, i) => {
+          const element = elements[i];
+          return element && typeof element.animate === 'function'
+            ? flyFrom(element, flight.from, {
+                flip: false,
+                delay: flight.delay,
+                duration: HAND_FLY_MS,
+              })
+            : Promise.resolve();
+        });
+        void Promise.all(done).then(() =>
+          this.handFlights.update((current) => (current === flights ? [] : current)),
+        );
+      },
+      { injector: this.injector },
+    );
   }
 }

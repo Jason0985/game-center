@@ -72,6 +72,8 @@ describe('Flip7GameView', () => {
   const buttons = (): HTMLButtonElement[] => [...el().querySelectorAll('button')];
   const button = (label: string) =>
     buttons().find((candidate) => candidate.textContent?.includes(label));
+  // Gezogen wird per Antippen des verdeckten Stapels
+  const drawPile = () => el().querySelector<HTMLButtonElement>('button.draw')!;
   // Das ⋮-Menü liegt im Overlay außerhalb der Komponente
   const openMenu = async (): Promise<HTMLElement[]> => {
     button('more_vert')!.click();
@@ -149,12 +151,16 @@ describe('Flip7GameView', () => {
     expect(el().querySelector('app-flip7-board')).toBe(board);
   });
 
-  it('enables Hit and Stay only on the own turn', async () => {
+  it('enables drawing from the pile and Stay only on the own turn', async () => {
     await render('host', makeGame());
     expect(el().textContent).not.toContain('ist am Zug');
-    expect(button('Karte ziehen')!.disabled).toBe(false);
+    expect(el().querySelector('.title-hint')?.textContent).toBe(
+      'Stapel antippen zum Ziehen – oder stehen bleiben',
+    );
+    expect(drawPile().disabled).toBe(false);
+    expect(drawPile().classList).toContain('glow');
 
-    button('Karte ziehen')!.click();
+    drawPile().click();
     // Mit dem angezeigten Stand, damit die Datenbank veraltete Züge ignorieren kann
     await vi.waitFor(() =>
       expect(flip7['hit']).toHaveBeenCalledWith(
@@ -165,7 +171,8 @@ describe('Flip7GameView', () => {
 
     await render('guest', makeGame());
     expect(el().textContent).toContain('Host ist am Zug');
-    expect(button('Karte ziehen')!.disabled).toBe(true);
+    expect(el().querySelector('.title-hint')).toBeNull();
+    expect(drawPile().disabled).toBe(true);
     expect(button('Stehen bleiben')!.disabled).toBe(true);
   });
 
@@ -174,17 +181,17 @@ describe('Flip7GameView', () => {
     let finishLoad!: (value: unknown) => void;
     flip7['load'].mockReturnValue(new Promise((resolve) => (finishLoad = resolve)));
 
-    button('Karte ziehen')!.click();
+    drawPile().click();
     await vi.waitFor(() => expect(flip7['hit']).toHaveBeenCalledTimes(1));
     await Promise.resolve();
     fixture.detectChanges();
-    expect(button('Karte ziehen')!.disabled).toBe(true);
-    button('Karte ziehen')!.click();
+    expect(drawPile().disabled).toBe(true);
+    drawPile().click();
 
     finishLoad({ ok: true, value: makeGame({ waiting_since: '2026-09-30T12:00:05Z' }) });
     await vi.waitFor(() => expect(component.busy()).toBe(false));
     fixture.detectChanges();
-    expect(button('Karte ziehen')!.disabled).toBe(false);
+    expect(drawPile().disabled).toBe(false);
     expect(flip7['hit']).toHaveBeenCalledTimes(1);
   });
 

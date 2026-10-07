@@ -76,6 +76,7 @@ export class Profile {
       .subscribe((updated) => {
         if (updated) {
           this.session.setProfile(updated);
+          this.toastService.success('Anzeigename gespeichert');
         }
       });
   }

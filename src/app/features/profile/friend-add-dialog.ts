@@ -6,6 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
 import { ProfileService } from '../../services/profile.service';
 import { AppErrorService } from '../../services/app-error.service';
+import { ToastService } from '../../services/toast.service';
 import { Profile } from './profile.model';
 
 export interface FriendAddDialogData {
@@ -26,6 +27,7 @@ export class FriendAddDialog {
   private readonly friendsService = inject(FriendsService);
   private readonly profileService = inject(ProfileService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly toastService = inject(ToastService);
   private readonly data = inject<FriendAddDialogData>(MAT_DIALOG_DATA);
 
   readonly search = signal('');
@@ -55,7 +57,7 @@ export class FriendAddDialog {
       case 'friend':
         return 'Bereits befreundet';
       case 'pending':
-        return 'Anfrage ausstehend';
+        return 'Anfrage gesendet, wartet auf Bestätigung';
       default:
         return 'Freund hinzufügen';
     }
@@ -82,15 +84,19 @@ export class FriendAddDialog {
     }, 250);
   }
 
-  async add(friendId: string): Promise<void> {
-    if (this.stateOf(friendId) !== 'none') {
+  async add(profile: Profile): Promise<void> {
+    if (this.stateOf(profile.id) !== 'none') {
       return;
     }
 
     this.errorMessage.set('');
-    const result = await this.friendsService.addFriend(this.data.userId, friendId);
+    const result = await this.friendsService.addFriend(this.data.userId, profile.id);
     if (result.ok) {
-      this.states.update((states) => new Map(states).set(friendId, 'pending'));
+      this.states.update((states) => new Map(states).set(profile.id, 'pending'));
+      this.toastService.success(
+        'Anfrage gesendet',
+        `Ihr seid befreundet, sobald ${profile.display_name || profile.username} sie annimmt.`,
+      );
     } else {
       this.errorMessage.set(result.message);
       this.appErrors.report(result.message, { toast: false });

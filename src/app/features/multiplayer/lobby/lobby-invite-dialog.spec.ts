@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { vi } from 'vitest';
 import { FriendRelation, FriendsService } from '../../../services/friends.service';
 import { AppErrorService } from '../../../services/app-error.service';
+import { ToastService } from '../../../services/toast.service';
 import { Profile, ProfileRole } from '../../profile/profile.model';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
@@ -82,11 +83,14 @@ describe('LobbyInviteDialog', () => {
   });
 
   it('marks a friend as invited after a successful invite', async () => {
+    const success = vi.spyOn(TestBed.inject(ToastService), 'success').mockReturnValue(0);
+
     await component.invite(component.rows()[0]);
     fixture.detectChanges();
 
     expect(inviteFriend).toHaveBeenCalledWith('lobby-1', 'anna');
     expect(buttonLabels()[0]).toBe('Anna: Eingeladen');
+    expect(success).toHaveBeenCalledWith('Einladung gesendet', 'Anna kann jetzt beitreten.');
   });
 
   it('shows the message of a failed invite', async () => {

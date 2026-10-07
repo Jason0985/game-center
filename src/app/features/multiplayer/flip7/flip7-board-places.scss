@@ -99,17 +99,13 @@
   gap: 10px;
 }
 
-.grow {
-  flex: 1;
-  min-width: 0;
+// iPad quer: Schild/Modifikatoren und Zahlen mittig nebeneinander
+:host([data-layout='quer']) .sheet {
+  justify-content: center;
+  gap: 40px;
 }
 
-.quer-actions {
-  flex-shrink: 0;
-  width: 250px;
-}
-
-// Laptop: Karten bei ~73 % der Tischhöhe, Schild auf der Unterkante, Buttons darunter
+// Laptop: Karten bei ~73 % der Tischhöhe, Schild auf der Unterkante
 .laptop-cards {
   position: absolute;
   top: 72.92%;
@@ -125,21 +121,12 @@
   transform: translateY(-50%);
 }
 
-.laptop-seat,
-.laptop-actions {
+.laptop-seat {
   position: absolute;
+  top: calc(100% + 4px);
   left: 50%;
   z-index: 6;
   transform: translate(-50%, -50%);
-}
-
-.laptop-seat {
-  top: calc(100% + 4px);
-}
-
-.laptop-actions {
-  top: calc(100% + 78px);
-  width: 520px;
 }
 
 // Eigene Zahlen: 7 Slots in Zugreihenfolge
@@ -257,143 +244,6 @@
   --you-size: 12px;
   --stat-size: 14px;
   --chip-lh: 21px;
-}
-
-// Aktionen
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.buttons {
-  display: flex;
-  gap: 10px;
-}
-
-:host([data-layout='quer']) .buttons {
-  flex-direction: column-reverse;
-  gap: 8px;
-}
-
-.btn {
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: var(--btn-h);
-  box-sizing: border-box;
-  border-radius: 14px;
-  font: 700 var(--btn-font) var(--font-sans);
-  cursor: pointer;
-}
-
-.btn .material-symbols-rounded {
-  font-size: var(--btn-icon);
-}
-
-.btn--stay {
-  border: 1.5px solid var(--table-violet);
-  background: transparent;
-  color: var(--color-text);
-}
-
-.btn--stay .material-symbols-rounded {
-  color: var(--table-violet);
-}
-
-.btn--hit {
-  flex-grow: 1.4;
-  border: 0;
-  background: var(--color-primary);
-  box-shadow: 0 6px 16px rgba(200, 56, 109, 0.35);
-  color: #ffffff;
-}
-
-:host([data-layout='quer']) .btn {
-  flex: none;
-  height: 48px;
-}
-
-:host([data-layout='quer']) .btn--hit {
-  height: 52px;
-}
-
-.btn:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-.status {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--status-size);
-  font-weight: 500;
-  text-align: center;
-}
-
-// Zielwahl: Hinweis statt Buttons
-.prompt {
-  --pc: #7dd3fc;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 50px;
-  box-sizing: border-box;
-  padding: 8px 14px 8px 8px;
-  border: 1.5px solid var(--pc);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--pc) 13%, transparent);
-}
-
-.prompt[data-card='FLIP3'] {
-  --pc: #ff9150;
-}
-
-.prompt[data-card='SC'] {
-  --pc: #c8386d;
-}
-
-.prompt-card {
-  --card-w: 31px;
-  --card-h: 43px;
-}
-
-.prompt-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.prompt-title {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.prompt-hint {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-:host([data-layout='quer']) .prompt {
-  min-height: 52px;
-}
-
-:host([data-layout='quer']) .prompt-card {
-  --card-w: 32px;
-  --card-h: 45px;
-}
-
-:host([data-layout='quer']) .prompt-title {
-  font-size: 14px;
-}
-
-:host([data-layout='quer']) .prompt-hint {
-  font-size: 12px;
 }
 
 // Eingefroren: statischer Frost über dem Bedienfeld, kriecht beim Einfrieren vom Rand herein

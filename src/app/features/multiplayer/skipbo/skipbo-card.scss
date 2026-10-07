@@ -84,13 +84,6 @@
   font-size: var(--fan-font, calc(var(--card-w) * 0.56));
 }
 
-.fan-index {
-  right: calc(var(--card-w) * 0.1);
-  bottom: calc(var(--card-h) * 0.05);
-  font-size: round(calc(var(--card-w) * 0.28), 1px);
-  opacity: 0.6;
-}
-
 .fan-joker {
   position: absolute;
   top: calc(var(--card-h) * 0.05);

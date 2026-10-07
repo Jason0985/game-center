@@ -87,6 +87,32 @@
   line-height: 1.2;
 }
 
+.title-hint {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--table-target);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  animation: title-hint-in 240ms ease-out;
+}
+
+@keyframes title-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-hint {
+    animation: none;
+  }
+}
+
 .count {
   display: inline-flex;
   align-items: center;

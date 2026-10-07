@@ -9,7 +9,7 @@
   --s: 1;
   --head-h: 56px;
   --area-top: 8px;
-  --below: 220px;
+  --below: 140px;
   --table-w: 378;
   --table-h: 560;
   --table-margin: 12px;
@@ -44,10 +44,6 @@
   --mod-font: 15px;
   --mod-label: 11px;
   --mod-value: 15px;
-  --btn-h: 50px;
-  --btn-font: 15px;
-  --btn-icon: 19px;
-  --status-size: 13px;
 
   // Tisch oben verankert, das Sheet überlappt ihn und füllt den Rest nach unten
   display: grid;
@@ -69,7 +65,7 @@
 :host([data-layout='hoch']) {
   --head-h: 64px;
   --area-top: 12px;
-  --below: 304px;
+  --below: 284px;
   --table-w: 788;
   --table-h: 800;
   --table-margin: 32px;
@@ -101,15 +97,11 @@
   --mod-font: 18px;
   --mod-label: 12px;
   --mod-value: 16px;
-  --btn-h: 56px;
-  --btn-font: 16px;
-  --btn-icon: 20px;
-  --status-size: 14px;
 }
 
 :host([data-layout='quer']) {
   --area-top: 12px;
-  --below: 232px;
+  --below: 202px;
   --table-w: 1140;
   --table-h: 520;
   --table-margin: 40px;
@@ -139,13 +131,12 @@
   --mod-w: 30px;
   --mod-h: 42px;
   --mod-font: 18px;
-  --status-size: 12px;
 }
 
 :host([data-layout='laptop']) {
   --head-h: 64px;
   --area-top: 54px;
-  --below: 122px;
+  --below: 64px;
   --table-w: 1220;
   --table-h: 720;
   --table-margin: 40px;
@@ -178,7 +169,6 @@
   --mod-font: 18px;
   --mod-label: 12px;
   --mod-value: 16px;
-  --btn-h: 52px;
 }
 
 :host([data-layout='hoch'][data-size='m']) {
@@ -199,7 +189,7 @@
   --s: 1.15;
 }
 
-// Mitte: Stapel, Ablage, Ereignis-Chip
+// Mitte: Stapel (zum Ziehen antippen), Ablage, darunter „Stehen bleiben“
 .center {
   position: absolute;
   top: var(--center-y);
@@ -260,35 +250,53 @@
   font-size: 12px;
 }
 
-.event-chip {
+// Ziehstapel als Button (wie Uno): leuchtet am eigenen Zug
+.draw {
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--pile-w) * 0.15);
+  background: transparent;
+  cursor: pointer;
+}
+
+.draw:disabled {
+  cursor: default;
+}
+
+// Im Button ein span: Größe aus .stack (_table-base) braucht display block
+.draw .stack {
+  display: block;
+}
+
+.draw.glow {
+  box-shadow:
+    0 0 0 3px var(--table-turn),
+    0 0 22px color-mix(in srgb, var(--table-turn) 30%, transparent);
+}
+
+.stay {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 7px 10px 7px 12px;
-  border: 1px solid var(--color-border-subtle);
+  padding: 7px 14px 7px 12px;
+  border: 1.5px solid var(--table-violet);
   border-radius: 999px;
   background: var(--color-surface);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   color: var(--color-text);
-  font: 600 var(--chip-size) var(--font-sans);
+  font-size: var(--chip-size);
+  font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.event-chip .material-symbols-rounded {
-  flex-shrink: 0;
+.stay .material-symbols-rounded {
+  color: var(--table-violet);
   font-size: var(--chip-icon);
 }
 
-.event-chip .chevron {
-  color: var(--color-text-muted);
-}
-
-.event-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.stay.off {
+  visibility: hidden;
 }
 
 // Kartenfächer der Mitspieler

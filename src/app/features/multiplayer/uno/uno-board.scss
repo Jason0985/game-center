@@ -259,11 +259,50 @@
   transform: rotate(45deg);
 }
 
-.sr-only {
+// Aktive Hausregeln oben rechts (Ecke neben der Tischrundung)
+.house-rules {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+  top: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.house-rules-title {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.house-rules ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.house-rules li {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
   white-space: nowrap;
+}
+
+// 7 tauscht, 0 dreht: fliegende Rücken liegen über allem
+.hand-flight {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
 }

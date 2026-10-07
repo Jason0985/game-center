@@ -192,8 +192,12 @@ describe('UnoGameView', () => {
 
   it('asks whom to swap with for a 7 under 7-0', async () => {
     await render('host', makeGame({ settings: { sevenZero: true } }));
+    expect(el().querySelector('.house-rules li')?.textContent).toBe('7 tauscht, 0 dreht');
     tap('Rot 7 spielen');
     expect(uno['play']).not.toHaveBeenCalled();
+    expect(el().querySelector('.title-hint')?.textContent).toBe(
+      'Wähle, mit wem du die Karten tauschst',
+    );
     const target = el().querySelector<HTMLButtonElement>('button[appunoseat][data-seat="2"]')!;
     expect(target.getAttribute('aria-label')).toBe('Dritte, 5 Karten – Karten tauschen');
     target.click();

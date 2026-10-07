@@ -9,7 +9,9 @@
     </span>
     <div class="title">
       <span class="title-main">{{ gameTitle() }}</span>
-      @if (subtitle(); as sub) {
+      @if (hint(); as text) {
+        <span class="title-hint">{{ text }}</span>
+      } @else if (subtitle(); as sub) {
         <span class="title-sub">{{ sub }}</span>
       }
     </div>

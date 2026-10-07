@@ -7,15 +7,19 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame } from '../table/table-game';
+import { injectTableGame, injectTableHistory } from '../table/table-game';
 import { Flip7Board } from './flip7-board';
 import { Flip7Final } from './flip7-final';
 import { Flip7RoundSummary } from './flip7-round-summary';
 import { Flip7Service } from './flip7.service';
 import {
   activeSeatOf,
+  describeEvent,
+  eventIcon,
+  Flip7Event,
   Flip7Game,
   FLIP7_NEXT_ROUND_DELAY_S,
   FLIP7_RULES,
@@ -29,7 +33,7 @@ const ROUND_END_S = ROUND_END_TABLE_S + FLIP7_NEXT_ROUND_DELAY_S;
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und
 // schaltet zwischen Spieltisch, Rundenübersicht und Endstand um. Liegt auf der
-// gemeinsamen Bühne (Kopf mit ⋮-Menü für Host-Aktionen und Verlassen).
+// gemeinsamen Bühne (Kopf mit Hinweis, letztem Ereignis, Verlauf und ⋮-Menü).
 @Component({
   selector: 'app-flip7-game',
   imports: [GameStage, Flip7Board, Flip7RoundSummary, Flip7Final],
@@ -100,6 +104,33 @@ export class Flip7GameView {
     );
   });
   readonly rules = { title: 'Flip 7 – Regeln', rules: FLIP7_RULES };
+  // Hinweis des Tisches (z. B. Ziel wählen) steht im Kopf der Bühne
+  private readonly board = viewChild(Flip7Board);
+  readonly hint = computed(() => this.board()?.hint() ?? null);
+
+  // Verlauf der laufenden Runde; "noch N Karten" nur beim neuesten Flip 3, ältere sind erledigt
+  private readonly roundLog = computed(() => {
+    const game = this.game();
+    return game
+      ? game.round_log.filter((event) => (event.r ?? game.round_no) === game.round_no)
+      : [];
+  });
+  private readonly liveFlip3 = computed(() =>
+    this.roundLog()
+      .filter((event) => event.t === 'flip3')
+      .at(-1),
+  );
+  private readonly history = injectTableHistory<Flip7Event>({
+    log: this.roundLog,
+    now: this.now,
+    describe: (event) => {
+      const game = this.game()!;
+      const context = event === this.liveFlip3() ? game : { ...game, flip3_left: null };
+      return { ...eventIcon(event), text: describeEvent(event, context, this.table.mySeat()) };
+    },
+  });
+  readonly lastEvent = this.history.lastEvent;
+  readonly historyNew = this.history.historyNew;
 
   constructor() {
     // Einmal pro Runde: nach Ablauf der Übersicht die nächste Runde anstoßen
@@ -153,5 +184,9 @@ export class Flip7GameView {
 
   async continueOpen(game: Flip7Game): Promise<void> {
     await this.table.run(() => this.flip7.continueOpen(game.id));
+  }
+
+  openHistory(): void {
+    this.history.open();
   }
 }

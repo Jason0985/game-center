@@ -12,10 +12,14 @@
   [finished]="game()?.status === 'finished'"
   [endHint]="game()?.status === 'playing' ? 'Laufende Runde zählt nicht' : 'Zum Endstand'"
   [rules]="rules"
+  [hint]="hint()"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
   (skip)="skip(game()!)"
   (endGame)="endGame(game()!)"
   (leave)="leave.emit($event)"
   (backToLobby)="backToLobby()"
+  (history)="openHistory()"
 >
   @if (game(); as g) {
     @if (g.status === 'finished') {
@@ -36,7 +40,6 @@
         [busy]="busy() || g.status !== 'playing'"
         [canSkip]="canSkip()"
         [waitingSeconds]="waitingSeconds()"
-        [now]="now()"
         (hit)="hit(g)"
         (stay)="stay(g)"
         (choose)="choose(g, $event)"

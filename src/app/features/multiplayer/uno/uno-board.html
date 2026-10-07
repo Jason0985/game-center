@@ -10,6 +10,17 @@
   [center]="center()"
   [target]="pointerTarget()"
 >
+  @if (houseRules().length) {
+    <div class="house-rules">
+      <span class="house-rules-title" aria-hidden="true">Hausregeln</span>
+      <ul aria-label="Aktive Hausregeln">
+        @for (rule of houseRules(); track rule.key) {
+          <li [title]="rule.rule">{{ rule.label }}</li>
+        }
+      </ul>
+    </div>
+  }
+
   <div class="center" [style.left.%]="centerPos().x" [style.top.%]="centerPos().y">
     <!-- Spielrichtung: zwei Bogenpfeile, spiegeln sich beim Richtungswechsel -->
     <svg
@@ -158,6 +169,18 @@
 }
 
 <p class="sr-only" aria-live="polite">{{ status() }}</p>
+
+@for (flight of handFlights(); track flight.id) {
+  <app-uno-card
+    class="hand-flight"
+    aria-hidden="true"
+    [card]="null"
+    [style.left.px]="flight.to.x"
+    [style.top.px]="flight.to.y"
+    [style.--card-w.px]="flight.to.width"
+    [style.--card-h.px]="flight.to.height"
+  />
+}
 
 <!-- Eigene Hand im Bogen (spielbare gehoben, andere gedimmt) und Uno-Knopf -->
 <ng-template #ownTpl>

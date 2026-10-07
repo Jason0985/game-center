@@ -11,6 +11,7 @@
   [finished]="game()?.status === 'finished'"
   endHint="Zum Endstand"
   [rules]="rules()"
+  [hint]="hint()"
   [lastEvent]="lastEvent()"
   [historyNew]="historyNew()"
   (skip)="skip(game()!)"

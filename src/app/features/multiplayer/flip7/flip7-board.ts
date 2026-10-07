@@ -3,36 +3,24 @@ import {
   AnimationCallbackEvent,
   Component,
   computed,
-  DestroyRef,
   effect,
   ElementRef,
   inject,
   input,
-  linkedSignal,
   output,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { MatBottomSheet, MatBottomSheetRef } from '@angular/material/bottom-sheet';
-import { HistoryRow, openHistorySheet } from '../table/history-sheet';
 import { CardFlyIn, reducedMotion } from '../table/table-motion';
-import {
-  eventAge,
-  formatClock,
-  injectTableLayout,
-  seatsAfter,
-  TableLayout,
-} from '../table/table.model';
+import { formatClock, injectTableLayout, seatsAfter, TableLayout } from '../table/table.model';
 import { TableTop } from '../table/table-top';
 import { Flip7CardView } from './flip7-card';
 import { Flip7Seat } from './flip7-seat';
 import {
   ACTION_NAMES,
   activeSeatOf,
-  describeEvent,
-  eventIcon,
   Flip7ActionCard,
   Flip7Card,
   Flip7Event,
@@ -90,6 +78,7 @@ const CHOOSER_TITLES: Record<Flip7ActionCard, string> = {
   FLIP3: 'Wer muss 3 Karten ziehen?',
   SC: 'Wem gibst du die Second Chance?',
 };
+const TURN_HINT = 'Stapel antippen zum Ziehen – oder stehen bleiben';
 
 function handCards(player: Flip7Player): HandCard[] {
   const seen = new Map<string, number>();
@@ -101,7 +90,8 @@ function handCards(player: Flip7Player): HandCard[] {
 }
 
 // Spieltisch einer laufenden Runde: ovale Platte mit Plätzen, Fächern und Stapel,
-// darunter (bzw. am Laptop darauf) der eigene Platz mit Karten und Aktionen.
+// darunter (bzw. am Laptop darauf) der eigene Platz mit Karten. Ziehen per Antippen des
+// Stapels, „Stehen bleiben“ direkt darunter; Hinweis und Verlauf stehen im Kopf der Bühne.
 @Component({
   selector: 'app-flip7-board',
   imports: [NgTemplateOutlet, Flip7CardView, Flip7Seat, TableTop],
@@ -114,7 +104,6 @@ function handCards(player: Flip7Player): HandCard[] {
   },
 })
 export class Flip7Board {
-  private readonly bottomSheet = inject(MatBottomSheet);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly game = input.required<Flip7Game>();
@@ -124,8 +113,6 @@ export class Flip7Board {
   // Host darf einen Spieler erst nach FLIP7_SKIP_AFTER_S überspringen (Uhr im Container)
   readonly canSkip = input(false);
   readonly waitingSeconds = input(0);
-  // Sekundentakt aus dem Container (Alter der Verlaufseinträge)
-  readonly now = input(0);
 
   readonly hit = output<void>();
   readonly stay = output<void>();
@@ -173,15 +160,6 @@ export class Flip7Board {
     const me = this.me();
     return new Set(card && me ? targetCandidates(this.game(), card, me.seat) : []);
   });
-  readonly chooserTitle = computed(() => {
-    const card = this.choosing();
-    return card ? CHOOSER_TITLES[card] : '';
-  });
-  readonly chooserHint = computed(() =>
-    this.choosing() === 'SC'
-      ? 'Tippe auf einen Platz am Tisch.'
-      : 'Tippe auf einen Platz am Tisch – auch dich selbst.',
-  );
 
   // Effekte nur direkt nach der passenden Aktion (last_events = letzte Aktion)
   private readonly eventSeats = computed(() => {
@@ -306,6 +284,15 @@ export class Flip7Board {
       ? `${name(seat)} wählt ein Ziel für ${ACTION_NAMES[game.pending_card]}`
       : `${name(seat)} ist am Zug`;
   });
+  // Hinweis im Kopf der Bühne: was ich gerade tun kann bzw. wie es um mich steht (wer
+  // sonst am Zug ist, zeigt der Zeiger)
+  readonly hint = computed(() => {
+    const card = this.choosing();
+    if (card) return `${CHOOSER_TITLES[card]} Tippe einen Platz an`;
+    if (this.myTurn()) return TURN_HINT;
+    const ownStatus = this.activeSeat() === null || this.me()?.state !== 'active';
+    return ownStatus ? this.statusText() || null : null;
+  });
 
   // Mitte: Ablage (quer/Laptop) mit offener Aktionskarte obenauf
   readonly discard = computed(() => {
@@ -313,35 +300,6 @@ export class Flip7Board {
     const pile = game.discard_count > 0 ? game.discard_top : [];
     const cards: Flip7Card[] = game.pending_card ? [...pile, game.pending_card] : [...pile];
     return { top: cards.at(-1) ?? null, below: cards.at(-2) ?? null };
-  });
-
-  // Verlauf der Runde, neueste oben; Alter ohne Uhrabweichung: gemessen ab dem
-  // Moment, in dem das neueste Ereignis hier ankam, plus Abstand laut Server
-  private readonly roundLog = computed(() => {
-    const game = this.game();
-    return game.round_log.filter((event) => event.r === undefined || event.r === game.round_no);
-  });
-  private readonly seenAt = linkedSignal({
-    source: () => this.roundLog().at(-1)?.at,
-    computation: () => Date.now(),
-  });
-  // Nur beim neuesten Flip 3 "noch N Karten" zeigen, ältere Einträge sind erledigt
-  private readonly liveFlip3 = computed(() =>
-    this.roundLog()
-      .filter((event) => event.t === 'flip3')
-      .at(-1),
-  );
-  readonly lastEvent = computed(() => {
-    const event = this.roundLog().at(-1) ?? this.game().last_events.at(-1);
-    return event ? this.describe(event) : this.roundStart();
-  });
-  readonly historyRows = computed((): HistoryRow[] => {
-    const log = this.roundLog();
-    const age = (at?: string) => eventAge(this.now(), this.seenAt(), log.at(-1)?.at, at);
-    return [
-      ...log.map((event) => ({ ...this.describe(event), time: age(event.at) })).reverse(),
-      { ...this.roundStart(), time: log.length ? age(log[0].at) : 'jetzt' },
-    ];
   });
 
   // Zug-Zeiger vom Stapel zum Spieler am Zug (zeichnet die Tischplatte)
@@ -367,12 +325,9 @@ export class Flip7Board {
 
   private readonly stack = viewChild<ElementRef<HTMLElement>>('stack');
   private readonly flyIn = new CardFlyIn(this.live);
-  private historySheet: MatBottomSheetRef | null = null;
 
   constructor() {
     afterNextRender(() => this.live.set(true));
-    // Verlauf schließen, wenn der Tisch verschwindet (Rundenübersicht)
-    inject(DestroyRef).onDestroy(() => this.historySheet?.dismiss());
 
     effect(() => {
       const game = this.game();
@@ -406,11 +361,8 @@ export class Flip7Board {
     if (!this.busy()) this.choose.emit(seat);
   }
 
-  openHistory(): void {
-    this.historySheet = openHistorySheet(this.bottomSheet, {
-      title: computed(() => `Verlauf · Runde ${this.game().round_no}`),
-      rows: this.historyRows,
-    });
+  tapPile(): void {
+    if (!this.busy() && this.myTurn()) this.hit.emit();
   }
 
   // Karte vom Stapel an ihren Platz (Vorlage ruft das bei animate.enter)
@@ -450,25 +402,5 @@ export class Flip7Board {
       )
       .finished.catch(() => undefined)
       .finally(done);
-  }
-
-  private describe(event: Flip7Event): Omit<HistoryRow, 'time'> {
-    const game = this.game();
-    const context = event === this.liveFlip3() ? game : { ...game, flip3_left: null };
-    return {
-      ...eventIcon(event),
-      text: describeEvent(event, context, this.me()?.seat ?? null),
-    };
-  }
-
-  private roundStart(): Omit<HistoryRow, 'time'> {
-    const game = this.game();
-    const dealer = game.players.find((player) => player.seat === game.dealer_seat);
-    const name = dealer === this.me() ? 'du' : (dealer?.name ?? '–');
-    return {
-      icon: 'refresh',
-      color: 'var(--color-text-muted)',
-      text: `Runde ${game.round_no} beginnt – Geber: ${name}`,
-    };
   }
 }
