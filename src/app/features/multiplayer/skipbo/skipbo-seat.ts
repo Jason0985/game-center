@@ -4,8 +4,9 @@ import { SkipboCardView } from './skipbo-card';
 import { SkipboFan } from './skipbo-fan';
 import { cardName, SkipboCard, SkipboPlayer } from './skipbo.model';
 
-// Namensschild am Tisch. Mitspieler (column: Handy/iPad hoch, row: quer/Laptop) mit
-// Stapel-Chip, Handanzahl und darunter ihre Auslage (Spielstapel-Oberkarte, 4 Ablagen);
+// Namensschild am Tisch. Mitspieler (column: iPad hoch, row: quer/Laptop, line: Zeile
+// in der Handy-Liste) mit Stapel-Chip, Handanzahl und ihrer Auslage (Spielstapel-
+// Oberkarte, 4 Ablagen; darunter, bei line rechts daneben);
 // eigener Platz als Reiter am Bedienfeld (tab) bzw. Pille auf dem Tisch (pill).
 // Größen kommen vom Tisch (CSS-Variablen).
 @Component({
@@ -25,7 +26,7 @@ import { cardName, SkipboCard, SkipboPlayer } from './skipbo.model';
 })
 export class SkipboSeat {
   readonly player = input.required<SkipboPlayer>();
-  readonly variant = input<'column' | 'row' | 'tab' | 'pill'>('column');
+  readonly variant = input<'column' | 'row' | 'line' | 'tab' | 'pill'>('column');
   readonly dealer = input(false);
   readonly turn = input(false);
   readonly winner = input(false);

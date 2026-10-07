@@ -5,14 +5,15 @@
 // der Mitte. Weitere Teile: skipbo-board-own.scss (eigener Bereich),
 // skipbo-board-places.scss (Mitspieler).
 :host {
+  // Handy: Mitte im eigenen Feld (skipbo-board-phone.scss), Breite reicht für 5 Stapel
   --center-dir: row;
   --center-align: flex-start;
-  --center-gap: 10px;
-  --pile-w: 30px;
-  --pile-h: 42px;
-  --build-w: 38px;
-  --build-h: 52px;
-  --build-gap: 6px;
+  --center-gap: 8px;
+  --build-w: clamp(44px, calc((100vw - 120px) / 5), 58px);
+  --build-h: round(calc(var(--build-w) * 1.414), 1px);
+  --pile-w: calc(var(--build-w) - 4px);
+  --pile-h: round(calc(var(--pile-w) * 1.414), 1px);
+  --build-gap: 8px;
 }
 
 :host([data-layout='hoch']) {

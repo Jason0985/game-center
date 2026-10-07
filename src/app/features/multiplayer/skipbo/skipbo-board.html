@@ -1,109 +1,144 @@
 @let g = game();
 @let t = table();
-<div
-  class="table-area"
-  appTableTop
-  mark="SB"
-  [w]="t.w"
-  [h]="t.h"
-  [center]="pointerCenter()"
-  [target]="pointerTarget()"
->
-  <div class="center">
-    <div class="pile">
-      <div class="stack draw-stack">
-        <app-skipbo-card class="back back--3" [card]="null" />
-        <app-skipbo-card class="back back--2" [card]="null" />
-        <app-skipbo-card class="back back--1" [card]="null" />
-      </div>
-    </div>
-
-    <div class="builds" role="group" aria-label="Aufbaustapel">
-      @for (b of builds(); track b.index) {
-        @if (b.target) {
-          <div class="build">
-            <button
-              type="button"
-              class="build-button"
-              [attr.data-build]="b.index"
-              [attr.aria-label]="b.label"
-              [disabled]="busy()"
-              (click)="playTo(b.index)"
-            >
-              <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
-            </button>
-          </div>
-        } @else {
-          <div
-            class="build"
-            role="img"
-            [attr.data-build]="b.index"
-            [attr.aria-label]="b.label"
-          >
-            <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
-          </div>
-        }
+@if (layout() === 'phone') {
+  <!-- Handy: Mitspieler als Liste, die Mitte als eigenes Feld, darunter Stapel und
+       Ablagen, die Hand ganz unten -->
+  <div class="phone">
+    <div class="opps">
+      @for (view of seats(); track view.player.seat) {
+        <div
+          appSkipboSeat
+          role="group"
+          variant="line"
+          [player]="view.player"
+          [dealer]="view.player.seat === g.dealer_seat"
+          [turn]="view.turn"
+          [winner]="view.winner"
+          [celebrate]="view.celebrate"
+          [waiting]="view.waiting"
+          [flat]="true"
+        ></div>
       }
     </div>
+
+    <section class="mid" aria-label="Tischmitte">
+      <ng-container *ngTemplateOutlet="centerTpl" />
+    </section>
+
+    @if (me()) {
+      <section class="own-phone" aria-label="Dein Platz">
+        <ng-container *ngTemplateOutlet="pilesTpl" />
+      </section>
+      <section class="hand-tray" aria-label="Deine Hand">
+        <ng-container *ngTemplateOutlet="handTpl" />
+      </section>
+    }
+  </div>
+} @else {
+  <div
+    class="table-area"
+    appTableTop
+    mark="SB"
+    [w]="t.w"
+    [h]="t.h"
+    [center]="pointerCenter()"
+    [target]="pointerTarget()"
+  >
+    <div class="center">
+      <ng-container *ngTemplateOutlet="centerTpl" />
+    </div>
+
+    @for (view of seats(); track view.player.seat) {
+      <div
+        appSkipboSeat
+        role="group"
+        class="opp"
+        [variant]="layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [dealer]="view.player.seat === g.dealer_seat"
+        [turn]="view.turn"
+        [winner]="view.winner"
+        [celebrate]="view.celebrate"
+        [waiting]="view.waiting"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+      ></div>
+    }
+
+    <!-- Laptop: eigener Bereich liegt auf dem Tisch, das Namensschild darunter -->
+    @if (layout() === 'laptop' && me(); as m) {
+      <div class="own-row">
+        <ng-container *ngTemplateOutlet="ownTpl" />
+      </div>
+      <div
+        appSkipboSeat
+        role="group"
+        class="own-pill"
+        variant="pill"
+        [player]="m"
+        [dealer]="m.seat === g.dealer_seat"
+        [turn]="myTurn()"
+        [winner]="g.winner_seat === m.seat"
+        [celebrate]="winSeatIsMe()"
+      ></div>
+    }
   </div>
 
-  @for (view of seats(); track view.player.seat) {
-    <div
-      appSkipboSeat
-      role="group"
-      class="opp"
-      [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
-      [player]="view.player"
-      [dealer]="view.player.seat === g.dealer_seat"
-      [turn]="view.turn"
-      [winner]="view.winner"
-      [celebrate]="view.celebrate"
-      [waiting]="view.waiting"
-      [flat]="layout() === 'phone'"
-      [style.left.%]="view.x"
-      [style.top.%]="view.y"
-    ></div>
+  @if (layout() !== 'laptop' && me(); as m) {
+    <section class="mine" aria-label="Dein Platz">
+      <div
+        appSkipboSeat
+        role="group"
+        class="tab"
+        variant="tab"
+        [player]="m"
+        [dealer]="m.seat === g.dealer_seat"
+        [turn]="myTurn()"
+        [winner]="g.winner_seat === m.seat"
+        [celebrate]="winSeatIsMe()"
+      ></div>
+      <div class="own-row">
+        <ng-container *ngTemplateOutlet="ownTpl" />
+      </div>
+    </section>
   }
-
-  <!-- Laptop: eigener Bereich liegt auf dem Tisch, das Namensschild darunter -->
-  @if (layout() === 'laptop' && me(); as m) {
-    <div class="own-row">
-      <ng-container *ngTemplateOutlet="ownTpl" />
-    </div>
-    <div
-      appSkipboSeat
-      role="group"
-      class="own-pill"
-      variant="pill"
-      [player]="m"
-      [dealer]="m.seat === g.dealer_seat"
-      [turn]="myTurn()"
-      [winner]="g.winner_seat === m.seat"
-      [celebrate]="winSeatIsMe()"
-    ></div>
-  }
-</div>
-
-@if (layout() !== 'laptop' && me(); as m) {
-  <section class="mine" aria-label="Dein Platz">
-    <div
-      appSkipboSeat
-      role="group"
-      class="tab"
-      variant="tab"
-      [player]="m"
-      [dealer]="m.seat === g.dealer_seat"
-      [turn]="myTurn()"
-      [winner]="g.winner_seat === m.seat"
-      [celebrate]="winSeatIsMe()"
-    ></div>
-    <div class="own-row">
-      <ng-container *ngTemplateOutlet="ownTpl" />
-    </div>
-  </section>
 }
 
 <p class="sr-only" aria-live="polite">{{ status() }}</p>
+
+<!-- Mitte: Nachziehstapel und 4 Aufbaustapel -->
+<ng-template #centerTpl>
+  <div class="pile">
+    <div class="stack draw-stack">
+      <app-skipbo-card class="back back--3" [card]="null" />
+      <app-skipbo-card class="back back--2" [card]="null" />
+      <app-skipbo-card class="back back--1" [card]="null" />
+    </div>
+  </div>
+
+  <div class="builds" role="group" aria-label="Aufbaustapel">
+    @for (b of builds(); track b.index) {
+      @if (b.target) {
+        <div class="build">
+          <button
+            type="button"
+            class="build-button"
+            [attr.data-build]="b.index"
+            [attr.aria-label]="b.label"
+            [disabled]="busy()"
+            (click)="playTo(b.index)"
+          >
+            <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
+          </button>
+        </div>
+      } @else {
+        <div class="build" role="img" [attr.data-build]="b.index" [attr.aria-label]="b.label">
+          <ng-container *ngTemplateOutlet="buildTpl; context: { $implicit: b }" />
+        </div>
+      }
+    }
+  </div>
+</ng-template>
 
 <!-- Aufbaustapel: bis zu 2 Kanten, oberste Karte (Joker mit Wert-Badge) oder Umriss „1“ -->
 <ng-template #buildTpl let-b>
@@ -131,103 +166,118 @@
   </span>
 </ng-template>
 
-<!-- Eigener Bereich: Spielstapel, 4 Ablagen, Hand -->
+<!-- Eigener Bereich (Tisch): Spielstapel, 4 Ablagen, Hand -->
 <ng-template #ownTpl>
-  @let stock = myStock()!;
-  @let h = hand();
-  <div class="own-piles">
-    @if (stock.source) {
-      <button
-        type="button"
-        class="my-stock"
-        [class.selected]="stock.selected"
-        [attr.aria-label]="stock.label"
-        [disabled]="busy()"
-        (click)="select({ kind: 'stock', index: 0 })"
-      >
-        <ng-container *ngTemplateOutlet="stockTpl; context: { $implicit: stock }" />
-      </button>
-    } @else {
-      <div class="my-stock" role="img" [attr.aria-label]="stock.label">
-        <ng-container *ngTemplateOutlet="stockTpl; context: { $implicit: stock }" />
-      </div>
-    }
+  <ng-container *ngTemplateOutlet="pilesTpl" />
+  <ng-container *ngTemplateOutlet="handTpl" />
+</ng-template>
 
-    <div
-      class="mine-discards"
-      role="group"
-      [attr.aria-label]="handSelected() ? 'Deine Ablagen, zum Ablegen wählbar' : 'Deine Ablagen'"
-    >
-      @for (d of myDiscards(); track d.index) {
-        <div class="discard-col">
-          @switch (d.mode) {
-            @case ('target') {
-              <button
-                type="button"
-                class="discard"
-                [attr.data-discard]="d.index"
-                [attr.aria-label]="d.label"
-                [disabled]="busy()"
-                (click)="discardTo(d.index)"
-              >
-                <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
-              </button>
-            }
-            @case ('source') {
-              <button
-                type="button"
-                class="discard"
-                [class.selected]="d.selected"
-                [attr.data-discard]="d.index"
-                [attr.aria-label]="d.label"
-                [disabled]="busy()"
-                (click)="select({ kind: 'discard', index: d.index })"
-              >
-                <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
-              </button>
-            }
-            @default {
-              <div
-                class="discard"
-                role="img"
-                [attr.data-discard]="d.index"
-                [attr.aria-label]="d.label"
-              >
-                <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
-              </div>
-            }
-          }
-          <!-- Kappe „+N“ antippen: ganze Ablage als Leiste -->
-          @if (d.cap) {
-            <button
-              type="button"
-              class="cap-toggle"
-              [attr.aria-label]="'Ablage ' + (d.index + 1) + ' ganz anzeigen'"
-              [attr.aria-expanded]="expanded() === d.index"
-              (click)="toggleCap(d.index)"
-            ></button>
-          }
-        </div>
-      }
-      @if (expanded() !== null && myDiscards()[expanded()!]; as d) {
-        <div
-          class="cap-list"
-          role="dialog"
-          [attr.aria-label]="'Ablage ' + (d.index + 1) + ', ' + d.cards.length + ' Karten'"
+<!-- Spielstapel und 4 Ablagen, je mit Schriftzug -->
+<ng-template #pilesTpl>
+  @let stock = myStock()!;
+  <div class="own-piles">
+    <div class="own-col">
+      <span class="own-label">Stapel</span>
+      @if (stock.source) {
+        <button
+          type="button"
+          class="my-stock"
+          [class.selected]="stock.selected"
+          [attr.aria-label]="stock.label"
+          [disabled]="busy()"
+          (click)="select({ kind: 'stock', index: 0 })"
         >
-          <span class="cap-title"
-            >Ablage {{ d.index + 1 }} · {{ d.cards.length }} Karten (unten → oben)</span
-          >
-          <span class="cap-cards">
-            @for (card of d.cards; track $index) {
-              <app-skipbo-card [card]="card" variant="flat" />
-            }
-          </span>
+          <ng-container *ngTemplateOutlet="stockTpl; context: { $implicit: stock }" />
+        </button>
+      } @else {
+        <div class="my-stock" role="img" [attr.aria-label]="stock.label">
+          <ng-container *ngTemplateOutlet="stockTpl; context: { $implicit: stock }" />
         </div>
       }
     </div>
-  </div>
 
+    <div class="own-col own-col--discards">
+      <span class="own-label own-label--line">Ablagen</span>
+      <div
+        class="mine-discards"
+        role="group"
+        [attr.aria-label]="handSelected() ? 'Deine Ablagen, zum Ablegen wählbar' : 'Deine Ablagen'"
+      >
+        @for (d of myDiscards(); track d.index) {
+          <div class="discard-col">
+            @switch (d.mode) {
+              @case ('target') {
+                <button
+                  type="button"
+                  class="discard"
+                  [attr.data-discard]="d.index"
+                  [attr.aria-label]="d.label"
+                  [disabled]="busy()"
+                  (click)="discardTo(d.index)"
+                >
+                  <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
+                </button>
+              }
+              @case ('source') {
+                <button
+                  type="button"
+                  class="discard"
+                  [class.selected]="d.selected"
+                  [attr.data-discard]="d.index"
+                  [attr.aria-label]="d.label"
+                  [disabled]="busy()"
+                  (click)="select({ kind: 'discard', index: d.index })"
+                >
+                  <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
+                </button>
+              }
+              @default {
+                <div
+                  class="discard"
+                  role="img"
+                  [attr.data-discard]="d.index"
+                  [attr.aria-label]="d.label"
+                >
+                  <span appSkipboFan [cards]="d.cards" [max]="layout() === 'phone' ? 3 : 4"></span>
+                </div>
+              }
+            }
+            <!-- Kappe „+N“ antippen: ganze Ablage als Leiste -->
+            @if (d.cap) {
+              <button
+                type="button"
+                class="cap-toggle"
+                [attr.aria-label]="'Ablage ' + (d.index + 1) + ' ganz anzeigen'"
+                [attr.aria-expanded]="expanded() === d.index"
+                (click)="toggleCap(d.index)"
+              ></button>
+            }
+          </div>
+        }
+        @if (expanded() !== null && myDiscards()[expanded()!]; as d) {
+          <div
+            class="cap-list"
+            role="dialog"
+            [attr.aria-label]="'Ablage ' + (d.index + 1) + ', ' + d.cards.length + ' Karten'"
+          >
+            <span class="cap-title"
+              >Ablage {{ d.index + 1 }} · {{ d.cards.length }} Karten (unten → oben)</span
+            >
+            <span class="cap-cards">
+              @for (card of d.cards; track $index) {
+                <app-skipbo-card [card]="card" variant="flat" />
+              }
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Hand: 5 Karten (am Tisch im Bogen), die gewählte rutscht nach oben -->
+<ng-template #handTpl>
+  @let h = hand();
   <div class="hand-wrap">
     <div
       class="hand"

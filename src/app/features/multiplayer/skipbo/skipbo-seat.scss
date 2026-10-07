@@ -86,3 +86,70 @@
   background: rgba(245, 200, 75, 0.18);
   color: var(--table-gold);
 }
+
+// Handy-Liste: eine Zeile je Mitspieler, Auslage rechts daneben; am Zug ein weißer
+// Strich links statt Leuchtrand
+:host([data-variant='line']) {
+  --ring: 30px;
+  --avatar: 26px;
+  --name-size: 13px;
+  --chip-size: 11px;
+  --chip-lh: 16px;
+  --chip-pad: 1px 6px;
+  --stats-gap: 6px;
+  --top-w: 30px;
+  --top-h: 42px;
+  --fan-w: 30px;
+  --fan-h: 42px;
+  --strip: 5px;
+  --discard-gap: 5px;
+  flex-direction: row;
+  gap: 10px;
+  width: auto;
+  padding: 6px 10px 6px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+:host([data-variant='line']) .info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+:host([data-variant='line']) .spread {
+  position: static;
+  flex: none;
+  align-items: flex-end;
+  gap: 10px;
+  transform: none;
+}
+
+:host([data-variant='line']) .spread-discards {
+  align-items: flex-end;
+  padding-left: 10px;
+  border-left: 1px solid var(--color-border);
+}
+
+:host([data-variant='line']) .waiting,
+:host([data-variant='line']) .badge-win {
+  position: static;
+  transform: none;
+}
+
+:host([data-variant='line'].is-turn) {
+  border: 0;
+  background: color-mix(in srgb, var(--table-turn) 4%, transparent);
+  box-shadow: inset 3px 0 0 var(--table-turn);
+}
+
+:host([data-variant='line'].is-winner) {
+  border: 0;
+  box-shadow: inset 3px 0 0 var(--table-gold);
+}

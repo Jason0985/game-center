@@ -67,7 +67,12 @@ const CLEAR_MS = 1400;
   selector: 'app-skipbo-board',
   imports: [NgTemplateOutlet, SkipboCardView, SkipboFan, SkipboSeat, TableTop],
   templateUrl: './skipbo-board.html',
-  styleUrls: ['./skipbo-board.scss', './skipbo-board-own.scss', './skipbo-board-places.scss'],
+  styleUrls: [
+    './skipbo-board.scss',
+    './skipbo-board-own.scss',
+    './skipbo-board-places.scss',
+    './skipbo-board-phone.scss',
+  ],
   host: {
     '[attr.data-layout]': 'layout()',
     '[attr.data-size]': 'sizeClass()',

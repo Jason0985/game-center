@@ -1,19 +1,20 @@
 // Eigener Bereich: Spielstapel, 4 Ablagen, Hand. Zweites Stylesheet von SkipboBoard
-// (Budget pro Datei). Handy: Bedienfeld unter dem Tisch, Hand halb dahinter; iPad:
-// Bedienfeld mit Reiter; Laptop: direkt auf dem Tisch, Namensschild darunter.
+// (Budget pro Datei). Handy: eigene Reihen unter der Mitte (skipbo-board-phone.scss);
+// iPad: Bedienfeld mit Reiter; Laptop: direkt auf dem Tisch, Namensschild darunter.
 :host {
-  --own-w: 44px;
-  --own-h: 62px;
-  --own-strip: 11px;
-  --own-fan-font: 9px;
-  --own-cap-font: 9px;
-  --own-chip: 11px;
-  --own-gap: 14px;
+  // Handy: Stapel und 4 Ablagen teilen sich die Breite, die Hand ebenso
+  --own-w: clamp(44px, calc((100vw - 64px) / 5 - 6px), 58px);
+  --own-h: round(calc(var(--own-w) * 1.414), 1px);
+  --own-strip: 18px;
+  --own-fan-font: 15px;
+  --own-cap-font: 11px;
+  --own-chip: 12px;
+  --own-gap: 8px;
   --own-discard-gap: 8px;
-  --hand-w: 44px;
-  --hand-h: 62px;
-  --hand-gap: 4px;
-  --hand-pad: 5px;
+  --hand-w: clamp(44px, calc((100vw - 72px) / 5), 62px);
+  --hand-h: round(calc(var(--hand-w) * 1.42), 1px);
+  --hand-gap: 8px;
+  --hand-pad: 0px;
 }
 
 :host([data-layout='hoch']) {
@@ -60,9 +61,8 @@
 
 .own-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  min-height: 128px;
 }
 
 .own-piles {
@@ -73,25 +73,45 @@
   gap: var(--own-gap);
 }
 
-// Handy: 5 Karten rechts, stark gebogen, nur die obere Hälfte über dem Bedienfeld
 .hand-wrap {
-  position: absolute;
-  top: -36px;
-  right: 12px;
-  z-index: 0;
-}
-
-:host(:not([data-layout='phone'])) .own-row {
-  align-items: flex-start;
-  min-height: 0;
-}
-
-:host(:not([data-layout='phone'])) .hand-wrap {
   position: relative;
-  top: auto;
-  right: auto;
   z-index: 2;
   padding-top: 6px;
+}
+
+// Schriftzüge „Stapel“ und „Ablagen“ über den Stapeln
+.own-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.own-col--discards {
+  align-items: stretch;
+}
+
+.own-label {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.own-label--line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.own-label--line::after {
+  flex-grow: 1;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
 }
 
 :host([data-layout='hoch']) .own-row {
@@ -111,7 +131,8 @@
 // Laptop: auf dem Tisch, Namensschild mittig auf der Unterkante
 :host([data-layout='laptop']) .own-row {
   position: absolute;
-  top: 71.67%;
+  // Schriftzüge über den Stapeln: um ihre Höhe (14 px + 8 px Abstand) höher
+  top: calc(71.67% - 22px);
   left: 50%;
   z-index: 4;
   transform: translateX(-50%);

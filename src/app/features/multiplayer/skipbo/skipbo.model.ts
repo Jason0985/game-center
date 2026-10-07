@@ -236,8 +236,9 @@ export const SPREAD_DY: Record<TableLayout, Record<'l' | 'm' | 's', number>> = {
 };
 
 // Handbogen: Grad je Karte, Absinken k·o² am Rand, Anheben der gewählten Karte
+// (Handy: gerade Reihe in der eigenen Leiste)
 export const HAND_ARC: Record<TableLayout, { deg: number; k: number; lift: number }> = {
-  phone: { deg: 9, k: 3, lift: 28 },
+  phone: { deg: 0, k: 0, lift: 12 },
   hoch: { deg: 5, k: 4, lift: 20 },
   quer: { deg: 5, k: 4, lift: 17 },
   laptop: { deg: 5, k: 5, lift: 22 },
