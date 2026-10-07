@@ -7,6 +7,7 @@ import { MatIcon } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
 import { AppErrorService } from '../../services/app-error.service';
 import { describeAuthError } from '../../services/supabase-errors';
+import { PASSWORD_RESET_ENABLED } from './auth-features';
 
 type AuthMode = 'login' | 'register' | 'forgot';
 
@@ -21,10 +22,14 @@ export const RESET_SENT_MESSAGE =
   styleUrl: './auth.scss',
 })
 export class Auth {
+  readonly passwordResetEnabled = inject(PASSWORD_RESET_ENABLED);
   // Direkt zum Formular „Passwort vergessen“ über /profile/auth?mode=forgot
   // Signals, weil die Meldungen erst nach einem await gesetzt werden (zoneless)
   readonly mode = signal<AuthMode>(
-    inject(ActivatedRoute).snapshot.queryParamMap.get('mode') === 'forgot' ? 'forgot' : 'login',
+    this.passwordResetEnabled &&
+      inject(ActivatedRoute).snapshot.queryParamMap.get('mode') === 'forgot'
+      ? 'forgot'
+      : 'login',
   );
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -92,6 +97,7 @@ export class Auth {
   }
 
   forgotPassword(): void {
+    if (!this.passwordResetEnabled) return;
     this.setMode('forgot');
     this.resetForm.controls.email.setValue(this.loginForm.controls.email.value);
   }

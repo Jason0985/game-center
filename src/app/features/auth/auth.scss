@@ -79,6 +79,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.auth-link:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
 .auth-link:focus-visible {
   border-radius: 8px;
   outline: 2px solid var(--color-primary-light);
@@ -90,4 +96,9 @@
   font-size: 15px;
   line-height: 1.4;
   text-align: center;
+}
+
+.auth-hint-small {
+  margin-top: -8px;
+  font-size: 13px;
 }

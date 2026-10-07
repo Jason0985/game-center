@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { AppErrorService } from '../../services/app-error.service';
 
 import { Auth, RESET_SENT_MESSAGE as NEUTRAL_MESSAGE } from './auth';
+import { PASSWORD_RESET_ENABLED } from './auth-features';
 
 describe('Auth', () => {
   let component: Auth;
@@ -31,6 +32,7 @@ describe('Auth', () => {
         provideRouter([{ path: 'profile/auth', component: Auth }]),
         { provide: AuthService, useValue: authService },
         { provide: AppErrorService, useValue: appErrors },
+        { provide: PASSWORD_RESET_ENABLED, useValue: true },
       ],
     }).compileComponents();
 
@@ -180,5 +182,39 @@ describe('Auth', () => {
     expect(component.mode()).toBe('login');
     expect(text()).toContain('Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.');
     expect(appErrors.report).not.toHaveBeenCalled();
+  });
+});
+
+describe('Auth without password reset', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Auth],
+      providers: [
+        provideRouter([{ path: 'profile/auth', component: Auth }]),
+        { provide: AuthService, useValue: {} },
+        { provide: AppErrorService, useValue: { report: vi.fn() } },
+      ],
+    }).compileComponents();
+  });
+
+  it('greys out "Passwort vergessen?" and stays on login', async () => {
+    const fixture = TestBed.createComponent(Auth);
+    await fixture.whenStable();
+
+    const link = [...fixture.nativeElement.querySelectorAll('button.auth-link')].find((button) =>
+      (button as HTMLButtonElement).textContent?.includes('Passwort vergessen?'),
+    ) as HTMLButtonElement;
+
+    expect(link.disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('bald verfügbar');
+    fixture.componentInstance.forgotPassword();
+    expect(fixture.componentInstance.mode()).toBe('login');
+  });
+
+  it('ignores ?mode=forgot', async () => {
+    const harness = await RouterTestingHarness.create();
+    const auth = await harness.navigateByUrl('/profile/auth?mode=forgot', Auth);
+
+    expect(auth.mode()).toBe('login');
   });
 });

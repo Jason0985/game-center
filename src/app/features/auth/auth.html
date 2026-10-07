@@ -78,9 +78,17 @@
         <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
           {{ loading() ? 'Anmeldung läuft …' : 'Anmelden' }}
         </button>
-        <button type="button" class="auth-link" (click)="forgotPassword()">
+        <button
+          type="button"
+          class="auth-link"
+          [disabled]="!passwordResetEnabled"
+          (click)="forgotPassword()"
+        >
           Passwort vergessen?
         </button>
+        @if (!passwordResetEnabled) {
+          <p class="auth-hint auth-hint-small">Passwort zurücksetzen ist bald verfügbar.</p>
+        }
       </form>
     } @else if (mode() === 'forgot') {
       @if (!resetSent()) {
