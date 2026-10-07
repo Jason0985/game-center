@@ -35,7 +35,6 @@ function makeGame(overrides: Partial<UnoGame> = {}): UnoGame {
     direction: 1,
     color: 'B',
     discard_top: ['R2', 'B7'],
-    draw_count: 60,
     pending_draw: 0,
     drew: false,
     uno_open_seat: null,
@@ -126,7 +125,7 @@ describe('UnoGameView', () => {
   it('shows the table while playing and the round end once finished', async () => {
     await render('guest', makeGame());
     expect(el().querySelector('app-uno-board')).not.toBeNull();
-    expect(el().textContent).toContain('Stapel: 60 Karten');
+    expect(el().textContent).not.toContain('Stapel:');
     fixture.destroy();
 
     const finished = makeGame({
@@ -174,7 +173,7 @@ describe('UnoGameView', () => {
 
     await render('guest', makeGame());
     expect(enabledCards()).toEqual([]);
-    expect(labelled('Karte ziehen, 60 im Stapel')!.disabled).toBe(true);
+    expect(labelled('Karte ziehen')!.disabled).toBe(true);
   });
 
   it('plays a number card right away', async () => {
@@ -215,7 +214,7 @@ describe('UnoGameView', () => {
 
   it('draws from the pile and keeps the drawn card on the second tap', async () => {
     await render('host', makeGame());
-    tap('Karte ziehen, 60 im Stapel');
+    tap('Karte ziehen');
     await vi.waitFor(() => expect(uno['draw']).toHaveBeenCalledWith(turn));
     fixture.destroy();
 

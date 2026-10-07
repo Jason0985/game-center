@@ -9,7 +9,7 @@ import { UnoCard, UnoColor, UnoGame, UnoPlayer } from './uno.model';
 // Genau die Felder von UnoGame; die eigene Hand kommt per RLS nur für mich mit
 const GAME_COLUMNS =
   'id, status, settings, seat_count, round_no, dealer_seat, turn_seat, turn_no, direction, color,' +
-  ' discard_top, draw_count, pending_draw, drew, uno_open_seat, winner_seat, last_events, round_log,' +
+  ' discard_top, pending_draw, drew, uno_open_seat, winner_seat, last_events, round_log,' +
   ' waiting_since,' +
   ' uno_players(user_id, seat, state, hand_count, uno_called, round_points, score),' +
   ' uno_hands(cards, drawn)';

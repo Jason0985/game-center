@@ -38,7 +38,6 @@ function game(overrides: Partial<UnoGame> = {}): UnoGame {
     direction: 1,
     color: 'B',
     discard_top: ['B7'],
-    draw_count: 60,
     pending_draw: 0,
     drew: false,
     uno_open_seat: null,

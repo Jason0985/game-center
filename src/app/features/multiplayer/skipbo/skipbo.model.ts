@@ -60,7 +60,6 @@ export interface SkipboGame {
   turn_seat: number | null;
   turn_no: number;
   build_piles: SkipboCard[][];
-  draw_count: number;
   winner_seat: number | null;
   // Nur die letzte Aktion (für Animationen)
   last_events: SkipboEvent[];

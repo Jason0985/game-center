@@ -10,7 +10,6 @@
   --center-gap: 10px;
   --pile-w: 30px;
   --pile-h: 42px;
-  --pile-label: 10px;
   --build-w: 38px;
   --build-h: 52px;
   --build-gap: 6px;
@@ -23,7 +22,6 @@
   --center-gap: 12px;
   --pile-w: 46px;
   --pile-h: 64px;
-  --pile-label: 12px;
   --build-w: 50px;
   --build-h: 70px;
   --build-gap: 9px;
@@ -33,7 +31,6 @@
   --center-gap: 22px;
   --pile-w: 50px;
   --pile-h: 70px;
-  --pile-label: 12px;
   --build-w: 54px;
   --build-h: 76px;
   --build-gap: 12px;
@@ -43,7 +40,6 @@
   --center-gap: 22px;
   --pile-w: 60px;
   --pile-h: 84px;
-  --pile-label: 12px;
   --build-w: 64px;
   --build-h: 90px;
   --build-gap: 14px;
@@ -65,10 +61,6 @@
   align-items: var(--center-align);
   gap: var(--center-gap);
   transform: translate(-50%, -50%);
-}
-
-.pile-label {
-  white-space: nowrap;
 }
 
 .builds {

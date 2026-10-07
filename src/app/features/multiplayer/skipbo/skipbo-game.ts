@@ -2,7 +2,6 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
 import { HistoryRow } from '../table/history-sheet';
 import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
-import { cardCount } from '../table/table.model';
 import { SkipboBoard, SkipboDiscard, SkipboPlay } from './skipbo-board';
 import { SkipboFinal } from './skipbo-final';
 import { SkipboService } from './skipbo.service';
@@ -65,10 +64,6 @@ export class SkipboGameView {
     computed(() => this.game()?.status ?? null),
     FINAL_DELAY_MS,
   );
-  readonly subtitle = computed(() => {
-    const game = this.game();
-    return game ? `Stapel: ${cardCount(game.draw_count)}` : null;
-  });
   readonly rules = { title: 'Skip-Bo – Regeln', rules: SKIPBO_RULES };
 
   // Im Kopf: Nachziehen anderer überdeckt sonst immer deren Ablegen davor

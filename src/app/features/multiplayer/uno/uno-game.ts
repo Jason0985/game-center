@@ -1,7 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
 import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
-import { cardCount } from '../table/table.model';
 import { UnoBoard, UnoPlay } from './uno-board';
 import { UnoFinal } from './uno-final';
 import { UnoService } from './uno.service';
@@ -65,10 +64,6 @@ export class UnoGameView {
     computed(() => this.game()?.status ?? null),
     FINAL_DELAY_MS,
   );
-  readonly subtitle = computed(() => {
-    const game = this.game();
-    return game ? `Stapel: ${cardCount(game.draw_count)}` : null;
-  });
   // Grundregeln plus die Hausregeln dieses Spiels
   readonly rules = computed(() => {
     const settings = this.game()?.settings ?? {};

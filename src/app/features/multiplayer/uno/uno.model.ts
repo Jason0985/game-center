@@ -80,7 +80,6 @@ export interface UnoGame {
   color: UnoColor | null;
   // Die letzten bis zu 3 gespielten Karten, oberste zuletzt
   discard_top: UnoCard[];
-  draw_count: number;
   pending_draw: number;
   // Der Spieler am Zug hat eine passende Karte gezogen
   drew: boolean;

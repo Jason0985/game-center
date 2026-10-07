@@ -36,7 +36,6 @@ function makeGame(overrides: Partial<SkipboGame> = {}): SkipboGame {
       ['1'],
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
     ],
-    draw_count: 80,
     winner_seat: null,
     last_events: [],
     round_log: [{ t: 'start', seat: 2, r: 0, at: '2026-09-30T12:00:00Z' }],
@@ -120,7 +119,7 @@ describe('SkipboGameView', () => {
   it('shows the table while playing and the final overview once finished', async () => {
     await render('guest', makeGame());
     expect(el().querySelector('app-skipbo-board')).not.toBeNull();
-    expect(el().textContent).toContain('Stapel: 80 Karten');
+    expect(el().textContent).not.toContain('Stapel:');
     fixture.destroy();
 
     await render('guest', makeGame({ status: 'finished', turn_seat: null, winner_seat: 1 }));

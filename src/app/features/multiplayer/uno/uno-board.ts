@@ -176,7 +176,7 @@ export class UnoBoard {
         ? 'Karte behalten, Zug beenden'
         : pending && myTurn
           ? `${cardCount(pending)} ziehen`
-          : `Karte ziehen, ${game.draw_count} im Stapel`,
+          : 'Karte ziehen',
     };
   });
   readonly discard = computed(() => {

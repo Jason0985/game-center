@@ -8,7 +8,7 @@ import { SkipboCard, SkipboGame, SkipboPlayer, SkipboSource } from './skipbo.mod
 
 // Genau die Felder von SkipboGame; die eigene Hand kommt per RLS nur für mich mit
 const GAME_COLUMNS =
-  'id, status, seat_count, dealer_seat, turn_seat, turn_no, build_piles, draw_count, winner_seat,' +
+  'id, status, seat_count, dealer_seat, turn_seat, turn_no, build_piles, winner_seat,' +
   ' last_events, round_log, waiting_since,' +
   ' skipbo_players(user_id, seat, state, stock_count, stock_top, hand_count, discards),' +
   ' skipbo_hands(cards)';
