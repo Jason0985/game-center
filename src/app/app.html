@@ -47,18 +47,16 @@
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
     </a>
-    <!-- Multiplayer nur eingeloggt (wie roleGuard() und can_use_multiplayer) -->
-    @if (session.isLoggedIn()) {
-      <a
-        class="bottom-nav-link"
-        routerLink="/multiplayer"
-        routerLinkActive="active"
-        ariaCurrentWhenActive="page"
-      >
-        <mat-icon aria-hidden="true">groups</mat-icon>
-        <span>Multiplayer</span>
-      </a>
-    }
+    <!-- Für alle: Ohne Konto tritt man dort als Gast mit dem Lobby-Code bei -->
+    <a
+      class="bottom-nav-link"
+      routerLink="/multiplayer"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+    >
+      <mat-icon aria-hidden="true">groups</mat-icon>
+      <span>Multiplayer</span>
+    </a>
     <a
       class="bottom-nav-link"
       routerLink="/collection"

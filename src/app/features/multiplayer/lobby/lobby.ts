@@ -10,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
+import { appUrl } from '../../../app-url';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import {
   canStartLobby,
@@ -61,8 +62,9 @@ export class Lobby {
   readonly loading = signal(true);
   readonly busy = signal(false);
 
-  // Nur die ID: Beim Token-Refresh kommt ein neues User-Objekt, das soll nicht neu abonnieren
-  readonly userId = computed(() => this.session.user()?.id ?? null);
+  // Nur die ID: Beim Token-Refresh kommt ein neues User-Objekt, das soll nicht neu abonnieren.
+  // authUser, weil auch Gäste (Beitritt per Code ohne Konto) in Lobbys sind
+  readonly userId = computed(() => this.session.authUser()?.id ?? null);
   readonly members = computed(() => this.lobby()?.members ?? []);
   readonly code = computed(() => this.lobby()?.code ?? null);
   readonly isHost = computed(() => {
@@ -112,6 +114,21 @@ export class Lobby {
     } catch (error) {
       console.error('Code konnte nicht kopiert werden.', error);
       this.appErrors.report('Der Code konnte nicht kopiert werden.');
+    }
+  }
+
+  // Link zur Multiplayer-Seite mit vorausgefülltem Code; ohne Konto tritt man darüber als Gast bei
+  async copyLink(): Promise<void> {
+    const code = this.code();
+    if (!code) return;
+
+    const link = appUrl(`multiplayer?code=${code}`);
+    try {
+      await navigator.clipboard.writeText(link);
+      this.toastService.success('Link kopiert');
+    } catch (error) {
+      console.error('Link konnte nicht kopiert werden.', error);
+      this.appErrors.report('Der Link konnte nicht kopiert werden.');
     }
   }
 

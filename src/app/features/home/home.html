@@ -28,18 +28,18 @@
     <section class="ui-section" aria-labelledby="home-actions-title">
       <h2 id="home-actions-title" class="ui-section-title">Schnellstart</h2>
       <div class="ui-group ui-group--icons">
-        @if (session.isLoggedIn()) {
-          <a class="ui-row" routerLink="/multiplayer">
-            <span class="ui-row-icon" style="--tile: var(--tile-pink)">
-              <mat-icon aria-hidden="true">groups</mat-icon>
-            </span>
-            <span class="ui-row-text">
-              <span class="ui-row-title">Online spielen</span>
-              <span class="ui-row-sub">Lobby eröffnen oder beitreten</span>
-            </span>
-            <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
-          </a>
-        }
+        <a class="ui-row" routerLink="/multiplayer">
+          <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+            <mat-icon aria-hidden="true">groups</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Online spielen</span>
+            <span class="ui-row-sub">{{
+              session.isLoggedIn() ? 'Lobby eröffnen oder beitreten' : 'Mit Lobby-Code beitreten'
+            }}</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+        </a>
         <a class="ui-row" routerLink="/ranking">
           <span class="ui-row-icon" style="--tile: var(--tile-blue)">
             <mat-icon aria-hidden="true">leaderboard</mat-icon>

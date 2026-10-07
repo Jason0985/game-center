@@ -7,27 +7,49 @@
     <header class="auth-header">
       <img class="auth-logo" src="icons/app-icon.svg" alt="" aria-hidden="true" />
       <h1 class="auth-title">
-        {{ mode === 'login' ? 'Willkommen zurück' : 'Konto erstellen' }}
+        @switch (mode()) {
+          @case ('login') {
+            Willkommen zurück
+          }
+          @case ('register') {
+            Konto erstellen
+          }
+          @case ('forgot') {
+            Passwort vergessen
+          }
+        }
       </h1>
       <p class="ui-page-lead">
-        {{
-          mode === 'login'
-            ? 'Melde dich an, um deine Spielstände zu verwalten.'
-            : 'Speichere Profile, Spielstände und spiele mit Freunden.'
-        }}
+        @switch (mode()) {
+          @case ('login') {
+            Melde dich an, um deine Spielstände zu verwalten.
+          }
+          @case ('register') {
+            Speichere Profile, Spielstände und spiele mit Freunden.
+          }
+          @case ('forgot') {
+            Wir schicken dir einen Link, mit dem du ein neues Passwort setzt.
+          }
+        }
       </p>
     </header>
 
-    <div class="ui-segmented" role="group" aria-label="Anmelden oder registrieren">
-      <button type="button" [attr.aria-pressed]="mode === 'login'" (click)="setMode('login')">
-        Anmelden
-      </button>
-      <button type="button" [attr.aria-pressed]="mode === 'register'" (click)="setMode('register')">
-        Registrieren
-      </button>
-    </div>
+    @if (mode() !== 'forgot') {
+      <div class="ui-segmented" role="group" aria-label="Anmelden oder registrieren">
+        <button type="button" [attr.aria-pressed]="mode() === 'login'" (click)="setMode('login')">
+          Anmelden
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="mode() === 'register'"
+          (click)="setMode('register')"
+        >
+          Registrieren
+        </button>
+      </div>
+    }
 
-    @if (mode === 'login') {
+    @if (mode() === 'login') {
       <form class="ui-group auth-card" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
         <mat-form-field appearance="outline">
           <mat-label>E-Mail-Adresse</mat-label>
@@ -53,10 +75,35 @@
           }
         </mat-form-field>
 
-        <button class="ui-btn auth-submit" type="submit" [disabled]="loading">
-          {{ loading ? 'Anmeldung läuft …' : 'Anmelden' }}
+        <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Anmeldung läuft …' : 'Anmelden' }}
+        </button>
+        <button type="button" class="auth-link" (click)="forgotPassword()">
+          Passwort vergessen?
         </button>
       </form>
+    } @else if (mode() === 'forgot') {
+      @if (!resetSent()) {
+        <form class="ui-group auth-card" [formGroup]="resetForm" (ngSubmit)="submitReset()">
+          <mat-form-field appearance="outline">
+            <mat-label>E-Mail-Adresse</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (resetForm.controls.email.hasError('required')) {
+              <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
+            }
+            @if (resetForm.controls.email.hasError('email')) {
+              <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
+            }
+          </mat-form-field>
+
+          <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+            {{ loading() ? 'Wird gesendet …' : 'Link senden' }}
+          </button>
+        </form>
+      }
+      <button type="button" class="auth-link" (click)="setMode('login')">
+        Zurück zur Anmeldung
+      </button>
     } @else {
       <form class="ui-group auth-card" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
         <mat-form-field appearance="outline">
@@ -119,18 +166,18 @@
           }
         </mat-form-field>
 
-        <button class="ui-btn auth-submit" type="submit" [disabled]="loading">
-          {{ loading ? 'Konto wird erstellt …' : 'Konto erstellen' }}
+        <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Konto wird erstellt …' : 'Konto erstellen' }}
         </button>
       </form>
     }
 
-    @if (errorMessage) {
-      <p class="auth-message error" role="alert">{{ errorMessage }}</p>
+    @if (errorMessage()) {
+      <p class="auth-message error" role="alert">{{ errorMessage() }}</p>
     }
 
-    @if (successMessage) {
-      <p class="auth-message success" role="status">{{ successMessage }}</p>
+    @if (successMessage()) {
+      <p class="auth-message success" role="status">{{ successMessage() }}</p>
     }
   </div>
 </div>

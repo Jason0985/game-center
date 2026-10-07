@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from './role-guard';
+import { lobbyGuard, roleGuard } from './role-guard';
 import { rankingResumeGuard } from './features/ranking/ranking-resume-guard';
 
 export const routes: Routes = [
@@ -42,15 +42,15 @@ export const routes: Routes = [
         (module) => module.ArrivalPlanner,
       ),
   },
+  // Ohne Guard: Ohne Konto kann man dort als Gast mit dem Lobby-Code beitreten
   {
     path: 'multiplayer',
-    canActivate: [roleGuard()],
     loadComponent: () =>
       import('./features/multiplayer/multiplayer').then((module) => module.Multiplayer),
   },
   {
     path: 'multiplayer/:lobbyId',
-    canActivate: [roleGuard()],
+    canActivate: [lobbyGuard],
     loadComponent: () =>
       import('./features/multiplayer/lobby/lobby').then((module) => module.Lobby),
   },
@@ -81,6 +81,12 @@ export const routes: Routes = [
   {
     path: 'profile/auth',
     loadComponent: () => import('./features/auth/auth').then((module) => module.Auth),
+  },
+  // Ziel des Links aus der Mail „Passwort zurücksetzen“ (redirectTo); ohne Guard, die Seite prüft selbst
+  {
+    path: 'profile/password',
+    loadComponent: () =>
+      import('./features/auth/password-reset').then((module) => module.PasswordReset),
   },
   {
     path: 'settings',

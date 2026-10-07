@@ -1,11 +1,21 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { SessionService } from '../../services/session.service';
+import { AuthService } from '../../services/auth.service';
+import { describeAuthError } from '../../services/supabase-errors';
 import { AppErrorService } from '../../services/app-error.service';
+import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-dialog';
 import { MultiplayerLobbyService } from './multiplayer-lobby.service';
 import { gameLabel, LOBBY_MAX_MEMBERS, LobbySummary } from './lobby.model';
 import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
+
+// Wie profiles_display_name_len in der DB
+const GUEST_NAME_MAX_LENGTH = 50;
+
+const normalizeCode = (value: string): string => value.toUpperCase().replace(/\s/g, '').slice(0, 6);
 
 @Component({
   selector: 'app-multiplayer',
@@ -18,6 +28,8 @@ export class Multiplayer {
   private readonly lobbyService = inject(MultiplayerLobbyService);
   private readonly appErrors = inject(AppErrorService);
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
   readonly maxMembers = LOBBY_MAX_MEMBERS;
   readonly gameLabel = gameLabel;
   readonly lobbies = signal<LobbySummary[]>([]);
@@ -29,8 +41,16 @@ export class Multiplayer {
   // Karte, in der gerade das Code-Feld offen ist
   readonly joiningLobbyId = signal<string | null>(null);
   readonly joinCode = signal('');
-  // Nur die ID: Beim Token-Refresh kommt ein neues User-Objekt, das soll nicht neu abonnieren
-  private readonly userId = computed(() => this.session.user()?.id ?? null);
+  // Beitritt nur mit dem Code; ohne Konto der einzige Weg (dann als Gast mit Anzeigename).
+  // Vorbelegt über den Link aus der Lobby (?code=…)
+  readonly directCode = signal(
+    normalizeCode(inject(ActivatedRoute).snapshot.queryParamMap.get('code') ?? ''),
+  );
+  readonly guestName = signal('');
+  readonly guestNameMaxLength = GUEST_NAME_MAX_LENGTH;
+  // Nur die ID: Beim Token-Refresh kommt ein neues User-Objekt, das soll nicht neu abonnieren.
+  // authUser, damit auch Gäste ihre Lobby wiederfinden
+  private readonly userId = computed(() => this.session.authUser()?.id ?? null);
 
   constructor() {
     effect((onCleanup) => {
@@ -40,6 +60,7 @@ export class Multiplayer {
 
       const userId = this.userId();
       if (!userId) {
+        this.myLobbyId.set(null);
         this.loading.set(false);
         return;
       }
@@ -78,8 +99,74 @@ export class Multiplayer {
 
   onCodeInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    input.value = input.value.toUpperCase().replace(/\s/g, '');
+    input.value = normalizeCode(input.value);
     this.joinCode.set(input.value);
+  }
+
+  onDirectCodeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = normalizeCode(input.value);
+    this.directCode.set(input.value);
+  }
+
+  // Ohne Sitzung wird vorher ein temporärer Gast mit dem gewählten Anzeigenamen angelegt
+  async joinByCode(event: Event): Promise<void> {
+    event.preventDefault();
+    const code = this.directCode();
+    const name = this.guestName().trim();
+    const needsGuest = !this.session.hasSession();
+    if (this.busy() || code.length < 6 || (needsGuest && !name)) {
+      return;
+    }
+
+    this.startAction();
+    if (needsGuest) {
+      const { error } = await this.authService.signInAsGuest(name);
+      if (error) {
+        console.error('Gast-Anmeldung fehlgeschlagen.', error);
+        this.busy.set(false);
+        this.fail(describeAuthError(error));
+        return;
+      }
+    }
+
+    const result = await this.lobbyService.joinLobbyByCode(code);
+    this.busy.set(false);
+
+    if (result.ok) {
+      void this.router.navigate(['/multiplayer', result.value]);
+    } else {
+      this.fail(result.message);
+    }
+  }
+
+  // Löscht den Gast samt Lobby-Platz; danach ist man wieder ohne Sitzung
+  async endGuestSession(): Promise<void> {
+    if (this.busy()) {
+      return;
+    }
+
+    if (
+      this.myLobbyId() &&
+      !(await this.confirm({
+        title: 'Gastsitzung beenden?',
+        message: 'Du verlässt damit auch deine Lobby und ein laufendes Spiel.',
+        confirmLabel: 'Beenden',
+        icon: 'logout',
+      }))
+    ) {
+      return;
+    }
+
+    this.startAction();
+    const ok = await this.authService.endGuestSession();
+    this.busy.set(false);
+
+    if (ok) {
+      this.guestName.set('');
+    } else {
+      this.fail('Die Gastsitzung konnte nicht beendet werden. Bitte versuche es erneut.');
+    }
   }
 
   async joinLobby(event: Event, lobby: LobbySummary): Promise<void> {
@@ -110,6 +197,14 @@ export class Multiplayer {
     this.appErrors.report(message, { title: 'Multiplayer' });
   }
 
+  private async confirm(data: ConfirmationDialogData): Promise<boolean> {
+    const dialogRef = this.dialog.open<ConfirmationDialog, ConfirmationDialogData, boolean>(
+      ConfirmationDialog,
+      { data },
+    );
+    return (await firstValueFrom(dialogRef.afterClosed())) === true;
+  }
+
   private startAction(): void {
     this.busy.set(true);
     this.errorMessage.set('');
@@ -117,7 +212,11 @@ export class Multiplayer {
 
   private async refresh(userId: string): Promise<void> {
     const [lobbies, myLobbyId] = await Promise.all([
-      this.lobbyService.listOpenLobbies(),
+      // Gäste sehen die Liste nicht (per RLS ohnehin nur die eigene Lobby): spart Lobbys + Profile.
+      // untracked, weil refresh im Effect startet und dort nicht neu abonnieren soll
+      untracked(this.session.isLoggedIn)
+        ? this.lobbyService.listOpenLobbies()
+        : Promise.resolve([]),
       this.lobbyService.findMyLobbyId(userId),
     ]);
     this.loading.set(false);

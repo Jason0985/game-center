@@ -17,6 +17,7 @@ function relation(
     username: id,
     display_name: displayName,
     roles,
+    is_guest: false,
     created_at: '2026-09-30T12:00:00Z',
   };
   return { friendshipId: `f-${id}`, profile, status, outgoing: false };

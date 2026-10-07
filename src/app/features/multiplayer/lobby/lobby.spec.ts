@@ -21,7 +21,7 @@ function member(userId: string, ready = false): LobbyMember {
     ready,
     joined_at: '2026-09-30T12:00:00Z',
     name: userId,
-    profile: { id: userId, username: userId, display_name: null },
+    profile: { id: userId, username: userId, display_name: null, is_guest: false },
   };
 }
 
@@ -109,7 +109,7 @@ describe('Lobby', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ lobbyId: 'lobby-1' }) } },
         },
-        { provide: SessionService, useValue: { user } },
+        { provide: SessionService, useValue: { authUser: user } },
         { provide: MultiplayerLobbyService, useValue: lobbyService },
         { provide: Flip7Service, useValue: flip7 },
         { provide: SkipboService, useValue: skipbo },

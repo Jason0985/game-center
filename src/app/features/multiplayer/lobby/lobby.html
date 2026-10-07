@@ -64,6 +64,15 @@
           >
             <mat-icon aria-hidden="true">content_copy</mat-icon>
           </button>
+          <button
+            type="button"
+            class="ui-icon-button ui-icon-button--accent"
+            aria-label="Beitritts-Link kopieren"
+            matTooltip="Link kopieren – auch ohne Konto als Gast nutzbar"
+            (click)="copyLink()"
+          >
+            <mat-icon aria-hidden="true">link</mat-icon>
+          </button>
         </section>
       }
 
@@ -108,7 +117,9 @@
                     [attr.aria-label]="member.ready ? 'Bereit' : 'Nicht bereit'"
                   ></span>
                   {{ member.ready ? 'Bereit' : 'Wartet' }}
-                  @if (member.profile) {
+                  @if (member.profile?.is_guest) {
+                    · Gast
+                  } @else if (member.profile) {
                     · &#64;{{ member.profile.username }}
                   }
                 </span>

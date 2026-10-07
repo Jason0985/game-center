@@ -6,5 +6,7 @@ export interface Profile {
   username: string;
   display_name: string | null;
   roles: ProfileRole[];
+  // Temporärer Gast aus dem Lobby-Beitritt per Code
+  is_guest: boolean;
   created_at: string;
 }

@@ -3,7 +3,7 @@
 <form mat-dialog-content class="dialog-form" (submit)="$event.preventDefault(); save()">
   <mat-form-field appearance="outline">
     <mat-label>Anzeigename</mat-label>
-    <input matInput [formControl]="control" maxlength="50" autocomplete="name" autofocus />
+    <input matInput [formControl]="control" maxlength="50" autocomplete="name" cdkFocusInitial />
     @if (control.hasError('required')) {
       <mat-error>Bitte gib einen Anzeigenamen ein.</mat-error>
     }

@@ -21,3 +21,13 @@ export function roleGuard(...roles: ProfileRole[]): CanActivateFn {
     );
   };
 }
+
+// Lobbys auch für Gäste (anonyme Sitzung über den Lobby-Code), sonst zurück zum Beitreten
+export const lobbyGuard: CanActivateFn = async () => {
+  const session = inject(SessionService);
+  const router = inject(Router);
+
+  await firstValueFrom(toObservable(session.initialized).pipe(filter(Boolean)));
+
+  return session.hasSession() || router.parseUrl('/multiplayer');
+};

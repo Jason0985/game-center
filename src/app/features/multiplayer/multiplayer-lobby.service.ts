@@ -152,6 +152,14 @@ export class MultiplayerLobbyService {
     return error ? lobbyFailure('Lobby-Beitritt fehlgeschlagen.', error) : { ok: true };
   }
 
+  // Nur mit dem Code, ohne die Lobby vorher auszuwählen (auch für Gäste); value = Lobby-ID
+  async joinLobbyByCode(code: string): Promise<LobbyResult<string>> {
+    const { data, error } = await supabase.rpc('join_lobby_by_code', { p_code: code });
+    return error
+      ? lobbyFailure('Lobby-Beitritt fehlgeschlagen.', error)
+      : { ok: true, value: data as string };
+  }
+
   async inviteFriend(lobbyId: string, userId: string): Promise<ActionResult> {
     const { error } = await supabase.rpc('invite_to_lobby', {
       p_lobby_id: lobbyId,
@@ -229,7 +237,7 @@ export class MultiplayerLobbyService {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, display_name')
+      .select('id, username, display_name, is_guest')
       .in('id', uniqueIds);
     if (error) {
       console.error('Profile konnten nicht geladen werden.', error);

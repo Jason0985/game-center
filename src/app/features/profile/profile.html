@@ -12,7 +12,14 @@
           </span>
           <span class="ui-row-text">
             <span class="ui-row-title profile-name">Nicht angemeldet</span>
-            <span class="ui-row-sub">Speichere Profile, Spielstände und spiele mit Freunden.</span>
+            <span class="ui-row-sub">
+              @if (session.isGuest()) {
+                Du spielst gerade als Gast „{{ session.displayName() }}“. Mit dem Anmelden endet die
+                Gastsitzung.
+              } @else {
+                Speichere Profile, Spielstände und spiele mit Freunden.
+              }
+            </span>
           </span>
         </div>
       </div>

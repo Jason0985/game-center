@@ -100,3 +100,30 @@
 .lobby-join-form .ui-pill-btn {
   min-height: 40px;
 }
+
+.code-join-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 12px 14px 16px;
+}
+
+.code-join-form .ui-pill-btn {
+  min-height: 40px;
+}
+
+// Name in normaler Schrift, nicht wie der Code gesperrt und in Großbuchstaben
+.lobby-name-field input {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.guest-session {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+}

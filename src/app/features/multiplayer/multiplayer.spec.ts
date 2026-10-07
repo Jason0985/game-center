@@ -1,8 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { SessionService } from '../../services/session.service';
+import { AuthService } from '../../services/auth.service';
 import { AppErrorService } from '../../services/app-error.service';
 import { Multiplayer } from './multiplayer';
 import { MultiplayerLobbyService } from './multiplayer-lobby.service';
@@ -13,13 +16,20 @@ describe('Multiplayer', () => {
   let fixture: ComponentFixture<Multiplayer>;
   let router: Router;
   let appErrors: { report: ReturnType<typeof vi.fn> };
+  let dialog: { open: ReturnType<typeof vi.fn> };
   let lobbyService: {
     listOpenLobbies: ReturnType<typeof vi.fn>;
     findMyLobbyId: ReturnType<typeof vi.fn>;
     subscribeToChanges: ReturnType<typeof vi.fn>;
     createLobby: ReturnType<typeof vi.fn>;
     joinLobby: ReturnType<typeof vi.fn>;
+    joinLobbyByCode: ReturnType<typeof vi.fn>;
   };
+  let authService: {
+    signInAsGuest: ReturnType<typeof vi.fn>;
+    endGuestSession: ReturnType<typeof vi.fn>;
+  };
+  let authUser: ReturnType<typeof signal<{ id: string; is_anonymous?: boolean } | null>>;
 
   const lobby: LobbySummary = {
     id: 'lobby-1',
@@ -46,8 +56,15 @@ describe('Multiplayer', () => {
       subscribeToChanges: vi.fn().mockReturnValue(() => {}),
       createLobby: vi.fn(),
       joinLobby: vi.fn(),
+      joinLobbyByCode: vi.fn(),
+    };
+    authService = {
+      signInAsGuest: vi.fn().mockResolvedValue({ error: null }),
+      endGuestSession: vi.fn().mockResolvedValue(true),
     };
     appErrors = { report: vi.fn() };
+    dialog = { open: vi.fn(() => ({ afterClosed: () => of(true) })) };
+    authUser = signal<{ id: string; is_anonymous?: boolean } | null>({ id: 'guest-user' });
 
     await TestBed.configureTestingModule({
       imports: [Multiplayer],
@@ -57,12 +74,17 @@ describe('Multiplayer', () => {
           provide: SessionService,
           useValue: {
             initialized: signal(true),
-            user: signal({ id: 'guest-user' }),
-            isLoggedIn: signal(true),
+            authUser,
+            hasSession: computed(() => authUser() !== null),
+            isGuest: computed(() => authUser()?.is_anonymous === true),
+            isLoggedIn: computed(() => !!authUser() && !authUser()?.is_anonymous),
+            displayName: signal('Alex'),
           },
         },
+        { provide: AuthService, useValue: authService },
         { provide: MultiplayerLobbyService, useValue: lobbyService },
         { provide: AppErrorService, useValue: appErrors },
+        { provide: MatDialog, useValue: dialog },
       ],
     }).compileComponents();
 
@@ -145,5 +167,139 @@ describe('Multiplayer', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Lobby eröffnen');
+  });
+
+  it('joins with just the code', async () => {
+    await render();
+    lobbyService.joinLobbyByCode.mockResolvedValue({ ok: true, value: 'lobby-3' });
+
+    component.directCode.set('ABC234');
+    await component.joinByCode(new Event('submit'));
+
+    expect(authService.signInAsGuest).not.toHaveBeenCalled();
+    expect(lobbyService.joinLobbyByCode).toHaveBeenCalledWith('ABC234');
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-3']);
+  });
+
+  it('signs in as guest with the chosen name before joining without an account', async () => {
+    authUser.set(null);
+    await render();
+    lobbyService.joinLobbyByCode.mockResolvedValue({ ok: true, value: 'lobby-3' });
+
+    component.directCode.set('ABC234');
+    component.guestName.set('  Alex ');
+    await component.joinByCode(new Event('submit'));
+
+    expect(authService.signInAsGuest).toHaveBeenCalledWith('Alex');
+    expect(lobbyService.joinLobbyByCode).toHaveBeenCalledWith('ABC234');
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-3']);
+  });
+
+  it('needs a display name to join without an account', async () => {
+    authUser.set(null);
+    await render();
+
+    component.directCode.set('ABC234');
+    await component.joinByCode(new Event('submit'));
+
+    expect(authService.signInAsGuest).not.toHaveBeenCalled();
+    expect(lobbyService.joinLobbyByCode).not.toHaveBeenCalled();
+  });
+
+  it('does not join when the guest sign-in fails', async () => {
+    authUser.set(null);
+    await render();
+    authService.signInAsGuest.mockResolvedValue({
+      error: { message: 'Anonymous sign-ins are disabled' },
+    });
+
+    component.directCode.set('ABC234');
+    component.guestName.set('Alex');
+    await component.joinByCode(new Event('submit'));
+
+    expect(lobbyService.joinLobbyByCode).not.toHaveBeenCalled();
+    expect(component.errorMessage()).not.toBe('');
+  });
+
+  it('describes a disabled guest access in German', async () => {
+    authUser.set(null);
+    await render();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    authService.signInAsGuest.mockResolvedValue({
+      error: { code: 'anonymous_provider_disabled', message: 'Anonymous sign-ins are disabled' },
+    });
+
+    component.directCode.set('ABC234');
+    component.guestName.set('Alex');
+    await component.joinByCode(new Event('submit'));
+
+    expect(component.errorMessage()).toBe('Der Gastzugang ist gerade nicht verfügbar.');
+  });
+
+  it('ends the guest session without asking outside a lobby', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render();
+    component.guestName.set('Alex');
+
+    await component.endGuestSession();
+
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(authService.endGuestSession).toHaveBeenCalled();
+    expect(component.guestName()).toBe('');
+  });
+
+  it('keeps the guest and shows an error when ending the session fails', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render();
+    authService.endGuestSession.mockResolvedValue(false);
+    component.guestName.set('Alex');
+
+    await component.endGuestSession();
+
+    expect(component.errorMessage()).toBe(
+      'Die Gastsitzung konnte nicht beendet werden. Bitte versuche es erneut.',
+    );
+    expect(component.guestName()).toBe('Alex');
+  });
+
+  it('asks before ending the guest session inside a lobby', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render('lobby-1');
+
+    await component.endGuestSession();
+
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+    expect(authService.endGuestSession).toHaveBeenCalled();
+  });
+
+  it('keeps the guest session when the question is cancelled', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render('lobby-1');
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of(false) });
+
+    await component.endGuestSession();
+
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+    expect(authService.endGuestSession).not.toHaveBeenCalled();
+  });
+
+  it('hides creating and the lobby list for guests', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).not.toContain('Lobby eröffnen');
+    expect(text).not.toContain('Offene Lobbys');
+    expect(text).toContain('Du spielst als Gast');
+  });
+
+  it('loads only the own lobby for guests, not the list of open lobbies', async () => {
+    authUser.set({ id: 'guest-user', is_anonymous: true });
+    await render('lobby-1');
+
+    expect(lobbyService.findMyLobbyId).toHaveBeenCalledWith('guest-user');
+    expect(lobbyService.listOpenLobbies).not.toHaveBeenCalled();
+    expect(component.myLobbyId()).toBe('lobby-1');
   });
 });

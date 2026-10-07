@@ -17,7 +17,7 @@ export const LOBBY_MAX_MEMBERS = 8;
 export const LOBBY_MIN_MEMBERS = 2;
 
 // Nur die Profilfelder, die die Lobby anzeigt
-export type LobbyProfile = Pick<Profile, 'id' | 'username' | 'display_name'>;
+export type LobbyProfile = Pick<Profile, 'id' | 'username' | 'display_name' | 'is_guest'>;
 
 export interface LobbySummary {
   id: string;
