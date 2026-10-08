@@ -1,0 +1,1 @@
+var e={name:`[Jason Brodt]`,street:`[Straße und Hausnummer]`,city:`[PLZ und Ort]`,email:`[E-Mail-Adresse]`,supabaseRegion:`[Region, z. B. Frankfurt (eu-central-1)]`,mailProvider:`Supabase (integrierter E-Mail-Versand)`,updated:`Oktober 2026`,repositoryUrl:`https://github.com/Jason0985/game-center`};export{e as t};
