@@ -1287,6 +1287,18 @@ button.ui-row:active {
   content: '';
 }
 
+.ui-switch::after {
+  transition: translate 120ms ease;
+}
+
+.ui-switch--on {
+  background: var(--color-success-light);
+}
+
+.ui-switch--on::after {
+  translate: 20px 0;
+}
+
 .ui-switch--disabled {
   opacity: 0.5;
 }

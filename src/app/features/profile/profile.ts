@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
+import { PushService } from '../../services/push.service';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
 import { ToastService } from '../../services/toast.service';
 import { AppErrorService } from '../../services/app-error.service';
@@ -46,6 +47,7 @@ const LEGAL_LINKS = [
 })
 export class Profile {
   private readonly authService = inject(AuthService);
+  private readonly push = inject(PushService);
   private readonly friendsService = inject(FriendsService);
   private readonly resultsService = inject(GameResultsService);
   private readonly dialog = inject(MatDialog);
@@ -89,6 +91,8 @@ export class Profile {
   }
 
   async logout(): Promise<void> {
+    // Vor dem Abmelden, danach darf die App die Zeile nicht mehr löschen (RLS)
+    await this.push.disable();
     await this.authService.logout();
   }
 

@@ -9,6 +9,7 @@ import { AppErrorService } from './services/app-error.service';
 import { ToastHost } from './toast-host';
 import { ThemeService } from './services/theme.service';
 import { SessionService } from './services/session.service';
+import { PushService } from './services/push.service';
 
 @Component({
   selector: 'app-root',
@@ -38,5 +39,7 @@ export class App {
     inject(AppErrorService);
     // Gespeichertes Farbschema anwenden
     inject(ThemeService);
+    // Gerät für Push-Nachrichten dem angemeldeten Konto zuordnen
+    inject(PushService);
   }
 }
