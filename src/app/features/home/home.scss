@@ -1,0 +1,46 @@
+// Hinweis zum Installieren (nur im Browser)
+.install-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.install-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-card-button {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.install-card-guide {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.install-card-guide summary {
+  min-height: 32px;
+  color: var(--color-primary-light);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.install-card-guide p {
+  margin: 6px 0 0;
+}
+
+.install-card-note {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.install-inline-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  vertical-align: -3px;
+}

@@ -10,6 +10,7 @@ import { ToastHost } from './toast-host';
 import { ThemeService } from './services/theme.service';
 import { SessionService } from './services/session.service';
 import { PushService } from './services/push.service';
+import { PwaService } from './services/pwa.service';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,7 @@ import { PushService } from './services/push.service';
 export class App {
   readonly notifications = inject(NotificationsService);
   readonly session = inject(SessionService);
+  readonly pwa = inject(PwaService);
   private readonly router = inject(Router);
 
   private readonly url = toSignal(

@@ -57,6 +57,8 @@ Deno.serve(async (request) => {
       title: body.title,
       body: body.message ?? '',
       icon: 'icons/icon-192.png',
+      // Android-Statusleiste: weiße Silhouette (scripts/make-badge.mjs)
+      badge: 'icons/badge-96.png',
       lang: 'de',
       data: {
         onActionClick: {

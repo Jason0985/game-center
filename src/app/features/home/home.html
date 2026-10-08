@@ -9,6 +9,55 @@
       </p>
       <h1 class="ui-large-title">Home</h1>
     </header>
+    <!-- Nur im Browser (Laptop oder Handy), nicht in der installierten App -->
+    @if (!pwa.standalone()) {
+      <section class="ui-group install-card" aria-labelledby="install-title">
+        <div class="install-card-head">
+          <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+            <mat-icon aria-hidden="true">install_mobile</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span id="install-title" class="ui-row-title">Game Center als App</span>
+            <span class="ui-row-sub">
+              Eigenes Icon, Vollbild und Push-Nachrichten – kostenlos, ohne App Store.
+            </span>
+          </span>
+        </div>
+        @if (pwa.canInstall()) {
+          <button type="button" class="ui-btn install-card-button" (click)="pwa.install()">
+            <mat-icon aria-hidden="true">download</mat-icon>App installieren
+          </button>
+        } @else {
+          <details class="install-card-guide">
+            <summary>So installierst du die App</summary>
+            @switch (pwa.installGuide) {
+              @case ('ios') {
+                <p>
+                  Tippe in Safari unten auf <strong>Teilen</strong>
+                  <mat-icon class="install-inline-icon" aria-label="Teilen-Symbol"
+                    >ios_share</mat-icon
+                  >
+                  und dann auf <strong>„Zum Home-Bildschirm“</strong>. Nur so gibt es auf dem iPhone
+                  auch Push-Nachrichten.
+                </p>
+              }
+              @case ('mac-safari') {
+                <p>Wähle in Safari oben im Menü <strong>Ablage → „Zum Dock hinzufügen“</strong>.</p>
+              }
+              @default {
+                <p>
+                  Öffne das Browsermenü <strong>⋮</strong> und wähle
+                  <strong>„App installieren“</strong> bzw.
+                  <strong>„Zum Startbildschirm hinzufügen“</strong>. Am Laptop findest du das
+                  Installieren-Symbol auch rechts in der Adressleiste.
+                </p>
+              }
+            }
+            <p class="install-card-note">Schon installiert? Öffne die App über ihr Icon.</p>
+          </details>
+        }
+      </section>
+    }
 
     <section class="ui-section" aria-labelledby="home-actions-title">
       <h2 id="home-actions-title" class="ui-section-title">Schnellstart</h2>

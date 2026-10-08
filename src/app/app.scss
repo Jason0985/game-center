@@ -163,3 +163,55 @@ main {
 .bottom-nav-link:active {
   transform: scale(0.96);
 }
+
+// Hinweise unter dem Kopf: neue Version, offline (PwaService)
+.app-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100% - 32px, var(--content-width));
+  box-sizing: border-box;
+  margin: 4px auto 8px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.app-banner > mat-icon {
+  flex: none;
+  color: var(--color-primary-light);
+}
+
+.app-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-banner-action {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-banner-action:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.app-banner--offline {
+  background: var(--color-surface-raised);
+}
+
+.app-banner--offline > mat-icon {
+  color: var(--color-warning);
+}

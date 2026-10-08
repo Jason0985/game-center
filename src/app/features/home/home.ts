@@ -2,6 +2,7 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
+import { PwaService } from '../../services/pwa.service';
 import { GameResult, GameResultsService, resultGameName } from '../profile/stats/game-stats';
 
 @Component({
@@ -13,6 +14,7 @@ import { GameResult, GameResultsService, resultGameName } from '../profile/stats
 })
 export class Home {
   readonly session = inject(SessionService);
+  readonly pwa = inject(PwaService);
   readonly greeting = greetingFor(new Date().getHours());
   readonly lastResult = signal<GameResult | null>(null);
   readonly gameName = resultGameName;
