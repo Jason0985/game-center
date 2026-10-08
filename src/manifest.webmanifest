@@ -85,5 +85,56 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/phone-home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Startseite mit Schnellstart und Statistik"
+    },
+    {
+      "src": "screenshots/phone-multiplayer.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Online spielen: mit Lobby-Code beitreten"
+    },
+    {
+      "src": "screenshots/phone-collection.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sammlung mit Spielen und Werkzeugen"
+    },
+    {
+      "src": "screenshots/phone-arrival.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ankunftsplaner: wann klingelt der Wecker?"
+    },
+    {
+      "src": "screenshots/phone-f1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "F1-Strategie mit Boxenstopp-Plan"
+    },
+    {
+      "src": "screenshots/wide-home.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Startseite am Laptop"
+    },
+    {
+      "src": "screenshots/wide-collection.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sammlung am Laptop"
+    }
   ]
 }
