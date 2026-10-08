@@ -93,6 +93,13 @@ export const routes: Routes = [
       import('./features/auth/password-reset').then((module) => module.PasswordReset),
   },
   {
+    path: 'settings/push',
+    loadComponent: () =>
+      import('./features/settings/push-settings/push-settings').then(
+        (module) => module.PushSettings,
+      ),
+  },
+  {
     path: 'settings',
     loadComponent: () => import('./features/settings/settings').then((module) => module.Settings),
   },

@@ -1,15 +1,24 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SwPush } from '@angular/service-worker';
+import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { supabase } from '../supabase.client';
 import { SessionService } from './session.service';
 import { AppErrorService } from './app-error.service';
+import { ToastService } from './toast.service';
+import { ConfirmationDialog, ConfirmationDialogData } from '../confirmation-dialog';
 import { ActionResult, describeSupabaseError } from './supabase-errors';
 
 // Öffentlicher VAPID-Schlüssel; der private liegt nur als Secret bei der Edge Function send-push
 const VAPID_PUBLIC_KEY =
   'BKAPfgFUijnHJ1ySzBEQJN3t0YxXO4xjQryBXAUtdNcv2BF3G4pXtx4sOnBlx2-nx080FQFH__s5IXAb_DEGXGE';
+
+// Pro Gerät: selbst ausgeschaltet (nie wieder automatisch an) bzw. schon einmal gefragt
+const OPT_OUT_KEY = 'push-opt-out';
+const ASKED_KEY = 'push-asked';
+// Erst nach dem Start fragen, nicht mitten ins Anmelden
+const OFFER_DELAY_MS = 3000;
 
 // unsupported: kein Service Worker/keine Notification-API (Entwicklung, iPhone ohne Installation)
 export type PushState = 'unsupported' | 'blocked' | 'off' | 'on';
@@ -22,6 +31,10 @@ export class PushService {
   private readonly swPush = inject(SwPush, { optional: true });
   private readonly session = inject(SessionService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly toasts = inject(ToastService);
+  private readonly dialog = inject(MatDialog);
+  // Konto, für das schon angeboten wurde (Abmelden schaltet aus, neues Anmelden bietet erneut an)
+  private offeredFor: string | null = null;
   private readonly subscription = toSignal(this.swPush?.subscription ?? of(null), {
     initialValue: null,
   });
@@ -37,12 +50,38 @@ export class PushService {
     return this.permission() === 'denied' ? 'blocked' : 'off';
   });
 
+  readonly hint = computed(() => {
+    if (!this.session.isLoggedIn()) return 'Nur mit Konto';
+    switch (this.state()) {
+      case 'on':
+        return 'Aktiv auf diesem Gerät';
+      case 'blocked':
+        return 'Im Browser blockiert – erlaube Benachrichtigungen für diese Seite';
+      case 'unsupported':
+        return this.isIos
+          ? 'Auf dem iPhone erst über Teilen → „Zum Home-Bildschirm“ installieren'
+          : 'Wird von diesem Browser nicht unterstützt';
+      default:
+        return 'Auch bei geschlossener App benachrichtigt werden';
+    }
+  });
+
   constructor() {
     // Einzige Stelle, die speichert: nach dem Aktivieren und bei jedem Start bzw. Kontowechsel,
     // damit das Gerät immer dem angemeldeten Konto gehört
     effect(() => {
       const subscription = this.subscription();
       if (this.session.user() && subscription) void this.save(subscription);
+    });
+
+    // Standard „an“, soweit der Browser es zulässt: Erlaubnis da → still einschalten,
+    // sonst einmal pro Gerät fragen. Wer selbst ausschaltet, bleibt aus.
+    effect(() => {
+      const userId = this.session.user()?.id;
+      if (!userId || this.state() !== 'off' || this.offeredFor === userId) return;
+      if (readFlag(OPT_OUT_KEY)) return;
+      this.offeredFor = userId;
+      setTimeout(() => untracked(() => void this.offer()), OFFER_DELAY_MS);
     });
   }
 
@@ -51,6 +90,7 @@ export class PushService {
     this.busy.set(true);
     try {
       await this.swPush.requestSubscription({ serverPublicKey: VAPID_PUBLIC_KEY });
+      writeFlag(OPT_OUT_KEY, false);
       return { ok: true };
     } catch (error) {
       console.error('Push-Nachrichten konnten nicht aktiviert werden.', error);
@@ -67,8 +107,9 @@ export class PushService {
     }
   }
 
-  // Auch beim Abmelden, damit das nächste Konto auf dem Gerät nichts vom vorherigen bekommt
-  async disable(): Promise<ActionResult> {
+  // Auch beim Abmelden, damit das nächste Konto auf dem Gerät nichts vom vorherigen bekommt.
+  // optOut: selbst ausgeschaltet, dann nicht mehr automatisch einschalten oder fragen.
+  async disable(optOut = false): Promise<ActionResult> {
     const subscription = this.subscription();
     if (!this.swPush || !subscription || this.busy()) return { ok: true };
     this.busy.set(true);
@@ -79,6 +120,7 @@ export class PushService {
         .eq('endpoint', subscription.endpoint);
       if (error) return { ok: false, message: describeSupabaseError(error) };
       await this.swPush.unsubscribe();
+      if (optOut) writeFlag(OPT_OUT_KEY, true);
       return { ok: true };
     } catch (error) {
       console.error('Push-Nachrichten konnten nicht deaktiviert werden.', error);
@@ -86,6 +128,35 @@ export class PushService {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private async offer(): Promise<void> {
+    if (!this.session.user() || this.state() !== 'off') return;
+
+    if (Notification.permission === 'granted') {
+      await this.enable();
+      return;
+    }
+    if (readFlag(ASKED_KEY)) return;
+    writeFlag(ASKED_KEY, true);
+
+    this.dialog
+      .open<ConfirmationDialog, ConfirmationDialogData, boolean>(ConfirmationDialog, {
+        data: {
+          title: 'Push-Nachrichten aktivieren?',
+          message:
+            'Dann bekommst du Einladungen und Freundschaftsanfragen aufs Handy, auch wenn die App geschlossen ist. Was ankommt, stellst du jederzeit unter Einstellungen → Push-Nachrichten ein.',
+          confirmLabel: 'Aktivieren',
+          icon: 'notifications_active',
+        },
+      })
+      .afterClosed()
+      .subscribe(async (confirmed) => {
+        if (!confirmed) return;
+        const result = await this.enable();
+        if (!result.ok) this.appErrors.report(result.message, { title: 'Push-Nachrichten' });
+        else if (this.state() === 'on') this.toasts.success('Push-Nachrichten aktiviert');
+      });
   }
 
   private async save(subscription: PushSubscription): Promise<void> {
@@ -99,5 +170,22 @@ export class PushService {
       console.error('Gerät für Push-Nachrichten konnte nicht gespeichert werden.', error);
       this.appErrors.report(describeSupabaseError(error), { title: 'Push-Nachrichten' });
     }
+  }
+}
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeFlag(key: string, value: boolean): void {
+  try {
+    if (value) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
+  } catch {
+    // Ohne Speicher wird höchstens erneut gefragt
   }
 }
