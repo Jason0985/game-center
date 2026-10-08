@@ -31,21 +31,24 @@
     <p class="user-list-message">Keine Nutzer gefunden.</p>
   } @else {
     @for (result of results(); track result.id) {
-      @let role = roleConfig(result.role);
       <div class="user-row">
         <div class="user-row-details">
           <strong>{{ result.display_name || result.username }}</strong>
           <span>&#64;{{ result.username }}</span>
         </div>
-        <span class="role-chip" [attr.data-role]="role.role">
-          <mat-icon aria-hidden="true">{{ role.icon }}</mat-icon>
-          {{ role.label }}
-        </span>
+        <div class="role-chips">
+          @for (role of roleConfigs(result.roles); track role.role) {
+            <span class="role-chip" [attr.data-role]="role.role">
+              <mat-icon aria-hidden="true">{{ role.icon }}</mat-icon>
+              {{ role.label }}
+            </span>
+          }
+        </div>
         <button
           mat-icon-button
           type="button"
-          [attr.aria-label]="'Rolle von ' + result.username + ' bearbeiten'"
-          matTooltip="Rolle bearbeiten"
+          [attr.aria-label]="'Rollen von ' + result.username + ' bearbeiten'"
+          matTooltip="Rollen bearbeiten"
           (click)="edit(result)"
         >
           <mat-icon aria-hidden="true">edit</mat-icon>

@@ -1,0 +1,72 @@
+@let w = winner();
+<section class="final" aria-labelledby="uno-final-title">
+  <div class="banner">
+    @if (w) {
+      <span class="avatar" [style.background]="winnerColor()" aria-hidden="true">{{
+        w.name.trim().charAt(0).toUpperCase() || '?'
+      }}</span>
+    }
+    <p class="kicker">Runde {{ game().round_no }} beendet</p>
+    <h2 id="uno-final-title">{{ w ? w.name + ' gewinnt!' : 'Endstand' }}</h2>
+    <p class="sub">
+      {{ w ? '+' + (w.round_points ?? 0) + ' Punkte aus den Restkarten' : 'Vorzeitig beendet' }}
+    </p>
+  </div>
+
+  <ol class="ranking">
+    @for (row of ranking(); track row.player.user_id) {
+      @let p = row.player;
+      <li
+        [class.top]="w && row.rank === 1"
+        [class.mine]="p.user_id === userId()"
+        [class.gone]="row.rank === null"
+      >
+        <span class="rank">{{ row.rank ?? '–' }}</span>
+        <span class="name">
+          <strong>{{ p.name }}</strong>
+          @if (p.user_id === userId()) {
+            <span class="note">(du)</span>
+          }
+          @if (row.rank === null) {
+            <span class="note">verlassen</span>
+          }
+        </span>
+        @if (row.rank !== null) {
+          <span class="cards">{{ p.hand_count ? cardCount(p.hand_count) : 'leer' }}</span>
+          @if (w) {
+            <span class="points"
+              ><span class="sr-only">Punkte: </span>{{ p.seat === w.seat ? '+' : ''
+              }}{{ p.round_points ?? 0 }}</span
+            >
+          }
+        }
+        @if (game().round_no > 1) {
+          <span class="total"><span class="sr-only">Gesamt: </span>{{ p.score }}</span>
+        }
+      </li>
+    }
+  </ol>
+
+  @if (isHost()) {
+    <div class="actions">
+      @if (canContinue()) {
+        <button type="button" class="back" [disabled]="busy()" (click)="nextRound.emit()">
+          <span class="material-symbols-rounded" aria-hidden="true">replay</span>
+          Nächste Runde
+        </button>
+      }
+      <button
+        type="button"
+        class="back"
+        [class.back--quiet]="canContinue()"
+        [disabled]="busy()"
+        (click)="backToLobby.emit()"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">meeting_room</span>
+        Zurück zur Warte-Lobby
+      </button>
+    </div>
+  } @else {
+    <p class="hint">Der Host entscheidet, wie es weitergeht.</p>
+  }
+</section>

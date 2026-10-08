@@ -1,0 +1,114 @@
+<h2 id="lobby-game-title">Spiel</h2>
+
+@if (selectedGame() || isHost()) {
+  <div class="game-tile" [class.game-tile--selected]="selectedGame()">
+    <mat-icon class="game-icon" aria-hidden="true">{{ selectedGame()?.icon ?? 'casino' }}</mat-icon>
+    <span class="game-copy">
+      <strong>{{ selectedGame()?.name ?? 'Noch kein Spiel' }}</strong>
+      @if (selectedGame()?.url; as url) {
+        <a [href]="url" target="_blank" rel="noopener">{{ url }}</a>
+      }
+    </span>
+    @if (isHost()) {
+      <button
+        mat-stroked-button
+        type="button"
+        class="game-switch"
+        [disabled]="disabled() || saving()"
+        (click)="openGameDialog()"
+      >
+        {{ selectedGame() ? 'Spiel wechseln' : 'Spiel wählen' }}
+      </button>
+    }
+  </div>
+} @else {
+  <p class="hint">Der Host wählt noch ein Spiel aus.</p>
+}
+
+<!-- Punkteziel und Kurzregeln gibt es nur für Flip 7 (ohne Spiel sieht der Host sie schon) -->
+@if (flip7() || (isHost() && !gameKey())) {
+  <p class="label" id="lobby-target-label">Punkteziel</p>
+  @if (isHost()) {
+    <div class="segments" role="group" aria-labelledby="lobby-target-label">
+      @for (option of targetOptions; track option) {
+        <button
+          type="button"
+          [attr.aria-pressed]="flip7() && target() === option"
+          [disabled]="disabled() || saving()"
+          (click)="selectTarget(option)"
+        >
+          {{ option }}
+        </button>
+      }
+      <button
+        type="button"
+        [attr.aria-pressed]="flip7() && target() === null"
+        [disabled]="disabled() || saving()"
+        (click)="selectTarget(null)"
+      >
+        Offen
+      </button>
+    </div>
+  } @else {
+    <p class="value">{{ target() === null ? 'Offen' : target() + ' Punkte' }}</p>
+  }
+  @if (target() === null) {
+    <p class="hint">Ohne Punkteziel – der Host beendet das Spiel.</p>
+  }
+
+  <details class="rules">
+    <summary>Kurzregeln</summary>
+    <ul>
+      <li>Wer am Zug ist, zieht eine Karte oder bleibt stehen und sichert seine Punkte.</li>
+      <li>Eine Zahl doppelt? Dann bist du raus und bekommst 0 Punkte für die Runde.</li>
+      <li>7 verschiedene Zahlen sind ein Flip 7: Die Runde endet sofort, +15 Bonus.</li>
+      <li>×2 verdoppelt die Summe deiner Zahlen, Plus-Karten kommen oben drauf.</li>
+      <li>
+        Aktionen: Einfrieren (Punkte sichern, raus), Drei ziehen und Zweite Chance (rettet einmal
+        vor einer doppelten Zahl).
+      </li>
+    </ul>
+  </details>
+}
+
+<!-- Uno: Hausregeln (der Host schaltet sie, die anderen sehen die aktiven) -->
+@if (uno()) {
+  <p class="label" id="lobby-rules-label">Hausregeln</p>
+  @if (isHost()) {
+    <div class="switches" role="group" aria-labelledby="lobby-rules-label">
+      @for (rule of houseRules; track rule.key) {
+        <button
+          type="button"
+          role="switch"
+          class="switch-row"
+          [attr.aria-checked]="unoRules()[rule.key]"
+          [disabled]="disabled() || saving()"
+          (click)="toggleHouseRule(rule.key)"
+        >
+          <span>{{ rule.label }}</span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
+      }
+    </div>
+  } @else {
+    <p class="value">
+      @for (rule of activeHouseRules(); track rule.key; let last = $last) {
+        {{ rule.label }}{{ last ? '' : ' · ' }}
+      } @empty {
+        Standardregeln
+      }
+    </p>
+  }
+
+  <details class="rules">
+    <summary>Kurzregeln</summary>
+    <ul>
+      @for (rule of unoRulesText; track $index) {
+        <li>{{ rule }}</li>
+      }
+      @for (rule of activeHouseRules(); track rule.key) {
+        <li>{{ rule.rule }}</li>
+      }
+    </ul>
+  </details>
+}

@@ -1,4 +1,11 @@
-import { ApplicationConfig, ErrorHandler, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
+import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter } from '@angular/router';
 import { isDevMode } from '@angular/core';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -11,6 +18,10 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     { provide: ErrorHandler, useClass: AppErrorHandler },
+    // Outline-Variante des bestehenden Icon-Sets (gleiche Icon-Namen)
+    provideAppInitializer(() => {
+      inject(MatIconRegistry).setDefaultFontSetClass('material-icons-outlined');
+    }),
     provideRouter(routes),
     {
       provide: MAT_DIALOG_DEFAULT_OPTIONS,

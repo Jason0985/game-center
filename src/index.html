@@ -1,25 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
   <head>
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Game Center" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta charset="utf-8" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#1c1c1e" />
     <title>Game Center</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="game-center-logo-background.png" />
-    <link rel="apple-touch-icon" href="game-center-logo-background.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script>
+      // Gespeichertes Farbschema vor dem ersten Rendern setzen (kein Aufblitzen)
+      try {
+        var theme = localStorage.getItem('game-center-theme');
+        var light =
+          theme === 'light' ||
+          (theme === 'system' && matchMedia('(prefers-color-scheme: light)').matches);
+        if (light) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+    </script>
+    <link rel="icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <!-- Icon-Schriften liegen in public/fonts, damit keine Daten an Google gehen.
+         Neues Symbol für die Spieltische: in scripts/update-icon-fonts.mjs ergänzen -->
+    <link rel="stylesheet" href="fonts/icons.css" />
   </head>
 
   <body>

@@ -5,8 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatInputModule } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { GameService } from '../game.service';
@@ -23,6 +24,8 @@ import { Player } from '../../../player.model';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatTooltipModule,
+    RouterLink,
   ],
   templateUrl: './game-setup.html',
   styleUrl: './game-setup.scss',

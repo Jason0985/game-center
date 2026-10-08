@@ -1,0 +1,59 @@
+<app-game-stage
+  gameTitle="Flip 7"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="!boardView()"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [skipName]="canSkip() ? activeName() : null"
+  [waitingClock]="waitingClock()"
+  [finished]="game()?.status === 'finished'"
+  [endHint]="game()?.status === 'playing' ? 'Laufende Runde zählt nicht' : 'Zum Endstand'"
+  [rules]="rules"
+  [hint]="hint()"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
+  (skip)="skip(game()!)"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+  (history)="openHistory()"
+>
+  @if (game(); as g) {
+    @if (g.status === 'finished') {
+      <app-flip7-final
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        (backToLobby)="backToLobby()"
+        (continueOpen)="continueOpen(g)"
+      />
+    } @else if (boardView()) {
+      <!-- Derselbe Tisch bleibt am Rundenende stehen, damit der letzte Zug noch animiert -->
+      <app-flip7-board
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy() || g.status !== 'playing'"
+        [canSkip]="canSkip()"
+        [waitingSeconds]="waitingSeconds()"
+        (hit)="hit(g)"
+        (stay)="stay(g)"
+        (choose)="choose(g, $event)"
+      />
+    } @else {
+      <app-flip7-round-summary
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        [secondsLeft]="secondsLeft()"
+        (next)="nextRound(g.id, g.round_no)"
+        (endGame)="endGame(g)"
+      />
+    }
+  }
+</app-game-stage>

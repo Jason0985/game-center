@@ -1,129 +1,127 @@
-<div class="home-root ui-page-root">
-  <header class="home-header ui-hero">
-    <p class="home-kicker">Guten Abend</p>
-    <h1 class="ui-title">Dein <span class="ui-accent">Spielbereich</span></h1>
-    <p class="ui-subtitle">Alles Wichtige für deinen nächsten Spieleabend auf einen Blick.</p>
-    <aside class="development-status" aria-labelledby="development-status-title">
-      <div class="development-status-heading">
-        <mat-icon aria-hidden="true">warning</mat-icon>
-        <h2 id="development-status-title">Aktueller Entwicklungsstand</h2>
-      </div>
-      <ul class="development-status-list">
-        <li><strong>Ranking:</strong> Wird für angemeldete Nutzer in der Datenbank gespeichert.</li>
-        <li>
-          <strong>Paddle:</strong> Läuft noch über den lokalen Speicher. Browserdaten können
-          verloren gehen.
-        </li>
-        <li>
-          <strong>Benachrichtigungen, Home, Einstellungen und einige Profilfunktionen:</strong>
-          Verwenden noch Mock-Daten und sind teilweise nicht funktionsfähig.
-        </li>
-        <li>
-          <strong>Anmeldung und Registrierung:</strong> Funktionieren. Die Freundesuche findet
-          Nutzer über Benutzer- und Anzeigenamen, das Hinzufügen funktioniert noch nicht.
-        </li>
-      </ul>
-    </aside>
-  </header>
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <p class="ui-page-kicker">
+        {{ greeting }}
+        @if (session.isLoggedIn() && session.displayName()) {
+          , {{ session.displayName() }}
+        }
+      </p>
+      <h1 class="ui-large-title">Home</h1>
+    </header>
 
-  <main class="home-content">
-    <section class="home-stats" aria-label="Deine Spielstatistik">
-      <div class="home-stat ui-surface">
-        <mat-icon aria-hidden="true">emoji_events</mat-icon>
-        <strong>-</strong>
-        <span>Spiele gewonnen</span>
+    <div class="ui-group ui-stat-row" aria-label="Deine Spielstatistik (in Planung)">
+      <div class="ui-stat">
+        <strong class="ui-stat-empty" aria-hidden="true">–</strong>
+        <span>Spieleabende</span>
       </div>
-      <div class="home-stat ui-surface">
-        <mat-icon aria-hidden="true">sports_esports</mat-icon>
-        <strong>-</strong>
-        <span>Spiele gespielt</span>
+      <div class="ui-stat">
+        <strong class="ui-stat-empty" aria-hidden="true">–</strong>
+        <span>Siege</span>
       </div>
-      <div class="home-stat ui-surface">
-        <mat-icon aria-hidden="true">trending_up</mat-icon>
-        <strong>-</strong>
+      <div class="ui-stat">
+        <strong class="ui-stat-empty" aria-hidden="true">–</strong>
         <span>Top-3-Quote</span>
       </div>
-    </section>
+    </div>
 
-    <section class="home-section" aria-labelledby="home-actions-title">
-      <div class="home-section-heading">
-        <div>
-          <p class="home-kicker">Schnellzugriff</p>
-          <h2 id="home-actions-title">Was möchtest du spielen?</h2>
-        </div>
-      </div>
-      <div class="home-actions">
-        <a class="home-action ui-surface" routerLink="/ranking">
-          <span class="home-action-icon"><mat-icon aria-hidden="true">add_circle</mat-icon></span>
-          <span>
-            <strong>Neues Ranking</strong>
-            <small>Spieler hinzufügen und loslegen</small>
+    <section class="ui-section" aria-labelledby="home-actions-title">
+      <h2 id="home-actions-title" class="ui-section-title">Schnellstart</h2>
+      <div class="ui-group ui-group--icons">
+        <a class="ui-row" routerLink="/multiplayer">
+          <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+            <mat-icon aria-hidden="true">groups</mat-icon>
           </span>
-          <mat-icon class="home-action-arrow" aria-hidden="true">chevron_right</mat-icon>
-        </a>
-        <a class="home-action ui-surface" routerLink="/collection">
-          <span class="home-action-icon home-action-icon--secondary"
-            ><mat-icon aria-hidden="true">apps</mat-icon></span
-          >
-          <span>
-            <strong>Sammlung öffnen</strong>
-            <small>Alle Spiele und Regeln ansehen</small>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Online spielen</span>
+            <span class="ui-row-sub">{{
+              session.isLoggedIn() ? 'Lobby eröffnen oder beitreten' : 'Mit Lobby-Code beitreten'
+            }}</span>
           </span>
-          <mat-icon class="home-action-arrow" aria-hidden="true">chevron_right</mat-icon>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+        </a>
+        <a class="ui-row" routerLink="/ranking">
+          <span class="ui-row-icon" style="--tile: var(--tile-blue)">
+            <mat-icon aria-hidden="true">leaderboard</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Neues Ranking</span>
+            <span class="ui-row-sub">Spieler hinzufügen und loslegen</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+        </a>
+        <a class="ui-row" routerLink="/collection">
+          <span class="ui-row-icon" style="--tile: var(--tile-green)">
+            <mat-icon aria-hidden="true">apps</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Sammlung</span>
+            <span class="ui-row-sub">Alle Spiele und Werkzeuge</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
         </a>
       </div>
     </section>
 
-    <section class="home-feature ui-surface" aria-labelledby="home-feature-title">
-      <div class="home-feature-topline">
-        <div>
-          <p class="home-kicker">Zuletzt gespielt</p>
-          <h2 id="home-feature-title">Paddle Table</h2>
+    <section class="ui-section" aria-labelledby="home-activity-title">
+      <h2 id="home-activity-title" class="ui-section-title">
+        <span>Letzte Aktivität</span>
+        <a class="ui-section-link" routerLink="/notifications">Alle</a>
+      </h2>
+      <div class="ui-group ui-group--icons">
+        <div class="ui-row">
+          <span class="ui-row-icon ui-row-icon--muted">
+            <mat-icon aria-hidden="true">history</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Letzte Runde</span>
+            <span class="ui-row-sub">Ergebnisse deiner Sessions erscheinen hier</span>
+          </span>
+          <span class="ui-soon">Bald</span>
         </div>
-        <span class="ui-badge">vor - Tagen</span>
-      </div>
-      <div class="home-feature-score">
-        <div>
-          <span class="home-score-label">Dein Ergebnis</span>
-          <strong>- <small>Punkte</small></strong>
+        <div class="ui-row">
+          <span class="ui-row-icon ui-row-icon--muted">
+            <mat-icon aria-hidden="true">insights</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Statistik &amp; Verlauf</span>
+            <span class="ui-row-sub">Siege, Spieleabende, Bestwerte</span>
+          </span>
+          <span class="ui-soon">Bald</span>
         </div>
-        <div class="home-place">- <span>von - Spielern</span></div>
       </div>
-      <a class="home-text-link" routerLink="/collection/paddle-table">
-        Spielübersicht öffnen <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-      </a>
     </section>
 
-    <section class="home-section home-activity" aria-labelledby="home-activity-title">
-      <div class="home-section-heading">
-        <div>
-          <p class="home-kicker">Verlauf</p>
-          <h2 id="home-activity-title">Letzte Aktivität</h2>
+    <section class="ui-section" aria-labelledby="home-status-title">
+      <h2 id="home-status-title" class="ui-section-title">Entwicklungsstand</h2>
+      <div class="ui-group">
+        <div class="ui-row">
+          <span class="ui-row-text">
+            <span class="ui-row-title">Bereits verfügbar</span>
+            <span class="ui-row-sub">
+              Konto &amp; Profil, Freunde, Live-Benachrichtigungen, Ranking, F1-Strategie und
+              Multiplayer (Flip 7, Skip-Bo, UNO).
+            </span>
+          </span>
         </div>
-        <a class="home-text-link" routerLink="/notifications"
-          >Alle <mat-icon aria-hidden="true">arrow_forward</mat-icon></a
-        >
-      </div>
-      <div class="home-activity-list ui-surface">
-        <div class="home-activity-item">
-          <span class="home-activity-icon"
-            ><mat-icon aria-hidden="true">military_tech</mat-icon></span
-          >
-          <span
-            ><strong>Du hast Platz 2 erreicht</strong
-            ><small>Paddle Table · vor - Tagen</small></span
-          >
+        <div class="ui-row">
+          <span class="ui-row-text">
+            <span class="ui-row-title">Nur lokal gespeichert</span>
+            <span class="ui-row-sub">
+              Paddle Tabelle und Ankunftsplaner speichern im Browser. Browserdaten können verloren
+              gehen.
+            </span>
+          </span>
         </div>
-        <div class="home-activity-item">
-          <span class="home-activity-icon home-activity-icon--quiet"
-            ><mat-icon aria-hidden="true">person_add</mat-icon></span
-          >
-          <span
-            ><strong>Neue Freundschaftsanfrage</strong
-            ><small>Alex möchte dir folgen · vor - Tagen</small></span
-          >
+        <div class="ui-row">
+          <span class="ui-row-text">
+            <span class="ui-row-title">Geplant</span>
+            <span class="ui-row-sub">
+              Sessions für Spieleabende, daraus Statistik, „Letzte Runde“ und Verlauf.
+            </span>
+          </span>
         </div>
       </div>
     </section>
-  </main>
+  </div>
 </div>

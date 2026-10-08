@@ -1,0 +1,22 @@
+@use '../table/final-base';
+
+// Skip-Bo-Spalte der Rangliste: verbleibende Spielstapel-Karten
+.left {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.left .material-symbols-rounded {
+  color: var(--color-text-muted);
+  font-size: 16px;
+  font-variation-settings: 'FILL' 1;
+}
+
+.top .left,
+.top .left .material-symbols-rounded {
+  color: var(--table-gold);
+}

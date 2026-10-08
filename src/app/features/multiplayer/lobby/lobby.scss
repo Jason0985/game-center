@@ -1,0 +1,113 @@
+// Warteraum vor dem Spiel; der Spieltisch selbst hat eigene Styles
+.lobby-block {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+}
+
+.lobby-block + .lobby-block {
+  margin-top: 24px;
+}
+
+.lobby-title {
+  font-size: 28px;
+  overflow-wrap: anywhere;
+}
+
+.lobby-back-link {
+  margin-top: 6px;
+}
+
+// Code nur für den Host
+.lobby-code-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px 10px 16px;
+}
+
+.lobby-code-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.lobby-code-label {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lobby-code {
+  display: block;
+  margin-top: 2px;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+}
+
+.lobby-settings {
+  padding: 14px 16px 16px;
+}
+
+.lobby-count {
+  font-weight: 500;
+}
+
+.lobby-member-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lobby-member {
+  padding-right: 8px;
+}
+
+.lobby-member-you {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.lobby-member-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ready-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+  transition: background-color var(--transition-fast);
+}
+
+.ready-dot--ready {
+  background: var(--color-success-light);
+}
+
+.lobby-host-badge {
+  flex: none;
+  margin-right: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lobby-kick-button:hover:not(:disabled) {
+  color: var(--color-danger-light);
+}
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

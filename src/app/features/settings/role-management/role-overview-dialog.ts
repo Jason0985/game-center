@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProfileService } from '../../../services/profile.service';
 import { SessionService } from '../../../services/session.service';
 import { Profile } from '../../profile/profile.model';
-import { PROFILE_ROLES } from '../../profile/profile-roles';
+import { PROFILE_ROLES, USER_ROLE } from '../../profile/profile-roles';
 import { openRoleEditDialog } from './role-edit-dialog';
 
 @Component({
@@ -23,13 +23,15 @@ export class RoleOverviewDialog {
   readonly loading = signal(true);
   private readonly profiles = signal<Profile[]>([]);
 
-  // Nutzer nach Rolle gruppiert, Rollen in fester Reihenfolge
-  readonly groups = computed(() =>
-    PROFILE_ROLES.map((config) => ({
+  // Nutzer nach Rolle gruppiert, Rollen in fester Reihenfolge; mit mehreren Rollen in mehreren
+  // Gruppen, "Nutzer" sind alle ohne Zusatzrolle
+  readonly groups = computed(() => [
+    ...PROFILE_ROLES.map((config) => ({
       config,
-      members: this.profiles().filter((profile) => profile.role === config.role),
+      members: this.profiles().filter((profile) => profile.roles.includes(config.role)),
     })),
-  );
+    { config: USER_ROLE, members: this.profiles().filter((profile) => !profile.roles.length) },
+  ]);
 
   constructor() {
     void this.load();

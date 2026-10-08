@@ -1,0 +1,186 @@
+@use '../table/table-base';
+@use '../table/arc-table';
+
+// Skip-Bo-Tisch (Platte in table/_arc-table.scss): Nachziehstapel und 4 Aufbaustapel in
+// der Mitte. Weitere Teile: skipbo-board-own.scss (eigener Bereich),
+// skipbo-board-places.scss (Mitspieler).
+:host {
+  // Handy: Mitte im eigenen Feld (skipbo-board-phone.scss), Breite reicht für 5 Stapel
+  --center-dir: row;
+  --center-align: flex-start;
+  --center-gap: 8px;
+  --build-w: clamp(44px, calc((100vw - 120px) / 5), 58px);
+  --build-h: round(calc(var(--build-w) * 1.414), 1px);
+  --pile-w: calc(var(--build-w) - 4px);
+  --pile-h: round(calc(var(--pile-w) * 1.414), 1px);
+  --build-gap: 8px;
+}
+
+:host([data-layout='hoch']) {
+  // Nachziehstapel über den Aufbaustapeln, damit die Reihe schmal bleibt
+  --center-dir: column;
+  --center-align: center;
+  --center-gap: 12px;
+  --pile-w: 46px;
+  --pile-h: 64px;
+  --build-w: 50px;
+  --build-h: 70px;
+  --build-gap: 9px;
+}
+
+:host([data-layout='quer']) {
+  --center-gap: 22px;
+  --pile-w: 50px;
+  --pile-h: 70px;
+  --build-w: 54px;
+  --build-h: 76px;
+  --build-gap: 12px;
+}
+
+:host([data-layout='laptop']) {
+  --center-gap: 22px;
+  --pile-w: 60px;
+  --pile-h: 84px;
+  --build-w: 64px;
+  --build-h: 90px;
+  --build-gap: 14px;
+}
+
+// Ab 5 Spielern rückt die Mitte hoch (Platz für die seitlichen Auslagen)
+:host([data-layout='laptop'][data-size='s']) {
+  --mark-y: 37.92%;
+}
+
+// Mitte: Nachziehstapel und Aufbaustapel
+.center {
+  position: absolute;
+  top: var(--mark-y);
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  flex-direction: var(--center-dir);
+  align-items: var(--center-align);
+  gap: var(--center-gap);
+  transform: translate(-50%, -50%);
+}
+
+.builds {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--build-gap);
+}
+
+.build {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.build-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.build-cards {
+  position: relative;
+  display: block;
+  width: var(--build-w);
+  height: var(--build-h);
+}
+
+.build-cards app-skipbo-card {
+  --card-w: var(--build-w);
+  --card-h: var(--build-h);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+// Kanten der Karten darunter in ihrer echten Farbe
+.builds .build-edge {
+  top: 4px;
+  left: 4px;
+  border-color: transparent;
+  box-shadow: var(--table-card-shadow);
+  opacity: 0.55;
+}
+
+.builds .build-edge--near {
+  top: 2px;
+  left: 2px;
+}
+
+.build-empty,
+.ghost-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--build-w);
+  height: var(--build-h);
+  box-sizing: border-box;
+  border-radius: max(3px, calc(var(--build-w) * 0.145));
+}
+
+// Leer: nur eine 1 oder ein Joker passt
+.build-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--table-slot-border);
+  background: var(--table-slot-bg);
+  color: #6b7280;
+  font-size: round(calc(var(--build-w) * 0.48), 1px);
+  font-weight: 800;
+}
+
+// Bei 12 voll: Goldrand (600 ms), dann gleitet der Stapel zum Rand und blendet aus
+.ghost {
+  position: absolute;
+  inset: 0;
+  animation: sb-clear-out 360ms 1000ms ease-in forwards;
+}
+
+.ghost-edge {
+  top: 4px;
+  left: 4px;
+  background: #6d5bd0;
+  box-shadow: var(--table-card-shadow);
+  opacity: 0.55;
+}
+
+.ghost-edge--near {
+  top: 2px;
+  left: 2px;
+}
+
+.ghost::after {
+  position: absolute;
+  inset: calc(var(--build-w) * -0.0625);
+  border-radius: calc(var(--build-w) * 0.19);
+  box-shadow:
+    0 0 0 2px var(--table-gold),
+    0 0 26px rgba(245, 200, 75, 0.18);
+  content: '';
+  opacity: 0;
+  animation: sb-clear-ring 600ms 400ms;
+}
+
+@keyframes sb-clear-ring {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sb-clear-out {
+  to {
+    opacity: 0;
+    transform: translate(30px, -40px) rotate(14deg);
+  }
+}

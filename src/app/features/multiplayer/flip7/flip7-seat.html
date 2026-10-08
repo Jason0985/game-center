@@ -1,0 +1,104 @@
+@let p = player();
+@if (p.state === 'flip7' && !own()) {
+  <span class="badge-flip7" aria-hidden="true">FLIP 7</span>
+}
+<span class="avatar-wrap">
+  <svg class="ring" [class.ring--pulse]="celebrate()" viewBox="0 0 48 48" aria-hidden="true">
+    @for (path of ringPaths; track $index) {
+      <path [attr.d]="path" [class.on]="$index < filled()" />
+    }
+  </svg>
+  @if (p.state === 'left') {
+    <span class="avatar avatar--left" aria-hidden="true">
+      <span class="material-symbols-rounded">event_seat</span>
+    </span>
+  } @else {
+    <span class="avatar" [style.background]="color()" aria-hidden="true">{{ initial() }}</span>
+  }
+
+  @if (p.state === 'frozen') {
+    <span class="token token--start token--freeze" role="img" aria-label="Eingefroren">
+      <span class="material-symbols-rounded">ac_unit</span>
+    </span>
+  } @else if (flip3Left() !== null) {
+    <span
+      class="token token--start token--flip3"
+      role="img"
+      [attr.aria-label]="'Flip 3, noch ' + flip3Left() + ' Karten'"
+      >3</span
+    >
+  }
+  @if (hasSc()) {
+    <span
+      class="token token--sc"
+      role="img"
+      aria-label="Second Chance"
+      (animate.leave)="breakSc($event)"
+    >
+      <span class="half half--start"
+        ><span class="material-symbols-rounded fill">favorite</span></span
+      >
+      <span class="half half--end"
+        ><span class="material-symbols-rounded fill">favorite</span></span
+      >
+    </span>
+  }
+  @if (dealer()) {
+    <span class="token token--dealer" role="img" aria-label="Geber">G</span>
+  }
+  @if (p.state === 'stayed') {
+    <span class="token token--stay" role="img" aria-label="Stehen geblieben">
+      <span class="material-symbols-rounded fill">pan_tool</span>
+    </span>
+  }
+</span>
+
+<span class="info">
+  <span class="name">
+    <span class="name-text">{{ p.name }}</span>
+    @if (variant() === 'mine') {
+      <span class="you">(du)</span>
+    }
+  </span>
+  @if (p.state === 'left') {
+    <span class="gone">hat verlassen</span>
+  } @else if (variant() !== 'tab') {
+    <span class="stats">
+      <span class="total">
+        <span class="material-symbols-rounded fill star" aria-hidden="true">star</span>
+        {{ p.total_score }}<span class="sr-only"> Punkte gesamt</span>
+      </span>
+      <span class="chip">
+        @if (p.state === 'stayed' || p.state === 'frozen') {
+          <span class="material-symbols-rounded fill" aria-hidden="true">lock</span>
+        }
+        <span
+          class="count"
+          [class.count--plus]="p.state !== 'busted'"
+          [style.--n]="points()"
+          aria-hidden="true"
+        ></span>
+        <span class="sr-only">{{ chipText() }} in dieser Runde</span>
+      </span>
+      @if (bonus()) {
+        <span class="bonus">inkl. +{{ flip7Bonus }}<span class="sr-only"> Flip-7-Bonus</span></span>
+      }
+    </span>
+  }
+</span>
+
+@if (choice(); as card) {
+  @if (own()) {
+    <span class="me-chip" aria-hidden="true">Ich</span>
+  } @else {
+    <span class="choice-label" aria-hidden="true">{{ choiceLabels[card] }}</span>
+  }
+} @else if (waiting(); as time) {
+  <span class="waiting">
+    <span class="material-symbols-rounded" aria-hidden="true">hourglass_bottom</span>
+    <span class="sr-only">wartet seit </span>{{ time }}
+  </span>
+}
+
+<!-- Kartenfächer vom Tisch (am Schildrand Richtung Tischmitte) -->
+<ng-content />

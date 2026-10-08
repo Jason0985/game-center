@@ -3,7 +3,7 @@
 }
 
 .game-setup-root .ui-title {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .add-card {
@@ -13,14 +13,6 @@
   padding: 14px 16px;
   overflow: hidden;
   background-color: var(--color-surface);
-}
-
-.add-card::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 5px;
-  content: '';
-  background: var(--gradient-accent);
 }
 
 .add-content {
@@ -45,7 +37,7 @@
   width: 36px;
   height: 36px;
   flex: 0 0 36px;
-  border-radius: 13px;
+  border-radius: 10px;
   background: var(--color-primary-soft);
   color: var(--color-primary-light);
 }

@@ -1,0 +1,70 @@
+<section class="final ui-surface ui-pop-in" aria-labelledby="flip7-final-title">
+  <div class="banner">
+    <mat-icon aria-hidden="true">emoji_events</mat-icon>
+    <p class="kicker">Spiel beendet</p>
+    @if (winners().length > 1) {
+      <h2 id="flip7-final-title">Gleichstand – geteilter Sieg</h2>
+      <p class="winner">{{ winnerNames() }}</p>
+    } @else if (winners().length === 1) {
+      <h2 id="flip7-final-title">{{ winnerNames() }} gewinnt!</h2>
+      <p class="winner">mit {{ winners()[0].total_score }} Punkten</p>
+    } @else {
+      <h2 id="flip7-final-title">Endstand</h2>
+    }
+  </div>
+
+  <ol class="ranking">
+    @for (row of ranking(); track row.player.user_id) {
+      <li
+        [class.mine]="row.player.user_id === userId()"
+        [class.top]="row.rank === 1"
+        [class.gone]="row.rank === null"
+      >
+        <span class="rank">{{ row.rank ?? '–' }}</span>
+        <span class="name">
+          <strong>{{ row.player.name }}</strong>
+          @if (row.player.user_id === userId()) {
+            <span class="note">(du)</span>
+          }
+          @if (row.rank === null) {
+            <span class="note">verlassen</span>
+          }
+        </span>
+        <strong class="total">{{ row.player.total_score }}</strong>
+      </li>
+    }
+  </ol>
+
+  @if (isHost()) {
+    <div class="actions">
+      @if (canContinue()) {
+        <button
+          mat-stroked-button
+          type="button"
+          class="ui-button"
+          [disabled]="busy()"
+          (click)="continueOpen.emit()"
+        >
+          <mat-icon aria-hidden="true">all_inclusive</mat-icon>
+          Weiterspielen
+        </button>
+      }
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="ui-button"
+        [disabled]="busy()"
+        (click)="backToLobby.emit()"
+      >
+        <mat-icon aria-hidden="true">meeting_room</mat-icon>
+        Zurück zur Warte-Lobby
+      </button>
+    </div>
+    @if (canContinue()) {
+      <p class="hint">Weiterspielen läuft ohne Punkteziel weiter, bis du das Spiel beendest.</p>
+    }
+  } @else {
+    <p class="hint">Der Host entscheidet, wie es weitergeht.</p>
+  }
+</section>

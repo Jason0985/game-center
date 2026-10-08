@@ -1,9 +1,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
-import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
@@ -13,10 +12,34 @@ import { ConfirmationDialog, ConfirmationDialogData } from '../../confirmation-d
 import { Profile as UserProfile } from './profile.model';
 import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog';
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
+import { AccountDeleteDialog, AccountDeleteDialogData } from './account-delete-dialog';
+import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
+
+const LEGAL_LINKS = [
+  { path: '/legal/impressum', label: 'Impressum', icon: 'info', tile: 'var(--tile-gray)' },
+  {
+    path: '/legal/datenschutz',
+    label: 'Datenschutz',
+    icon: 'privacy_tip',
+    tile: 'var(--tile-blue)',
+  },
+  {
+    path: '/legal/nutzungsbedingungen',
+    label: 'Nutzungsbedingungen',
+    icon: 'gavel',
+    tile: 'var(--tile-purple)',
+  },
+  {
+    path: '/legal/lizenzen',
+    label: 'Lizenzen & Quellen',
+    icon: 'copyright',
+    tile: 'var(--tile-green)',
+  },
+];
 
 @Component({
   selector: 'app-profile',
-  imports: [MatIcon, MatButton, MatTooltip, RouterLink],
+  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -26,10 +49,12 @@ export class Profile {
   private readonly dialog = inject(MatDialog);
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
+  private readonly router = inject(Router);
   readonly session = inject(SessionService);
   private readonly relations = signal<FriendRelation[]>([]);
   readonly friendsLoading = signal(true);
   readonly friendFilter = signal('');
+  readonly legalLinks = LEGAL_LINKS;
 
   readonly friends = computed(() =>
     this.relations()
@@ -61,6 +86,25 @@ export class Profile {
     await this.authService.logout();
   }
 
+  deleteAccount(): void {
+    const username = this.session.username();
+    if (!username) {
+      return;
+    }
+
+    this.dialog
+      .open<AccountDeleteDialog, AccountDeleteDialogData, boolean>(AccountDeleteDialog, {
+        data: { username },
+        width: '380px',
+      })
+      .afterClosed()
+      .subscribe(async (deleted) => {
+        if (!deleted) return;
+        this.toastService.success('Konto gelöscht', 'Dein Konto und alle Daten wurden entfernt.');
+        await this.router.navigateByUrl('/');
+      });
+  }
+
   editDisplayName(): void {
     const userId = this.session.user()?.id;
     const profile = this.session.profile();
@@ -76,6 +120,7 @@ export class Profile {
       .subscribe((updated) => {
         if (updated) {
           this.session.setProfile(updated);
+          this.toastService.success('Anzeigename gespeichert');
         }
       });
   }
@@ -120,7 +165,10 @@ export class Profile {
         this.relations.update((relations) =>
           relations.filter((relation) => relation.friendshipId !== friend.friendshipId),
         );
-        this.toastService.success('Freund entfernt', `${name} ist nicht mehr in deiner Freundesliste.`);
+        this.toastService.success(
+          'Freund entfernt',
+          `${name} ist nicht mehr in deiner Freundesliste.`,
+        );
       });
   }
 

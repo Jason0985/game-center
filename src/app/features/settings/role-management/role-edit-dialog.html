@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Rolle bearbeiten</h2>
+<h2 mat-dialog-title>Rollen bearbeiten</h2>
 
 <div mat-dialog-content class="dialog-content">
   <div class="role-user">
@@ -6,16 +6,26 @@
     <span>&#64;{{ profile.username }}</span>
   </div>
 
-  <div class="role-options" role="radiogroup" aria-label="Rolle">
+  <div class="role-options" role="group" aria-label="Rollen">
+    <div class="role-option role-option--fixed" [attr.data-role]="userRole.role">
+      <mat-icon aria-hidden="true">{{ userRole.icon }}</mat-icon>
+      <span class="role-option-copy">
+        <strong>{{ userRole.label }}</strong>
+        <span>{{ userRole.description }}</span>
+      </span>
+      <mat-icon class="role-option-check" aria-hidden="true">check</mat-icon>
+    </div>
+
     @for (role of roles; track role.role) {
+      @let selected = selectedRoles().includes(role.role);
       <button
         type="button"
-        role="radio"
+        role="checkbox"
         class="role-option"
         [attr.data-role]="role.role"
-        [class.role-option--selected]="selectedRole() === role.role"
-        [attr.aria-checked]="selectedRole() === role.role"
-        (click)="selectedRole.set(role.role)"
+        [class.role-option--selected]="selected"
+        [attr.aria-checked]="selected"
+        (click)="toggle(role.role)"
       >
         <mat-icon aria-hidden="true">{{ role.icon }}</mat-icon>
         <span class="role-option-copy">
@@ -23,7 +33,7 @@
           <span>{{ role.description }}</span>
         </span>
         <mat-icon class="role-option-check" aria-hidden="true">
-          {{ selectedRole() === role.role ? 'radio_button_checked' : 'radio_button_unchecked' }}
+          {{ selected ? 'check_box' : 'check_box_outline_blank' }}
         </mat-icon>
       </button>
     }
@@ -40,7 +50,7 @@
     mat-flat-button
     color="primary"
     type="button"
-    [disabled]="selectedRole() === profile.role || saving()"
+    [disabled]="!changed() || saving()"
     (click)="save()"
   >
     {{ saving() ? 'Speichern ...' : 'Speichern' }}

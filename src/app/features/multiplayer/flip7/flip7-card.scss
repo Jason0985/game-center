@@ -1,0 +1,72 @@
+@use '../table/card-base';
+
+// Flip-7-Gesichter (Grundlage in table/_card-base.scss)
+:host(.underline) .value,
+:host(.underline) .fan-value {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+:host([data-kind='modifier']) {
+  border: 1.5px solid var(--f7-mod-border);
+  background: var(--f7-mod-bg);
+  color: var(--f7-mod-text);
+  letter-spacing: normal;
+}
+
+:host([data-kind='modifier']) .value {
+  font-size: var(--card-font, calc(var(--card-w) * 0.47));
+}
+
+.icon {
+  font-size: calc(var(--card-w) * 0.553);
+  font-variation-settings: 'FILL' 1;
+}
+
+.three {
+  font-size: calc(var(--card-w) * 0.64);
+  font-weight: 900;
+}
+
+.sub {
+  max-width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-size: max(8px, calc(var(--card-w) * 0.13));
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+// Bust: grau; die doppelte Zahl rot mit weißem Rand
+:host([data-highlight='bust']) {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: var(--f7-bust-bg);
+  color: var(--f7-bust-text);
+}
+
+:host([data-highlight='dup']) {
+  border-color: #ffffff;
+  background: var(--table-danger);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 2px var(--table-danger),
+    var(--table-card-shadow);
+}
+
+:host([data-highlight='dup'][data-variant='row']) {
+  box-shadow:
+    0 0 0 3px var(--table-danger),
+    var(--table-card-shadow);
+}
+
+.seven {
+  color: #f27ba5;
+  font-size: calc(var(--card-w) * 0.47);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}

@@ -1,10 +1,8 @@
-@use '../styles/notification-tones';
-
 .toast-stack {
   position: fixed;
   top: 52px;
   left: 50%;
-  z-index: 900; // unter Dialogen (cdk-overlay), über dem Inhalt
+  z-index: 1100; // über Dialogen (cdk-overlay 1000): Rückmeldungen aus Dialogen bleiben sichtbar
   display: flex;
   width: min(calc(100% - 32px), 400px);
   flex-direction: column;

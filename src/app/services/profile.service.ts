@@ -22,6 +22,7 @@ export class ProfileService {
       .from('profiles')
       .select('*')
       .eq('username', username)
+      .eq('is_guest', false)
       .maybeSingle();
 
     return error ? null : (data as Profile | null);
@@ -37,6 +38,7 @@ export class ProfileService {
       .select('*')
       .or(`username.ilike.%${term}%,display_name.ilike.%${term}%`)
       .neq('id', currentUserId)
+      .eq('is_guest', false)
       .order('username')
       .limit(8);
 
@@ -45,16 +47,18 @@ export class ProfileService {
 
   // Für die Rollenübersicht; bei vielen Nutzern später paginieren
   async listProfiles(): Promise<Profile[]> {
-    const { data, error } = await supabase.from('profiles').select('*').order('username');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('is_guest', false)
+      .order('username');
 
     return error ? [] : (data as Profile[]);
   }
 
   // Nur für Admins; Berechtigung und Schutzregeln prüft die Datenbank
-  async setRole(userId: string, role: ProfileRole) {
-    return supabase
-      .rpc('set_user_role', { p_user_id: userId, p_role: role })
-      .single<Profile>();
+  async setRoles(userId: string, roles: ProfileRole[]) {
+    return supabase.rpc('set_user_roles', { p_user_id: userId, p_roles: roles }).single<Profile>();
   }
 
   async updateDisplayName(userId: string, displayName: string) {

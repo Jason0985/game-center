@@ -1,148 +1,249 @@
 import { Injectable } from '@angular/core';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from '../../supabase.client';
+import { ActionResult, describeSupabaseError } from '../../services/supabase-errors';
+import {
+  displayNameOf,
+  LobbyDetail,
+  LobbyGameSettings,
+  LobbyMember,
+  LobbyProfile,
+  LobbyStatus,
+  LobbySummary,
+} from './lobby.model';
+import { watchTables } from './realtime-watch';
 
-export interface MultiplayerLobby {
+export type LobbyResult<T> = { ok: true; value: T } | { ok: false; message: string };
+
+interface LobbySummaryRow {
   id: string;
-  code: string;
   host_user_id: string;
-  game_key: 'flip-7' | null;
-  status: 'open';
+  status: LobbyStatus;
+  game_key: string | null;
+  game_settings: LobbyGameSettings | null;
   created_at: string;
-  memberIds: string[];
+  multiplayer_lobby_members: { count: number }[];
 }
 
-interface LobbyMember {
-  lobby_id: string;
-  user_id: string;
+type MemberRow = Omit<LobbyMember, 'name' | 'profile'>;
+
+interface LobbyDetailRow extends Omit<LobbyDetail, 'code' | 'members'> {
+  multiplayer_lobby_members: MemberRow[];
+  // 1:1-Beziehung (je nach PostgREST-Version Objekt oder Liste); für Nicht-Hosts per RLS leer
+  multiplayer_lobby_codes: { code: string } | { code: string }[] | null;
 }
 
+// Fachliche Fehler aus den Lobby- und Spielfunktionen (P0001) sind schon deutsche Meldungen
+export function lobbyFailure(
+  context: string,
+  error: PostgrestError,
+): { ok: false; message: string } {
+  console.error(context, error);
+  return {
+    ok: false,
+    message: error.code === 'P0001' ? error.message : describeSupabaseError(error),
+  };
+}
+
+// Alle Schreibzugriffe laufen über RPCs, die Tabellen sind für Clients nur lesbar
 @Injectable({ providedIn: 'root' })
 export class MultiplayerLobbyService {
-  async listOpenLobbies(): Promise<MultiplayerLobby[]> {
-    const { data: lobbyData, error: lobbyError } = await supabase
+  // null = Laden fehlgeschlagen
+  async listOpenLobbies(): Promise<LobbySummary[] | null> {
+    const { data, error } = await supabase
       .from('multiplayer_lobbies')
-      .select('id, code, host_user_id, game_key, status, created_at')
+      .select(
+        'id, host_user_id, status, game_key, game_settings, created_at,' +
+          ' multiplayer_lobby_members(count)',
+      )
       .eq('status', 'open')
       .order('created_at', { ascending: false });
 
-    if (lobbyError) {
-      throw lobbyError;
+    if (error) {
+      console.error('Offene Lobbys konnten nicht geladen werden.', error);
+      return null;
     }
 
-    const lobbies = (lobbyData ?? []) as Omit<MultiplayerLobby, 'memberIds'>[];
-    if (lobbies.length === 0) {
-      return [];
+    const rows = (data ?? []) as unknown as LobbySummaryRow[];
+    const profiles = await this.loadProfiles(rows.map((row) => row.host_user_id));
+    if (!profiles) {
+      return null;
     }
 
-    const { data: memberData, error: memberError } = await supabase
-      .from('multiplayer_lobby_members')
-      .select('lobby_id, user_id')
-      .in(
-        'lobby_id',
-        lobbies.map((lobby) => lobby.id),
-      );
-
-    if (memberError) {
-      throw memberError;
-    }
-
-    const members = (memberData ?? []) as LobbyMember[];
-    const membersByLobby = new Map<string, string[]>();
-    for (const member of members) {
-      const lobbyMembers = membersByLobby.get(member.lobby_id) ?? [];
-      lobbyMembers.push(member.user_id);
-      membersByLobby.set(member.lobby_id, lobbyMembers);
-    }
-
-    return lobbies.map((lobby) => ({
-      ...lobby,
-      memberIds: membersByLobby.get(lobby.id) ?? [],
+    return rows.map((row) => ({
+      id: row.id,
+      host_user_id: row.host_user_id,
+      hostName: displayNameOf(profiles.get(row.host_user_id)),
+      status: row.status,
+      game_key: row.game_key,
+      game_settings: row.game_settings,
+      created_at: row.created_at,
+      memberCount: row.multiplayer_lobby_members[0]?.count ?? 0,
     }));
   }
 
-  async createLobby(userId: string): Promise<MultiplayerLobby> {
+  // Lobby, in der der User gerade ist (höchstens eine)
+  async findMyLobbyId(userId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('multiplayer_lobby_members')
+      .select('lobby_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Eigene Lobby konnte nicht geladen werden.', error);
+      return null;
+    }
+
+    return (data as { lobby_id: string } | null)?.lobby_id ?? null;
+  }
+
+  // value null = Lobby gibt es nicht (mehr). Lobby, Mitglieder und Code in einer Abfrage.
+  async getLobby(lobbyId: string): Promise<LobbyResult<LobbyDetail | null>> {
     const { data, error } = await supabase
       .from('multiplayer_lobbies')
-      .insert({ host_user_id: userId })
-      .select('id, code, host_user_id, game_key, status, created_at')
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    const lobby = data as Omit<MultiplayerLobby, 'memberIds'>;
-    const { error: memberError } = await supabase
-      .from('multiplayer_lobby_members')
-      .insert({ lobby_id: lobby.id, user_id: userId });
-
-    if (memberError) {
-      await supabase.from('multiplayer_lobbies').delete().eq('id', lobby.id);
-      throw memberError;
-    }
-
-    return { ...lobby, memberIds: [userId] };
-  }
-
-  async chooseGame(lobbyId: string): Promise<void> {
-    const { error } = await supabase
-      .from('multiplayer_lobbies')
-      .update({ game_key: 'flip-7' })
-      .eq('id', lobbyId);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  async joinLobby(lobbyId: string, userId: string): Promise<void> {
-    const { error } = await supabase
-      .from('multiplayer_lobby_members')
-      .insert({ lobby_id: lobbyId, user_id: userId });
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  async leaveLobby(lobbyId: string, userId: string): Promise<void> {
-    const { error } = await supabase
-      .from('multiplayer_lobby_members')
-      .delete()
-      .eq('lobby_id', lobbyId)
-      .eq('user_id', userId);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  async closeLobby(lobbyId: string): Promise<void> {
-    const { error } = await supabase.from('multiplayer_lobbies').delete().eq('id', lobbyId);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  subscribeToChanges(onChange: () => void): RealtimeChannel {
-    return supabase
-      .channel('multiplayer-lobbies')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'multiplayer_lobbies' },
-        onChange,
+      .select(
+        'id, host_user_id, status, game_key, game_settings, created_at, started_at,' +
+          ' multiplayer_lobby_members(user_id, ready, joined_at), multiplayer_lobby_codes(code)',
       )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'multiplayer_lobby_members' },
-        onChange,
-      )
-      .subscribe();
+      .eq('id', lobbyId)
+      .order('joined_at', { referencedTable: 'multiplayer_lobby_members' })
+      .maybeSingle();
+
+    if (error) {
+      return lobbyFailure('Lobby konnte nicht geladen werden.', error);
+    }
+    if (!data) {
+      return { ok: true, value: null };
+    }
+
+    const {
+      multiplayer_lobby_members: memberRows,
+      multiplayer_lobby_codes: codeRow,
+      ...lobby
+    } = data as unknown as LobbyDetailRow;
+    const profiles = await this.loadProfiles(memberRows.map((member) => member.user_id));
+    if (!profiles) {
+      return { ok: false, message: describeSupabaseError(null) };
+    }
+
+    return {
+      ok: true,
+      value: {
+        ...lobby,
+        code: [codeRow].flat()[0]?.code ?? null,
+        members: memberRows.map((member) => {
+          const profile = profiles.get(member.user_id) ?? null;
+          return { ...member, name: displayNameOf(profile), profile };
+        }),
+      },
+    };
   }
 
-  removeChannel(channel: RealtimeChannel): Promise<string> {
-    return supabase.removeChannel(channel);
+  async createLobby(): Promise<LobbyResult<string>> {
+    const { data, error } = await supabase.rpc('create_lobby');
+    return error
+      ? lobbyFailure('Lobby konnte nicht eröffnet werden.', error)
+      : { ok: true, value: data as string };
+  }
+
+  async joinLobby(lobbyId: string, code: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('join_lobby', { p_lobby_id: lobbyId, p_code: code });
+    return error ? lobbyFailure('Lobby-Beitritt fehlgeschlagen.', error) : { ok: true };
+  }
+
+  // Nur mit dem Code, ohne die Lobby vorher auszuwählen (auch für Gäste); value = Lobby-ID
+  async joinLobbyByCode(code: string): Promise<LobbyResult<string>> {
+    const { data, error } = await supabase.rpc('join_lobby_by_code', { p_code: code });
+    return error
+      ? lobbyFailure('Lobby-Beitritt fehlgeschlagen.', error)
+      : { ok: true, value: data as string };
+  }
+
+  async inviteFriend(lobbyId: string, userId: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('invite_to_lobby', {
+      p_lobby_id: lobbyId,
+      p_user_id: userId,
+    });
+    return error ? lobbyFailure('Einladung konnte nicht gesendet werden.', error) : { ok: true };
+  }
+
+  // value null = Lobby gibt es nicht mehr (Einladung wurde entfernt)
+  async acceptInvite(notificationId: string): Promise<LobbyResult<string | null>> {
+    const { data, error } = await supabase.rpc('accept_lobby_invite', {
+      p_notification_id: notificationId,
+    });
+    return error
+      ? lobbyFailure('Einladung konnte nicht angenommen werden.', error)
+      : { ok: true, value: (data as string | null) ?? null };
+  }
+
+  async setReady(lobbyId: string, ready: boolean): Promise<ActionResult> {
+    const { error } = await supabase.rpc('set_lobby_ready', {
+      p_lobby_id: lobbyId,
+      p_ready: ready,
+    });
+    return error ? lobbyFailure('Bereit-Status konnte nicht gesetzt werden.', error) : { ok: true };
+  }
+
+  async kick(lobbyId: string, userId: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('kick_lobby_member', {
+      p_lobby_id: lobbyId,
+      p_user_id: userId,
+    });
+    return error ? lobbyFailure('Spieler konnte nicht entfernt werden.', error) : { ok: true };
+  }
+
+  // Verlässt der Host die Lobby, wird sie geschlossen
+  async leave(lobbyId: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('leave_lobby', { p_lobby_id: lobbyId });
+    return error ? lobbyFailure('Lobby konnte nicht verlassen werden.', error) : { ok: true };
+  }
+
+  async start(lobbyId: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('start_lobby', { p_lobby_id: lobbyId });
+    return error ? lobbyFailure('Lobby konnte nicht gestartet werden.', error) : { ok: true };
+  }
+
+  // Nur der Host einer offenen Lobby; Bereit-Status bleibt erhalten
+  async setGame(
+    lobbyId: string,
+    gameKey: string,
+    settings: LobbyGameSettings,
+  ): Promise<ActionResult> {
+    const { error } = await supabase.rpc('set_lobby_game', {
+      p_lobby_id: lobbyId,
+      p_game_key: gameKey,
+      p_settings: settings,
+    });
+    return error ? lobbyFailure('Spiel konnte nicht eingestellt werden.', error) : { ok: true };
+  }
+
+  // Ungefiltert, weil DELETE-Events sich nicht filtern lassen. Gibt die Abmeldung zurück.
+  subscribeToChanges(name: string, onChange: () => void): () => void {
+    return watchTables(
+      name,
+      [{ table: 'multiplayer_lobbies' }, { table: 'multiplayer_lobby_members' }],
+      onChange,
+    );
+  }
+
+  // null = Laden fehlgeschlagen
+  async loadProfiles(ids: string[]): Promise<Map<string, LobbyProfile> | null> {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) {
+      return new Map();
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, is_guest')
+      .in('id', uniqueIds);
+    if (error) {
+      console.error('Profile konnten nicht geladen werden.', error);
+      return null;
+    }
+
+    return new Map((data as LobbyProfile[]).map((profile) => [profile.id, profile]));
   }
 }

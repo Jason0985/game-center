@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
+import { THEME_OPTIONS, ThemeService } from '../../services/theme.service';
 import { RoleManagement } from './role-management/role-management';
 
 @Component({
@@ -12,4 +13,6 @@ import { RoleManagement } from './role-management/role-management';
 })
 export class Settings {
   readonly session = inject(SessionService);
+  readonly themes = inject(ThemeService);
+  readonly themeOptions = THEME_OPTIONS;
 }

@@ -1,0 +1,512 @@
+@use '../table/table-base';
+
+// Spieltisch nach den Artboards Handy (390), iPad hoch (820), iPad quer (1180) und
+// Laptop (1440). Alles auf der Tischplatte sitzt in Prozent der Platte; Schilder,
+// Karten und Schrift behalten ihre Design-Pixel. --s skaliert die Mitspieler-Plätze
+// (≤ 3 Spieler groß, 4–5 mittel, ab 6 Grundgröße).
+:host {
+  // Handy (--head-h: Kopf der Bühne; --below: Platz unter der Tischplatte laut Design)
+  --s: 1;
+  --head-h: 56px;
+  --area-top: 8px;
+  --below: 140px;
+  --table-w: 378;
+  --table-h: 560;
+  --table-margin: 12px;
+  --table-radius: 50% 50% 28px 28px / 44.64% 44.64% 28px 28px;
+  --felt-y: 70%;
+  --rim: 10px;
+  --table-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  --mark-size: 180px;
+  --mark-x: 50%;
+  --mark-y: 73.21%;
+  --center-x: 50%;
+  --center-y: 72.5%;
+  --center-gap: 10px;
+  --center-max: 260px;
+  --pile-w: 40px;
+  --pile-h: 56px;
+  --pile-label: 11px;
+  --chip-size: 13px;
+  --chip-icon: 17px;
+  // Fächer der Mitspieler: wenige Spieler, größere Karten (--fan-k je Größe)
+  --fan-k: 1;
+  --fan-w: calc(14px * var(--fan-k));
+  --fan-h: calc(20px * var(--fan-k));
+  --fan-gap: 6px;
+  --fan-overlap: -0.45;
+  --dot: 4px;
+  --mod-chip-size: 10px;
+  --mod-chip-lh: 14px;
+  --mod-chip-pad: 1px 5px;
+  --slot-w: 44px;
+  --slot-h: 62px;
+  --slot-gap: 6px;
+  --mod-w: 26px;
+  --mod-h: 36px;
+  --mod-font: 15px;
+  --mod-label: 11px;
+  --mod-value: 15px;
+
+  // Tisch oben verankert, das Sheet überlappt ihn und füllt den Rest nach unten
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+:host([data-size='m']) {
+  --s: 1.1;
+  --fan-k: 1.6;
+}
+
+:host([data-size='l']) {
+  --s: 1.25;
+  --fan-k: 2.2;
+}
+
+:host([data-layout='hoch']) {
+  --head-h: 64px;
+  --area-top: 12px;
+  --below: 220px;
+  --table-w: 788;
+  --table-h: 800;
+  --table-margin: 32px;
+  --table-radius: 50% 50% 36px 36px / 47.5% 47.5% 36px 36px;
+  --felt-y: 65%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 300px;
+  --mark-y: 74.25%;
+  --center-y: 73%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 52px;
+  --pile-h: 72px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(28px * var(--fan-k));
+  --fan-h: calc(40px * var(--fan-k));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 12px;
+  --mod-chip-lh: 17px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 62px;
+  --slot-h: 86px;
+  --slot-gap: 10px;
+  --mod-w: 38px;
+  --mod-h: 54px;
+  --mod-font: 18px;
+  --mod-label: 12px;
+  --mod-value: 16px;
+}
+
+:host([data-layout='quer']) {
+  --area-top: 12px;
+  --below: 202px;
+  --table-w: 1140;
+  --table-h: 520;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 55%;
+  --rim: 14px;
+  --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+  --mark-size: 300px;
+  --mark-y: 50%;
+  --center-y: 48.08%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 52px;
+  --pile-h: 72px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(28px * var(--fan-k));
+  --fan-h: calc(40px * var(--fan-k));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 11px;
+  --mod-chip-lh: 15px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 58px;
+  --slot-h: 80px;
+  --slot-gap: 8px;
+  --mod-w: 30px;
+  --mod-h: 42px;
+  --mod-font: 18px;
+}
+
+:host([data-layout='laptop']) {
+  --head-h: 64px;
+  --area-top: 54px;
+  --below: 64px;
+  --table-w: 1220;
+  --table-h: 720;
+  --table-margin: 40px;
+  --table-radius: 50%;
+  --felt-y: 50%;
+  --rim: 16px;
+  --table-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  --mark-size: 300px;
+  --mark-y: 40.56%;
+  --center-y: 39.17%;
+  --center-gap: 14px;
+  --center-max: 420px;
+  --pile-w: 60px;
+  --pile-h: 84px;
+  --pile-label: 12px;
+  --chip-size: 14px;
+  --chip-icon: 18px;
+  --fan-w: calc(36px * var(--fan-k));
+  --fan-h: calc(50px * var(--fan-k));
+  --fan-overlap: -0.39;
+  --dot: 5px;
+  --mod-chip-size: 12px;
+  --mod-chip-lh: 17px;
+  --mod-chip-pad: 1px 6px;
+  --slot-w: 68px;
+  --slot-h: 94px;
+  --slot-gap: 10px;
+  --mod-w: 38px;
+  --mod-h: 54px;
+  --mod-font: 18px;
+  --mod-label: 12px;
+  --mod-value: 16px;
+}
+
+:host([data-layout='hoch'][data-size='m']) {
+  --s: 1.1;
+}
+
+:host([data-layout='hoch'][data-size='l']) {
+  --s: 1.2;
+}
+
+:host([data-layout='quer'][data-size='m']),
+:host([data-layout='laptop'][data-size='m']) {
+  --s: 1.05;
+}
+
+:host([data-layout='quer'][data-size='l']),
+:host([data-layout='laptop'][data-size='l']) {
+  --s: 1.15;
+}
+
+// Ab iPad sind die Fächer schon größer: etwas weniger Zuwachs, mehr Abstand
+:host(:not([data-layout='phone'])) {
+  --fan-gap: 8px;
+}
+
+:host(:not([data-layout='phone'])[data-size='m']) {
+  --fan-k: 1.2;
+}
+
+:host(:not([data-layout='phone'])[data-size='l']) {
+  --fan-k: 1.6;
+}
+
+// Handy, iPad hoch: Bedienfeld nur so hoch wie nötig, der Tisch rutscht nach unten
+// (überschüssige Höhe liegt oben statt als Leere im Bedienfeld)
+:host([data-layout='phone']),
+:host([data-layout='hoch']) {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+:host([data-layout='phone']) .table-area,
+:host([data-layout='hoch']) .table-area {
+  align-items: flex-end;
+}
+
+// Mitte: Stapel (zum Ziehen antippen), Ablage, darunter „Stehen bleiben“
+.center {
+  position: absolute;
+  top: var(--center-y);
+  left: var(--center-x);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--center-gap);
+  max-width: var(--center-max);
+  transform: translate(-50%, -50%);
+}
+
+.piles {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.discard {
+  position: relative;
+  width: calc(var(--pile-w) + 6px);
+  height: calc(var(--pile-h) + 6px);
+}
+
+.discard app-flip7-card,
+.discard-empty {
+  --card-w: var(--pile-w);
+  --card-h: var(--pile-h);
+  position: absolute;
+}
+
+.discard-below {
+  top: 4px;
+  left: 4px;
+  opacity: 0.55;
+  rotate: -8deg;
+}
+
+.discard-top {
+  top: 2px;
+  left: 2px;
+  rotate: 5deg;
+}
+
+.discard-empty {
+  top: 2px;
+  left: 2px;
+  width: var(--pile-w);
+  height: var(--pile-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: calc(var(--pile-w) * 0.145);
+  background: var(--table-slot-bg);
+}
+
+.pile-label--plain {
+  font-size: 12px;
+}
+
+// Zielwahl: farbiger Hinweis in der Farbe der Aktionskarte, direkt unter dem Stapel (wo
+// sonst „Stehen bleiben“ steht); am Handy, wo darunter das Bedienfeld beginnt, auf dem
+// Stapel. So überdeckt er keine Fächer der Mitspieler.
+.center-foot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.choose {
+  --pc: #7dd3fc;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 48px));
+  padding: 8px 14px;
+  border: 1.5px solid var(--pc);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pc) 16%, var(--color-surface));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  transform: translateX(-50%);
+  animation: f7-choose-in 220ms ease-out;
+}
+
+.choose[data-card='FLIP3'] {
+  --pc: #ff9150;
+}
+
+.choose[data-card='SC'] {
+  --pc: #c8386d;
+}
+
+.choose-title {
+  // Mit der Textfarbe gemischt: lesbar im hellen wie im dunklen Schema
+  color: color-mix(in srgb, var(--pc) 75%, var(--color-text));
+  font-size: var(--choose-size, 15px);
+  font-weight: 800;
+}
+
+.choose-sub {
+  color: var(--color-text-muted);
+  font-size: calc(var(--choose-size, 15px) - 3px);
+  font-weight: 600;
+}
+
+:host(:not([data-layout='phone'])) .choose {
+  --choose-size: 17px;
+}
+
+:host([data-layout='phone']) .center-foot {
+  position: static;
+}
+
+:host([data-layout='phone']) .choose {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes f7-choose-in {
+  from {
+    opacity: 0;
+    scale: 0.94;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choose {
+    animation: none;
+  }
+}
+
+// Ziehstapel als Button (wie Uno): leuchtet am eigenen Zug
+.draw {
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--pile-w) * 0.15);
+  background: transparent;
+  cursor: pointer;
+}
+
+.draw:disabled {
+  cursor: default;
+}
+
+// Im Button ein span: Größe aus .stack (_table-base) braucht display block
+.draw .stack {
+  display: block;
+}
+
+.draw.glow {
+  box-shadow:
+    0 0 0 3px var(--table-turn),
+    0 0 22px color-mix(in srgb, var(--table-turn) 30%, transparent);
+}
+
+.stay {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  border: 1.5px solid var(--table-violet);
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  color: var(--color-text);
+  font-size: var(--chip-size);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stay .material-symbols-rounded {
+  color: var(--table-violet);
+  font-size: var(--chip-icon);
+}
+
+.stay.off {
+  visibility: hidden;
+}
+
+// Kartenfächer der Mitspieler: im Schild projiziert, außen an dem Rand, der zur
+// Tischmitte zeigt (--dir-x/--dir-y aus seatSpots, größere Komponente 1), --fan-gap
+// Abstand. Unter Schild-Inhalten wie Zielwahl- und Warte-Pille.
+.fan {
+  position: absolute;
+  top: calc(50% + var(--dir-y) * (50% + var(--fan-gap)));
+  left: calc(50% + var(--dir-x) * (50% + var(--fan-gap)));
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translate(calc(-50% + var(--dir-x) * 50%), calc(-50% + var(--dir-y) * 50%));
+}
+
+// Zielwahl- bzw. Warte-Pille hängt unten am Schild (--label-bottom): Fächer darunter rückt
+// so weit ab, dass sie keine Karten verdeckt
+.opp[data-choice] .fan--below,
+.opp.has-waiting .fan--below {
+  --fan-gap: calc(4px - var(--label-bottom, -19px));
+}
+
+.fan-cards {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.fan-cards app-flip7-card {
+  --card-w: var(--fan-w);
+  --card-h: var(--fan-h);
+}
+
+.fan-cards app-flip7-card + app-flip7-card {
+  margin-left: calc(var(--fan-w) * var(--fan-overlap));
+}
+
+// Ab iPad: Handbogen, Drehpunkt unten
+:host(:not([data-layout='phone'])) .fan-cards {
+  align-items: flex-start;
+  padding: 2px 0 3px;
+}
+
+:host(:not([data-layout='phone'])) .fan-cards app-flip7-card {
+  transform-origin: 50% 100%;
+}
+
+// Eisschleier über den Karten eingefrorener Spieler
+.veil {
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 10px;
+  background: rgba(125, 211, 252, 0.13);
+  pointer-events: none;
+}
+
+:host(.live) .veil {
+  animation: f7-fade-in 200ms ease-out;
+}
+
+@keyframes f7-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.fan-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dots {
+  display: flex;
+  gap: 2px;
+}
+
+.dots span {
+  width: var(--dot);
+  height: var(--dot);
+  box-sizing: border-box;
+  border: 1px solid var(--table-slot-border);
+  border-radius: 50%;
+}
+
+.dots span.on {
+  border: 0;
+  background: var(--f7-ring-on);
+}
+
+.mod-chip {
+  padding: var(--mod-chip-pad);
+  border: 1px solid var(--f7-mod-border);
+  border-radius: 5px;
+  background: var(--f7-mod-bg);
+  color: var(--f7-mod-text);
+  font-size: var(--mod-chip-size);
+  font-weight: 800;
+  line-height: var(--mod-chip-lh);
+  white-space: nowrap;
+}

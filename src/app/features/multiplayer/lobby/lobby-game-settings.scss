@@ -1,0 +1,179 @@
+@use 'game-tile';
+
+:host {
+  display: block;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.label {
+  margin: 16px 0 6px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.value {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.hint {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+// Segmentierte Auswahl ohne Material, damit sie auf dem Handy in eine Zeile passt
+.segments {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--color-fill);
+}
+
+.segments button {
+  min-height: 32px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segments button[aria-pressed='true'] {
+  background: var(--color-segment-active);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  font-weight: 600;
+}
+
+.segments button:disabled {
+  cursor: default;
+}
+
+.segments button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.rules {
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.rules summary {
+  min-height: 32px;
+  color: var(--color-primary-light);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rules ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.game-tile {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-fill);
+}
+
+.game-tile--selected {
+  background: var(--color-primary-soft);
+}
+
+.game-switch {
+  flex: 0 0 auto;
+}
+
+.game-copy a {
+  color: var(--color-primary-light);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+// Uno-Hausregeln als Schalterzeilen
+.switches {
+  display: grid;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-fill);
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.switch-row:first-child {
+  border-top: 0;
+}
+
+.switch-row:disabled {
+  cursor: default;
+}
+
+.switch-row:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 999px;
+  background: var(--color-fill);
+  transition: background 120ms ease;
+}
+
+.switch::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  content: '';
+  transition: translate 120ms ease;
+}
+
+.switch-row[aria-checked='true'] .switch {
+  background: var(--color-success-light);
+}
+
+.switch-row[aria-checked='true'] .switch::after {
+  translate: 20px 0;
+}

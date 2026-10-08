@@ -1,315 +1,78 @@
-@use '../../../styles/user-list';
-
-.profile-header {
-  position: relative;
-  box-sizing: border-box;
-  padding: 18px;
-  border: 1px solid var(--color-white-10);
-  border-top: 2px solid var(--color-primary);
-  margin-bottom: 26px;
-  text-align: left;
-}
-
-.profile-header-inner {
-  display: flex;
-  align-items: center;
+.profile-identity,
+.profile-guest {
+  min-height: 76px;
   gap: 14px;
 }
 
-.profile-header-mark {
-  display: grid;
-  flex: 0 0 50px;
-  place-items: center;
-  width: 50px;
-  height: 50px;
-  border: 1px solid var(--color-primary-light-28);
-  border-radius: var(--radius-medium);
-  background: var(--color-primary-soft);
-  color: var(--color-primary-light);
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 21px;
 }
 
-.profile-header-mark mat-icon {
-  width: 28px;
-  height: 28px;
-  font-size: 28px;
+.profile-avatar--guest {
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
 }
 
-.profile-header-copy {
-  min-width: 0;
-  flex: 1;
+.profile-avatar--guest mat-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
 }
 
-.profile-kicker {
-  margin: 0 0 4px;
-  color: var(--color-primary-light);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.profile-identity {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.profile-identity .ui-title {
-  margin: 0;
-}
-
-.profile-edit-button {
-  display: grid;
-  flex: 0 0 36px;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--color-text-subtle);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.profile-edit-button mat-icon {
-  width: 20px;
-  height: 20px;
+.profile-name {
   font-size: 20px;
-}
-
-.profile-edit-button:hover {
-  color: var(--color-primary-light);
-}
-
-.profile-edit-button:active {
-  background: var(--color-primary-soft);
-}
-
-.profile-edit-button:focus {
-  outline: none;
-}
-
-.profile-edit-button:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
-}
-
-.profile-username {
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  font-weight: 400;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.profile-header .ui-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.profile-card {
-  display: flex;
-  flex-direction: column;
-  width: min(100%, var(--content-width));
-  box-sizing: border-box;
-  gap: 22px;
-  margin-bottom: 16px;
-  padding: 22px 18px;
-}
-
-.profile-card-heading {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.profile-card-heading > mat-icon {
-  color: var(--color-primary-light);
-}
-
-.profile-card-heading h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.profile-card-heading p {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.profile-card mat-form-field {
-  width: 100%;
-}
-
-.profile-overview-card,
-.activity-card {
-  gap: 16px;
-}
-
-.profile-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.profile-stat {
-  display: flex;
-  min-height: 76px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border-radius: var(--radius-small);
-  background: var(--color-white-05);
-  text-align: center;
-}
-
-.profile-stat strong {
-  color: var(--color-primary-light);
-  font-size: 22px;
-  line-height: 1;
-}
-
-.profile-stat span {
-  color: var(--color-text-muted);
-  font-size: 10px;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.activity-row {
-  display: flex;
-  align-items: center;
-  min-height: 58px;
-  gap: 10px;
-  border-top: 1px solid var(--color-white-08);
-}
-
-.activity-icon {
-  display: grid;
-  flex: 0 0 34px;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-small);
-  background: var(--color-primary-soft);
-  color: var(--color-primary-light);
-}
-
-.activity-icon mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
-}
-
-.activity-copy {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.activity-copy strong,
-.activity-copy span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.activity-copy strong {
-  font-size: 13px;
   font-weight: 600;
 }
 
-.activity-copy span {
+.profile-stats {
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-guest-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -12px;
+}
+
+.friends-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.friends-add {
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+.friend-row {
+  padding-right: 6px;
+}
+
+.friends-message {
+  margin: 0;
+  padding: 16px;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 15px;
 }
 
-.activity-arrow {
-  flex: 0 0 auto;
-  color: var(--color-text-subtle);
+.profile-logout {
+  justify-content: center;
+  color: var(--color-danger-light);
+  font-size: 16px;
 }
 
-.profile-card button {
-  align-self: flex-start;
-}
-
-.friends-card {
-  gap: 16px;
-}
-
-.user-row .friend-remove-button {
-  color: var(--color-text-subtle);
-}
-
-.user-row .friend-remove-button:hover:not(:disabled) {
+.profile-delete .ui-row-title {
   color: var(--color-danger-light);
 }
 
-.version-tag {
-  align-self: center;
-  padding: 7px 13px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-white-08);
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.profile-logout-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: min(100%, var(--content-width));
-  min-height: 44px;
-  box-sizing: border-box;
-  margin: 4px 0 22px;
-  border-radius: var(--radius-pill);
-  background: var(--color-danger) !important;
-  color: var(--color-white) !important;
-  --mdc-filled-button-container-color: var(--color-danger);
-  --mdc-filled-button-label-text-color: var(--color-white);
-}
-
-.profile-logout-button mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
-}
-
 .profile-footer {
-  margin-top: auto;
-  padding-bottom: 8px;
+  margin-top: -8px;
   color: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
-}
-
-.profile-actions {
-  display: flex;
-  align-self: center;
-  gap: 12px;
-}
-
-@media (min-width: 600px) {
-  .profile-card {
-    padding: 24px;
-  }
 }

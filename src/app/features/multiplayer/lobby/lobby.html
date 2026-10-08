@@ -1,0 +1,200 @@
+<div class="lobby-root ui-page-root" [class.ui-page-root--spacious]="!started()">
+  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game, uno-game) -->
+  @if (!started()) {
+    <header class="ui-page-head lobby-block">
+      <a class="ui-back-link" routerLink="/multiplayer">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Lobbys
+      </a>
+      <h1 class="ui-large-title lobby-title">
+        @if (hostName()) {
+          Lobby von {{ hostName() }}
+        } @else {
+          Lobby
+        }
+      </h1>
+      <p class="ui-page-lead">Warte auf deine Mitspieler und mach dich bereit.</p>
+    </header>
+  }
+
+  @if (loading()) {
+    <section class="ui-group ui-empty lobby-block" role="status">
+      <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+      <p>Lobby wird geladen …</p>
+    </section>
+  } @else if (lobby(); as current) {
+    @if (started()) {
+      @if (current.game_key === 'skip-bo') {
+        <app-skipbo-game
+          [lobbyId]="lobbyId"
+          [hostUserId]="current.host_user_id"
+          [userId]="userId()!"
+          (returned)="reload()"
+          (leave)="leave($event)"
+        />
+      } @else if (current.game_key === 'uno') {
+        <app-uno-game
+          [lobbyId]="lobbyId"
+          [hostUserId]="current.host_user_id"
+          [userId]="userId()!"
+          (returned)="reload()"
+          (leave)="leave($event)"
+        />
+      } @else {
+        <app-flip7-game
+          [lobbyId]="lobbyId"
+          [hostUserId]="current.host_user_id"
+          [userId]="userId()!"
+          (returned)="reload()"
+          (leave)="leave($event)"
+        />
+      }
+    } @else {
+      @if (isHost() && code(); as lobbyCode) {
+        <section class="ui-group lobby-block lobby-code-box" aria-labelledby="lobby-code-title">
+          <div class="lobby-code-copy">
+            <p id="lobby-code-title" class="lobby-code-label">Lobby-Code · nur für dich sichtbar</p>
+            <strong class="lobby-code">{{ lobbyCode }}</strong>
+          </div>
+          <button
+            type="button"
+            class="ui-icon-button ui-icon-button--accent"
+            aria-label="Code kopieren"
+            matTooltip="Code kopieren"
+            (click)="copyCode()"
+          >
+            <mat-icon aria-hidden="true">content_copy</mat-icon>
+          </button>
+          <button
+            type="button"
+            class="ui-icon-button ui-icon-button--accent"
+            aria-label="Beitritts-Link kopieren"
+            matTooltip="Link kopieren – auch ohne Konto als Gast nutzbar"
+            (click)="copyLink()"
+          >
+            <mat-icon aria-hidden="true">link</mat-icon>
+          </button>
+        </section>
+      }
+
+      <section class="ui-group lobby-block lobby-settings" aria-labelledby="lobby-game-title">
+        <app-lobby-game-settings
+          [lobbyId]="lobbyId"
+          [gameKey]="current.game_key"
+          [settings]="current.game_settings"
+          [isHost]="isHost()"
+          [disabled]="busy()"
+          (changed)="reload()"
+        />
+      </section>
+
+      <section class="ui-section lobby-block" aria-labelledby="lobby-members-title">
+        <h2 id="lobby-members-title" class="ui-section-title">
+          <span>Spieler</span>
+          <span class="lobby-count">{{ members().length }}/{{ maxMembers }}</span>
+        </h2>
+
+        <ul class="ui-group ui-group--avatars lobby-member-list">
+          @for (member of members(); track member.user_id) {
+            <li class="ui-row lobby-member">
+              <span
+                class="ui-avatar-initials"
+                [style.--avatar]="member.profile?.username ?? member.name | avatarColor"
+                aria-hidden="true"
+                >{{ member.name | initials }}</span
+              >
+              <div class="ui-row-text">
+                <span class="ui-row-title">
+                  {{ member.name }}
+                  @if (member.user_id === userId()) {
+                    <span class="lobby-member-you">(du)</span>
+                  }
+                </span>
+                <span class="ui-row-sub lobby-member-sub">
+                  <span
+                    class="ready-dot"
+                    [class.ready-dot--ready]="member.ready"
+                    role="img"
+                    [attr.aria-label]="member.ready ? 'Bereit' : 'Nicht bereit'"
+                  ></span>
+                  {{ member.ready ? 'Bereit' : 'Wartet' }}
+                  @if (member.profile?.is_guest) {
+                    · Gast
+                  } @else if (member.profile) {
+                    · &#64;{{ member.profile.username }}
+                  }
+                </span>
+              </div>
+              @if (member.user_id === lobby()!.host_user_id) {
+                <span class="lobby-host-badge">Host</span>
+              } @else if (isHost()) {
+                <button
+                  type="button"
+                  class="ui-icon-button lobby-kick-button"
+                  [disabled]="busy()"
+                  [attr.aria-label]="member.name + ' entfernen'"
+                  matTooltip="Aus der Lobby entfernen"
+                  (click)="kick(member)"
+                >
+                  <mat-icon aria-hidden="true">person_remove</mat-icon>
+                </button>
+              }
+            </li>
+          }
+        </ul>
+
+        <p class="ui-section-footer" aria-live="polite">
+          {{ readyCount() }} von {{ members().length }} bereit – mindestens
+          {{ requiredReady() }} nötig
+          @if (members().length < minMembers) {
+            <br />Zum Starten braucht es mindestens {{ minMembers }} Spieler.
+          }
+          @if (startBlocker(); as reason) {
+            <br />{{ reason }}
+          }
+        </p>
+      </section>
+    }
+
+    @if (!started()) {
+      <div class="lobby-block lobby-actions">
+        @if (isHost()) {
+          <button type="button" class="ui-btn" [disabled]="busy() || !canStart()" (click)="start()">
+            <mat-icon aria-hidden="true">play_arrow</mat-icon>
+            Spiel starten
+          </button>
+        }
+        <button
+          type="button"
+          class="ui-btn"
+          [class.ui-btn--secondary]="isHost() || me()?.ready"
+          [disabled]="busy()"
+          (click)="toggleReady()"
+        >
+          <mat-icon aria-hidden="true">{{ me()?.ready ? 'close' : 'check' }}</mat-icon>
+          {{ me()?.ready ? 'Nicht mehr bereit' : 'Bereit' }}
+        </button>
+        @if (isHost()) {
+          <button
+            type="button"
+            class="ui-btn ui-btn--secondary"
+            [disabled]="busy() || members().length >= maxMembers"
+            (click)="openInvite()"
+          >
+            <mat-icon aria-hidden="true">person_add</mat-icon>
+            Freunde einladen
+          </button>
+        }
+        <button type="button" class="ui-btn ui-btn--danger" [disabled]="busy()" (click)="leave()">
+          {{ isHost() ? 'Lobby schließen' : 'Lobby verlassen' }}
+        </button>
+      </div>
+    }
+  } @else {
+    <!-- Erstes Laden fehlgeschlagen (Fehler wurde schon gemeldet) -->
+    <section class="ui-group ui-empty lobby-block" role="status">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <p>Die Lobby konnte nicht geladen werden.</p>
+      <a class="ui-section-link lobby-back-link" routerLink="/multiplayer">Zurück zu den Lobbys</a>
+    </section>
+  }
+</div>

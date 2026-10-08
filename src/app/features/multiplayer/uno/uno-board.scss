@@ -1,0 +1,308 @@
+@use '../table/table-base';
+@use '../table/arc-table';
+
+// Uno-Tisch (Platte in table/_arc-table.scss): Mitte mit Spielrichtung, Ziehstapel,
+// Ablage und Farbe; die Lage der Mitte kommt aus UNO_POINTER. Weitere Teile:
+// uno-board-own.scss (eigene Hand, Uno-Knopf), uno-board-places.scss (Mitspieler).
+:host {
+  // Karte fliegt 320 ms, erst dann dreht der Zeiger und der Platz leuchtet
+  --pointer-delay: 320ms;
+  --turn-delay: 560ms;
+  --pile-w: 46px;
+  --pile-h: 66px;
+  --pile-gap: 18px;
+  --dir-w: 178px;
+  --dir-h: 126px;
+  --dot: 26px;
+  --picker: 200px;
+}
+
+:host([data-layout='hoch']) {
+  --pile-w: 72px;
+  --pile-h: 104px;
+  --pile-gap: 28px;
+  --dir-w: 304px;
+  --dir-h: 204px;
+  --dot: 32px;
+  --picker: 260px;
+}
+
+:host([data-layout='quer']) {
+  --pile-w: 64px;
+  --pile-h: 92px;
+  --pile-gap: 26px;
+  --dir-w: 288px;
+  --dir-h: 192px;
+  --dot: 30px;
+  --picker: 240px;
+}
+
+:host([data-layout='laptop']) {
+  --pile-w: 80px;
+  --pile-h: 116px;
+  --pile-gap: 30px;
+  --dir-w: 320px;
+  --dir-h: 216px;
+  --dot: 32px;
+  --picker: 260px;
+}
+
+.center {
+  position: absolute;
+  z-index: 4;
+  width: var(--dir-w);
+  height: var(--dir-h);
+  transform: translate(-50%, -50%);
+}
+
+// Spielrichtung: im Uhrzeigersinn = Sitzreihenfolge; dreht in 240 ms wie der Zeiger
+.direction {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-muted);
+  transition: transform 240ms ease;
+}
+
+.direction--ccw {
+  transform: scaleX(-1);
+}
+
+.direction path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-opacity: 0.45;
+  stroke-width: 2;
+}
+
+.direction polygon {
+  fill: currentColor;
+  fill-opacity: 0.6;
+}
+
+.piles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: var(--pile-gap);
+  transform: translate(-50%, -50%);
+}
+
+// Ziehstapel: 3 versetzte Rücken (Stapel aus _table-base), weißer Rand, wenn nichts passt
+.draw {
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--pile-w) * 0.15);
+  background: transparent;
+  cursor: pointer;
+}
+
+.draw:disabled {
+  cursor: default;
+}
+
+// Im Button ein span: Größe aus .stack (_table-base) braucht display block
+.draw .stack {
+  display: block;
+}
+
+.draw.glow {
+  box-shadow:
+    0 0 0 3px var(--table-turn),
+    0 0 22px color-mix(in srgb, var(--table-turn) 30%, transparent);
+}
+
+// Ablage: oberste Karte, zwei darunter verdreht
+.discard {
+  position: relative;
+  width: calc(var(--pile-w) + 16px);
+  height: calc(var(--pile-h) + 16px);
+}
+
+.discard app-uno-card {
+  --card-w: var(--pile-w);
+  --card-h: var(--pile-h);
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+// Farbwahl oben: leuchtet in der gewählten Farbe
+.discard [data-glow='R'] {
+  --glow: #d1373b;
+}
+
+.discard [data-glow='Y'] {
+  --glow: #f2c230;
+}
+
+.discard [data-glow='G'] {
+  --glow: #43b77a;
+}
+
+.discard [data-glow='B'] {
+  --glow: #2a4fc1;
+}
+
+.discard [data-glow] {
+  box-shadow:
+    0 0 0 4px var(--glow),
+    0 0 22px var(--glow);
+}
+
+// Aktuelle Farbe als Punkt mit Form unter der Mitte; Farbwahl als vier Viertel darüber
+.current {
+  position: absolute;
+  top: calc(100% - var(--dot) / 2);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--face);
+  box-shadow:
+    0 0 0 3px var(--table-edge),
+    0 0 0 4px var(--color-border-subtle);
+  transform: translateX(-50%);
+  --shape: calc(var(--dot) * 0.38);
+}
+
+.picker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: var(--picker);
+  height: var(--picker);
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.5));
+  transform: translate(-50%, -50%);
+  --shape: calc(var(--picker) * 0.1);
+}
+
+.picker button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 3px solid var(--color-surface);
+  background: var(--face);
+  cursor: pointer;
+}
+
+.picker button:nth-child(1) {
+  border-radius: 100% 0 0 0;
+}
+
+.picker button:nth-child(2) {
+  border-radius: 0 100% 0 0;
+}
+
+.picker button:nth-child(3) {
+  border-radius: 0 0 0 100%;
+}
+
+.picker button:nth-child(4) {
+  border-radius: 0 0 100% 0;
+}
+
+[data-color='R'] {
+  --face: #d1373b;
+  --ink: #ffffff;
+}
+
+[data-color='Y'] {
+  --face: #f2c230;
+  --ink: #1a1300;
+}
+
+[data-color='G'] {
+  --face: #43b77a;
+  --ink: #0b1f14;
+}
+
+[data-color='B'] {
+  --face: #2a4fc1;
+  --ink: #ffffff;
+}
+
+// Farbform: Rot ●, Gelb ▲, Grün ■, Blau ◆
+.shape {
+  width: var(--shape);
+  height: var(--shape);
+  background: var(--ink);
+}
+
+[data-color='R'] .shape {
+  border-radius: 50%;
+}
+
+[data-color='Y'] .shape {
+  width: calc(var(--shape) * 1.1);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+[data-color='G'] .shape {
+  border-radius: 1px;
+}
+
+[data-color='B'] .shape {
+  width: calc(var(--shape) * 0.75);
+  height: calc(var(--shape) * 0.75);
+  transform: rotate(45deg);
+}
+
+// Aktive Hausregeln oben rechts (Ecke neben der Tischrundung)
+.house-rules {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.house-rules-title {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.house-rules ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.house-rules li {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+// 7 tauscht, 0 dreht: fliegende Rücken liegen über allem
+.hand-flight {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+}

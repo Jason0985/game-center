@@ -20,7 +20,7 @@
 }
 
 .role-group {
-  --role-color: var(--color-primary-light);
+  --role-color: var(--color-text-muted);
 
   display: flex;
   flex-direction: column;
@@ -29,6 +29,10 @@
 
 .role-group[data-role='admin'] {
   --role-color: var(--color-rank-badge);
+}
+
+.role-group[data-role='race_results'] {
+  --role-color: var(--color-success-light);
 }
 
 .role-group-heading {

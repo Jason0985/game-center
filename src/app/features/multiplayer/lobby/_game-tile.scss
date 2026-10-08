@@ -1,0 +1,57 @@
+// Spielkachel, gemeinsam für Lobby und Spielauswahl-Dialog
+.game-tile {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: var(--color-white-04);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+}
+
+button.game-tile {
+  cursor: pointer;
+}
+
+button.game-tile:disabled {
+  cursor: default;
+}
+
+.game-tile--selected {
+  border-color: var(--color-primary-light-48);
+  background: var(--color-primary-soft);
+}
+
+.game-icon {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.game-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-copy small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.game-check {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.game-tile:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}

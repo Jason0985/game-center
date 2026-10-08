@@ -1,108 +1,223 @@
-<div class="multiplayer-root ui-page-root">
-  <header class="multiplayer-header ui-hero">
-    <p class="multiplayer-kicker">Gemeinsam spielen</p>
-    <h1 class="ui-title">Offene <span class="ui-accent">Lobbys</span></h1>
-    <p class="ui-subtitle">Eröffne einen Raum und wähle das Spiel für deine Runde.</p>
-  </header>
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <h1 class="ui-large-title">Multiplayer</h1>
+      <p class="ui-page-lead">Eröffne einen Raum oder tritt mit dem Code des Hosts bei.</p>
+    </header>
 
-  <main class="multiplayer-content">
     @if (!session.initialized()) {
-      <div class="lobby-message ui-surface" role="status">Verbindung wird hergestellt ...</div>
-    } @else if (!session.isLoggedIn()) {
-      <section class="lobby-message ui-surface">
-        <mat-icon aria-hidden="true">account_circle</mat-icon>
-        <h2>Anmeldung erforderlich</h2>
-        <p>Melde dich an, um Lobbys zu eröffnen oder ihnen beizutreten.</p>
-        <a class="lobby-button" routerLink="/profile/auth">
-          <mat-icon aria-hidden="true">login</mat-icon>
-          Anmelden
-        </a>
-      </section>
-    } @else {
-      <div class="lobby-toolbar">
-        <div>
-          <p class="multiplayer-kicker">Multiplayer</p>
-          <h2>Verfügbare Räume</h2>
-        </div>
-        <!-- <button class="lobby-button" type="button" [disabled]="busy()" (click)="createLobby()">
-          <mat-icon aria-hidden="true">add</mat-icon>
-          Lobby eröffnen
-        </button> -->
+      <div class="ui-group ui-empty" role="status">
+        <p>Verbindung wird hergestellt …</p>
       </div>
+    } @else {
+      @if (myLobbyId(); as lobbyId) {
+        <div class="ui-group ui-group--icons">
+          <a class="ui-row" [routerLink]="['/multiplayer', lobbyId]">
+            <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+              <mat-icon aria-hidden="true">meeting_room</mat-icon>
+            </span>
+            <span class="ui-row-text">
+              <span class="ui-row-title">Du bist in einer Lobby</span>
+              <span class="ui-row-sub">Zurück zur Lobby</span>
+            </span>
+            <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+          </a>
+        </div>
+      } @else if (!loading()) {
+        @if (session.isLoggedIn()) {
+          <button class="ui-btn" type="button" [disabled]="busy()" (click)="createLobby()">
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Lobby eröffnen
+          </button>
+        }
+
+        <section class="ui-section" aria-labelledby="code-join-title">
+          <h2 id="code-join-title" class="ui-section-title">Mit Code beitreten</h2>
+          <form class="ui-group code-join-form" (submit)="joinByCode($event)">
+            <label class="lobby-code-field">
+              <span>Lobby-Code</span>
+              <input
+                type="text"
+                maxlength="6"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                placeholder="ABC234"
+                [value]="directCode()"
+                (input)="onDirectCodeInput($event)"
+              />
+            </label>
+            @if (!session.hasSession()) {
+              <label class="lobby-code-field lobby-name-field">
+                <span>Dein Anzeigename</span>
+                <input
+                  type="text"
+                  autocomplete="nickname"
+                  placeholder="z. B. Alex"
+                  [attr.maxlength]="guestNameMaxLength"
+                  [value]="guestName()"
+                  (input)="guestName.set($any($event.target).value)"
+                />
+              </label>
+            }
+            <button
+              class="ui-pill-btn ui-pill-btn--filled lobby-button"
+              type="submit"
+              [disabled]="
+                busy() || directCode().length < 6 || (!session.hasSession() && !guestName().trim())
+              "
+            >
+              {{ session.hasSession() ? 'Beitreten' : 'Als Gast beitreten' }}
+            </button>
+          </form>
+          <p class="ui-section-footer">
+            @if (session.hasSession()) {
+              Den 6-stelligen Code bekommst du vom Host der Lobby.
+            } @else {
+              Ohne Konto spielst du als Gast. Zum Eröffnen eigener Lobbys
+              <a routerLink="/profile/auth">melde dich an</a>.
+            }
+          </p>
+        </section>
+      }
+
+      @if (session.isGuest()) {
+        <div class="ui-group guest-session">
+          <span
+            class="ui-avatar-initials lobby-avatar"
+            [style.--avatar]="session.displayName() | avatarColor"
+            aria-hidden="true"
+            >{{ session.displayName() | initials }}</span
+          >
+          <span class="ui-row-text">
+            <span class="ui-row-title">{{ session.displayName() }}</span>
+            <span class="ui-row-sub">Du spielst als Gast</span>
+          </span>
+          <button
+            class="ui-pill-btn ui-pill-btn--neutral"
+            type="button"
+            [disabled]="busy()"
+            (click)="endGuestSession()"
+          >
+            Beenden
+          </button>
+        </div>
+      }
 
       @if (errorMessage()) {
         <p class="lobby-error" role="alert">{{ errorMessage() }}</p>
       }
 
-      @if (loading() && lobbies().length === 0) {
-        <div class="lobby-message ui-surface" role="status">Lobbys werden geladen ...</div>
-      } @else if (lobbies().length === 0) {
-        <div class="lobby-message ui-surface">
-          <mat-icon aria-hidden="true">sports_esports</mat-icon>
-          <h2>Noch keine offenen Lobbys</h2>
-          <p>Eröffne den ersten Raum für deine Spielrunde.</p>
-        </div>
-      } @else {
-        <section class="lobby-list" aria-label="Offene Lobbys">
-          @for (lobby of lobbies(); track lobby.id) {
-            <article class="lobby-card ui-surface">
-              <div class="lobby-card-heading">
-                <div>
-                  <p class="lobby-code-label">Lobby-Code</p>
-                  <h3>{{ lobby.code }}</h3>
-                </div>
-                <span class="lobby-member-count">
-                  <mat-icon aria-hidden="true">groups</mat-icon>
-                  {{ lobby.memberIds.length }}
-                </span>
-              </div>
+      @if (session.isLoggedIn()) {
+        <section class="ui-section" aria-labelledby="open-lobbies-title">
+          <h2 id="open-lobbies-title" class="ui-section-title">
+            <span>Offene Lobbys</span>
+            @if (lobbies().length) {
+              <span class="lobby-total">{{ lobbies().length }}</span>
+            }
+          </h2>
 
-              @if (lobby.game_key === 'flip-7') {
-                <p class="lobby-selected-game">
-                  <mat-icon aria-hidden="true">casino</mat-icon>
-                  Flip 7 ausgewählt
-                </p>
-              } @else if (isHost(lobby)) {
-                <div class="lobby-game-picker">
-                  <p>Wähle ein Spiel für deine Lobby</p>
-                  <button
-                    class="game-choice"
-                    type="button"
-                    [disabled]="busy()"
-                    (click)="chooseFlip7(lobby)"
-                  >
-                    <mat-icon aria-hidden="true">casino</mat-icon>
-                    <span><strong>Flip 7</strong><small>Kartenspiel</small></span>
-                    <mat-icon class="game-choice-arrow" aria-hidden="true">chevron_right</mat-icon>
-                  </button>
-                </div>
-              } @else {
-                <p class="lobby-waiting">Wartet auf die Spielauswahl des Gastgebers.</p>
-              }
+          @if (loading() && lobbies().length === 0) {
+            <div class="ui-group ui-empty" role="status">
+              <p>Lobbys werden geladen …</p>
+            </div>
+          } @else if (lobbies().length === 0) {
+            <div class="ui-group ui-empty">
+              <mat-icon aria-hidden="true">sports_esports</mat-icon>
+              <h2>Noch keine offenen Lobbys</h2>
+              <p>Eröffne den ersten Raum für deine Spielrunde.</p>
+            </div>
+          } @else {
+            <div class="ui-group lobby-list" aria-label="Offene Lobbys">
+              @for (lobby of lobbies(); track lobby.id) {
+                <article class="lobby-card">
+                  <div class="lobby-card-main">
+                    <span
+                      class="ui-avatar-initials lobby-avatar"
+                      [style.--avatar]="lobby.hostName | avatarColor"
+                      aria-hidden="true"
+                      >{{ lobby.hostName | initials }}</span
+                    >
+                    <span class="ui-row-text">
+                      <span class="ui-row-title">Lobby von {{ lobby.hostName }}</span>
+                      <span class="ui-row-sub">{{
+                        gameLabel(lobby.game_key, lobby.game_settings)
+                      }}</span>
+                    </span>
+                    <span
+                      class="lobby-member-count"
+                      [attr.aria-label]="lobby.memberCount + ' von ' + maxMembers + ' Spielern'"
+                      >{{ lobby.memberCount }}/{{ maxMembers }}</span
+                    >
 
-              @if (isHost(lobby)) {
-                <button
-                  class="lobby-secondary-action"
-                  type="button"
-                  [disabled]="busy()"
-                  (click)="closeLobby(lobby)"
-                >
-                  Lobby schließen
-                </button>
-              } @else {
-                <button
-                  class="lobby-secondary-action"
-                  type="button"
-                  [disabled]="busy()"
-                  (click)="toggleMembership(lobby)"
-                >
-                  {{ isMember(lobby) ? 'Lobby verlassen' : 'Lobby beitreten' }}
-                </button>
+                    @if (myLobbyId() === lobby.id) {
+                      <div class="lobby-card-actions">
+                        <a
+                          class="ui-pill-btn lobby-button"
+                          [routerLink]="['/multiplayer', lobby.id]"
+                          >Öffnen</a
+                        >
+                      </div>
+                    } @else if (!myLobbyId() && joiningLobbyId() !== lobby.id) {
+                      <div class="lobby-card-actions">
+                        <button
+                          class="ui-pill-btn lobby-button"
+                          type="button"
+                          [disabled]="busy() || isFull(lobby)"
+                          (click)="openJoin(lobby)"
+                        >
+                          @if (isFull(lobby)) {
+                            Voll
+                          } @else {
+                            Beitreten
+                          }
+                        </button>
+                      </div>
+                    }
+                  </div>
+
+                  @if (!myLobbyId() && joiningLobbyId() === lobby.id) {
+                    <form class="lobby-join-form" (submit)="joinLobby($event, lobby)">
+                      <label class="lobby-code-field">
+                        <span>Lobby-Code</span>
+                        <input
+                          type="text"
+                          maxlength="6"
+                          autocomplete="off"
+                          autocapitalize="characters"
+                          spellcheck="false"
+                          placeholder="ABC234"
+                          [value]="joinCode()"
+                          (input)="onCodeInput($event)"
+                          aria-label="Lobby-Code eingeben"
+                          autofocus
+                        />
+                      </label>
+                      <div class="lobby-card-actions">
+                        <button
+                          class="ui-pill-btn ui-pill-btn--neutral"
+                          type="button"
+                          (click)="openJoin(lobby)"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          class="ui-pill-btn ui-pill-btn--filled lobby-button"
+                          type="submit"
+                          [disabled]="busy() || joinCode().length < 6"
+                        >
+                          Beitreten
+                        </button>
+                      </div>
+                    </form>
+                  }
+                </article>
               }
-            </article>
+            </div>
+            <p class="ui-section-footer">Den 6-stelligen Code bekommst du vom Host der Lobby.</p>
           }
         </section>
       }
     }
-  </main>
+  </div>
 </div>

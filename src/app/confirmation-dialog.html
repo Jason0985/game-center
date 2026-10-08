@@ -9,7 +9,7 @@
 
 <mat-dialog-actions align="end">
   <button mat-button type="button" (click)="cancel()">Abbrechen</button>
-  <button mat-flat-button color="warn" type="button" (click)="confirm()">
+  <button mat-flat-button class="confirm-button" type="button" (click)="confirm()">
     {{ data.confirmLabel ?? 'Beenden' }}
   </button>
 </mat-dialog-actions>

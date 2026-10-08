@@ -10,93 +10,77 @@ main {
   min-height: 0;
   width: 100%;
   box-sizing: border-box;
-  padding-top: 4px;
   padding-bottom: var(--bottom-nav-space);
 }
 
+// Einheitlicher Kopf auf allen Seiten: Logo mit Namen links, Aktionen rechts
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 48px;
+  min-height: var(--top-bar-height);
   box-sizing: border-box;
-  padding: 7px 14px 7px 18px;
+  padding: 4px 6px 4px 16px;
 }
 
 .top-bar-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-height: 44px;
   color: var(--color-text);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .top-bar-title img {
   display: block;
-  width: 24px;
-  height: 24px;
-  padding: 3px;
-  box-sizing: border-box;
-  border-radius: 9px;
-  background: var(--color-white-08);
-  object-fit: contain;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
-@media (max-width: 600px) {
-  .top-bar-title img {
-    width: 36px;
-    height: 36px;
-  }
+.top-bar-title:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
 }
 
 .header-icon-button {
   position: relative;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--color-text-muted);
-  appearance: none;
-  -webkit-appearance: none;
+  color: var(--color-text);
+  text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.notification-button::before,
-.notification-button::after {
-  display: none;
+  transition: background-color var(--transition-fast);
 }
 
 .header-icon-button mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
 }
 
 .header-icon-button:hover {
-  color: var(--color-primary-light);
+  background: var(--color-white-06);
 }
 
-.header-icon-button:active {
-  background: var(--color-primary-soft) !important;
-  transform: scale(0.92);
+.header-icon-button--active {
+  background: var(--color-surface);
 }
 
 .header-icon-button:focus {
@@ -105,19 +89,20 @@ main {
 
 .header-icon-button:focus-visible {
   outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 1px;
+  top: 6px;
+  right: 6px;
   display: grid;
   place-items: center;
-  min-width: 16px;
-  height: 16px;
+  min-width: 17px;
+  height: 17px;
   box-sizing: border-box;
   padding: 0 4px;
+  border: 2px solid var(--color-background);
   border-radius: var(--radius-pill);
   background: var(--color-notification);
   color: var(--color-white);
@@ -127,88 +112,54 @@ main {
   pointer-events: none;
 }
 
+// Tab-Leiste über die volle Breite, aktiver Tab in Textfarbe (weiß im Dunkelmodus)
 .bottom-nav {
   position: fixed;
-  left: 50%;
-  bottom: 12px;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 10;
   display: flex;
-  width: min(calc(100% - 32px), 400px);
-  box-sizing: border-box;
-  transform: translateX(-50%);
-  padding: 7px 4px 5px;
-  overflow: hidden;
-  isolation: isolate;
-
-  border-radius: 28px;
-
+  justify-content: center;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border);
   background-color: var(--color-navigation-surface);
-  backdrop-filter: blur(3px) saturate(180%);
-  -webkit-backdrop-filter: blur(3px) saturate(180%);
-}
-
-.bottom-nav::before {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  z-index: 0;
-  width: calc((100% - 8px) / 4);
-
-  border-radius: 26px;
-  background: linear-gradient(135deg, var(--color-navigation-highlight), var(--color-primary-20));
-
-  content: '';
-  pointer-events: none;
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(1).active)::before {
-  transform: translateX(0) scaleX(1.02);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(2).active)::before {
-  transform: translateX(100%) scaleX(1.04);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(3).active)::before {
-  transform: translateX(200%) scaleX(1.02);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(4).active)::before {
-  transform: translateX(300%) scaleX(1.02);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 .bottom-nav-link {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 42px;
-  border-radius: 300px;
-  color: var(--color-neutral-muted);
-  font-size: 10px;
-  font-weight: 600;
+  max-width: 120px;
+  min-height: 48px;
+  border-radius: 12px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 500;
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .bottom-nav-link mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
+  width: 26px;
+  height: 26px;
+  font-size: 26px;
+}
+
+.bottom-nav-link:hover {
+  color: var(--color-text-muted);
 }
 
 .bottom-nav-link.active {
   color: var(--color-text);
+  font-weight: 600;
 }
 
 .bottom-nav-link:active {
   transform: scale(0.96);
-}
-
-.bottom-nav-link:focus {
-  outline: none;
 }

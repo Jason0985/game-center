@@ -1,148 +1,197 @@
-<div class="auth-root ui-page-root ui-page-root--spacious">
-  <header class="auth-header">
-    <div class="auth-avatar ui-avatar" aria-hidden="true">
-      <mat-icon>{{ mode === 'login' ? 'login' : 'person_add' }}</mat-icon>
-    </div>
+<div class="ui-page-root">
+  <div class="ui-page auth-page">
+    <a class="ui-back-link" routerLink="/profile">
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>Profil
+    </a>
 
-    <h1 class="ui-title">
-      {{ mode === 'login' ? 'Willkommen zurück' : 'Konto erstellen' }}
-    </h1>
+    <header class="auth-header">
+      <img class="auth-logo" src="icons/app-icon.svg" alt="" aria-hidden="true" />
+      <h1 class="auth-title">
+        @switch (mode()) {
+          @case ('login') {
+            Willkommen zurück
+          }
+          @case ('register') {
+            Konto erstellen
+          }
+          @case ('forgot') {
+            Passwort vergessen
+          }
+        }
+      </h1>
+      <p class="ui-page-lead">
+        @switch (mode()) {
+          @case ('login') {
+            Melde dich an, um deine Spielstände zu verwalten.
+          }
+          @case ('register') {
+            Speichere Profile, Spielstände und spiele mit Freunden.
+          }
+          @case ('forgot') {
+            Wir schicken dir einen Link, mit dem du ein neues Passwort setzt.
+          }
+        }
+      </p>
+    </header>
 
-    <p class="ui-subtitle">
-      {{
-        mode === 'login'
-          ? 'Melde dich an, um deine Spielstände zu verwalten.'
-          : 'Erstelle dein persönliches Game Center-Konto.'
-      }}
-    </p>
-  </header>
+    @if (mode() !== 'forgot') {
+      <div class="ui-segmented" role="group" aria-label="Anmelden oder registrieren">
+        <button type="button" [attr.aria-pressed]="mode() === 'login'" (click)="setMode('login')">
+          Anmelden
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="mode() === 'register'"
+          (click)="setMode('register')"
+        >
+          Registrieren
+        </button>
+      </div>
+    }
 
-  <div class="auth-switcher" role="tablist" aria-label="Authentifizierung">
-    <button type="button" [class.active]="mode === 'login'" (click)="setMode('login')">
-      Anmelden
-    </button>
+    @if (mode() === 'login') {
+      <form class="ui-group auth-card" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+        <mat-form-field appearance="outline">
+          <mat-label>E-Mail-Adresse</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email" />
+          @if (loginForm.controls.email.hasError('required')) {
+            <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
+          }
+          @if (loginForm.controls.email.hasError('email')) {
+            <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
+          }
+        </mat-form-field>
 
-    <button type="button" [class.active]="mode === 'register'" (click)="setMode('register')">
-      Registrieren
-    </button>
+        <mat-form-field appearance="outline">
+          <mat-label>Passwort</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          @if (loginForm.controls.password.hasError('required')) {
+            <mat-error>Passwort ist erforderlich.</mat-error>
+          }
+        </mat-form-field>
+
+        <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Anmeldung läuft …' : 'Anmelden' }}
+        </button>
+        <button
+          type="button"
+          class="auth-link"
+          [disabled]="!passwordResetEnabled"
+          (click)="forgotPassword()"
+        >
+          Passwort vergessen?
+        </button>
+        @if (!passwordResetEnabled) {
+          <p class="auth-hint auth-hint-small">Passwort zurücksetzen ist bald verfügbar.</p>
+        }
+      </form>
+    } @else if (mode() === 'forgot') {
+      @if (!resetSent()) {
+        <form class="ui-group auth-card" [formGroup]="resetForm" (ngSubmit)="submitReset()">
+          <mat-form-field appearance="outline">
+            <mat-label>E-Mail-Adresse</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (resetForm.controls.email.hasError('required')) {
+              <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
+            }
+            @if (resetForm.controls.email.hasError('email')) {
+              <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
+            }
+          </mat-form-field>
+
+          <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+            {{ loading() ? 'Wird gesendet …' : 'Link senden' }}
+          </button>
+        </form>
+      }
+      <button type="button" class="auth-link" (click)="setMode('login')">
+        Zurück zur Anmeldung
+      </button>
+    } @else {
+      <form class="ui-group auth-card" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
+        <mat-form-field appearance="outline">
+          <mat-label>E-Mail-Adresse</mat-label>
+          <input
+            matInput
+            type="email"
+            maxlength="100"
+            formControlName="email"
+            autocomplete="email"
+          />
+          @if (registerForm.controls.email.hasError('required')) {
+            <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
+          }
+          @if (registerForm.controls.email.hasError('email')) {
+            <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Benutzername</mat-label>
+          <input matInput formControlName="username" maxlength="20" autocomplete="username" />
+          @if (registerForm.controls.username.hasError('required')) {
+            <mat-error>Benutzername ist erforderlich.</mat-error>
+          }
+          @if (registerForm.controls.username.hasError('minlength')) {
+            <mat-error>Mindestens 3 Zeichen erforderlich.</mat-error>
+          }
+          @if (registerForm.controls.username.hasError('pattern')) {
+            <mat-error>Nur Buchstaben, Zahlen und Unterstriche sind erlaubt.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Anzeigename</mat-label>
+          <input matInput formControlName="displayName" maxlength="50" autocomplete="name" />
+          @if (registerForm.controls.displayName.hasError('required')) {
+            <mat-error>Anzeigename ist erforderlich.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Passwort</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="new-password" />
+          @if (registerForm.controls.password.hasError('minlength')) {
+            <mat-error>Das Passwort muss mindestens 8 Zeichen enthalten.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Passwort wiederholen</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="passwordConfirmation"
+            autocomplete="new-password"
+          />
+          @if (registerForm.controls.passwordConfirmation.hasError('required')) {
+            <mat-error>Bitte wiederhole dein Passwort.</mat-error>
+          }
+        </mat-form-field>
+
+        <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Konto wird erstellt …' : 'Konto erstellen' }}
+        </button>
+        <p class="auth-legal">
+          Mit dem Erstellen deines Kontos akzeptierst du die
+          <a routerLink="/legal/nutzungsbedingungen">Nutzungsbedingungen</a>. Wie deine Daten
+          verarbeitet werden, steht in der
+          <a routerLink="/legal/datenschutz">Datenschutzerklärung</a>.
+        </p>
+      </form>
+    }
+
+    @if (errorMessage()) {
+      <p class="auth-message error" role="alert">{{ errorMessage() }}</p>
+    }
+
+    @if (successMessage()) {
+      <p class="auth-message success" role="status">{{ successMessage() }}</p>
+    }
   </div>
-
-  @if (mode === 'login') {
-    <form class="auth-card ui-surface" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
-      <mat-form-field appearance="outline">
-        <mat-label>E-Mail-Adresse</mat-label>
-        <input matInput type="email" formControlName="email" autocomplete="email" />
-        @if (loginForm.controls.email.hasError('required')) {
-          <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
-        }
-        @if (loginForm.controls.email.hasError('email')) {
-          <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Passwort</mat-label>
-        <input
-          matInput
-          type="password"
-          formControlName="password"
-          autocomplete="current-password"
-        />
-        @if (loginForm.controls.password.hasError('required')) {
-          <mat-error>Passwort ist erforderlich.</mat-error>
-        }
-      </mat-form-field>
-
-      <button
-        mat-flat-button
-        color="primary"
-        class="auth-submit"
-        type="submit"
-        [disabled]="loading"
-      >
-        <mat-icon>login</mat-icon>
-        {{ loading ? 'Anmeldung läuft ...' : 'Anmelden' }}
-      </button>
-    </form>
-  } @else {
-    <form class="auth-card ui-surface" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
-      <mat-form-field appearance="outline">
-        <mat-label>E-Mail-Adresse</mat-label>
-        <input matInput type="email" maxlength="100" formControlName="email" autocomplete="email" />
-        @if (registerForm.controls.email.hasError('required')) {
-          <mat-error>E-Mail-Adresse ist erforderlich.</mat-error>
-        }
-        @if (registerForm.controls.email.hasError('email')) {
-          <mat-error>Bitte gib eine gültige E-Mail-Adresse ein.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Benutzername</mat-label>
-        <input matInput formControlName="username" maxlength="20" autocomplete="username" />
-        @if (registerForm.controls.username.hasError('required')) {
-          <mat-error>Benutzername ist erforderlich.</mat-error>
-        }
-        @if (registerForm.controls.username.hasError('minlength')) {
-          <mat-error>Mindestens 3 Zeichen erforderlich.</mat-error>
-        }
-        @if (registerForm.controls.username.hasError('pattern')) {
-          <mat-error>Nur Buchstaben, Zahlen und Unterstriche sind erlaubt.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Anzeigename</mat-label>
-        <input matInput formControlName="displayName" maxlength="50" autocomplete="name" />
-        @if (registerForm.controls.displayName.hasError('required')) {
-          <mat-error>Anzeigename ist erforderlich.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Passwort</mat-label>
-        <input matInput type="password" formControlName="password" autocomplete="new-password" />
-        @if (registerForm.controls.password.hasError('minlength')) {
-          <mat-error>Das Passwort muss mindestens 8 Zeichen enthalten.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Passwort wiederholen</mat-label>
-        <input
-          matInput
-          type="password"
-          formControlName="passwordConfirmation"
-          autocomplete="new-password"
-        />
-        @if (registerForm.controls.passwordConfirmation.hasError('required')) {
-          <mat-error>Bitte wiederhole dein Passwort.</mat-error>
-        }
-      </mat-form-field>
-
-      <button
-        mat-flat-button
-        color="primary"
-        class="auth-submit"
-        type="submit"
-        [disabled]="loading"
-      >
-        <mat-icon>person_add</mat-icon>
-        {{ loading ? 'Konto wird erstellt ...' : 'Registrieren' }}
-      </button>
-    </form>
-  }
-
-  @if (errorMessage) {
-    <p class="auth-message error" role="alert">{{ errorMessage }}</p>
-  }
-
-  @if (successMessage) {
-    <p class="auth-message success" role="status">{{ successMessage }}</p>
-  }
-
-  <a class="back-link" routerLink="/profile">
-    <mat-icon>arrow_back</mat-icon>
-    Zurück zum Profil
-  </a>
 </div>

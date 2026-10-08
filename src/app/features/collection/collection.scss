@@ -1,155 +1,35 @@
-.collection-header,
-.collection-content {
-  width: min(100%, var(--content-width));
-  box-sizing: border-box;
+.collection-page {
+  gap: 20px;
 }
 
-.collection-header {
-  margin-bottom: 24px;
-  text-align: center;
+.collection-group {
+  --ui-row-inset: 70px;
 }
 
-.collection-heading {
-  width: 100%;
+.collection-row {
+  min-height: 68px;
+  gap: 14px;
 }
 
-.collection-heading > div {
-  width: 100%;
-}
-
-.collection-search {
+.collection-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 46px;
-  margin-bottom: 16px;
-  padding: 0 14px;
-}
-
-.collection-search input {
+  gap: 8px;
   min-width: 0;
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 14px;
 }
 
-.collection-search input::placeholder {
-  color: var(--color-text-subtle);
-}
-.collection-search mat-icon {
-  color: var(--color-primary-light);
-}
-
-.game-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.collection-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.game-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 76px;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-@media (hover: hover) {
-  .game-card:hover {
-    background-color: var(--color-neutral-card);
-    box-shadow: 0 20px 48px var(--color-shadow-card);
-    transform: translateY(-2px);
-  }
-}
-
-.game-card:active {
-  transform: scale(0.98);
-}
-
-.game-card:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
-}
-
-.game-icon {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-small);
+.collection-tag {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
   background: var(--color-primary-soft);
   color: var(--color-primary-light);
-}
-
-.game-icon mat-icon {
-  width: 22px;
-  height: 22px;
-  font-size: 22px;
-}
-.game-details {
-  min-width: 0;
-  flex: 1;
-}
-
-.game-category {
-  margin: 0 0 2px;
-  color: var(--color-primary-light);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.game-details h2 {
-  overflow: hidden;
-  margin: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 16px;
-}
-
-.game-description {
-  overflow: hidden;
-  margin: 3px 0 0;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.game-arrow {
-  flex: 0 0 auto;
-  margin-left: auto;
-  color: var(--color-text-subtle);
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 90px;
-  color: var(--color-text-muted);
-}
-
-.empty-state mat-icon {
-  color: var(--color-primary-light);
-}
-.empty-state p {
-  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
 }

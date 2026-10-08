@@ -1,107 +1,63 @@
-@use '../../../styles/notification-tones';
-
-.notifications-header,
-.notification-list,
-.notifications-empty {
-  width: min(100%, var(--content-width));
-  box-sizing: border-box;
-}
-
-.notifications-header {
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.notifications-back {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.notifications-back:hover,
-.notifications-back:focus-visible {
-  background: var(--color-primary);
-  color: var(--color-text);
-}
-
-.notifications-back mat-icon {
-  width: 22px;
-  height: 22px;
-  font-size: 22px;
-}
-
-.notifications-kicker {
-  margin: 12px 0 4px;
-  color: var(--color-primary-light);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.notifications-header .ui-title {
-  margin: 0 0 8px;
-}
-
-.system-notification-button {
-  margin-top: 14px;
-  border-radius: var(--radius-pill);
-}
-
-.system-notification-button mat-icon {
-  width: 18px;
-  height: 18px;
-  font-size: 18px;
-}
-
 .notification-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+}
+
+// Jede Mitteilung ist eine Zeile der Gruppe; die Hülle trägt die Wisch-Aktionen
+.notification-swipe-shell {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.notification-swipe-shell + .notification-swipe-shell::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 62px;
+  z-index: 3;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
 }
 
 .notification-card {
-  padding: 16px;
+  position: relative;
+  z-index: 2;
+  padding: 12px 8px 12px 16px;
+  background: var(--color-surface);
   touch-action: pan-y;
+  transition: transform 220ms ease;
 }
 
 .notification-card-topline {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .notification-type-icon {
   display: grid;
-  flex: 0 0 40px;
+  flex: 0 0 34px;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-small);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   background: var(--tone-soft);
   color: var(--tone);
 }
 
 .notification-type-icon mat-icon {
-  width: 21px;
-  height: 21px;
-  font-size: 21px;
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
 }
 
 .notification-copy {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .notification-meta {
@@ -110,99 +66,70 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 2px;
+  color: var(--color-text-muted);
+  font-size: 13px;
 }
 
 .notification-meta span {
   flex: 0 0 auto;
-  color: var(--color-text-subtle);
-  font-size: 10px;
 }
 
 .notification-meta .notification-category {
   color: var(--tone);
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .notification-copy h2 {
   overflow: hidden;
   margin: 0;
   font-size: 15px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .notification-copy p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .notification-card-topline > button {
   flex: 0 0 auto;
-  margin: -8px -8px 0 0;
+  margin: -6px 0 0;
   color: var(--color-text-subtle);
 }
 
 .notification-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-white-08);
+  margin: 10px 0 2px 46px;
 }
 
-.notification-actions button {
-  min-height: 36px;
+// Systembenachrichtigungen heben sich farbig von persönlichen ab
+.notification-card[data-category='system'] {
+  background-color: color-mix(in srgb, var(--tone) 10%, var(--color-surface));
 }
 
-.notifications-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 42px 24px;
-  text-align: center;
+.notification-card[data-category='system'] .notification-copy p {
+  color: var(--color-text);
 }
 
-.notifications-empty > mat-icon {
-  width: 42px;
-  height: 42px;
-  color: var(--color-primary-light);
-  font-size: 42px;
+.notification-card--dragging {
+  transition: none;
 }
 
-.notifications-empty h2 {
-  margin: 18px 0 8px;
-  font-size: 20px;
-}
-
-.notifications-empty p {
-  margin: 0 0 18px;
-  color: var(--color-text-muted);
-  font-size: 13px;
+.notification-card--removing {
+  transition: transform 220ms ease;
 }
 
 .notifications-hint {
-  width: min(100%, var(--content-width));
-  margin: 14px 0 0;
-  color: var(--color-text-subtle);
-  font-size: 11px;
-  text-align: center;
-}
-
-.notification-swipe-shell {
-  position: relative;
-  overflow: hidden;
-  border-radius: 30px;
-  background: var(--color-surface);
+  margin-top: -16px;
 }
 
 .notification-swipe-shell--ready .swipe-delete-action {
   opacity: 1;
-  transform: scale(1.08);
 }
 
 .swipe-delete-action {
@@ -216,22 +143,18 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: var(--color-danger);
+  background: var(--color-danger-strong);
   color: var(--color-white);
-  opacity: 0.55;
-  transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
 }
 
 .swipe-delete-action--left {
   left: 0;
-  border-radius: 30px 0 0 30px;
 }
 
 .swipe-delete-action--right {
   right: 0;
-  border-radius: 0 30px 30px 0;
 }
 
 .swipe-delete-action mat-icon {
@@ -241,51 +164,10 @@
 }
 
 .swipe-delete-action span {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .swipe-threshold {
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  z-index: 1;
-  width: 1px;
-  border-left: 1px dashed var(--color-white-58);
-  opacity: 0.85;
-}
-
-.swipe-threshold--left {
-  left: 84px;
-}
-
-.swipe-threshold--right {
-  right: 84px;
-}
-
-.notification-card {
-  padding: 16px;
-  position: relative;
-  z-index: 2;
-  transition: transform 220ms ease;
-}
-
-// Systembenachrichtigungen heben sich farbig von persönlichen ab
-.notification-card[data-category='system'] {
-  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
-  background-color: color-mix(in srgb, var(--tone) 12%, var(--color-surface));
-}
-
-.notification-card[data-category='system'] .notification-copy p {
-  color: var(--color-text);
-}
-
-.notification-card--dragging {
-  transition: none;
-}
-
-.notification-card--removing {
-  transition: transform 220ms ease;
+  display: none;
 }

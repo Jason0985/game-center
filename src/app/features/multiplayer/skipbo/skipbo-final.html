@@ -1,0 +1,53 @@
+<section class="final" aria-labelledby="skipbo-final-title">
+  <div class="banner">
+    @if (winner(); as w) {
+      <span class="avatar" [style.background]="winnerColor()" aria-hidden="true">{{
+        w.name.trim().charAt(0).toUpperCase() || '?'
+      }}</span>
+    }
+    <p class="kicker">Spiel beendet</p>
+    <h2 id="skipbo-final-title">{{ winner() ? winner()!.name + ' gewinnt!' : 'Endstand' }}</h2>
+    <p class="sub">{{ winner() ? 'Spielstapel leer' : 'Vorzeitig beendet' }}</p>
+  </div>
+
+  <ol class="ranking">
+    @for (row of ranking(); track row.player.user_id) {
+      <li
+        [class.top]="row.rank === 1"
+        [class.mine]="row.player.user_id === userId()"
+        [class.gone]="row.rank === null"
+      >
+        <span class="rank">{{ row.rank ?? '–' }}</span>
+        <span class="name">
+          <strong>{{ row.player.name }}</strong>
+          @if (row.player.user_id === userId()) {
+            <span class="note">(du)</span>
+          }
+          @if (row.rank === null) {
+            <span class="note">verlassen</span>
+          }
+        </span>
+        <span class="left">
+          <span class="material-symbols-rounded" aria-hidden="true">layers</span>
+          <span class="sr-only">Spielstapel: </span>
+          {{
+            row.rank === null
+              ? row.player.stock_count
+              : row.player.stock_count
+                ? 'noch ' + row.player.stock_count
+                : 'leer'
+          }}
+        </span>
+      </li>
+    }
+  </ol>
+
+  @if (isHost()) {
+    <button type="button" class="back" [disabled]="busy()" (click)="backToLobby.emit()">
+      <span class="material-symbols-rounded" aria-hidden="true">meeting_room</span>
+      Zurück zur Warte-Lobby
+    </button>
+  } @else {
+    <p class="hint">Der Host entscheidet, wie es weitergeht.</p>
+  }
+</section>

@@ -1,0 +1,454 @@
+@use 'arrival-planner-shared';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// --- Strecke ----------------------------------------------------------------------------------
+
+.route-card-main {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 16px;
+}
+
+.route-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+}
+
+.route-field + .route-field {
+  border-top: 1px solid var(--color-white-08);
+}
+
+.route-field > mat-icon {
+  flex: 0 0 auto;
+  color: var(--color-primary-light);
+}
+
+.route-field-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.route-field-copy label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.route-field-copy input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  padding: 2px 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.route-field-copy input::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.route-field-copy input:focus-visible {
+  outline: none;
+}
+
+.route-field:focus-within {
+  box-shadow: inset 0 -2px 0 var(--color-primary-light);
+}
+
+.field-status {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-subtle);
+  font-size: 18px;
+}
+
+.field-ok {
+  color: var(--color-primary-light);
+}
+
+.suggestions {
+  margin: 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--color-white-08);
+  list-style: none;
+}
+
+.suggestions button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestions button:hover,
+.suggestions button:focus-visible {
+  background: var(--color-white-08);
+}
+
+.suggestions mat-icon {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+}
+
+.suggestion-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.suggestion-copy strong,
+.suggestion-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-copy strong {
+  font-size: 15px;
+}
+
+.suggestion-copy span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.field-error {
+  margin: 0;
+  padding: 0 16px 12px;
+  color: var(--color-danger-light);
+  font-size: 12px;
+}
+
+.arrival-date-input {
+  margin-top: 4px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 12px;
+}
+
+.arrival-date-input:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+// --- Buttons ----------------------------------------------------------------------------------
+
+.swap-button,
+.search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.swap-button {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  margin-left: 8px;
+  border-radius: 10px;
+}
+
+.swap-button:hover,
+.swap-button:focus-visible {
+  background: var(--color-white-08);
+  color: var(--color-text);
+}
+
+.swap-button:focus-visible,
+.search-button:focus-visible,
+.connection-row:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.search-button {
+  gap: 8px;
+  min-height: 48px;
+  border-radius: var(--radius-large);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.planner-toolbar .ui-badge {
+  white-space: nowrap;
+}
+
+.delay,
+.leg-alert {
+  color: var(--color-danger-light);
+  font-weight: 600;
+}
+
+.plan-time .delay {
+  font-size: 11px;
+}
+
+// --- Fahrtverlauf -----------------------------------------------------------------------------
+
+.leg-list {
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+}
+
+.leg {
+  padding: 10px 14px;
+}
+
+.leg-cancelled {
+  opacity: 0.6;
+}
+
+.leg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.leg-headsign {
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.leg-alert {
+  font-size: 12px;
+}
+
+.leg-stop {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.leg-time {
+  flex: 0 0 48px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leg-station {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.leg-track {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.leg-track-changed {
+  color: var(--color-danger-light);
+  font-weight: 700;
+}
+
+.leg-meta {
+  margin: 4px 0 4px 21px;
+  padding: 4px 0 4px 31px;
+  border-left: 2px solid var(--color-primary-soft);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.leg-walk,
+.leg-transfer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.leg-walk mat-icon,
+.leg-transfer mat-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.leg-transfer {
+  margin: 0 14px;
+  border-radius: var(--radius-small);
+  background: var(--color-white-05);
+}
+
+// --- Verbindungsliste -------------------------------------------------------------------------
+
+.connection-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.connection-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.connection-row + .connection-row {
+  border-top: 1px solid var(--color-white-08);
+}
+
+.connection-row[aria-pressed='true'] {
+  background: linear-gradient(115deg, var(--color-primary-soft), var(--color-surface));
+}
+
+.connection-times {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.connection-times strong {
+  font-size: 18px;
+}
+
+.connection-line {
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-text-subtle);
+}
+
+.connection-meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.connection-detail {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.connection-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.line-chip,
+.recommended-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.line-chip {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+}
+
+.line-chip mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.recommended-chip {
+  border: 1px solid var(--color-primary-light);
+  color: var(--color-primary-light);
+}
+
+.attribution {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  text-align: center;
+}
+
+.attribution a {
+  color: inherit;
+}
+
+@media (max-width: 420px) {
+  .connection-row {
+    gap: 10px;
+  }
+
+  .connection-times strong {
+    font-size: 16px;
+  }
+
+  .connection-line {
+    width: 10px;
+  }
+}

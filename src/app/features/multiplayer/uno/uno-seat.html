@@ -1,0 +1,67 @@
+@let p = player();
+@if (winner() && !own()) {
+  <span class="badge-win" aria-hidden="true">SIEG</span>
+} @else if (uno() && !own()) {
+  <span class="badge-win badge-uno" aria-hidden="true">UNO!</span>
+}
+<span class="avatar-wrap">
+  @if (p.state === 'left') {
+    <span class="avatar avatar--left" aria-hidden="true">
+      <span class="material-symbols-rounded">event_seat</span>
+    </span>
+  } @else {
+    <span
+      class="avatar"
+      [class.avatar--pulse]="celebrate()"
+      [style.background]="color()"
+      aria-hidden="true"
+      >{{ initial() }}</span
+    >
+  }
+  @if (skipped()) {
+    <span class="token token--skip" aria-hidden="true">
+      <span class="material-symbols-rounded">block</span>
+    </span>
+  }
+  @if (dealer()) {
+    <span class="token token--dealer" aria-hidden="true">G</span>
+  }
+</span>
+
+<span class="info">
+  <span class="name">
+    <span class="name-text">{{ p.name }}</span>
+    @if (variant() === 'pill') {
+      <span class="you">(du)</span>
+    }
+  </span>
+  @if (p.state === 'left') {
+    <span class="gone">hat verlassen</span>
+  } @else if (!own()) {
+    <span class="hand" aria-hidden="true">
+      <span class="backs">
+        @for (tilt of backs(); track $index) {
+          <span [style.rotate.deg]="tilt"></span>
+        }
+      </span>
+      {{ p.hand_count }}
+    </span>
+  }
+</span>
+
+@if (pending() && !own()) {
+  <span class="pending" aria-hidden="true">+{{ pending() }}</span>
+} @else if (waiting(); as time) {
+  <span class="waiting">
+    <span class="material-symbols-rounded" aria-hidden="true">hourglass_bottom</span>
+    <span class="sr-only">wartet seit </span>{{ time }}
+  </span>
+}
+
+@if (fanCards().length) {
+  <span class="fan" aria-hidden="true">
+    @for (transform of fanCards(); track $index) {
+      <span class="fan-back" [style.transform]="transform"></span>
+    }
+  </span>
+}

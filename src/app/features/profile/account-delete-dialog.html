@@ -1,0 +1,44 @@
+<h2 mat-dialog-title class="delete-title">
+  <mat-icon aria-hidden="true">delete_forever</mat-icon>
+  Konto löschen?
+</h2>
+
+<form mat-dialog-content class="dialog-form" (submit)="$event.preventDefault(); delete()">
+  <p class="delete-text">
+    Dein Konto wird endgültig gelöscht, zusammen mit Profil, Freundschaften, Mitteilungen, Lobbys
+    und Spielständen. Das lässt sich nicht rückgängig machen.
+  </p>
+  <p class="delete-text">
+    Gib zur Bestätigung deinen Benutzernamen <strong>{{ data.username }}</strong> ein.
+  </p>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Benutzername</mat-label>
+    <input
+      matInput
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      [value]="typedName()"
+      (input)="typedName.set($any($event.target).value)"
+      cdkFocusInitial
+    />
+  </mat-form-field>
+
+  @if (errorMessage()) {
+    <p class="dialog-error" role="alert">{{ errorMessage() }}</p>
+  }
+</form>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" [disabled]="deleting()" (click)="cancel()">Abbrechen</button>
+  <button
+    mat-flat-button
+    class="delete-button"
+    type="button"
+    [disabled]="!confirmed || deleting()"
+    (click)="delete()"
+  >
+    {{ deleting() ? 'Wird gelöscht …' : 'Endgültig löschen' }}
+  </button>
+</div>

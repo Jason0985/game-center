@@ -1,0 +1,49 @@
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 360px;
+}
+
+.delete-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-title mat-icon {
+  color: var(--color-danger-light);
+}
+
+.dialog-form {
+  padding-top: 4px;
+}
+
+.delete-text {
+  margin: 0 0 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.delete-text strong {
+  color: var(--color-text);
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.dialog-error {
+  margin: 4px 0 0;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+[mat-dialog-actions] {
+  gap: 8px;
+}
+
+.delete-button:not(:disabled) {
+  background-color: var(--color-danger-strong) !important;
+  color: var(--color-white) !important;
+}

@@ -20,3 +20,9 @@ mat-dialog-content {
 mat-dialog-actions {
   padding-bottom: 8px;
 }
+
+// Bestätigen ist hier immer eine destruktive Aktion (Beenden, Ablehnen, Entfernen)
+.confirm-button {
+  background-color: var(--color-danger-strong) !important;
+  color: var(--color-white) !important;
+}

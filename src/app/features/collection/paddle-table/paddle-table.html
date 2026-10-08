@@ -1,16 +1,38 @@
 <div class="paddle-root ui-page-root">
-  <header class="ui-hero paddle-header">
+  <header class="ui-hero ui-header-nav paddle-header">
     <a
-      class="collection-back-button"
+      class="ui-header-button ui-header-button--start"
       routerLink="/collection"
       matTooltip="Zur Sammlung"
       aria-label="Zur Sammlung zurück"
     >
       <mat-icon aria-hidden="true">chevron_left</mat-icon>
     </a>
-    <div class="paddle-heading-icon" aria-hidden="true">
-      <mat-icon>sports_tennis</mat-icon>
-    </div>
+    @if (sortedPlayers().length) {
+      <button
+        class="ui-header-button ui-header-button--end"
+        type="button"
+        [matMenuTriggerFor]="playerActionsMenu"
+        aria-label="Kartenaktionen öffnen"
+        matTooltip="Kartenaktionen"
+      >
+        <mat-icon aria-hidden="true">more_vert</mat-icon>
+      </button>
+      <mat-menu #playerActionsMenu="matMenu" xPosition="before">
+        <button mat-menu-item type="button" (click)="expandAllPlayers()">
+          <mat-icon aria-hidden="true">unfold_more</mat-icon>
+          <span>Alle Karten öffnen</span>
+        </button>
+        <button mat-menu-item type="button" (click)="collapseAllPlayers()">
+          <mat-icon aria-hidden="true">unfold_less</mat-icon>
+          <span>Alle Karten schließen</span>
+        </button>
+        <button mat-menu-item type="button" (click)="openSetValueDialog()">
+          <mat-icon aria-hidden="true">euro</mat-icon>
+          <span>Einsatz ändern</span>
+        </button>
+      </mat-menu>
+    }
     <h1 class="ui-title">Paddle <span class="ui-accent">Rangliste</span></h1>
   </header>
 
@@ -23,30 +45,7 @@
         </div>
         <div class="section-actions">
           <mat-icon aria-hidden="true">leaderboard</mat-icon>
-          <button
-            mat-icon-button
-            type="button"
-            [matMenuTriggerFor]="playerActionsMenu"
-            aria-label="Kartenaktionen öffnen"
-            matTooltip="Kartenaktionen"
-          >
-            <mat-icon aria-hidden="true">more_vert</mat-icon>
-          </button>
         </div>
-        <mat-menu #playerActionsMenu="matMenu">
-          <button mat-menu-item type="button" (click)="expandAllPlayers()">
-            <mat-icon aria-hidden="true">unfold_more</mat-icon>
-            <span>Alle Karten öffnen</span>
-          </button>
-          <button mat-menu-item type="button" (click)="collapseAllPlayers()">
-            <mat-icon aria-hidden="true">unfold_less</mat-icon>
-            <span>Alle Karten schließen</span>
-          </button>
-          <button mat-menu-item type="button" (click)="openSetValueDialog()">
-            <mat-icon aria-hidden="true">euro</mat-icon>
-            <span>Einsatz ändern</span>
-          </button>
-        </mat-menu>
       </div>
 
       <div class="player-card-list ui-surface">
