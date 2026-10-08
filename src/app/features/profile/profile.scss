@@ -28,6 +28,13 @@
 
 .profile-stats {
   border-top: 1px solid var(--color-border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-stats:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
 }
 
 .profile-guest-actions {

@@ -1,17 +1,33 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { PaddleDebtEntry, PaddlePlayer } from './paddle-player.model';
+import { UserStateService } from '../../../services/user-state.service';
 
 const STORAGE_KEY = 'gameroster:paddle-players';
 const DEBTS_STORAGE_KEY = 'gameroster:paddle-debts';
 const WIN_VALUE_STORAGE_KEY = 'gameroster:paddle-win-value';
 const DEFAULT_WIN_VALUE = 2.5;
 
+interface PaddleState {
+  players: PaddlePlayer[];
+  debtEntries: PaddleDebtEntry[];
+  winValue: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PaddleService {
+  private readonly userState = inject(UserStateService);
   readonly defaultWinValue = DEFAULT_WIN_VALUE;
   readonly winValue = signal(this.loadWinValue());
   readonly players = signal<PaddlePlayer[]>(this.loadPlayers());
   readonly debtEntries = signal<PaddleDebtEntry[]>(this.loadDebtEntries());
+
+  constructor() {
+    this.userState.connect<PaddleState>(
+      'paddle',
+      () => (this.players().length || this.debtEntries().length ? this.state() : null),
+      (value) => this.applyState(value),
+    );
+  }
 
   addPlayer(name: string): void {
     const trimmedName = name.trim();
@@ -56,9 +72,7 @@ export class PaddleService {
 
     const normalizedValue = Math.round(value * 100) / 100;
     this.winValue.set(normalizedValue);
-    try {
-      localStorage.setItem(WIN_VALUE_STORAGE_KEY, String(normalizedValue));
-    } catch {}
+    this.persist();
   }
 
   addDebtEntry(winnerIds: string[], loserIds: string[], rounds = 1): void {
@@ -104,14 +118,12 @@ export class PaddleService {
       },
     ]);
     this.persist();
-    this.persistDebtEntries();
   }
 
   endGame(): void {
     this.players.set([]);
     this.debtEntries.set([]);
     this.persist();
-    this.persistDebtEntries();
   }
 
   private updatePlayer(playerId: string, update: (player: PaddlePlayer) => PaddlePlayer): void {
@@ -121,15 +133,32 @@ export class PaddleService {
     this.persist();
   }
 
-  private persist(): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.players()));
-    } catch {}
+  private state(): PaddleState {
+    return { players: this.players(), debtEntries: this.debtEntries(), winValue: this.winValue() };
   }
 
-  private persistDebtEntries(): void {
+  // Stand aus dem Konto übernehmen
+  private applyState(value: unknown): void {
+    const state = value as Partial<PaddleState> | null;
+    if (!Array.isArray(state?.players) || !Array.isArray(state.debtEntries)) return;
+
+    this.players.set(state.players);
+    this.debtEntries.set(state.debtEntries);
+    const winValue = Number(state.winValue);
+    this.winValue.set(Number.isFinite(winValue) && winValue > 0 ? winValue : DEFAULT_WIN_VALUE);
+    this.storeLocal();
+  }
+
+  private persist(): void {
+    this.storeLocal();
+    this.userState.save('paddle', this.state());
+  }
+
+  private storeLocal(): void {
     try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.players()));
       localStorage.setItem(DEBTS_STORAGE_KEY, JSON.stringify(this.debtEntries()));
+      localStorage.setItem(WIN_VALUE_STORAGE_KEY, String(this.winValue()));
     } catch {}
   }
 

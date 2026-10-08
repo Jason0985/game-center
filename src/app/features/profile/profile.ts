@@ -14,6 +14,7 @@ import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog'
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
 import { AccountDeleteDialog, AccountDeleteDialogData } from './account-delete-dialog';
 import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
+import { computeStats, GameResultsService, GameStats } from './stats/game-stats';
 
 const LEGAL_LINKS = [
   { path: '/legal/impressum', label: 'Impressum', icon: 'info', tile: 'var(--tile-gray)' },
@@ -46,6 +47,7 @@ const LEGAL_LINKS = [
 export class Profile {
   private readonly authService = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
+  private readonly resultsService = inject(GameResultsService);
   private readonly dialog = inject(MatDialog);
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
@@ -54,6 +56,7 @@ export class Profile {
   private readonly relations = signal<FriendRelation[]>([]);
   readonly friendsLoading = signal(true);
   readonly friendFilter = signal('');
+  readonly stats = signal<GameStats | null>(null);
   readonly legalLinks = LEGAL_LINKS;
 
   readonly friends = computed(() =>
@@ -78,6 +81,9 @@ export class Profile {
       const userId = this.session.user()?.id;
       if (userId) {
         void this.loadRelations(userId);
+        void this.resultsService.getResults(userId).then((results) => {
+          if (results && this.session.user()?.id === userId) this.stats.set(computeStats(results));
+        });
       }
     });
   }

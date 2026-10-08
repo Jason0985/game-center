@@ -79,6 +79,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profile/profile').then((module) => module.Profile),
   },
   {
+    path: 'profile/stats',
+    loadComponent: () => import('./features/profile/stats/stats').then((module) => module.Stats),
+  },
+  {
     path: 'profile/auth',
     loadComponent: () => import('./features/auth/auth').then((module) => module.Auth),
   },
