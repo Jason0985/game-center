@@ -15,10 +15,10 @@
   "apple-mobile-web-app-status-bar-style": "default",
   "shortcuts": [
     {
-      "name": "Online spielen",
-      "short_name": "Spielen",
-      "description": "Lobby eröffnen oder mit Code beitreten",
-      "url": "/game-center/multiplayer",
+      "name": "Neue Lobby",
+      "short_name": "Neue Lobby",
+      "description": "Lobby eröffnen und Freunde einladen",
+      "url": "/game-center/multiplayer?neu=1",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -28,10 +28,23 @@
       ]
     },
     {
-      "name": "Statistik",
-      "short_name": "Statistik",
-      "description": "Siege, Serien und letzte Spiele",
-      "url": "/game-center/profile/stats",
+      "name": "Neues Ranking",
+      "short_name": "Ranking",
+      "description": "Spieler hinzufügen und Punkte zählen",
+      "url": "/game-center/ranking",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Paddle Tabelle",
+      "short_name": "Paddle",
+      "description": "Paddle-Schulden eintragen",
+      "url": "/game-center/collection/paddle-table",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -45,6 +58,19 @@
       "short_name": "Wecker",
       "description": "Weckzeit für deine Ankunft berechnen",
       "url": "/game-center/collection/arrival-planner",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Statistik",
+      "short_name": "Statistik",
+      "description": "Siege, Serien und letzte Spiele",
+      "url": "/game-center/profile/stats",
       "icons": [
         {
           "src": "icons/icon-192.png",

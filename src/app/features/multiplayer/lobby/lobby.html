@@ -73,6 +73,17 @@
           >
             <mat-icon aria-hidden="true">link</mat-icon>
           </button>
+          @if (canShare) {
+            <button
+              type="button"
+              class="ui-icon-button ui-icon-button--accent"
+              aria-label="Einladung teilen"
+              matTooltip="Teilen, z. B. per WhatsApp"
+              (click)="shareLink(lobbyCode)"
+            >
+              <mat-icon aria-hidden="true">{{ shareIcon }}</mat-icon>
+            </button>
+          }
         </section>
       }
 

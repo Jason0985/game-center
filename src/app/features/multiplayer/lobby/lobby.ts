@@ -132,6 +132,28 @@ export class Lobby {
     }
   }
 
+  // Teilen-Menü des Geräts (WhatsApp, Nachrichten …); fehlt es (z. B. Firefox am Desktop),
+  // bleibt „Link kopieren“
+  readonly canShare = typeof globalThis.navigator?.share === 'function';
+  readonly shareIcon = /iPhone|iPad|Macintosh/.test(globalThis.navigator?.userAgent ?? '')
+    ? 'ios_share'
+    : 'share';
+
+  async shareLink(code: string): Promise<void> {
+    try {
+      await navigator.share({
+        title: 'Game Center',
+        text: `Spiel mit mir im Game Center! Lobby-Code: ${code}`,
+        url: appUrl(`multiplayer?code=${code}`),
+      });
+    } catch (error) {
+      // Abbrechen im Teilen-Menü ist kein Fehler
+      if ((error as DOMException).name === 'AbortError') return;
+      console.error('Link konnte nicht geteilt werden.', error);
+      this.appErrors.report('Der Link konnte nicht geteilt werden.');
+    }
+  }
+
   async toggleReady(): Promise<void> {
     const me = this.me();
     if (!me) return;

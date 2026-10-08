@@ -72,6 +72,7 @@ export class SkipboGameView {
     now: this.table.now,
     describe: (event) => this.describe(event),
     headline: (event) => event.t !== 'draw' || event.seat === this.table.mySeat(),
+    cue: (event) => (event.t === 'win' && event.seat === this.table.mySeat() ? 'win' : null),
   });
   readonly lastEvent = this.history.lastEvent;
   readonly historyNew = this.history.historyNew;

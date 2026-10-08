@@ -7,6 +7,8 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+const UPDATE_CHECK_MS = 30 * 60 * 1000;
+
 // Wo es keinen Installationsdialog gibt, zeigt die App eine Anleitung
 export type InstallGuide = 'ios' | 'mac-safari' | 'other';
 
@@ -51,12 +53,16 @@ export class PwaService {
       }
     };
 
+    // Bleibt die App lange offen und sichtbar, zusätzlich alle 30 Minuten (nur ngsw.json, wenige KB)
+    const updateTimer = setInterval(onVisible, UPDATE_CHECK_MS);
+
     addEventListener('online', onOnline);
     addEventListener('offline', onOffline);
     addEventListener('beforeinstallprompt', onInstallPrompt);
     addEventListener('appinstalled', onInstalled);
     document.addEventListener('visibilitychange', onVisible);
     inject(DestroyRef).onDestroy(() => {
+      clearInterval(updateTimer);
       removeEventListener('online', onOnline);
       removeEventListener('offline', onOffline);
       removeEventListener('beforeinstallprompt', onInstallPrompt);

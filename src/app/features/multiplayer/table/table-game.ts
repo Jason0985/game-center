@@ -13,11 +13,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
 import { AppErrorService } from '../../../services/app-error.service';
+import { FeedbackCue, FeedbackService } from '../../../services/feedback.service';
 import { ActionResult } from '../../../services/supabase-errors';
 import { LobbyResult } from '../multiplayer-lobby.service';
 import { HistoryRow, openHistorySheet } from './history-sheet';
 import { TableTurn } from './table-data';
 import { eventAge, formatClock } from './table.model';
+
+const CUE_PRIORITY: readonly FeedbackCue[] = ['win', 'bust', 'alert', 'turn', 'tap'];
 
 // Gemeinsamer Rahmen der Spielansichten (Flip 7, Skip-Bo, Uno). Nur im Injection Context
 // (Feld-Initialisierer der Komponente).
@@ -53,6 +56,7 @@ export function injectTableGame<
   const activeSeat = options.activeSeat ?? ((game: G) => game.turn_seat);
   const appErrors = inject(AppErrorService);
   const dialog = inject(MatDialog);
+  const feedback = inject(FeedbackService);
   const isHost = computed(() => options.hostUserId() === userId());
 
   const game = signal<G | null>(null);
@@ -104,11 +108,29 @@ export function injectTableGame<
   });
   const waitingSeconds = computed(() => Math.floor((now() - waitingSince()) / 1000));
 
+  const mySeat = computed(
+    () => game()?.players.find((player) => player.user_id === userId())?.seat ?? null,
+  );
+  // Ton/Vibration, sobald man dran ist (nicht schon beim Öffnen des Tisches)
+  const myTurn = computed(() => {
+    const current = game();
+    if (!current) return null;
+    return current.status === 'playing' && mySeat() !== null && activeSeat(current) === mySeat();
+  });
+  let wasMyTurn: boolean | null = null;
+  effect(() => {
+    const turn = myTurn();
+    if (turn === null) return;
+    if (turn && wasMyTurn === false) untracked(() => feedback.play('turn'));
+    wasMyTurn = turn;
+  });
+
   // Aktion ausführen und danach neu laden, auch bei Fehlern (Stand ist dann evtl. weiter).
   // Buttons erst nach dem Neuladen wieder frei, sonst trifft ein zweiter Tipp den alten Stand.
   const run = async (action: () => Promise<ActionResult>): Promise<boolean> => {
     if (busy()) return false;
 
+    feedback.play('tap');
     busy.set(true);
     try {
       const result = await action();
@@ -136,9 +158,7 @@ export function injectTableGame<
     busy,
     now,
     isHost,
-    mySeat: computed(
-      () => game()?.players.find((player) => player.user_id === userId())?.seat ?? null,
-    ),
+    mySeat,
     activeName: computed(() => {
       const current = game();
       const seat = current ? activeSeat(current) : null;
@@ -190,15 +210,39 @@ export function injectTableGame<
 
 // Verlauf im Kopf und als Bottom-Sheet (Skip-Bo, Uno), neueste oben. Alter ohne
 // Uhrabweichung: gemessen ab dem Moment, in dem das neueste Ereignis hier ankam, plus
-// Abstand laut Server. headline: welche Ereignisse im Kopf stehen dürfen.
+// Abstand laut Server. headline: welche Ereignisse im Kopf stehen dürfen; cue: Ton/Vibration
+// für neu eingetroffene Ereignisse.
 export function injectTableHistory<E extends { at?: string }>(options: {
   log: Signal<readonly E[]>;
   now: Signal<number>;
   describe(event: E): Omit<HistoryRow, 'time'>;
   headline?(event: E): boolean;
+  cue?(event: E): FeedbackCue | null;
 }) {
-  const { log, now, describe, headline = () => true } = options;
+  const { log, now, describe, headline = () => true, cue } = options;
   const bottomSheet = inject(MatBottomSheet);
+
+  if (cue) {
+    const feedback = inject(FeedbackService);
+    // Zeitpunkt des neuesten schon bekannten Ereignisses; was beim Öffnen da ist, bleibt still.
+    // Alle Ereignisse eines Zuges haben denselben Zeitpunkt (Serverzeit der Transaktion).
+    let heardAt: number | null = null;
+    effect(() => {
+      const events = log();
+      if (!events.length) return;
+      untracked(() => {
+        const times = events.map((event) => (event.at ? Date.parse(event.at) : 0));
+        if (heardAt !== null) {
+          const since = heardAt;
+          const cues = events.filter((_, i) => times[i] > since).map(cue);
+          // Pro Zug nur der wichtigste Hinweis (Reihenfolge in CUE_PRIORITY)
+          const best = CUE_PRIORITY.find((c) => cues.includes(c));
+          if (best) feedback.play(best);
+        }
+        heardAt = Math.max(heardAt ?? 0, ...times);
+      });
+    });
+  }
 
   const latestAt = computed(() => log().at(-1)?.at);
   const arrivedAt = linkedSignal({ source: latestAt, computation: () => Date.now() });

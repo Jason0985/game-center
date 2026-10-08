@@ -88,6 +88,12 @@ export class UnoGameView {
       text: describeEvent(event, this.game()?.players ?? [], this.table.mySeat()),
     }),
     headline: (event) => event.t !== 'color',
+    cue: (event) =>
+      event.t === 'uno'
+        ? 'alert'
+        : event.t === 'win' && event.seat === this.table.mySeat()
+          ? 'win'
+          : null,
   });
   readonly lastEvent = this.history.lastEvent;
   readonly historyNew = this.history.historyNew;
