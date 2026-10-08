@@ -45,6 +45,7 @@ describe('gameLabel', () => {
 
   it('names games without settings plainly', () => {
     expect(gameLabel('skip-bo', {})).toBe('Skip-Bo');
+    expect(gameLabel('skip-bo', { stockSize: 15 })).toBe('Skip-Bo · 15 Karten');
   });
 
   it('lists the active Uno house rules', () => {

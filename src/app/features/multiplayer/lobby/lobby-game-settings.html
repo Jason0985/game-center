@@ -71,6 +71,32 @@
   </details>
 }
 
+<!-- Skip-Bo: Karten im eigenen Spielstapel (der Host stellt ein, die anderen sehen den Wert) -->
+@if (skipBo()) {
+  <p class="label" id="lobby-stock-label">Karten im Spielstapel</p>
+  @if (isHost()) {
+    <div class="stock">
+      <input
+        type="range"
+        [min]="stockMin"
+        [max]="stockMax"
+        step="1"
+        [value]="stockDraft()"
+        [disabled]="disabled() || saving()"
+        aria-labelledby="lobby-stock-label"
+        (input)="stockDraft.set(+$any($event.target).value)"
+        (change)="selectStockSize(+$any($event.target).value)"
+      />
+      <output class="value">{{ stockDraft() }}</output>
+    </div>
+  } @else {
+    <p class="value">{{ stockSize() === null ? 'Standard' : stockSize() + ' Karten' }}</p>
+  }
+  @if (stockSize() === null) {
+    <p class="hint">Standard: 30 Karten, ab 5 Spielern 20.</p>
+  }
+}
+
 <!-- Uno: Hausregeln (der Host schaltet sie, die anderen sehen die aktiven) -->
 @if (uno()) {
   <p class="label" id="lobby-rules-label">Hausregeln</p>
