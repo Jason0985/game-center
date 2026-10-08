@@ -14,12 +14,13 @@ import { NotificationItem } from './notification.model';
 import { notificationTypeConfig } from './notification-types';
 import { SystemNotificationDialog } from './system-notification-dialog';
 import { MultiplayerLobbyService } from '../multiplayer/multiplayer-lobby.service';
+import { SkeletonRows } from '../../ui/skeleton-rows';
 
 const MARK_SEEN_DELAY_MS = 2000;
 
 @Component({
   selector: 'app-notifications',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, RouterLink],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule, RouterLink, SkeletonRows],
   templateUrl: './notifications.html',
   styleUrl: './notifications.scss',
 })
@@ -76,7 +77,10 @@ export class Notifications {
     if (!result.ok) {
       this.appErrors.report(result.message);
     } else if (accept) {
-      this.toastService.success('Anfrage angenommen', `${notification.sender_name} ist jetzt dein Freund.`);
+      this.toastService.success(
+        'Anfrage angenommen',
+        `${notification.sender_name} ist jetzt dein Freund.`,
+      );
     } else {
       this.toastService.success('Anfrage abgelehnt');
     }
@@ -117,7 +121,11 @@ export class Notifications {
     } else if (result.value) {
       void this.router.navigate(['/multiplayer', result.value]);
     } else {
-      this.toastService.show({ tone: 'info', icon: 'info', title: 'Die Lobby gibt es nicht mehr.' });
+      this.toastService.show({
+        tone: 'info',
+        icon: 'info',
+        title: 'Die Lobby gibt es nicht mehr.',
+      });
     }
   }
 

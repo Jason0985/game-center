@@ -32,6 +32,23 @@
 
   <app-toast-host />
 
+  @if (pwa.updateReady()) {
+    <div class="app-banner" role="status">
+      <mat-icon aria-hidden="true">system_update</mat-icon>
+      <span class="app-banner-text">Neue Version verfügbar</span>
+      <button type="button" class="app-banner-action" (click)="pwa.reload()">Neu laden</button>
+    </div>
+  }
+  @if (!pwa.online()) {
+    <div class="app-banner app-banner--offline" role="status">
+      <mat-icon aria-hidden="true">cloud_off</mat-icon>
+      <span class="app-banner-text">
+        Du bist offline. Lobbys, Freunde und Statistik brauchen Internet – Paddle Tabelle und
+        Ankunftsplaner (Auto) gehen weiter.
+      </span>
+    </div>
+  }
+
   <main>
     <router-outlet></router-outlet>
   </main>

@@ -1,12 +1,14 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "5.2.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "build:pages": "ng build --base-href /game-center/ --deploy-url /game-center/",
+    "predeploy": "npm version minor -m \"chore: Version %s\"",
     "deploy": "npm run build:pages && npx angular-cli-ghpages --dir=dist/frontend/browser",
+    "postdeploy": "git push --follow-tags",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

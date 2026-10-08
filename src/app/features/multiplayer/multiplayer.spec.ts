@@ -99,7 +99,32 @@ describe('Multiplayer', () => {
     await component.createLobby();
 
     expect(lobbyService.createLobby).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-2']);
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-2'], {
+      replaceUrl: false,
+    });
+  });
+
+  it('opens a new lobby once via the app shortcut (?neu)', async () => {
+    await router.navigateByUrl('/?neu=1');
+    lobbyService.createLobby.mockResolvedValue({ ok: true, value: 'lobby-2' });
+
+    await render();
+
+    expect(lobbyService.createLobby).toHaveBeenCalledTimes(1);
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-2'], {
+      replaceUrl: true,
+    });
+  });
+
+  it('goes to the own lobby instead of opening another via the shortcut', async () => {
+    await router.navigateByUrl('/?neu=1');
+
+    await render('lobby-1');
+
+    expect(lobbyService.createLobby).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-1'], {
+      replaceUrl: true,
+    });
   });
 
   it('joins a lobby with the entered code', async () => {

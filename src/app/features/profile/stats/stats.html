@@ -1,0 +1,175 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/profile">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Profil
+      </a>
+      <h1 class="ui-large-title">Statistik</h1>
+    </header>
+
+    @if (session.initialized() && !session.isLoggedIn()) {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">insights</mat-icon>
+        <h2>Nur mit Konto</h2>
+        <p>Melde dich an, damit deine Online-Spiele gezählt werden.</p>
+        <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
+      </div>
+    } @else if (!session.initialized() || loading()) {
+      <!-- Gleiches Gerüst wie unten, nur mit Platzhaltern -->
+      <div class="ui-group" role="status" aria-label="Statistik wird geladen">
+        @for (labels of skeletonStats; track $index) {
+          <div class="ui-stat-row" [class.stats-row-divider]="$index > 0">
+            @for (label of labels; track label) {
+              <div class="ui-stat">
+                <span class="ui-skeleton ui-skeleton--value"></span>
+                <span>{{ label }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <section class="ui-section">
+        <h2 class="ui-section-title">Serien &amp; Rekorde</h2>
+        <div class="ui-group ui-group--icons"><app-skeleton-rows [count]="4" /></div>
+      </section>
+      <section class="ui-section">
+        <h2 class="ui-section-title">Nach Spiel</h2>
+        <div class="ui-group ui-group--icons"><app-skeleton-rows /></div>
+      </section>
+    } @else if (!stats().played) {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">insights</mat-icon>
+        <h2>Noch keine Spiele</h2>
+        <p>Spiel eine Runde Flip 7, Skip-Bo oder Uno online, dann erscheinen hier deine Werte.</p>
+        <a class="ui-btn" routerLink="/multiplayer">Online spielen</a>
+      </div>
+    } @else {
+      @let s = stats();
+      <div class="ui-group" aria-label="Überblick">
+        <div class="ui-stat-row">
+          <div class="ui-stat">
+            <strong>{{ s.played }}</strong>
+            <span>Spiele</span>
+          </div>
+          <div class="ui-stat">
+            <strong>{{ s.wins }}</strong>
+            <span>Siege</span>
+          </div>
+          <div class="ui-stat">
+            <strong>{{ percent(s.winRate) }}</strong>
+            <span>Siegquote</span>
+          </div>
+        </div>
+        <div class="ui-stat-row stats-row-divider">
+          <div class="ui-stat">
+            <strong>{{ s.evenings }}</strong>
+            <span>Spieleabende</span>
+          </div>
+          <div class="ui-stat" title="Nur Spiele ab 4 Spielern">
+            <strong>{{ percent(s.top3Rate) }}</strong>
+            <span>Top-3-Quote</span>
+          </div>
+          <div class="ui-stat">
+            <strong>{{ decimal(s.averagePlacement) }}</strong>
+            <span>Ø Platz</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="ui-section" aria-labelledby="stats-records-title">
+        <h2 id="stats-records-title" class="ui-section-title">Serien &amp; Rekorde</h2>
+        <div class="ui-group ui-group--icons">
+          <div class="ui-row">
+            <span class="ui-row-icon" style="--tile: var(--tile-orange)">
+              <mat-icon aria-hidden="true">local_fire_department</mat-icon>
+            </span>
+            <span class="ui-row-text"><span class="ui-row-title">Aktuelle Siegesserie</span></span>
+            <span class="ui-row-value">{{ s.currentStreak }}</span>
+          </div>
+          <div class="ui-row">
+            <span class="ui-row-icon" style="--tile: var(--tile-purple)">
+              <mat-icon aria-hidden="true">emoji_events</mat-icon>
+            </span>
+            <span class="ui-row-text"><span class="ui-row-title">Längste Siegesserie</span></span>
+            <span class="ui-row-value">{{ s.longestStreak }}</span>
+          </div>
+          <div class="ui-row">
+            <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+              <mat-icon aria-hidden="true">favorite</mat-icon>
+            </span>
+            <span class="ui-row-text"><span class="ui-row-title">Lieblingsspiel</span></span>
+            <span class="ui-row-value">{{ s.favorite ?? '–' }}</span>
+          </div>
+          @if (s.bestEvening; as best) {
+            <div class="ui-row">
+              <span class="ui-row-icon" style="--tile: var(--tile-green)">
+                <mat-icon aria-hidden="true">nightlife</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Bester Abend</span>
+                <span class="ui-row-sub">{{ day(best.date) }}</span>
+              </span>
+              <span class="ui-row-value"
+                >{{ best.wins }} {{ best.wins === 1 ? 'Sieg' : 'Siege' }}</span
+              >
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="ui-section" aria-labelledby="stats-games-title">
+        <h2 id="stats-games-title" class="ui-section-title">Nach Spiel</h2>
+        <div class="ui-group ui-group--icons">
+          @for (game of s.perGame; track game.key) {
+            <div class="ui-row">
+              <span class="ui-row-icon" style="--tile: var(--tile-blue)">
+                <mat-icon aria-hidden="true">{{ game.icon }}</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="ui-row-title">{{ game.name }}</span>
+                <span class="ui-row-sub">
+                  {{ game.played }} {{ game.key === 'uno' ? 'Runden' : 'Spiele' }} · {{ game.wins }}
+                  {{ game.wins === 1 ? 'Sieg' : 'Siege' }}
+                  @if (game.best !== null) {
+                    · {{ game.key === 'uno' ? 'Beste Runde' : 'Bestwert' }} {{ game.best }} P.
+                  }
+                </span>
+              </span>
+              <span class="ui-row-value">{{ percent(game.winRate) }}</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="ui-section" aria-labelledby="stats-recent-title">
+        <h2 id="stats-recent-title" class="ui-section-title">Letzte Spiele</h2>
+        <div class="ui-group ui-group--icons">
+          @for (result of s.recent; track result.game_id + '-' + result.round_no) {
+            <div class="ui-row">
+              <span
+                class="ui-row-icon"
+                [class.ui-row-icon--muted]="!result.won"
+                style="--tile: var(--tile-green)"
+              >
+                <mat-icon aria-hidden="true">{{ icon(result) }}</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="ui-row-title">{{ placementLabel(result) }}</span>
+                <span class="ui-row-sub">
+                  {{ gameName(result) }}
+                  @if (result.game_key === 'uno') {
+                    · Runde {{ result.round_no }}
+                  }
+                  · {{ when(result.finished_at) }}
+                </span>
+              </span>
+              @if (scoreLabel(result); as score) {
+                <span class="ui-row-value">{{ score }}</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</div>

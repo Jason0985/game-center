@@ -4,9 +4,10 @@ import { UNO_HOUSE_RULES } from './uno/uno.model';
 export type LobbyStatus = 'open' | 'started';
 
 // Rahmenbedingungen des Spiels (set_lobby_game). Flip 7: targetScore null = offen ohne
-// Punkteziel; Uno: die drei Hausregeln; Skip-Bo hat keine Einstellungen ({})
+// Punkteziel; Uno: die drei Hausregeln; Skip-Bo: stockSize 5–50, ohne = Standard
 export interface LobbyGameSettings {
   targetScore?: number | null;
+  stockSize?: number;
   stacking?: boolean;
   sevenZero?: boolean;
   drawUntilPlayable?: boolean;
@@ -117,7 +118,7 @@ export function startBlocker(
     : null;
 }
 
-// z. B. "Flip 7 · bis 200 Punkte", "Flip 7 · Offen" oder "Uno · Stapeln, 7-0"
+// z. B. "Flip 7 · bis 200 Punkte", "Flip 7 · Offen", "Skip-Bo · 15 Karten" oder "Uno · Stapeln, 7-0"
 export function gameLabel(
   gameKey: string | null | undefined,
   settings: LobbyGameSettings | null | undefined,
@@ -130,6 +131,9 @@ export function gameLabel(
   if (gameKey === 'uno') {
     const rules = UNO_HOUSE_RULES.filter((rule) => settings?.[rule.key]).map((rule) => rule.short);
     return rules.length ? `${name} · ${rules.join(', ')}` : name;
+  }
+  if (gameKey === 'skip-bo') {
+    return settings?.stockSize ? `${name} · ${settings.stockSize} Karten` : name;
   }
   if (gameKey !== 'flip-7') return name;
 

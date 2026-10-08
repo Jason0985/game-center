@@ -6,8 +6,8 @@
     </header>
 
     @if (!session.initialized()) {
-      <div class="ui-group ui-empty" role="status">
-        <p>Verbindung wird hergestellt …</p>
+      <div class="ui-group">
+        <app-skeleton-rows [count]="2" lead="none" label="Verbindung wird hergestellt" />
       </div>
     } @else {
       @if (myLobbyId(); as lobbyId) {
@@ -79,6 +79,10 @@
             }
           </p>
         </section>
+      } @else {
+        <div class="ui-group">
+          <app-skeleton-rows [count]="2" lead="none" />
+        </div>
       }
 
       @if (session.isGuest()) {
@@ -118,8 +122,8 @@
           </h2>
 
           @if (loading() && lobbies().length === 0) {
-            <div class="ui-group ui-empty" role="status">
-              <p>Lobbys werden geladen …</p>
+            <div class="ui-group">
+              <app-skeleton-rows [count]="2" lead="avatar" label="Lobbys werden geladen" />
             </div>
           } @else if (lobbies().length === 0) {
             <div class="ui-group ui-empty">

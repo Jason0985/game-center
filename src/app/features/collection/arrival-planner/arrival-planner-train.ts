@@ -16,11 +16,18 @@ import {
   transferMinutes,
 } from './arrival-planner-train.model';
 import { TrainConnectionsService, TrainResult } from './train-connections.service';
+import { UserStateService } from '../../../services/user-state.service';
 
 const SETTINGS_STORAGE_KEY = 'game-center-arrival-planner-train-settings';
 const ROUTE_STORAGE_KEY = 'game-center-arrival-planner-train-route';
 const SUGGESTION_DELAY_MS = 300;
 const TIME_ZONE = 'Europe/Berlin';
+
+interface StoredRoute {
+  from?: TrainLocation | null;
+  to?: TrainLocation | null;
+  time?: string;
+}
 
 const timeFormat = new Intl.DateTimeFormat('de-DE', {
   timeZone: TIME_ZONE,
@@ -123,6 +130,7 @@ interface SearchedRequest {
 export class ArrivalPlannerTrain {
   private readonly dialog = inject(MatDialog);
   private readonly connections = inject(TrainConnectionsService);
+  private readonly userState = inject(UserStateService);
 
   readonly from = new LocationField((query) => this.connections.searchLocations(query));
   readonly to = new LocationField((query) => this.connections.searchLocations(query));
@@ -177,7 +185,22 @@ export class ArrivalPlannerTrain {
   });
 
   constructor() {
-    this.restoreRoute();
+    this.restoreRoute(this.read<StoredRoute>(ROUTE_STORAGE_KEY));
+    this.userState.connect(
+      'arrival-planner-train',
+      () => ({ settings: this.settings(), route: this.route() }),
+      (value) => {
+        const stored = value as { settings?: Partial<TrainPlannerSettings>; route?: StoredRoute };
+        if (stored?.settings && isValidTrainSettings(stored.settings)) {
+          this.settings.set(stored.settings as TrainPlannerSettings);
+          this.store(SETTINGS_STORAGE_KEY, stored.settings);
+        }
+        if (stored?.route) {
+          this.restoreRoute(stored.route);
+          this.store(ROUTE_STORAGE_KEY, this.route());
+        }
+      },
+    );
     inject(DestroyRef).onDestroy(() => {
       this.from.dispose();
       this.to.dispose();
@@ -276,6 +299,7 @@ export class ArrivalPlannerTrain {
           }
           this.settings.set(settings);
           this.store(SETTINGS_STORAGE_KEY, settings);
+          this.saveToAccount();
         }
       });
   }
@@ -352,18 +376,23 @@ export class ArrivalPlannerTrain {
     this.request.set(null);
   }
 
+  private route(): StoredRoute {
+    return { from: this.from.selected(), to: this.to.selected(), time: this.arrivalTime() };
+  }
+
   private saveRoute(): void {
-    this.store(ROUTE_STORAGE_KEY, {
-      from: this.from.selected(),
-      to: this.to.selected(),
-      time: this.arrivalTime(),
+    this.store(ROUTE_STORAGE_KEY, this.route());
+    this.saveToAccount();
+  }
+
+  private saveToAccount(): void {
+    this.userState.save('arrival-planner-train', {
+      settings: this.settings(),
+      route: this.route(),
     });
   }
 
-  private restoreRoute(): void {
-    const route = this.read<{ from?: TrainLocation; to?: TrainLocation; time?: string }>(
-      ROUTE_STORAGE_KEY,
-    );
+  private restoreRoute(route: StoredRoute | null): void {
     const isLocation = (value: unknown): value is TrainLocation =>
       typeof (value as TrainLocation)?.place === 'string' &&
       typeof (value as TrainLocation)?.name === 'string';

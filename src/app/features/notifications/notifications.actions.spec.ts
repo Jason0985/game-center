@@ -63,7 +63,12 @@ describe('Notifications actions', () => {
         },
         {
           provide: SessionService,
-          useValue: { isLoggedIn: signal(true), isAdmin: signal(false), user: signal({ id: 'me' }) },
+          useValue: {
+            initialized: signal(true),
+            isLoggedIn: signal(true),
+            isAdmin: signal(false),
+            user: signal({ id: 'me' }),
+          },
         },
         { provide: ToastService, useValue: toast },
         { provide: AppErrorService, useValue: appErrors },

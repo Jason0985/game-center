@@ -428,7 +428,36 @@ mat-card.ui-surface {
   display: block;
   height: 10px;
   border-radius: var(--radius-pill);
-  background: linear-gradient(90deg, var(--color-skeleton-shine), var(--color-skeleton) 70%);
+  background: linear-gradient(
+      90deg,
+      var(--color-skeleton) 30%,
+      var(--color-skeleton-shine) 50%,
+      var(--color-skeleton) 70%
+    )
+    0 0 / 300% 100%;
+  animation: ui-skeleton-shine 1.4s ease-in-out infinite;
+}
+
+@keyframes ui-skeleton-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton {
+    animation: none;
+  }
+}
+
+// Platzhalter für eine Zahl in .ui-stat, gleich hoch wie die Zahl
+.ui-stat .ui-skeleton--value {
+  width: 34px;
+  height: 22px;
+  margin: 3px 0;
 }
 
 .ui-skeleton--title {
@@ -1285,6 +1314,18 @@ button.ui-row:active {
   background: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   content: '';
+}
+
+.ui-switch::after {
+  transition: translate 120ms ease;
+}
+
+.ui-switch--on {
+  background: var(--color-success-light);
+}
+
+.ui-switch--on::after {
+  translate: 20px 0;
 }
 
 .ui-switch--disabled {

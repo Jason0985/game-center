@@ -7,6 +7,7 @@ import { RouterLink } from '@angular/router';
 import { ArrivalPlannerSettingsDialog } from './arrival-planner-settings-dialog';
 import { ArrivalPlannerTrain } from './arrival-planner-train';
 import { ArrivalPlannerSettings, DEFAULT_ARRIVAL_PLANNER_SETTINGS } from './arrival-planner.model';
+import { UserStateService } from '../../../services/user-state.service';
 
 export type ArrivalPlannerMode = 'car' | 'train';
 
@@ -34,6 +35,7 @@ function formatClock(minutes: number): string {
 })
 export class ArrivalPlanner {
   private readonly dialog = inject(MatDialog);
+  private readonly userState = inject(UserStateService);
   readonly mode = signal<ArrivalPlannerMode>('car');
   private readonly trainPlanner = viewChild(ArrivalPlannerTrain);
   readonly settingsLabel = computed(() =>
@@ -68,6 +70,17 @@ export class ArrivalPlanner {
     };
   });
 
+  constructor() {
+    this.userState.connect(
+      'arrival-planner',
+      () => this.settings(),
+      (value) => {
+        const settings = parseSettings(value);
+        if (settings) this.storeSettings(settings);
+      },
+    );
+  }
+
   updateArrivalTime(event: Event): void {
     this.arrivalTime.set((event.target as HTMLInputElement).value);
   }
@@ -85,28 +98,34 @@ export class ArrivalPlanner {
       .afterClosed()
       .subscribe((settings: ArrivalPlannerSettings | undefined) => {
         if (settings) {
-          this.settings.set(settings);
-          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+          this.storeSettings(settings);
+          this.userState.save('arrival-planner', settings);
         }
       });
+  }
+
+  private storeSettings(settings: ArrivalPlannerSettings): void {
+    this.settings.set(settings);
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
   }
 
   private loadSettings(): ArrivalPlannerSettings {
     try {
       const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (!storedSettings) {
-        return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
-      }
-
-      const parsed = JSON.parse(storedSettings) as Partial<ArrivalPlannerSettings>;
-      const values = [parsed.travelMinutes, parsed.trafficBufferMinutes, parsed.preparationMinutes];
-      if (values.every((value) => Number.isInteger(value) && value! >= 0 && value! <= 300)) {
-        return parsed as ArrivalPlannerSettings;
-      }
-    } catch {
-      return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
-    }
+      const parsed = storedSettings ? parseSettings(JSON.parse(storedSettings)) : null;
+      if (parsed) return parsed;
+    } catch {}
 
     return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
   }
+}
+
+function parseSettings(value: unknown): ArrivalPlannerSettings | null {
+  const parsed = value as Partial<ArrivalPlannerSettings> | null;
+  const values = [parsed?.travelMinutes, parsed?.trafficBufferMinutes, parsed?.preparationMinutes];
+  return values.every((v) => Number.isInteger(v) && v! >= 0 && v! <= 300)
+    ? (parsed as ArrivalPlannerSettings)
+    : null;
 }

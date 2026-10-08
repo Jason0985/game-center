@@ -79,6 +79,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profile/profile').then((module) => module.Profile),
   },
   {
+    path: 'profile/stats',
+    loadComponent: () => import('./features/profile/stats/stats').then((module) => module.Stats),
+  },
+  {
     path: 'profile/auth',
     loadComponent: () => import('./features/auth/auth').then((module) => module.Auth),
   },
@@ -87,6 +91,13 @@ export const routes: Routes = [
     path: 'profile/password',
     loadComponent: () =>
       import('./features/auth/password-reset').then((module) => module.PasswordReset),
+  },
+  {
+    path: 'settings/push',
+    loadComponent: () =>
+      import('./features/settings/push-settings/push-settings').then(
+        (module) => module.PushSettings,
+      ),
   },
   {
     path: 'settings',

@@ -9,6 +9,9 @@ import { AppErrorService } from './services/app-error.service';
 import { ToastHost } from './toast-host';
 import { ThemeService } from './services/theme.service';
 import { SessionService } from './services/session.service';
+import { PushService } from './services/push.service';
+import { PwaService } from './services/pwa.service';
+import { FeedbackService } from './services/feedback.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +22,7 @@ import { SessionService } from './services/session.service';
 export class App {
   readonly notifications = inject(NotificationsService);
   readonly session = inject(SessionService);
+  readonly pwa = inject(PwaService);
   private readonly router = inject(Router);
 
   private readonly url = toSignal(
@@ -38,5 +42,9 @@ export class App {
     inject(AppErrorService);
     // Gespeichertes Farbschema anwenden
     inject(ThemeService);
+    // Gerät für Push-Nachrichten dem angemeldeten Konto zuordnen
+    inject(PushService);
+    // Töne fürs Spiel mit dem ersten Tippen freischalten (Safari)
+    inject(FeedbackService);
   }
 }

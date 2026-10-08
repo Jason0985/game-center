@@ -17,9 +17,10 @@ const GUEST_NAME_MAX_LENGTH = 50;
 
 const normalizeCode = (value: string): string => value.toUpperCase().replace(/\s/g, '').slice(0, 6);
 
+import { SkeletonRows } from '../../ui/skeleton-rows';
 @Component({
   selector: 'app-multiplayer',
-  imports: [MatIcon, RouterLink, InitialsPipe, AvatarColorPipe],
+  imports: [MatIcon, RouterLink, InitialsPipe, AvatarColorPipe, SkeletonRows],
   templateUrl: './multiplayer.html',
   styleUrl: './multiplayer.scss',
 })
@@ -43,9 +44,10 @@ export class Multiplayer {
   readonly joinCode = signal('');
   // Beitritt nur mit dem Code; ohne Konto der einzige Weg (dann als Gast mit Anzeigename).
   // Vorbelegt über den Link aus der Lobby (?code=…)
-  readonly directCode = signal(
-    normalizeCode(inject(ActivatedRoute).snapshot.queryParamMap.get('code') ?? ''),
-  );
+  private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
+  readonly directCode = signal(normalizeCode(this.query.get('code') ?? ''));
+  // App-Shortcut „Neue Lobby“ (?neu): einmal eröffnen bzw. zur eigenen Lobby wechseln
+  private createOnOpen = this.query.has('neu');
   readonly guestName = signal('');
   readonly guestNameMaxLength = GUEST_NAME_MAX_LENGTH;
   // Nur die ID: Beim Token-Refresh kommt ein neues User-Objekt, das soll nicht neu abonnieren.
@@ -75,7 +77,7 @@ export class Multiplayer {
     });
   }
 
-  async createLobby(): Promise<void> {
+  async createLobby(replaceUrl = false): Promise<void> {
     if (this.busy()) {
       return;
     }
@@ -85,7 +87,7 @@ export class Multiplayer {
     this.busy.set(false);
 
     if (result.ok) {
-      void this.router.navigate(['/multiplayer', result.value]);
+      void this.router.navigate(['/multiplayer', result.value], { replaceUrl });
     } else {
       this.fail(result.message);
     }
@@ -221,6 +223,16 @@ export class Multiplayer {
     ]);
     this.loading.set(false);
     this.myLobbyId.set(myLobbyId);
+
+    // replaceUrl: „Zurück“ soll nicht wieder auf ?neu landen und noch eine Lobby eröffnen
+    if (this.createOnOpen && untracked(this.session.isLoggedIn)) {
+      this.createOnOpen = false;
+      if (myLobbyId) {
+        void this.router.navigate(['/multiplayer', myLobbyId], { replaceUrl: true });
+      } else {
+        void this.createLobby(true);
+      }
+    }
 
     if (lobbies) {
       this.lobbies.set(lobbies);

@@ -35,30 +35,67 @@
     </section>
 
     <section class="ui-section" aria-labelledby="game-title">
-      <h2 id="game-title" class="ui-section-title settings-planned-title">
-        <span>Spiele &amp; Mitteilungen</span><span class="ui-soon">Bald</span>
-      </h2>
+      <h2 id="game-title" class="ui-section-title">Spiele &amp; Mitteilungen</h2>
       <div class="ui-group ui-group--icons">
+        <a class="ui-row" routerLink="/settings/push">
+          <span class="ui-row-icon" style="--tile: var(--tile-blue)">
+            <mat-icon aria-hidden="true">notifications_active</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Push-Nachrichten</span>
+            <span class="ui-row-sub">{{ push.hint() }}</span>
+          </span>
+          <span class="ui-row-value">{{ push.state() === 'on' ? 'An' : 'Aus' }}</span>
+          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+        </a>
+        <button
+          type="button"
+          class="ui-row"
+          role="switch"
+          [attr.aria-checked]="feedback.sound()"
+          (click)="feedback.setSound(!feedback.sound())"
+        >
+          <span class="ui-row-icon" style="--tile: var(--tile-orange)">
+            <mat-icon aria-hidden="true">volume_up</mat-icon>
+          </span>
+          <span class="ui-row-text">
+            <span class="ui-row-title">Töne</span>
+            <span class="ui-row-sub">Wenn du dran bist, bei Uno und beim Sieg</span>
+          </span>
+          <span
+            class="ui-switch"
+            [class.ui-switch--on]="feedback.sound()"
+            aria-hidden="true"
+          ></span>
+        </button>
+        @if (feedback.canVibrate) {
+          <button
+            type="button"
+            class="ui-row"
+            role="switch"
+            [attr.aria-checked]="feedback.vibration()"
+            (click)="feedback.setVibration(!feedback.vibration())"
+          >
+            <span class="ui-row-icon" style="--tile: var(--tile-purple)">
+              <mat-icon aria-hidden="true">vibration</mat-icon>
+            </span>
+            <span class="ui-row-text">
+              <span class="ui-row-title">Vibration</span>
+              <span class="ui-row-sub">Bei deinen Zügen und wenn du dran bist</span>
+            </span>
+            <span
+              class="ui-switch"
+              [class.ui-switch--on]="feedback.vibration()"
+              aria-hidden="true"
+            ></span>
+          </button>
+        }
         <div class="ui-row">
           <span class="ui-row-icon" style="--tile: var(--tile-green)">
             <mat-icon aria-hidden="true">save</mat-icon>
           </span>
           <span class="ui-row-text"><span class="ui-row-title">Spielstände behalten</span></span>
-          <span class="ui-switch ui-switch--disabled" aria-hidden="true"></span>
-        </div>
-        <div class="ui-row">
-          <span class="ui-row-icon" style="--tile: var(--tile-pink)">
-            <mat-icon aria-hidden="true">groups</mat-icon>
-          </span>
-          <span class="ui-row-text"><span class="ui-row-title">Spiel-Einladungen</span></span>
-          <span class="ui-switch ui-switch--disabled" aria-hidden="true"></span>
-        </div>
-        <div class="ui-row">
-          <span class="ui-row-icon" style="--tile: var(--tile-orange)">
-            <mat-icon aria-hidden="true">notifications</mat-icon>
-          </span>
-          <span class="ui-row-text"><span class="ui-row-title">Neuigkeiten</span></span>
-          <span class="ui-switch ui-switch--disabled" aria-hidden="true"></span>
+          <span class="ui-soon">Bald</span>
         </div>
       </div>
     </section>
@@ -77,7 +114,7 @@
       <div class="ui-group">
         <div class="ui-row">
           <span class="ui-row-text"><span class="ui-row-title">Version</span></span>
-          <span class="ui-row-value">4.0</span>
+          <span class="ui-row-value">{{ version }}</span>
         </div>
         <div class="ui-row">
           <span class="ui-row-text"><span class="ui-row-title">Status</span></span>

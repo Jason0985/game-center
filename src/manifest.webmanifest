@@ -1,8 +1,11 @@
 {
   "name": "Game Center",
   "short_name": "Game Center",
-  "theme_color": "#0f1115",
-  "background_color": "#0f1115",
+  "description": "Spieleabende mit Freunden: Uno, Skip-Bo und Flip 7 online spielen, Ranglisten führen und praktische Werkzeuge wie Ankunftsplaner und F1-Strategie.",
+  "lang": "de",
+  "categories": ["games", "entertainment"],
+  "theme_color": "#1c1c1e",
+  "background_color": "#1c1c1e",
   "display": "standalone",
   "id": "/game-center/",
   "scope": "/game-center/",
@@ -12,11 +15,69 @@
   "apple-mobile-web-app-status-bar-style": "default",
   "shortcuts": [
     {
+      "name": "Neue Lobby",
+      "short_name": "Neue Lobby",
+      "description": "Lobby eröffnen und Freunde einladen",
+      "url": "/game-center/multiplayer?neu=1",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Neues Ranking",
+      "short_name": "Ranking",
+      "description": "Spieler hinzufügen und Punkte zählen",
+      "url": "/game-center/ranking",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Paddle Tabelle",
+      "short_name": "Paddle",
+      "description": "Paddle-Schulden eintragen",
+      "url": "/game-center/collection/paddle-table",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Ankunftsplaner",
       "short_name": "Wecker",
       "description": "Weckzeit für deine Ankunft berechnen",
       "url": "/game-center/collection/arrival-planner",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Statistik",
+      "short_name": "Statistik",
+      "description": "Siege, Serien und letzte Spiele",
+      "url": "/game-center/profile/stats",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "icons": [
@@ -49,6 +110,57 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/phone-home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Startseite mit Schnellstart und Statistik"
+    },
+    {
+      "src": "screenshots/phone-multiplayer.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Online spielen: mit Lobby-Code beitreten"
+    },
+    {
+      "src": "screenshots/phone-collection.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sammlung mit Spielen und Werkzeugen"
+    },
+    {
+      "src": "screenshots/phone-arrival.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ankunftsplaner: wann klingelt der Wecker?"
+    },
+    {
+      "src": "screenshots/phone-f1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "F1-Strategie mit Boxenstopp-Plan"
+    },
+    {
+      "src": "screenshots/wide-home.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Startseite am Laptop"
+    },
+    {
+      "src": "screenshots/wide-collection.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sammlung am Laptop"
     }
   ]
 }

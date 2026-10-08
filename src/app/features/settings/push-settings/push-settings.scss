@@ -1,0 +1,17 @@
+.push-type {
+  cursor: pointer;
+}
+
+.push-type input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-success-light);
+  cursor: inherit;
+}
+
+.push-types--off .push-type {
+  cursor: default;
+  opacity: 0.5;
+}

@@ -80,6 +80,12 @@ export interface SkipboRankedPlayer {
 
 export const SKIPBO_SKIP_AFTER_S = 30;
 
+// Karten im Spielstapel (Lobby-Einstellung stockSize); ohne Einstellung wie in der DB:
+// 30, ab 5 Spielern 20
+export const SKIPBO_STOCK_MIN = 5;
+export const SKIPBO_STOCK_MAX = 50;
+export const SKIPBO_STOCK_DEFAULT = 30;
+
 // Kurzregeln für das ⋮-Menü im Spiel
 export const SKIPBO_RULES = [
   'Wer zuerst den eigenen Spielstapel leer spielt, gewinnt.',

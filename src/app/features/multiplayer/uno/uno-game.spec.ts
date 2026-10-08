@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { AppErrorService } from '../../../services/app-error.service';
+import { FeedbackService } from '../../../services/feedback.service';
 import { UnoGameView } from './uno-game';
 import { UnoService } from './uno.service';
 import { UnoGame, UnoPlayer } from './uno.model';
@@ -120,6 +121,31 @@ describe('UnoGameView', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('plays sound/vibration only for new events, not for what was there on opening', async () => {
+    const play = vi.spyOn(TestBed.inject(FeedbackService), 'play').mockImplementation(() => {});
+    const unoCall = { t: 'uno' as const, seat: 0, r: 2, at: '2026-10-02T12:00:05Z' };
+    await render('guest', makeGame({ round_log: [...makeGame().round_log, unoCall] }));
+    expect(play).not.toHaveBeenCalled();
+
+    // Gast ist jetzt dran, im selben Zug ruft der Host Uno
+    uno['load'].mockResolvedValue({
+      ok: true,
+      value: makeGame({
+        turn_seat: 1,
+        round_log: [
+          ...makeGame().round_log,
+          unoCall,
+          { t: 'play', seat: 0, card: 'R3', r: 3, at: '2026-10-02T12:00:09Z' },
+          { t: 'uno', seat: 0, r: 3, at: '2026-10-02T12:00:09Z' },
+        ],
+      }),
+    });
+    await component['table'].load();
+    fixture.detectChanges();
+
+    expect(play.mock.calls).toEqual([['turn'], ['alert']]);
   });
 
   it('shows the table while playing and the round end once finished', async () => {

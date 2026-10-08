@@ -128,6 +128,11 @@ export class Flip7GameView {
       const context = event === this.liveFlip3() ? game : { ...game, flip3_left: null };
       return { ...eventIcon(event), text: describeEvent(event, context, this.table.mySeat()) };
     },
+    cue: (event) => {
+      const mine = event.seat === this.table.mySeat();
+      if (event.t === 'flip7') return mine ? 'win' : 'alert';
+      return event.t === 'bust' && mine ? 'bust' : null;
+    },
   });
   readonly lastEvent = this.history.lastEvent;
   readonly historyNew = this.history.historyNew;

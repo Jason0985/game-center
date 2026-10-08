@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
+import { PushService } from '../../services/push.service';
 import { FriendRelation, FriendsService } from '../../services/friends.service';
 import { ToastService } from '../../services/toast.service';
 import { AppErrorService } from '../../services/app-error.service';
@@ -14,6 +15,8 @@ import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog'
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
 import { AccountDeleteDialog, AccountDeleteDialogData } from './account-delete-dialog';
 import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
+import { SkeletonRows } from '../../ui/skeleton-rows';
+import { computeStats, GameResultsService, GameStats } from './stats/game-stats';
 
 const LEGAL_LINKS = [
   { path: '/legal/impressum', label: 'Impressum', icon: 'info', tile: 'var(--tile-gray)' },
@@ -39,13 +42,15 @@ const LEGAL_LINKS = [
 
 @Component({
   selector: 'app-profile',
-  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe],
+  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe, SkeletonRows],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
 export class Profile {
   private readonly authService = inject(AuthService);
+  private readonly push = inject(PushService);
   private readonly friendsService = inject(FriendsService);
+  private readonly resultsService = inject(GameResultsService);
   private readonly dialog = inject(MatDialog);
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
@@ -54,6 +59,8 @@ export class Profile {
   private readonly relations = signal<FriendRelation[]>([]);
   readonly friendsLoading = signal(true);
   readonly friendFilter = signal('');
+  // undefined = lädt noch, null = nicht geladen (Fehler)
+  readonly stats = signal<GameStats | null | undefined>(undefined);
   readonly legalLinks = LEGAL_LINKS;
 
   readonly friends = computed(() =>
@@ -78,11 +85,18 @@ export class Profile {
       const userId = this.session.user()?.id;
       if (userId) {
         void this.loadRelations(userId);
+        void this.resultsService.getResults(userId).then((results) => {
+          if (this.session.user()?.id === userId) {
+            this.stats.set(results ? computeStats(results) : null);
+          }
+        });
       }
     });
   }
 
   async logout(): Promise<void> {
+    // Vor dem Abmelden, danach darf die App die Zeile nicht mehr löschen (RLS)
+    await this.push.disable();
     await this.authService.logout();
   }
 

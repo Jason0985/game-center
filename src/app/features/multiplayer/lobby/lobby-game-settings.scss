@@ -177,3 +177,22 @@ h2 {
 .switch-row[aria-checked='true'] .switch::after {
   translate: 20px 0;
 }
+
+// Skip-Bo: Regler für die Stapelgröße mit Wert daneben
+.stock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--color-primary-light);
+}
+
+.stock .value {
+  min-width: 2ch;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

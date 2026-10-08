@@ -22,6 +22,11 @@
           document.documentElement.setAttribute('data-theme', 'light');
         }
       } catch (e) {}
+      // Kommt evtl. vor dem Start von Angular; PwaService übernimmt es dann
+      addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        window.earlyInstallPrompt = event;
+      });
     </script>
     <link rel="icon" href="favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
