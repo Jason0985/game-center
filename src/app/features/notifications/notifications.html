@@ -21,17 +21,16 @@
       </div>
     }
 
-    @if (!session.isLoggedIn()) {
+    @if (session.initialized() && !session.isLoggedIn()) {
       <section class="ui-group ui-empty">
         <mat-icon aria-hidden="true">lock</mat-icon>
         <h2>Anmelden erforderlich</h2>
         <p>Melde dich an, um deine Benachrichtigungen zu sehen.</p>
         <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
       </section>
-    } @else if (loading()) {
-      <section class="ui-group ui-empty" role="status">
-        <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
-        <p>Benachrichtigungen werden geladen …</p>
+    } @else if (!session.initialized() || loading()) {
+      <section class="ui-group ui-group--icons">
+        <app-skeleton-rows [count]="4" label="Benachrichtigungen werden geladen" />
       </section>
     } @else if (!notifications().length) {
       <section class="ui-group ui-empty">

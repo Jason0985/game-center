@@ -15,6 +15,7 @@ import { ProfileEditDialog, ProfileEditDialogData } from './profile-edit-dialog'
 import { FriendAddDialog, FriendAddDialogData } from './friend-add-dialog';
 import { AccountDeleteDialog, AccountDeleteDialogData } from './account-delete-dialog';
 import { AvatarColorPipe, InitialsPipe } from '../../ui/avatar.pipes';
+import { SkeletonRows } from '../../ui/skeleton-rows';
 import { computeStats, GameResultsService, GameStats } from './stats/game-stats';
 
 const LEGAL_LINKS = [
@@ -41,7 +42,7 @@ const LEGAL_LINKS = [
 
 @Component({
   selector: 'app-profile',
-  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe],
+  imports: [MatIcon, MatTooltip, RouterLink, InitialsPipe, AvatarColorPipe, SkeletonRows],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
@@ -58,7 +59,8 @@ export class Profile {
   private readonly relations = signal<FriendRelation[]>([]);
   readonly friendsLoading = signal(true);
   readonly friendFilter = signal('');
-  readonly stats = signal<GameStats | null>(null);
+  // undefined = lädt noch, null = nicht geladen (Fehler)
+  readonly stats = signal<GameStats | null | undefined>(undefined);
   readonly legalLinks = LEGAL_LINKS;
 
   readonly friends = computed(() =>
@@ -84,7 +86,9 @@ export class Profile {
       if (userId) {
         void this.loadRelations(userId);
         void this.resultsService.getResults(userId).then((results) => {
-          if (results && this.session.user()?.id === userId) this.stats.set(computeStats(results));
+          if (this.session.user()?.id === userId) {
+            this.stats.set(results ? computeStats(results) : null);
+          }
         });
       }
     });

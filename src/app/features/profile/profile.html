@@ -4,7 +4,8 @@
       <h1 class="ui-large-title">Profil</h1>
     </header>
 
-    @if (!session.isLoggedIn()) {
+    <!-- Beim Start (Sitzung noch unbekannt) gleich das Gerüst des Profils mit Platzhaltern -->
+    @if (session.initialized() && !session.isLoggedIn()) {
       <div class="ui-group">
         <div class="ui-row profile-guest">
           <span class="ui-avatar-initials profile-avatar profile-avatar--guest" aria-hidden="true">
@@ -29,39 +30,61 @@
       </div>
     } @else {
       <div class="ui-group">
-        <button
-          type="button"
-          class="ui-row profile-identity"
-          aria-label="Anzeigename ändern"
-          (click)="editDisplayName()"
-        >
-          <span
-            class="ui-avatar-initials profile-avatar"
-            [style.--avatar]="session.username() | avatarColor"
-            aria-hidden="true"
-            >{{ session.displayName() | initials }}</span
+        @if (session.isLoggedIn() && session.profile()) {
+          <button
+            type="button"
+            class="ui-row profile-identity"
+            aria-label="Anzeigename ändern"
+            (click)="editDisplayName()"
           >
-          <span class="ui-row-text">
-            <span class="ui-row-title profile-name">{{ session.displayName() }}</span>
-            <span class="ui-row-sub">&#64;{{ session.username() }} · Anzeigename ändern</span>
-          </span>
-          <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
-        </button>
+            <span
+              class="ui-avatar-initials profile-avatar"
+              [style.--avatar]="session.username() | avatarColor"
+              aria-hidden="true"
+              >{{ session.displayName() | initials }}</span
+            >
+            <span class="ui-row-text">
+              <span class="ui-row-title profile-name">{{ session.displayName() }}</span>
+              <span class="ui-row-sub">&#64;{{ session.username() }} · Anzeigename ändern</span>
+            </span>
+            <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+          </button>
+        } @else {
+          <div class="ui-row profile-identity" role="status" aria-label="Profil wird geladen">
+            <span class="ui-skeleton ui-skeleton--circle profile-avatar"></span>
+            <span class="ui-row-text profile-skeleton-text">
+              <span class="ui-skeleton ui-skeleton--title" style="width: 45%"></span>
+              <span class="ui-skeleton" style="width: 62%"></span>
+            </span>
+          </div>
+        }
         <a
           class="ui-stat-row profile-stats"
           routerLink="/profile/stats"
           aria-label="Statistik öffnen"
         >
           <span class="ui-stat">
-            <strong>{{ stats()?.evenings ?? '–' }}</strong>
+            @if (stats() === undefined) {
+              <span class="ui-skeleton ui-skeleton--value"></span>
+            } @else {
+              <strong>{{ stats()?.evenings ?? '–' }}</strong>
+            }
             <span>Spieleabende</span>
           </span>
           <span class="ui-stat">
-            <strong>{{ stats()?.wins ?? '–' }}</strong>
+            @if (stats() === undefined) {
+              <span class="ui-skeleton ui-skeleton--value"></span>
+            } @else {
+              <strong>{{ stats()?.wins ?? '–' }}</strong>
+            }
             <span>Siege</span>
           </span>
           <span class="ui-stat">
-            <strong>{{ friendsLoading() ? '–' : friends().length }}</strong>
+            @if (friendsLoading()) {
+              <span class="ui-skeleton ui-skeleton--value"></span>
+            } @else {
+              <strong>{{ friends().length }}</strong>
+            }
             <span>Freunde</span>
           </span>
         </a>
@@ -103,7 +126,7 @@
 
         <div class="ui-group ui-group--avatars" aria-live="polite">
           @if (friendsLoading()) {
-            <p class="friends-message">Freunde werden geladen …</p>
+            <app-skeleton-rows lead="avatar" label="Freunde werden geladen" />
           } @else if (!friends().length) {
             <p class="friends-message">Noch keine Freunde. Füge über das Plus neue hinzu.</p>
           } @else if (!filteredFriends().length) {

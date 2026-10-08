@@ -7,15 +7,35 @@
       <h1 class="ui-large-title">Statistik</h1>
     </header>
 
-    @if (!session.isLoggedIn()) {
+    @if (session.initialized() && !session.isLoggedIn()) {
       <div class="ui-group ui-empty">
         <mat-icon aria-hidden="true">insights</mat-icon>
         <h2>Nur mit Konto</h2>
         <p>Melde dich an, damit deine Online-Spiele gezählt werden.</p>
         <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
       </div>
-    } @else if (loading()) {
-      <p class="stats-message" aria-live="polite">Statistik wird geladen …</p>
+    } @else if (!session.initialized() || loading()) {
+      <!-- Gleiches Gerüst wie unten, nur mit Platzhaltern -->
+      <div class="ui-group" role="status" aria-label="Statistik wird geladen">
+        @for (labels of skeletonStats; track $index) {
+          <div class="ui-stat-row" [class.stats-row-divider]="$index > 0">
+            @for (label of labels; track label) {
+              <div class="ui-stat">
+                <span class="ui-skeleton ui-skeleton--value"></span>
+                <span>{{ label }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <section class="ui-section">
+        <h2 class="ui-section-title">Serien &amp; Rekorde</h2>
+        <div class="ui-group ui-group--icons"><app-skeleton-rows [count]="4" /></div>
+      </section>
+      <section class="ui-section">
+        <h2 class="ui-section-title">Nach Spiel</h2>
+        <div class="ui-group ui-group--icons"><app-skeleton-rows /></div>
+      </section>
     } @else if (!stats().played) {
       <div class="ui-group ui-empty">
         <mat-icon aria-hidden="true">insights</mat-icon>

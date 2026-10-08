@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { SessionService } from '../../../services/session.service';
 import { computeStats, GameResult, GameResultsService, resultGameName } from './game-stats';
 import { gameOf } from '../../multiplayer/lobby.model';
+import { SkeletonRows } from '../../../ui/skeleton-rows';
 
 const percentFormat = new Intl.NumberFormat('de-DE', { style: 'percent' });
 const decimalFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
@@ -12,7 +13,7 @@ const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '
 
 @Component({
   selector: 'app-stats',
-  imports: [MatIconModule, RouterLink],
+  imports: [MatIconModule, RouterLink, SkeletonRows],
   templateUrl: './stats.html',
   styleUrl: './stats.scss',
 })
@@ -23,6 +24,10 @@ export class Stats {
   readonly loading = signal(true);
   readonly stats = computed(() => computeStats(this.results() ?? []));
   readonly gameName = resultGameName;
+  readonly skeletonStats = [
+    ['Spiele', 'Siege', 'Siegquote'],
+    ['Spieleabende', 'Top-3-Quote', 'Ø Platz'],
+  ];
 
   constructor() {
     effect(() => {

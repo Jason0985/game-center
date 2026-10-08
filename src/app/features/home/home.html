@@ -115,7 +115,9 @@
           <span class="ui-row-text">
             <span class="ui-row-title">Letzte Runde</span>
             <span class="ui-row-sub">
-              @if (lastResult(); as last) {
+              @if (!session.initialized() || lastResult() === undefined) {
+                <span class="ui-skeleton home-skeleton-line" aria-label="Wird geladen"></span>
+              } @else if (lastResult(); as last) {
                 {{ gameName(last) }} ·
                 {{ last.won ? 'Sieg' : last.placement + '. Platz von ' + last.player_count }}
               } @else if (session.isLoggedIn()) {

@@ -44,3 +44,9 @@
   font-size: 18px;
   vertical-align: -3px;
 }
+
+// Gleich hoch wie eine Zeile .ui-row-sub, damit nichts springt
+.home-skeleton-line {
+  width: 55%;
+  margin: 4px 0 3px;
+}

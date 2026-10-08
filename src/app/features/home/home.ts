@@ -16,14 +16,15 @@ export class Home {
   readonly session = inject(SessionService);
   readonly pwa = inject(PwaService);
   readonly greeting = greetingFor(new Date().getHours());
-  readonly lastResult = signal<GameResult | null>(null);
+  // undefined = lädt noch
+  readonly lastResult = signal<GameResult | null | undefined>(undefined);
   readonly gameName = resultGameName;
   private readonly resultsService = inject(GameResultsService);
 
   constructor() {
     effect(() => {
       const userId = this.session.user()?.id;
-      this.lastResult.set(null);
+      this.lastResult.set(userId ? undefined : null);
       if (!userId) return;
       void this.resultsService.getResults(userId, 1).then((results) => {
         if (this.session.user()?.id === userId) this.lastResult.set(results?.[0] ?? null);

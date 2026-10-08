@@ -17,9 +17,10 @@ const GUEST_NAME_MAX_LENGTH = 50;
 
 const normalizeCode = (value: string): string => value.toUpperCase().replace(/\s/g, '').slice(0, 6);
 
+import { SkeletonRows } from '../../ui/skeleton-rows';
 @Component({
   selector: 'app-multiplayer',
-  imports: [MatIcon, RouterLink, InitialsPipe, AvatarColorPipe],
+  imports: [MatIcon, RouterLink, InitialsPipe, AvatarColorPipe, SkeletonRows],
   templateUrl: './multiplayer.html',
   styleUrl: './multiplayer.scss',
 })
