@@ -1,7 +1,7 @@
 // Angaben für Impressum und Datenschutzerklärung. Vor dem Veröffentlichen die Platzhalter in
 // eckigen Klammern durch echte Angaben ersetzen (Impressumspflicht nach § 5 DDG).
 export const LEGAL_INFO = {
-  name: '[Vor- und Nachname]',
+  name: '[Jason Brodt]',
   street: '[Straße und Hausnummer]',
   city: '[PLZ und Ort]',
   email: '[E-Mail-Adresse]',
