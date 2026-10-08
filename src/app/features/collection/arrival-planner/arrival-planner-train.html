@@ -1,0 +1,346 @@
+<section class="route-card ui-surface" aria-label="Strecke">
+  <div class="route-card-main">
+    <div class="route-fields">
+      <div class="route-field">
+        <mat-icon aria-hidden="true">trip_origin</mat-icon>
+        <div class="route-field-copy">
+          <label for="train-from">Von</label>
+          <input
+            id="train-from"
+            type="text"
+            placeholder="Bahnhof oder Adresse"
+            autocomplete="off"
+            enterkeyhint="next"
+            [value]="from.query()"
+            (input)="onLocationInput('from', $event)"
+            (keydown.enter)="onLocationEnter('from', $event)"
+            (focus)="focusedField.set('from')"
+            (blur)="focusedField.set(null)"
+          />
+        </div>
+        @if (from.searching()) {
+          <mat-icon class="field-status spin" aria-hidden="true">autorenew</mat-icon>
+        } @else if (from.selected()) {
+          <mat-icon class="field-status field-ok" aria-label="Ausgewählt">check_circle</mat-icon>
+        }
+      </div>
+      <div class="route-field">
+        <mat-icon aria-hidden="true">location_on</mat-icon>
+        <div class="route-field-copy">
+          <label for="train-to">Nach</label>
+          <input
+            id="train-to"
+            type="text"
+            placeholder="Bahnhof oder Adresse"
+            autocomplete="off"
+            enterkeyhint="done"
+            [value]="to.query()"
+            (input)="onLocationInput('to', $event)"
+            (keydown.enter)="onLocationEnter('to', $event)"
+            (focus)="focusedField.set('to')"
+            (blur)="focusedField.set(null)"
+          />
+        </div>
+        @if (to.searching()) {
+          <mat-icon class="field-status spin" aria-hidden="true">autorenew</mat-icon>
+        } @else if (to.selected()) {
+          <mat-icon class="field-status field-ok" aria-label="Ausgewählt">check_circle</mat-icon>
+        }
+      </div>
+    </div>
+    <button
+      class="swap-button"
+      type="button"
+      aria-label="Start und Ziel tauschen"
+      (click)="swapLocations()"
+    >
+      <mat-icon aria-hidden="true">swap_vert</mat-icon>
+    </button>
+  </div>
+
+  @if (activeSuggestions().length > 0) {
+    <ul class="suggestions" role="listbox" aria-label="Vorschläge">
+      @for (location of activeSuggestions(); track location.place) {
+        <li role="option" aria-selected="false">
+          <!-- mousedown verhindern, damit das Eingabefeld beim Antippen nicht den Fokus verliert -->
+          <button
+            type="button"
+            (mousedown)="$event.preventDefault()"
+            (click)="chooseLocation(focusedField()!, location)"
+          >
+            <mat-icon aria-hidden="true">{{ locationIcon(location) }}</mat-icon>
+            <span class="suggestion-copy">
+              <strong>{{ location.name }}</strong>
+              @if (location.detail) {
+                <span>{{ location.detail }}</span>
+              }
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (from.error() || to.error(); as error) {
+    <p class="field-error" role="alert">{{ error }}</p>
+  }
+</section>
+
+<section class="arrival-entry ui-surface" aria-labelledby="train-arrival-label">
+  <div class="arrival-entry-copy">
+    <mat-icon aria-hidden="true">event_available</mat-icon>
+    <div>
+      <label id="train-arrival-label" for="train-arrival-time">Ich muss da sein um</label>
+      <input
+        class="arrival-date-input"
+        type="date"
+        aria-label="Datum der Ankunft"
+        [min]="minDate"
+        [value]="arrivalDate()"
+        (input)="updateArrivalDate($event)"
+      />
+    </div>
+  </div>
+  <input
+    id="train-arrival-time"
+    class="arrival-time-input"
+    type="time"
+    [value]="arrivalTime()"
+    (input)="updateArrivalTime($event)"
+    aria-label="Gewünschte Ankunftszeit"
+  />
+</section>
+
+<button class="search-button" type="button" [disabled]="!canSearch()" (click)="search()">
+  @if (status() === 'loading') {
+    <mat-icon class="spin" aria-hidden="true">autorenew</mat-icon>
+    Suche läuft …
+  } @else {
+    <mat-icon aria-hidden="true">search</mat-icon>
+    Verbindungen suchen
+  }
+</button>
+
+@switch (status()) {
+  @case ('error') {
+    <div class="planner-empty ui-surface" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+  @case ('done') {
+    @if (schedule(); as plan) {
+      <div class="planner-toolbar">
+        <p>Dein Zeitplan</p>
+        <span class="ui-badge">{{ targetLabel() }}</span>
+      </div>
+
+      <section class="plan-list ui-surface" aria-label="Berechneter Zeitplan">
+        <article class="plan-row plan-row-primary">
+          <div class="plan-icon"><mat-icon aria-hidden="true">alarm</mat-icon></div>
+          <div class="plan-copy">
+            <h2>Wecker stellen</h2>
+            <p>{{ settings().preparationMinutes }} Min. zum Fertigmachen</p>
+          </div>
+          <div class="plan-time">
+            <strong>{{ formatTime(plan.alarm) }}</strong>
+            @if (dayHint(plan.alarm); as hint) {
+              <span>{{ hint }}</span>
+            }
+          </div>
+        </article>
+
+        <article class="plan-row">
+          <div class="plan-icon"><mat-icon aria-hidden="true">directions_walk</mat-icon></div>
+          <div class="plan-copy">
+            <h2>Losgehen</h2>
+            <p>
+              @if (request()?.from?.kind === 'stop') {
+                {{ settings().walkToStationMinutes }} Min. zum Bahnhof
+              } @else {
+                Fußweg ist eingerechnet
+              }
+            </p>
+          </div>
+          <div class="plan-time">
+            <strong>{{ formatTime(plan.leaveHome) }}</strong>
+            @if (dayHint(plan.leaveHome); as hint) {
+              <span>{{ hint }}</span>
+            }
+          </div>
+        </article>
+
+        @if (plan.firstTrain; as train) {
+          <article class="plan-row">
+            <div class="plan-icon">
+              <mat-icon aria-hidden="true">{{ modeIcon(train) }}</mat-icon>
+            </div>
+            <div class="plan-copy">
+              <h2>{{ train.line ?? 'Erster Zug' }} fährt ab</h2>
+              <p>
+                {{ train.from.name }}
+                @if (train.from.track) {
+                  · Gleis {{ train.from.track }}
+                }
+              </p>
+            </div>
+            <div class="plan-time">
+              <strong>{{ formatTime(train.from.time) }}</strong>
+              @if (delay(train.from) > 0) {
+                <span class="delay">+{{ delay(train.from) }} Min.</span>
+              } @else if (dayHint(train.from.time); as hint) {
+                <span>{{ hint }}</span>
+              }
+            </div>
+          </article>
+        }
+
+        <article class="plan-row">
+          <div class="plan-icon"><mat-icon aria-hidden="true">flag</mat-icon></div>
+          <div class="plan-copy">
+            <h2>Ankunft</h2>
+            <p>
+              {{ plan.spareMinutes }} Min. vor deiner Zeit ·
+              {{ durationLabel(selectedJourney()!.durationMinutes) }} unterwegs
+            </p>
+          </div>
+          <div class="plan-time">
+            <strong>{{ formatTime(plan.arrival) }}</strong>
+          </div>
+        </article>
+      </section>
+
+      <div class="planner-toolbar">
+        <p>Deine Fahrt</p>
+        <span class="ui-badge">{{ transfersLabel(selectedJourney()!.transfers) }}</span>
+      </div>
+
+      <ol class="leg-list ui-surface" aria-label="Fahrtverlauf">
+        @for (leg of selectedJourney()!.legs; track $index) {
+          @if (transferBefore(selectedJourney()!.legs, $index); as wait) {
+            <li class="leg-transfer">
+              <mat-icon aria-hidden="true">sync_alt</mat-icon>
+              Umstieg · {{ wait }} Min.
+            </li>
+          }
+          @if (leg.kind === 'walk') {
+            <li class="leg leg-walk">
+              <mat-icon aria-hidden="true">directions_walk</mat-icon>
+              <span>
+                Fußweg {{ leg.durationMinutes }} Min.
+                @if (leg.distanceMeters) {
+                  · {{ leg.distanceMeters }} m
+                }
+                @if (leg.to.name) {
+                  zu {{ leg.to.name }}
+                }
+              </span>
+            </li>
+          } @else {
+            <li class="leg" [class.leg-cancelled]="leg.cancelled">
+              <div class="leg-head">
+                <span class="line-chip">
+                  <mat-icon aria-hidden="true">{{ modeIcon(leg) }}</mat-icon>
+                  {{ leg.line ?? leg.mode }}
+                </span>
+                @if (leg.headsign) {
+                  <span class="leg-headsign">Richtung {{ leg.headsign }}</span>
+                }
+                @if (leg.cancelled) {
+                  <span class="leg-alert">Fällt aus</span>
+                }
+              </div>
+              <div class="leg-stop">
+                <strong class="leg-time">{{ formatTime(leg.from.time) }}</strong>
+                <span class="leg-station">{{ leg.from.name ?? request()?.from?.name }}</span>
+                @if (leg.from.track) {
+                  <span class="leg-track" [class.leg-track-changed]="leg.from.trackChanged"
+                    >Gl. {{ leg.from.track }}</span
+                  >
+                }
+              </div>
+              <p class="leg-meta">
+                {{ durationLabel(leg.durationMinutes) }}
+                @if (leg.stopCount > 0) {
+                  · {{ leg.stopCount }} Zwischenhalt{{ leg.stopCount === 1 ? '' : 'e' }}
+                }
+                @if (leg.operator) {
+                  · {{ leg.operator }}
+                }
+                @if (leg.realTime && delay(leg.from) > 0) {
+                  · <span class="delay">+{{ delay(leg.from) }} Min.</span>
+                }
+              </p>
+              <div class="leg-stop">
+                <strong class="leg-time">{{ formatTime(leg.to.time) }}</strong>
+                <span class="leg-station">{{ leg.to.name ?? request()?.to?.name }}</span>
+                @if (leg.to.track) {
+                  <span class="leg-track" [class.leg-track-changed]="leg.to.trackChanged"
+                    >Gl. {{ leg.to.track }}</span
+                  >
+                }
+              </div>
+            </li>
+          }
+        }
+      </ol>
+    }
+
+    <div class="planner-toolbar">
+      <p>Alle Verbindungen</p>
+    </div>
+
+    @if (journeys().length === 0) {
+      <div class="planner-empty ui-surface">
+        <mat-icon aria-hidden="true">search_off</mat-icon>
+        <p>Keine Verbindung gefunden, die rechtzeitig ankommt.</p>
+      </div>
+    } @else {
+      <section class="connection-list ui-surface" aria-label="Gefundene Verbindungen">
+        @for (journey of journeys(); track $index) {
+          <button
+            class="connection-row"
+            type="button"
+            [attr.aria-pressed]="selectedIndex() === $index"
+            (click)="selectJourney($index)"
+          >
+            <span class="connection-times">
+              <strong>{{ formatTime(journey.departure) }}</strong>
+              <span class="connection-line" aria-hidden="true"></span>
+              <strong>{{ formatTime(journey.arrival) }}</strong>
+            </span>
+            <span class="connection-meta">
+              <span class="connection-lines">
+                @for (line of transitLines(journey); track $index) {
+                  <span class="line-chip">{{ line }}</span>
+                }
+                @if (recommendedIndex() === $index) {
+                  <span class="recommended-chip">Empfohlen</span>
+                }
+              </span>
+              <span class="connection-detail">
+                {{ durationLabel(journey.durationMinutes) }} ·
+                {{ transfersLabel(journey.transfers) }}
+              </span>
+            </span>
+          </button>
+        }
+      </section>
+    }
+
+    <p class="attribution">
+      Fahrplandaten:
+      <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous</a>
+      · Orte:
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener"
+        >© OpenStreetMap-Mitwirkende (ODbL)</a
+      >
+    </p>
+  }
+  @default {
+    <div class="planner-empty ui-surface">
+      <mat-icon aria-hidden="true">train</mat-icon>
+      <p>Wähle Start, Ziel und Ankunftszeit, um deine Verbindung zu finden.</p>
+    </div>
+  }
+}

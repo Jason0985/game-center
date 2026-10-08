@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthError, isAuthImplicitGrantRedirectError } from '@supabase/supabase-js';
 import { supabase } from '../supabase.client';
 import { appUrl } from '../app-url';
-import { describeAuthError } from './supabase-errors';
+import { describeAuthError, describeFunctionError } from './supabase-errors';
 
 // Das Gast-Token gibt es nach Login/Registrierung nur noch hier, daher kurz wiederholen
 const GUEST_DELETE_RETRY_DELAYS_MS = [500, 1500];
@@ -79,6 +79,20 @@ export class AuthService {
     // Lokal, weil der User serverseitig schon gelöscht ist
     await supabase.auth.signOut({ scope: 'local' });
     return true;
+  }
+
+  // Löscht das eigene Konto samt allen Daten endgültig (Edge Function "delete-account")
+  async deleteAccount(): Promise<{ ok: true } | { ok: false; message: string }> {
+    const { error } = await supabase.functions.invoke('delete-account', {
+      body: { confirm: true },
+    });
+    if (error) {
+      console.error('Konto konnte nicht gelöscht werden.', error);
+      return { ok: false, message: await describeFunctionError(error) };
+    }
+    // Lokal, weil der User serverseitig schon gelöscht ist
+    await supabase.auth.signOut({ scope: 'local' });
+    return { ok: true };
   }
 
   // Mail mit Link auf /profile/password; ob es die Adresse gibt, verrät GoTrue nicht

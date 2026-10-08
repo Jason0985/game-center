@@ -1,11 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ArrivalPlannerSettingsDialog } from './arrival-planner-settings-dialog';
+import { ArrivalPlannerTrain } from './arrival-planner-train';
 import { ArrivalPlannerSettings, DEFAULT_ARRIVAL_PLANNER_SETTINGS } from './arrival-planner.model';
+
+export type ArrivalPlannerMode = 'car' | 'train';
 
 const SETTINGS_STORAGE_KEY = 'game-center-arrival-planner-settings';
 
@@ -18,12 +21,26 @@ function formatClock(minutes: number): string {
 
 @Component({
   selector: 'app-arrival-planner',
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule, RouterLink],
+  imports: [
+    ArrivalPlannerTrain,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   templateUrl: './arrival-planner.html',
   styleUrl: './arrival-planner.scss',
 })
 export class ArrivalPlanner {
   private readonly dialog = inject(MatDialog);
+  readonly mode = signal<ArrivalPlannerMode>('car');
+  private readonly trainPlanner = viewChild(ArrivalPlannerTrain);
+  readonly settingsLabel = computed(() =>
+    this.mode() === 'car'
+      ? 'Fahr- und Vorbereitungszeiten einstellen'
+      : 'Vorbereitung, Fußweg und Puffer einstellen',
+  );
   readonly arrivalTime = signal('');
   readonly settings = signal(this.loadSettings());
   readonly plan = computed(() => {
@@ -56,6 +73,10 @@ export class ArrivalPlanner {
   }
 
   openSettingsDialog(): void {
+    if (this.mode() === 'train') {
+      this.trainPlanner()?.openSettingsDialog();
+      return;
+    }
     this.dialog
       .open(ArrivalPlannerSettingsDialog, {
         width: 'min(92vw, 480px)',

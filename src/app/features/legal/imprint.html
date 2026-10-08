@@ -1,0 +1,44 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/profile">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Profil
+      </a>
+      <h1 class="ui-large-title">Impressum</h1>
+    </header>
+
+    <div class="ui-group legal-text">
+      <h2>Angaben gemäß § 5 DDG</h2>
+      <address>
+        {{ info.name }}<br />
+        {{ info.street }}<br />
+        {{ info.city }}<br />
+        Deutschland
+      </address>
+
+      <h2>Kontakt</h2>
+      <p>E-Mail: {{ info.email }}</p>
+
+      <h2>Hinweis</h2>
+      <p>
+        Game Center ist ein privates, nicht-kommerzielles Hobbyprojekt. Es gibt keine Werbung, keine
+        Bezahlfunktionen und kein Tracking.
+      </p>
+
+      <h2>Haftung für Links</h2>
+      <p>
+        Die App enthält Links zu externen Websites, auf deren Inhalte ich keinen Einfluss habe. Für
+        diese Inhalte ist der jeweilige Anbieter verantwortlich. Bei Bekanntwerden von
+        Rechtsverletzungen entferne ich solche Links umgehend.
+      </p>
+
+      <h2>Quellcode</h2>
+      <p>
+        Der Quellcode ist unter der MIT-Lizenz auf
+        <a [href]="info.repositoryUrl" target="_blank" rel="noopener">GitHub</a> veröffentlicht.
+      </p>
+    </div>
+
+    <p class="legal-updated">Stand: {{ info.updated }}</p>
+  </div>
+</div>

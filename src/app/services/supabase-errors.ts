@@ -1,3 +1,5 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
+
 // Einheitliche, verständliche Fehlermeldungen für Supabase-Aufrufe
 interface SupabaseLikeError {
   code?: string;
@@ -80,4 +82,15 @@ export function failure(
 ): ActionResult {
   console.error(context, error);
   return { ok: false, message: describeSupabaseError(error) };
+}
+
+// Edge Functions liefern eine lesbare Meldung im Feld "error"
+export async function describeFunctionError(error: unknown): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    const body = await error.context.json().catch(() => null);
+    if (typeof body?.error === 'string') {
+      return body.error;
+    }
+  }
+  return describeSupabaseError(error as SupabaseLikeError | null);
 }

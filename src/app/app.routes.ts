@@ -93,6 +93,22 @@ export const routes: Routes = [
     loadComponent: () => import('./features/settings/settings').then((module) => module.Settings),
   },
   {
+    path: 'legal/impressum',
+    loadComponent: () => import('./features/legal/imprint').then((module) => module.Imprint),
+  },
+  {
+    path: 'legal/datenschutz',
+    loadComponent: () => import('./features/legal/privacy').then((module) => module.Privacy),
+  },
+  {
+    path: 'legal/nutzungsbedingungen',
+    loadComponent: () => import('./features/legal/terms').then((module) => module.Terms),
+  },
+  {
+    path: 'legal/lizenzen',
+    loadComponent: () => import('./features/legal/licenses').then((module) => module.Licenses),
+  },
+  {
     path: 'notifications',
     loadComponent: () =>
       import('./features/notifications/notifications').then((module) => module.Notifications),

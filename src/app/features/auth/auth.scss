@@ -102,3 +102,15 @@
   margin-top: -8px;
   font-size: 13px;
 }
+
+.auth-legal {
+  margin: 10px 4px 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-legal a {
+  color: var(--color-primary-light);
+}

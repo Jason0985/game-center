@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { FunctionsHttpError } from '@supabase/supabase-js';
-import { describeSupabaseError } from '../../../services/supabase-errors';
+import { describeFunctionError } from '../../../services/supabase-errors';
 import { supabase } from '../../../supabase.client';
 import { ExtractedResult } from './race-results.model';
 
@@ -20,7 +19,7 @@ export class RaceResultsService {
 
     if (error || !data) {
       console.error('Screenshots auslesen', error);
-      return { ok: false, message: await readErrorMessage(error) };
+      return { ok: false, message: await describeFunctionError(error) };
     }
     return { ok: true, result: data.result };
   }
@@ -36,15 +35,4 @@ async function toJpegBase64(file: File): Promise<{ mediaType: string; data: stri
   bitmap.close();
 
   return { mediaType: 'image/jpeg', data: canvas.toDataURL('image/jpeg', 0.9).split(',')[1] };
-}
-
-// Die Edge Function liefert eine lesbare Meldung im Feld "error"
-async function readErrorMessage(error: unknown): Promise<string> {
-  if (error instanceof FunctionsHttpError) {
-    const body = await error.context.json().catch(() => null);
-    if (typeof body?.error === 'string') {
-      return body.error;
-    }
-  }
-  return describeSupabaseError(error as { message?: string } | null);
 }

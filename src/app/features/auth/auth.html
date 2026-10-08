@@ -177,6 +177,12 @@
         <button class="ui-btn auth-submit" type="submit" [disabled]="loading()">
           {{ loading() ? 'Konto wird erstellt …' : 'Konto erstellen' }}
         </button>
+        <p class="auth-legal">
+          Mit dem Erstellen deines Kontos akzeptierst du die
+          <a routerLink="/legal/nutzungsbedingungen">Nutzungsbedingungen</a>. Wie deine Daten
+          verarbeitet werden, steht in der
+          <a routerLink="/legal/datenschutz">Datenschutzerklärung</a>.
+        </p>
       </form>
     }
 

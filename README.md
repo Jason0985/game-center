@@ -88,3 +88,17 @@ dieselbe Datenbank wie die produktive Seite testen.
 Die GitHub-Pages-URL ist kein Zugriffsschutz. Alles, was im Browser ausgeführt
 wird, kann von Benutzern eingesehen werden. RLS und Authentifizierung müssen
 deshalb im Backend durchgesetzt werden.
+
+## Rechtliches
+
+- Vor dem Veröffentlichen die Platzhalter in
+  `src/app/features/legal/legal-info.ts` ausfüllen (Impressum und Datenschutz).
+- Die Icon-Schriften liegen in `public/fonts`, damit keine Verbindung zu Google
+  entsteht. Ein neues Symbol für die Spieltische in
+  `scripts/update-icon-fonts.mjs` ergänzen und `node scripts/update-icon-fonts.mjs`
+  ausführen.
+
+## Lizenz
+
+MIT, siehe [LICENSE](LICENSE). Fahrplandaten: [Transitous](https://transitous.org/sources/),
+Ortsdaten © [OpenStreetMap-Mitwirkende](https://www.openstreetmap.org/copyright) (ODbL).

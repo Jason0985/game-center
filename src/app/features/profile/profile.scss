@@ -66,6 +66,10 @@
   font-size: 16px;
 }
 
+.profile-delete .ui-row-title {
+  color: var(--color-danger-light);
+}
+
 .profile-footer {
   margin-top: -8px;
   color: var(--color-text-subtle);

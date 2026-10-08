@@ -128,6 +128,34 @@
       </div>
     }
 
+    <section class="ui-section" aria-labelledby="legal-title">
+      <h2 id="legal-title" class="ui-section-title">Rechtliches &amp; Datenschutz</h2>
+      <div class="ui-group ui-group--icons">
+        @for (link of legalLinks; track link.path) {
+          <a class="ui-row" [routerLink]="link.path">
+            <span class="ui-row-icon" [style.--tile]="link.tile">
+              <mat-icon aria-hidden="true">{{ link.icon }}</mat-icon>
+            </span>
+            <span class="ui-row-text"
+              ><span class="ui-row-title">{{ link.label }}</span></span
+            >
+            <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+          </a>
+        }
+        @if (session.isLoggedIn()) {
+          <button type="button" class="ui-row profile-delete" (click)="deleteAccount()">
+            <span class="ui-row-icon" style="--tile: var(--color-danger-strong)">
+              <mat-icon aria-hidden="true">delete_forever</mat-icon>
+            </span>
+            <span class="ui-row-text">
+              <span class="ui-row-title">Konto löschen</span>
+              <span class="ui-row-sub">Entfernt dein Konto und alle Daten endgültig</span>
+            </span>
+          </button>
+        }
+      </div>
+    </section>
+
     <footer class="profile-footer">&#169; 2026 Game Center</footer>
   </div>
 </div>
