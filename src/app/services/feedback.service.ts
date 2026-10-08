@@ -7,17 +7,18 @@ export type FeedbackCue = 'tap' | 'turn' | 'alert' | 'win' | 'bust';
 // Ton: Frequenz (Hz), Start und Dauer (s) ab Abspielbeginn
 type Note = [hz: number, at: number, duration: number];
 
+// Vibration in ms (an, Pause, an …); unter ~30 ms spüren viele Handys nichts
 const CUES: Record<FeedbackCue, { vibrate: number | number[]; notes: Note[] }> = {
-  tap: { vibrate: 12, notes: [[880, 0, 0.05]] },
+  tap: { vibrate: 35, notes: [[880, 0, 0.05]] },
   turn: {
-    vibrate: [40, 60, 40],
+    vibrate: [150, 100, 150],
     notes: [
       [659, 0, 0.12],
       [988, 0.1, 0.22],
     ],
   },
   alert: {
-    vibrate: [80, 50, 80, 50, 80],
+    vibrate: [200, 100, 200, 100, 200],
     notes: [
       [784, 0, 0.09],
       [784, 0.12, 0.09],
@@ -25,7 +26,7 @@ const CUES: Record<FeedbackCue, { vibrate: number | number[]; notes: Note[] }> =
     ],
   },
   win: {
-    vibrate: [60, 40, 60, 40, 220],
+    vibrate: [120, 80, 120, 80, 400],
     notes: [
       [523, 0, 0.12],
       [659, 0.12, 0.12],
@@ -34,7 +35,7 @@ const CUES: Record<FeedbackCue, { vibrate: number | number[]; notes: Note[] }> =
     ],
   },
   bust: {
-    vibrate: 250,
+    vibrate: 500,
     notes: [
       [311, 0, 0.18],
       [233, 0.16, 0.35],
