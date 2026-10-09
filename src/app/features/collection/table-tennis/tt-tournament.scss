@@ -1,0 +1,418 @@
+.tt-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.tt-head-row .ui-back-link {
+  margin: 0 0 0 -8px;
+}
+
+.tt-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-danger-light);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tt-reset mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+// Einrichtung
+.tt-field {
+  justify-content: space-between;
+}
+
+.tt-field .ui-segmented {
+  flex: 0 1 220px;
+}
+
+.tt-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tt-stepper button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-fill);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.tt-stepper button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tt-stepper output {
+  min-width: 3ch;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.tt-switch {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  border-radius: 16px;
+  background: rgba(118, 118, 128, 0.32);
+  transition: background 120ms ease;
+}
+
+.tt-switch::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  content: '';
+  transition: translate 120ms ease;
+}
+
+.tt-switch-row[aria-checked='true'] .tt-switch {
+  background: var(--color-success-light);
+}
+
+.tt-switch-row[aria-checked='true'] .tt-switch::after {
+  translate: 20px 0;
+}
+
+.tt-names,
+.tt-path,
+.tt-table {
+  --ui-row-inset: 52px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tt-seed {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-fill);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tt-names input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.tt-names input:focus {
+  outline: 0;
+}
+
+.tt-names .ui-row:focus-within {
+  background: var(--color-white-04);
+}
+
+// Turnierbaum: Runden als Spalten. Jedes Spiel steht in einem Feld gleicher Höhe (flex: 1),
+// so liegt ein Spiel genau mittig zu seinen zwei Vorgängern. Die Linien: ein Stich nach rechts
+// aus jedem Spiel, ein senkrechter Strich, der zwei Spiele verbindet, und ein Stich nach links
+// in das nächste Spiel – alle in der Mitte der Spaltenlücke.
+.tt-bracket {
+  --gap: 28px;
+  --line: var(--color-border-strong);
+  display: flex;
+  gap: var(--gap);
+  margin: 0 calc(-1 * var(--page-padding-mobile));
+  padding: 4px var(--page-padding-mobile) 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  // Sonst rastet die erste Spalte am Rand statt am Seitenabstand ein
+  scroll-padding-inline: var(--page-padding-mobile);
+  scrollbar-width: thin;
+}
+
+.tt-bracket:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.tt-round {
+  display: flex;
+  flex: 0 0 160px;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.tt-round h3 {
+  margin: 0 0 4px 4px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tt-round-games {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.tt-slot {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  padding: 6px 0;
+}
+
+// Stich nach rechts
+.tt-round:not(:last-child) .tt-slot::after {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--gap) / -2);
+  width: calc(var(--gap) / 2);
+  border-top: 1.5px solid var(--line);
+  content: '';
+}
+
+// Senkrechter Strich: vom oberen Spiel eines Paars nach unten, vom unteren nach oben
+.tt-round:not(:last-child) .tt-slot::before {
+  position: absolute;
+  right: calc(var(--gap) / -2);
+  border-right: 1.5px solid var(--line);
+  content: '';
+}
+
+.tt-round:not(:last-child) .tt-slot:nth-child(odd)::before {
+  top: 50%;
+  bottom: 0;
+}
+
+.tt-round:not(:last-child) .tt-slot:nth-child(even)::before {
+  top: 0;
+  bottom: 50%;
+}
+
+// Stich nach links in das Spiel der nächsten Runde
+.tt-round:not(:first-child) .tt-game::before {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--gap) / -2 - 1px);
+  width: calc(var(--gap) / 2);
+  border-top: 1.5px solid var(--line);
+  content: '';
+}
+
+.tt-game {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tt-game:disabled {
+  cursor: default;
+}
+
+.tt-game:not(:disabled):active {
+  background: var(--color-surface-raised);
+}
+
+// Bereit zum Eintragen: beide Spieler stehen fest, noch kein Ergebnis
+.tt-game--open {
+  border-color: var(--color-primary-light-48);
+  background: color-mix(in srgb, var(--color-primary-light) 8%, var(--color-surface));
+}
+
+.tt-game--bye {
+  opacity: 0.6;
+}
+
+.tt-game-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.tt-game-line + .tt-game-line {
+  border-top: 0.5px solid var(--color-border);
+}
+
+.tt-game-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-game-sets {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tt-game-line--won {
+  font-weight: 700;
+}
+
+.tt-game-line--won .tt-game-sets {
+  color: var(--color-success-light);
+}
+
+.tt-game-line--lost {
+  color: var(--color-text-subtle);
+}
+
+.tt-game-points {
+  padding: 5px 10px 6px;
+  border-top: 0.5px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Abschluss
+.tt-champion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 24px 16px 20px;
+  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-surface));
+  text-align: center;
+}
+
+.tt-champion > mat-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  color: var(--color-warning);
+  font-size: 44px;
+}
+
+.tt-champion-kicker {
+  margin: 0;
+  color: var(--color-warning);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tt-champion h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tt-champion-sub {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.tt-place {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tt-place--1 {
+  --tile: #b8860b;
+}
+
+.tt-place--2 {
+  --tile: #7d7d85;
+}
+
+.tt-place--3 {
+  --tile: #8c5a2b;
+}
+
+.tt-result small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.tt-result,
+.tt-record {
+  flex: none;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tt-record {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.tt-record small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tt-table-head {
+  margin-right: 16px;
+  font-weight: 500;
+}

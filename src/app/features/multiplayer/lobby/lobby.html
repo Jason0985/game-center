@@ -1,7 +1,7 @@
 <div class="lobby-root ui-page-root" [class.ui-page-root--spacious]="!started()">
   <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game, uno-game) -->
   @if (!started()) {
-    <header class="ui-page-head lobby-block">
+    <header class="ui-page-head lobby-block lobby-head">
       <div class="lobby-head-row">
         <a class="ui-back-link" routerLink="/multiplayer">
           <mat-icon aria-hidden="true">chevron_left</mat-icon>Lobbys
@@ -20,6 +20,14 @@
           Lobby
         }
       </h1>
+      @if (lobby()) {
+        <p class="ui-page-lead">
+          @if (isHost()) {
+            Du bist Host ·
+          }
+          {{ members().length }} von {{ maxMembers }} Plätzen belegt
+        </p>
+      }
     </header>
   }
 
@@ -56,161 +64,236 @@
         />
       }
     } @else {
-      @if (isHost() && code(); as lobbyCode) {
-        <section class="ui-group lobby-block lobby-code-box" aria-labelledby="lobby-code-title">
-          <div class="lobby-code-copy">
-            <p id="lobby-code-title" class="lobby-code-label">Lobby-Code · nur für dich</p>
-            <strong class="lobby-code">{{ lobbyCode }}</strong>
-          </div>
-          <button
-            type="button"
-            class="ui-icon-button ui-icon-button--accent"
-            aria-label="Code kopieren"
-            matTooltip="Code kopieren"
-            (click)="copyCode()"
-          >
-            <mat-icon aria-hidden="true">content_copy</mat-icon>
-          </button>
-          <button
-            type="button"
-            class="ui-icon-button ui-icon-button--accent"
-            aria-label="Beitritts-Link kopieren"
-            matTooltip="Link kopieren – auch ohne Konto als Gast nutzbar"
-            (click)="copyLink()"
-          >
-            <mat-icon aria-hidden="true">link</mat-icon>
-          </button>
-          @if (canShare) {
-            <button
-              type="button"
-              class="ui-icon-button ui-icon-button--accent"
-              aria-label="Einladung teilen"
-              matTooltip="Teilen, z. B. per WhatsApp"
-              (click)="shareLink(lobbyCode)"
-            >
-              <mat-icon aria-hidden="true">{{ shareIcon }}</mat-icon>
-            </button>
-          }
-          <button
-            type="button"
-            class="ui-icon-button ui-icon-button--accent"
-            aria-label="Freunde einladen"
-            matTooltip="Freunde einladen"
-            [disabled]="busy() || members().length >= maxMembers"
-            (click)="openInvite()"
-          >
-            <mat-icon aria-hidden="true">person_add</mat-icon>
-          </button>
-        </section>
-      }
-
-      <section class="ui-section lobby-block" aria-labelledby="lobby-members-title">
-        <h2 id="lobby-members-title" class="ui-section-title">
-          <span>Spieler</span>
-          <span class="lobby-count">{{ members().length }}/{{ maxMembers }}</span>
-        </h2>
-
-        <ul class="ui-group ui-group--avatars lobby-member-list">
-          @for (member of ranking(); track member.user_id) {
-            @let memberWins = wins()[member.user_id] ?? 0;
-            <li class="ui-row lobby-member">
-              <span
-                class="ui-avatar-initials"
-                [style.--avatar]="member.profile?.username ?? member.name | avatarColor"
-                aria-hidden="true"
-                >{{ member.name | initials }}</span
-              >
-              <div class="ui-row-text">
-                <span class="ui-row-title">
-                  {{ member.name }}
-                  @if (member.user_id === userId()) {
-                    <span class="lobby-member-you">(du)</span>
-                  }
+      <div class="lobby-block lobby-body">
+        @if (isHost()) {
+          <!-- Host: Code mit Einladen, darunter das Spiel als eine Zeile -->
+          <div class="lobby-stack">
+            @if (code(); as lobbyCode) {
+              <section class="lobby-card lobby-code-box" aria-labelledby="lobby-code-title">
+                <span class="lobby-code-copy">
+                  <span id="lobby-code-title" class="lobby-code-label">Lobby-Code</span>
+                  <strong class="lobby-code">{{ lobbyCode }}</strong>
                 </span>
-                <span class="ui-row-sub lobby-member-sub">
-                  <span
-                    class="ready-dot"
-                    [class.ready-dot--ready]="member.ready"
-                    role="img"
-                    [attr.aria-label]="member.ready ? 'Bereit' : 'Nicht bereit'"
-                  ></span>
-                  {{ member.ready ? 'Bereit' : 'Wartet' }}
-                  @if (member.user_id === current.host_user_id) {
-                    · <span class="lobby-host">Host</span>
-                  } @else if (member.profile?.is_guest) {
-                    · Gast
-                  } @else if (member.profile) {
-                    · &#64;{{ member.profile.username }}
-                  }
-                </span>
-              </div>
-              <span
-                class="lobby-wins"
-                [class.lobby-wins--none]="!memberWins"
-                [class.lobby-wins--leader]="memberWins && memberWins === leaderWins()"
-                [attr.aria-label]="memberWins === 1 ? '1 Sieg' : memberWins + ' Siege'"
-              >
-                <mat-icon aria-hidden="true">emoji_events</mat-icon>{{ memberWins }}
-              </span>
-              @if (isHost() && member.user_id !== current.host_user_id) {
                 <button
                   type="button"
-                  class="ui-icon-button lobby-member-menu"
-                  [disabled]="busy()"
-                  [attr.aria-label]="'Optionen für ' + member.name"
-                  [matMenuTriggerFor]="memberMenu"
-                  [matMenuTriggerData]="{ member }"
+                  class="lobby-invite"
+                  [disabled]="busy() || members().length >= maxMembers"
+                  (click)="openInvite()"
                 >
-                  <mat-icon aria-hidden="true">more_vert</mat-icon>
+                  <mat-icon aria-hidden="true">person_add</mat-icon>Einladen
                 </button>
-              } @else if (isHost()) {
-                <!-- Eigene Zeile des Hosts: Platz des Menüs, damit die Siege bündig stehen -->
-                <span class="lobby-member-menu" aria-hidden="true"></span>
-              }
-            </li>
-          }
-        </ul>
+              </section>
+            }
 
-        <p class="ui-section-footer">
-          Siege zählen, solange die Lobby offen ist – wer beim Schließen vorn liegt, ist
-          Abend-Gewinner.
-        </p>
-      </section>
-
-      <section class="ui-group lobby-block lobby-settings" aria-labelledby="lobby-game-title">
-        <app-lobby-game-settings
-          [lobbyId]="lobbyId"
-          [gameKey]="current.game_key"
-          [settings]="current.game_settings"
-          [isHost]="isHost()"
-          [disabled]="busy()"
-          (changed)="reload()"
-        />
-      </section>
-
-      <!-- Bleibt über der Tab-Leiste stehen, damit Bereit/Starten immer erreichbar sind -->
-      <div class="lobby-block lobby-actions">
-        <p class="lobby-status" aria-live="polite">{{ status() }}</p>
-        <div class="lobby-buttons">
-          <button
-            type="button"
-            class="ui-btn"
-            [class.ui-btn--secondary]="isHost() || me()?.ready"
-            [disabled]="busy()"
-            (click)="toggleReady()"
-          >
-            <mat-icon aria-hidden="true">{{ me()?.ready ? 'close' : 'check' }}</mat-icon>
-            {{ me()?.ready ? 'Nicht bereit' : 'Bereit' }}
-          </button>
-          @if (isHost()) {
             <button
               type="button"
-              class="ui-btn"
-              [disabled]="busy() || !canStart()"
-              (click)="start()"
+              class="lobby-card lobby-game"
+              [disabled]="busy()"
+              [attr.aria-label]="'Spiel und Regeln: ' + (game()?.name ?? 'Spiel wählen')"
+              (click)="openGameSheet()"
             >
-              <mat-icon aria-hidden="true">play_arrow</mat-icon>
-              Starten
+              <span class="lobby-game-tile" [style.--tile]="game()?.tile">
+                <mat-icon aria-hidden="true">{{ game()?.icon ?? 'casino' }}</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="lobby-game-name">{{ game()?.name ?? 'Spiel wählen' }}</span>
+                <span class="lobby-game-sub">{{ gameSummary() }}</span>
+              </span>
+              <span class="lobby-game-tune"><mat-icon aria-hidden="true">tune</mat-icon></span>
+            </button>
+
+            @if (game()?.url; as url) {
+              <a class="lobby-card lobby-external" [href]="url" target="_blank" rel="noopener">
+                <span class="ui-row-text">{{ url }}</span>
+                <mat-icon aria-hidden="true">open_in_new</mat-icon>
+              </a>
+            }
+          </div>
+        } @else {
+          <!-- Gäste: das Spiel zuerst, das ist für sie die wichtigste Info -->
+          <section class="ui-section" aria-labelledby="lobby-game-title">
+            <h2 id="lobby-game-title" class="ui-section-title">Spiel</h2>
+            <div class="ui-group">
+              <div class="ui-row lobby-game-row">
+                <span class="lobby-game-tile" [style.--tile]="game()?.tile">
+                  <mat-icon aria-hidden="true">{{ game()?.icon ?? 'casino' }}</mat-icon>
+                </span>
+                <span class="ui-row-text">
+                  <span class="lobby-game-name">{{ game()?.name ?? 'Noch kein Spiel' }}</span>
+                  <span class="lobby-game-sub">
+                    {{
+                      game()
+                        ? 'Der Host hat das Spiel gewählt'
+                        : 'Der Host wählt noch ein Spiel aus.'
+                    }}
+                  </span>
+                </span>
+              </div>
+              @if (gameSettings(); as gameSetting) {
+                <div class="ui-row lobby-settings">
+                  <span class="lobby-settings-label">{{ gameSetting.label }}</span>
+                  <span class="lobby-chips">
+                    @for (chip of gameSetting.chips; track chip) {
+                      <span class="lobby-chip"
+                        ><mat-icon aria-hidden="true">check</mat-icon>{{ chip }}</span
+                      >
+                    }
+                  </span>
+                </div>
+              }
+              @if (game()?.url; as url) {
+                <a class="ui-row" [href]="url" target="_blank" rel="noopener">
+                  <span class="ui-row-text ui-row-title">{{ url }}</span>
+                  <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+                </a>
+              }
+              @if (rules().length) {
+                <button type="button" class="ui-row" (click)="openRules()">
+                  <span class="ui-row-text ui-row-title">Kurzregeln</span>
+                  <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+                </button>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="ui-section" aria-labelledby="lobby-members-title">
+          <h2 id="lobby-members-title" class="ui-section-title lobby-members-title">
+            <span>Spieler · {{ members().length }}/{{ maxMembers }}</span>
+            <span class="lobby-ready-count" aria-live="polite"
+              >{{ readyCount() }}/{{ members().length }} bereit</span
+            >
+          </h2>
+
+          <ul class="ui-group lobby-member-list">
+            @for (member of ranking(); track member.user_id) {
+              @let memberWins = wins()[member.user_id] ?? 0;
+              @let host = member.user_id === current.host_user_id;
+              <li class="ui-row lobby-member">
+                <span class="lobby-avatar" [class.lobby-avatar--waiting]="!member.ready">
+                  <span
+                    class="ui-avatar-initials"
+                    [style.--avatar]="member.profile?.username ?? member.name | avatarColor"
+                    aria-hidden="true"
+                    >{{ member.name | initials }}</span
+                  >
+                  @if (member.ready) {
+                    <span class="lobby-ready-badge" role="img" aria-label="Bereit">
+                      <mat-icon aria-hidden="true">check</mat-icon>
+                    </span>
+                  }
+                </span>
+                <span class="ui-row-text">
+                  <span class="ui-row-title">
+                    {{ member.name }}
+                    @if (member.user_id === userId()) {
+                      <span class="lobby-member-you">(du)</span>
+                    }
+                  </span>
+                  <span class="ui-row-sub lobby-member-sub" [class.lobby-host]="host">
+                    @if (host) {
+                      Host
+                    } @else if (member.profile?.is_guest) {
+                      Gast
+                    } @else if (member.profile) {
+                      &#64;{{ member.profile.username }}
+                    }
+                    @if (!member.ready) {
+                      · wartet noch
+                    }
+                  </span>
+                </span>
+                @if (leaderWins()) {
+                  <span
+                    class="lobby-wins"
+                    [class.lobby-wins--none]="!memberWins"
+                    [class.lobby-wins--leader]="memberWins === leaderWins()"
+                    [attr.aria-label]="memberWins === 1 ? '1 Sieg' : memberWins + ' Siege'"
+                  >
+                    <mat-icon aria-hidden="true">emoji_events</mat-icon>{{ memberWins }}
+                  </span>
+                }
+                @if (isHost() && !host) {
+                  <button
+                    type="button"
+                    class="ui-icon-button lobby-member-menu"
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Optionen für ' + member.name"
+                    [matMenuTriggerFor]="memberMenu"
+                    [matMenuTriggerData]="{ member }"
+                  >
+                    <mat-icon aria-hidden="true">more_horiz</mat-icon>
+                  </button>
+                } @else if (isHost()) {
+                  <!-- Eigene Zeile des Hosts: Platz des Menüs, damit die Siege bündig stehen -->
+                  <span class="lobby-member-menu" aria-hidden="true"></span>
+                }
+              </li>
+            }
+            @if (isHost() && code() && members().length < maxMembers) {
+              <li>
+                <button
+                  type="button"
+                  class="ui-row lobby-free"
+                  [disabled]="busy()"
+                  (click)="openInvite()"
+                >
+                  <span class="lobby-free-icon"><mat-icon aria-hidden="true">add</mat-icon></span>
+                  Freie Plätze: {{ maxMembers - members().length }}
+                </button>
+              </li>
+            }
+          </ul>
+
+          <p class="ui-section-footer">Siege zählen, solange die Lobby offen ist.</p>
+        </section>
+      </div>
+
+      <!-- Klebt über der Tab-Leiste, damit Bereit/Starten immer erreichbar sind -->
+      <div class="lobby-dock">
+        <div class="lobby-dock-inner">
+          @if (isHost()) {
+            @if (!canStart() && status(); as hint) {
+              <p class="lobby-status" aria-live="polite">{{ hint }}</p>
+            }
+            <div class="lobby-buttons">
+              <button
+                type="button"
+                class="lobby-ready"
+                [class.lobby-ready--on]="me()?.ready"
+                [attr.aria-pressed]="!!me()?.ready"
+                [disabled]="busy()"
+                (click)="toggleReady()"
+              >
+                <mat-icon aria-hidden="true">{{
+                  me()?.ready ? 'check_circle' : 'radio_button_unchecked'
+                }}</mat-icon>
+                {{ me()?.ready ? 'Bereit' : 'Bereit?' }}
+              </button>
+              <button
+                type="button"
+                class="ui-btn lobby-start"
+                [disabled]="busy() || !canStart()"
+                (click)="start()"
+              >
+                <mat-icon aria-hidden="true">play_arrow</mat-icon>
+                Spiel starten
+              </button>
+            </div>
+          } @else {
+            <p class="lobby-status" aria-live="polite">{{ guestStatus() }}</p>
+            <button
+              type="button"
+              class="lobby-ready lobby-ready--guest"
+              [class.lobby-ready--on]="me()?.ready"
+              [attr.aria-pressed]="!!me()?.ready"
+              [disabled]="busy()"
+              (click)="toggleReady()"
+            >
+              <mat-icon aria-hidden="true">{{
+                me()?.ready ? 'check_circle' : 'radio_button_unchecked'
+              }}</mat-icon>
+              {{ me()?.ready ? 'Bereit – tippen zum Zurücknehmen' : 'Bereit' }}
             </button>
           }
         </div>

@@ -1,0 +1,302 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <div class="tt-head-row">
+        <a class="ui-back-link" routerLink="/collection">
+          <mat-icon aria-hidden="true">chevron_left</mat-icon>Sammlung
+        </a>
+        @if (tournament()) {
+          <button type="button" class="tt-reset" (click)="reset()">
+            <mat-icon aria-hidden="true">restart_alt</mat-icon>Neues Turnier
+          </button>
+        }
+      </div>
+      <h1 class="ui-large-title">Turnier</h1>
+      <p class="ui-page-lead">
+        @if (tournament(); as current) {
+          {{ current.players.length }} Spieler · Best of {{ current.bestOf }} ·
+          {{ progress().done }}/{{ progress().total }} Spiele
+        } @else {
+          Tischtennis im K.-o.-System
+        }
+      </p>
+    </header>
+
+    @if (!tournament()) {
+      <!-- Einrichtung -->
+      <section class="ui-section" aria-labelledby="tt-setup-title">
+        <h2 id="tt-setup-title" class="ui-section-title">Einstellungen</h2>
+        <div class="ui-group">
+          <div class="ui-row tt-field">
+            <span class="ui-row-title" id="tt-count-label">Spieler</span>
+            <div class="tt-stepper" role="group" aria-labelledby="tt-count-label">
+              <button
+                type="button"
+                aria-label="Ein Spieler weniger"
+                [disabled]="names().length <= minPlayers"
+                (click)="setCount(names().length - 1)"
+              >
+                <mat-icon aria-hidden="true">remove</mat-icon>
+              </button>
+              <output aria-live="polite">{{ names().length }}</output>
+              <button
+                type="button"
+                aria-label="Ein Spieler mehr"
+                [disabled]="names().length >= maxPlayers"
+                (click)="setCount(names().length + 1)"
+              >
+                <mat-icon aria-hidden="true">add</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="ui-row tt-field">
+            <span class="ui-row-title" id="tt-best-of">Sätze</span>
+            <div class="ui-segmented" role="group" aria-labelledby="tt-best-of">
+              @for (option of bestOfOptions; track option) {
+                <button
+                  type="button"
+                  [attr.aria-pressed]="bestOf() === option"
+                  (click)="bestOf.set(option)"
+                >
+                  Bo{{ option }}
+                </button>
+              }
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="ui-row tt-field tt-switch-row"
+            [attr.aria-checked]="shuffle()"
+            (click)="shuffle.set(!shuffle())"
+          >
+            <span class="ui-row-text">
+              <span class="ui-row-title">Zufällig auslosen</span>
+              <span class="ui-row-sub">Sonst in der Reihenfolge unten</span>
+            </span>
+            <span class="tt-switch" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+
+      <section class="ui-section" aria-labelledby="tt-names-title">
+        <h2 id="tt-names-title" class="ui-section-title">Namen</h2>
+        <ol class="ui-group tt-names">
+          @for (playerName of names(); track $index) {
+            <li class="ui-row">
+              <span class="tt-seed">{{ $index + 1 }}</span>
+              <input
+                type="text"
+                maxlength="24"
+                autocomplete="off"
+                [attr.aria-label]="'Name Spieler ' + ($index + 1)"
+                [value]="playerName"
+                (focus)="$any($event.target).select()"
+                (input)="rename($index, $any($event.target).value)"
+              />
+            </li>
+          }
+        </ol>
+        <p class="ui-section-footer">
+          Ist die Spielerzahl keine 2, 4, 8, 16 oder 32, bekommen einige in Runde 1 ein Freilos.
+        </p>
+      </section>
+
+      <button type="button" class="ui-btn" (click)="start()">
+        <mat-icon aria-hidden="true">account_tree</mat-icon>Turnierbaum erstellen
+      </button>
+    } @else {
+      @if (summary(); as result) {
+        <!-- Abschluss: Sieger, Podest und ein paar Zahlen -->
+        <section class="ui-group tt-champion" aria-labelledby="tt-champion-title">
+          <mat-icon aria-hidden="true">emoji_events</mat-icon>
+          <p class="tt-champion-kicker">Turniersieger</p>
+          <h2 id="tt-champion-title">{{ name(result.champion) }}</h2>
+          <p class="tt-champion-sub">
+            {{ result.path.length }} {{ result.path.length === 1 ? 'Sieg' : 'Siege' }} ·
+            {{ result.table[0].setsWon }}:{{ result.table[0].setsLost }} Sätze
+          </p>
+        </section>
+
+        <section class="ui-section" aria-labelledby="tt-podium-title">
+          <h2 id="tt-podium-title" class="ui-section-title">Platzierungen</h2>
+          <div class="ui-group ui-group--icons">
+            <div class="ui-row">
+              <span class="ui-row-icon tt-place tt-place--1">1</span>
+              <span class="ui-row-text ui-row-title">{{ name(result.champion) }}</span>
+            </div>
+            <div class="ui-row">
+              <span class="ui-row-icon tt-place tt-place--2">2</span>
+              <span class="ui-row-text ui-row-title">{{ name(result.finalist) }}</span>
+            </div>
+            @for (player of result.semifinalists; track player) {
+              <div class="ui-row">
+                <span class="ui-row-icon tt-place tt-place--3">3</span>
+                <span class="ui-row-text ui-row-title">{{ name(player) }}</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="ui-section" aria-labelledby="tt-facts-title">
+          <h2 id="tt-facts-title" class="ui-section-title">Zahlen</h2>
+          <div class="ui-group">
+            <div class="ui-stat-row">
+              <div class="ui-stat">
+                <strong>{{ result.games }}</strong
+                ><span>Spiele</span>
+              </div>
+              <div class="ui-stat">
+                <strong>{{ result.sets }}</strong
+                ><span>Sätze</span>
+              </div>
+              <div class="ui-stat">
+                <strong>{{ result.points }}</strong
+                ><span>Punkte</span>
+              </div>
+            </div>
+            @if (result.clearest; as game) {
+              <div class="ui-row">
+                <span class="ui-row-text">
+                  <span class="ui-row-sub">Klarster Sieg · {{ roundName(game.round) }}</span>
+                  <span class="ui-row-title">
+                    {{ name(game.winner) }} gegen
+                    {{ name(game.winner === game.a ? game.b : game.a) }}
+                  </span>
+                </span>
+                <span class="tt-result">
+                  {{ winnerScore(game) }}<small>{{ setPoints(game) }}</small>
+                </span>
+              </div>
+            }
+            @if (result.closest; as game) {
+              <div class="ui-row">
+                <span class="ui-row-text">
+                  <span class="ui-row-sub">Krimi des Turniers · {{ roundName(game.round) }}</span>
+                  <span class="ui-row-title">
+                    {{ name(game.winner) }} gegen
+                    {{ name(game.winner === game.a ? game.b : game.a) }}
+                  </span>
+                </span>
+                <span class="tt-result">
+                  {{ winnerScore(game) }}<small>{{ setPoints(game) }}</small>
+                </span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="ui-section" aria-labelledby="tt-path-title">
+          <h2 id="tt-path-title" class="ui-section-title">Weg zum Titel</h2>
+          <ol class="ui-group tt-path">
+            @for (step of result.path; track step.round) {
+              <li class="ui-row">
+                <span class="ui-row-text">
+                  <span class="ui-row-sub">{{ roundName(step.round) }}</span>
+                  <span class="ui-row-title">gegen {{ name(step.opponent) }}</span>
+                </span>
+                <span class="tt-result">
+                  {{ step.score[0] }}:{{ step.score[1] }}
+                  <small>
+                    @for (set of step.sets; track $index; let last = $last) {
+                      {{ set[0] }}:{{ set[1] }}{{ last ? '' : ' · ' }}
+                    }
+                  </small>
+                </span>
+              </li>
+            }
+          </ol>
+        </section>
+
+        <section class="ui-section" aria-labelledby="tt-table-title">
+          <h2 id="tt-table-title" class="ui-section-title">
+            <span>Tabelle</span><span class="tt-table-head">S–N · Sätze</span>
+          </h2>
+          <ol class="ui-group tt-table">
+            @for (row of result.table; track row.player; let rank = $index) {
+              <li class="ui-row">
+                <span class="tt-seed">{{ rank + 1 }}</span>
+                <span class="ui-row-text">
+                  <span class="ui-row-title">{{ row.name }}</span>
+                  <span class="ui-row-sub">
+                    {{
+                      row.reached === rounds().length ? 'Sieger' : 'bis ' + roundName(row.reached)
+                    }}
+                  </span>
+                </span>
+                <span class="tt-record">
+                  {{ row.won }}–{{ row.played - row.won }}
+                  <small>{{ row.setsWon }}:{{ row.setsLost }}</small>
+                </span>
+              </li>
+            }
+          </ol>
+        </section>
+      }
+
+      <section class="ui-section" aria-labelledby="tt-bracket-title">
+        <h2 id="tt-bracket-title" class="ui-section-title">Turnierbaum</h2>
+        <div class="tt-bracket" tabindex="0" aria-label="Turnierbaum, seitlich scrollbar">
+          @for (round of rounds(); track $index) {
+            <div class="tt-round">
+              <h3>{{ roundName($index) }}</h3>
+              <div class="tt-round-games">
+                <!-- Jedes Spiel in einem gleich hohen Feld: so liegt es mittig zu seinen zwei
+                     Vorgängern, und die Linien treffen sich dort -->
+                @for (game of round; track game.index) {
+                  <div class="tt-slot">
+                    <button
+                      type="button"
+                      class="tt-game"
+                      [class.tt-game--open]="game.a !== null && game.b !== null && !game.score"
+                      [class.tt-game--bye]="game.bye"
+                      [disabled]="game.a === null || game.b === null"
+                      [attr.aria-label]="
+                        game.a !== null && game.b !== null
+                          ? roundName(game.round) +
+                            ': ' +
+                            name(game.a) +
+                            ' gegen ' +
+                            name(game.b) +
+                            (game.score
+                              ? ', ' + winnerScore(game) + ' für ' + name(game.winner)
+                              : ', Ergebnis eintragen')
+                          : null
+                      "
+                      (click)="openResult(game)"
+                    >
+                      @for (slot of [0, 1]; track slot) {
+                        @let player = slot ? game.b : game.a;
+                        <span
+                          class="tt-game-line"
+                          [class.tt-game-line--won]="game.winner !== null && game.winner === player"
+                          [class.tt-game-line--lost]="
+                            game.winner !== null && game.winner !== player
+                          "
+                        >
+                          <span class="tt-game-name">
+                            {{ player !== null ? name(player) : game.bye ? 'Freilos' : 'offen' }}
+                          </span>
+                          @if (game.score) {
+                            <span class="tt-game-sets">{{ game.score[slot] }}</span>
+                          }
+                        </span>
+                      }
+                      @if (game.sets) {
+                        <span class="tt-game-points">{{ setPoints(game) }}</span>
+                      }
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <p class="ui-section-footer">
+          Spiel antippen und die Punkte je Satz eintragen, z. B. 11:9. Ändert sich später der
+          Sieger, werden seine folgenden Spiele zurückgesetzt.
+        </p>
+      </section>
+    }
+  </div>
+</div>

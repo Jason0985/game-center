@@ -1,9 +1,9 @@
 import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from '../../../services/session.service';
@@ -11,20 +11,25 @@ import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
-import { appUrl } from '../../../app-url';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import {
   canStartLobby,
   eveningWinners,
+  flip7TargetOf,
+  gameOf,
   LOBBY_MAX_MEMBERS,
   LOBBY_MIN_MEMBERS,
   LobbyDetail,
   LobbyMember,
-  requiredReadyCount,
+  rulesOf,
+  settingsLabel,
   startBlocker,
+  unoRulesOf,
 } from '../lobby.model';
-import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
-import { LobbyGameSetup } from './lobby-game-settings';
+import { UNO_HOUSE_RULES } from '../uno/uno.model';
+import { RulesDialog, RulesDialogData } from '../table/rules-dialog';
+import { LobbyInviteSheet, LobbyInviteSheetData } from './lobby-invite-sheet';
+import { LobbyGameSheet, LobbyGameSheetData } from './lobby-game-sheet';
 import { Flip7GameView } from '../flip7/flip7-game';
 import { SkipboGameView } from '../skipbo/skipbo-game';
 import { UnoGameView } from '../uno/uno-game';
@@ -37,9 +42,7 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatTooltipModule,
     RouterLink,
-    LobbyGameSetup,
     Flip7GameView,
     SkipboGameView,
     UnoGameView,
@@ -53,6 +56,7 @@ export class Lobby {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly bottomSheet = inject(MatBottomSheet);
   private readonly lobbyService = inject(MultiplayerLobbyService);
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
@@ -81,22 +85,66 @@ export class Lobby {
   );
   readonly me = computed(() => this.members().find((member) => member.user_id === this.userId()));
   readonly readyCount = computed(() => this.members().filter((member) => member.ready).length);
-  readonly requiredReady = computed(() => requiredReadyCount(this.members().length));
   // Starten braucht zusätzlich ein gewähltes, startbares Spiel für diese Spielerzahl
   readonly startBlocker = computed(() =>
     startBlocker(this.lobby()?.game_key, this.members().length),
   );
   readonly canStart = computed(() => canStartLobby(this.members()) && !this.startBlocker());
-  // Eine Zeile über den Knöpfen: was dem Start noch fehlt
+  // Eine Zeile über den Knöpfen: was dem Start noch fehlt; allein in der Lobby keine
   readonly status = computed(() => {
     const count = this.members().length;
-    if (count < this.minMembers)
-      return `Zum Starten braucht es mindestens ${this.minMembers} Spieler.`;
+    if (count < this.minMembers) return null;
     return (
-      this.startBlocker() ??
-      `${this.readyCount()} von ${count} bereit – mindestens ${this.requiredReady()} nötig`
+      this.startBlocker() ?? `${this.readyCount()} von ${count} bereit – alle müssen bereit sein`
     );
   });
+
+  // Gast: was er tun kann bzw. worauf er wartet
+  readonly guestStatus = computed(() =>
+    this.me()?.ready
+      ? (this.startBlocker() ?? 'Du bist bereit – der Host startet das Spiel.')
+      : 'Tippe auf „Bereit“, sobald du loslegen willst.',
+  );
+
+  readonly game = computed(() => gameOf(this.lobby()?.game_key));
+  // Host: Kurzbeschreibung und Einstellungen in einer Zeile
+  readonly gameSummary = computed(() => {
+    const game = this.game();
+    if (!game) return 'Noch kein Spiel gewählt';
+    const lobby = this.lobby();
+    const target = flip7TargetOf(lobby?.game_settings);
+    const settings =
+      lobby?.game_key === 'flip-7'
+        ? target === null
+          ? 'Offen'
+          : `Ziel ${target}`
+        : settingsLabel(lobby?.game_key, lobby?.game_settings);
+    return settings ? `${game.tagline} · ${settings}` : game.tagline;
+  });
+  // Gäste sehen die Einstellungen des Spiels als Chips
+  readonly gameSettings = computed((): { label: string; chips: string[] } | null => {
+    const lobby = this.lobby();
+    const settings = lobby?.game_settings;
+    switch (lobby?.game_key) {
+      case 'flip-7': {
+        const target = flip7TargetOf(settings);
+        return { label: 'Punkteziel', chips: [target === null ? 'Offen' : `${target} Punkte`] };
+      }
+      case 'skip-bo':
+        return {
+          label: 'Spielstapel',
+          chips: [settings?.stockSize ? `${settings.stockSize} Karten` : 'Standard'],
+        };
+      case 'uno': {
+        const active = unoRulesOf(settings);
+        const chips = UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.label);
+        return { label: 'Hausregeln', chips: chips.length ? chips : ['Standardregeln'] };
+      }
+      default:
+        return null;
+    }
+  });
+  readonly rules = computed(() => rulesOf(this.lobby()?.game_key, this.lobby()?.game_settings));
 
   // Abend-Wertung: Siege seit Eröffnen der Lobby, Spieler danach sortiert (sonst Beitritt)
   readonly wins = computed(() => this.lobby()?.wins ?? {});
@@ -129,56 +177,6 @@ export class Lobby {
     inject(DestroyRef).onDestroy(() => (this.leaving = true));
   }
 
-  async copyCode(): Promise<void> {
-    const code = this.code();
-    if (!code) return;
-
-    try {
-      await navigator.clipboard.writeText(code);
-      this.toastService.success('Code kopiert');
-    } catch (error) {
-      console.error('Code konnte nicht kopiert werden.', error);
-      this.appErrors.report('Der Code konnte nicht kopiert werden.');
-    }
-  }
-
-  // Link zur Multiplayer-Seite mit vorausgefülltem Code; ohne Konto tritt man darüber als Gast bei
-  async copyLink(): Promise<void> {
-    const code = this.code();
-    if (!code) return;
-
-    const link = appUrl(`multiplayer?code=${code}`);
-    try {
-      await navigator.clipboard.writeText(link);
-      this.toastService.success('Link kopiert');
-    } catch (error) {
-      console.error('Link konnte nicht kopiert werden.', error);
-      this.appErrors.report('Der Link konnte nicht kopiert werden.');
-    }
-  }
-
-  // Teilen-Menü des Geräts (WhatsApp, Nachrichten …); fehlt es (z. B. Firefox am Desktop),
-  // bleibt „Link kopieren“
-  readonly canShare = typeof globalThis.navigator?.share === 'function';
-  readonly shareIcon = /iPhone|iPad|Macintosh/.test(globalThis.navigator?.userAgent ?? '')
-    ? 'ios_share'
-    : 'share';
-
-  async shareLink(code: string): Promise<void> {
-    try {
-      await navigator.share({
-        title: 'Game Center',
-        text: `Spiel mit mir im Game Center! Lobby-Code: ${code}`,
-        url: appUrl(`multiplayer?code=${code}`),
-      });
-    } catch (error) {
-      // Abbrechen im Teilen-Menü ist kein Fehler
-      if ((error as DOMException).name === 'AbortError') return;
-      console.error('Link konnte nicht geteilt werden.', error);
-      this.appErrors.report('Der Link konnte nicht geteilt werden.');
-    }
-  }
-
   async toggleReady(): Promise<void> {
     const me = this.me();
     if (!me) return;
@@ -199,15 +197,44 @@ export class Lobby {
 
   openInvite(): void {
     const userId = this.userId();
-    if (!userId) return;
+    const code = this.code();
+    if (!userId || !code) return;
 
-    this.dialog.open<LobbyInviteDialog, LobbyInviteDialogData>(LobbyInviteDialog, {
+    this.bottomSheet.open<LobbyInviteSheet, LobbyInviteSheetData>(LobbyInviteSheet, {
       data: {
         lobbyId: this.lobbyId,
         userId,
+        code,
         memberIds: this.members().map((member) => member.user_id),
       },
-      width: '380px',
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Leute einladen',
+      autoFocus: 'dialog',
+    });
+  }
+
+  openGameSheet(): void {
+    this.bottomSheet.open<LobbyGameSheet, LobbyGameSheetData>(LobbyGameSheet, {
+      data: {
+        lobbyId: this.lobbyId,
+        lobby: this.lobby,
+        busy: this.busy,
+        changed: () => this.reload(),
+      },
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Spiel und Regeln',
+      autoFocus: 'dialog',
+    });
+  }
+
+  openRules(): void {
+    const game = this.game();
+    if (!game) return;
+
+    this.dialog.open<RulesDialog, RulesDialogData>(RulesDialog, {
+      data: { title: `${game.name} – Regeln`, rules: [...this.rules()] },
     });
   }
 

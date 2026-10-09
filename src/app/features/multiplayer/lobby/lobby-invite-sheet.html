@@ -1,0 +1,101 @@
+<div class="sheet-grip" aria-hidden="true"></div>
+<div class="sheet-head">
+  <h2>Leute einladen</h2>
+  <button type="button" class="ui-icon-button" aria-label="Schließen" (click)="sheet.dismiss()">
+    <mat-icon aria-hidden="true">close</mat-icon>
+  </button>
+</div>
+
+<div class="actions">
+  @if (canShare) {
+    <button type="button" class="action" (click)="share()">
+      <span class="action-icon" style="--tile: var(--tile-pink)">
+        <mat-icon aria-hidden="true">{{ shareIcon }}</mat-icon>
+      </span>
+      Teilen
+    </button>
+  }
+  <button type="button" class="action" (click)="copyLink()">
+    <span class="action-icon" style="--tile: var(--tile-blue)">
+      <mat-icon aria-hidden="true">link</mat-icon>
+    </span>
+    Link kopieren
+  </button>
+  <button type="button" class="action" (click)="copyCode()">
+    <span class="action-icon" style="--tile: var(--tile-gray)">
+      <mat-icon aria-hidden="true">content_copy</mat-icon>
+    </span>
+    Code kopieren
+  </button>
+</div>
+
+<!-- Titel und Suche bleiben stehen, nur die Liste scrollt -->
+<div class="friends">
+  <h3 class="friends-title">
+    <span>Freunde</span>
+    @if (friends().length) {
+      <span class="friends-count">{{ friends().length }} Freunde</span>
+    }
+  </h3>
+  <label class="search">
+    <mat-icon aria-hidden="true">search</mat-icon>
+    <input
+      type="search"
+      placeholder="Freunde suchen"
+      aria-label="Freunde suchen"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </label>
+
+  <div class="friends-list" aria-live="polite">
+    @if (loading()) {
+      <p class="message">Freunde werden geladen …</p>
+    } @else if (!rows().length && !errorMessage()) {
+      <p class="message">
+        {{ search().trim() ? 'Keine Freunde gefunden.' : 'Du hast noch keine Freunde.' }}
+      </p>
+    } @else {
+      <ul class="rows">
+        @for (row of rows(); track row.profile.id) {
+          <li class="row">
+            <span
+              class="ui-avatar-initials"
+              [style.--avatar]="row.profile.username | avatarColor"
+              aria-hidden="true"
+              >{{ row.name | initials }}</span
+            >
+            <span class="row-text">
+              <span class="row-name">{{ row.name }}</span>
+              <span class="row-sub">&#64;{{ row.profile.username }}</span>
+            </span>
+            @switch (row.state) {
+              @case ('member') {
+                <span class="row-state">In der Lobby</span>
+              }
+              @case ('invited') {
+                <span class="row-state row-state--invited">
+                  <mat-icon aria-hidden="true">check</mat-icon>Eingeladen
+                </span>
+              }
+              @default {
+                <button
+                  type="button"
+                  class="invite"
+                  [disabled]="row.pending"
+                  [attr.aria-label]="row.name + ' einladen'"
+                  (click)="invite(row)"
+                >
+                  Einladen
+                </button>
+              }
+            }
+          </li>
+        }
+      </ul>
+    }
+    @if (errorMessage()) {
+      <p class="error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+</div>

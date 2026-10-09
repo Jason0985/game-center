@@ -1,0 +1,121 @@
+<div class="sheet-grip" aria-hidden="true"></div>
+<div class="sheet-head">
+  <h2>Spiel &amp; Regeln</h2>
+  <button type="button" class="done" (click)="sheet.dismiss()">Fertig</button>
+</div>
+
+<div class="group" role="radiogroup" aria-label="Spiel">
+  @for (option of games; track option.key) {
+    <button
+      type="button"
+      role="radio"
+      class="game"
+      [attr.aria-checked]="option.key === gameKey()"
+      [disabled]="locked()"
+      (click)="selectGame(option.key)"
+    >
+      <span class="tile" [style.--tile]="option.tile">
+        <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+      </span>
+      <span class="game-text">
+        <span class="game-name">{{ option.name }}</span>
+        <span class="game-meta">{{ option.meta }}</span>
+      </span>
+      @if (option.key === gameKey()) {
+        <span class="check" aria-hidden="true"><mat-icon>check</mat-icon></span>
+      }
+    </button>
+  }
+</div>
+
+@switch (gameKey()) {
+  @case ('flip-7') {
+    <div class="field">
+      <span class="label" id="lobby-target-label">Punkteziel</span>
+      <div class="segments" role="group" aria-labelledby="lobby-target-label">
+        @for (option of targetOptions; track option) {
+          <button
+            type="button"
+            [attr.aria-pressed]="target() === option"
+            [disabled]="locked()"
+            (click)="selectTarget(option)"
+          >
+            {{ option }}
+          </button>
+        }
+        <button
+          type="button"
+          [attr.aria-pressed]="target() === null"
+          [disabled]="locked()"
+          (click)="selectTarget(null)"
+        >
+          Offen
+        </button>
+      </div>
+      @if (target() === null) {
+        <p class="hint">Ohne Punkteziel – der Host beendet das Spiel.</p>
+      }
+    </div>
+  }
+  @case ('uno') {
+    <div class="field">
+      <span class="label" id="lobby-rules-label">Hausregeln</span>
+      <div class="group" role="group" aria-labelledby="lobby-rules-label">
+        @for (rule of houseRules; track rule.key) {
+          <button
+            type="button"
+            role="switch"
+            class="switch-row"
+            [attr.aria-checked]="unoRules()[rule.key]"
+            [disabled]="locked()"
+            (click)="toggleHouseRule(rule.key)"
+          >
+            <span>{{ rule.label }}</span>
+            <span class="switch" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+  @case ('skip-bo') {
+    <div class="field">
+      <label class="label" for="lobby-stock">Karten im Spielstapel</label>
+      <div class="group stock">
+        <input
+          id="lobby-stock"
+          type="range"
+          [min]="stockMin"
+          [max]="stockMax"
+          step="1"
+          [value]="stockDraft()"
+          [disabled]="locked()"
+          (input)="stockDraft.set(+$any($event.target).value)"
+          (change)="selectStockSize(+$any($event.target).value)"
+        />
+        <output for="lobby-stock">{{ stockDraft() }}</output>
+      </div>
+      @if (stockSize() === null) {
+        <p class="hint">Standard: 30 Karten, ab 5 Spielern 20.</p>
+      }
+    </div>
+  }
+}
+
+@if (game()?.url) {
+  <p class="hint">{{ game()?.name }} läuft extern – die Lobby zeigt allen den Link.</p>
+}
+
+@if (rules().length) {
+  <details class="group rules">
+    <summary>
+      <mat-icon class="rules-icon" aria-hidden="true">menu_book</mat-icon>
+      <span>Kurzregeln</span>
+      <mat-icon class="rules-chevron" aria-hidden="true">expand_more</mat-icon>
+    </summary>
+    <ul>
+      @for (rule of rules(); track $index) {
+        <li>{{ rule }}</li>
+      }
+    </ul>
+  </details>
+}

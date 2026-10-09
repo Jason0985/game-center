@@ -1,60 +1,63 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FriendsService } from '../../../services/friends.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ToastService } from '../../../services/toast.service';
+import { appUrl } from '../../../app-url';
+import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
 import { Profile } from '../../profile/profile.model';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { displayNameOf } from '../lobby.model';
 
-export interface LobbyInviteDialogData {
+export interface LobbyInviteSheetData {
   lobbyId: string;
   userId: string;
+  code: string;
   memberIds: string[];
 }
 
 // member: schon in der Lobby
 type InviteState = 'member' | 'invited' | 'none';
 
-const INVITE_STATES: Record<InviteState, { icon: string; label: string }> = {
-  member: { icon: 'how_to_reg', label: 'Bereits in der Lobby' },
-  invited: { icon: 'schedule', label: 'Eingeladen' },
-  none: { icon: 'person_add', label: 'Einladen' },
-};
-
 export interface InviteRow {
   profile: Profile;
   name: string;
   state: InviteState;
-  icon: string;
-  label: string;
   pending: boolean;
 }
 
+// Einladen für den Host: Link teilen/kopieren, Code kopieren oder Freunde direkt einladen
 @Component({
-  selector: 'app-lobby-invite-dialog',
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule],
-  templateUrl: './lobby-invite-dialog.html',
-  styleUrl: './lobby-invite-dialog.scss',
+  selector: 'app-lobby-invite-sheet',
+  imports: [MatIconModule, InitialsPipe, AvatarColorPipe],
+  templateUrl: './lobby-invite-sheet.html',
+  styleUrl: './lobby-invite-sheet.scss',
 })
-export class LobbyInviteDialog {
-  private readonly dialogRef = inject(MatDialogRef<LobbyInviteDialog>);
+export class LobbyInviteSheet {
   private readonly friendsService = inject(FriendsService);
   private readonly lobbyService = inject(MultiplayerLobbyService);
   private readonly appErrors = inject(AppErrorService);
   private readonly toastService = inject(ToastService);
-  private readonly data = inject<LobbyInviteDialogData>(MAT_DIALOG_DATA);
+  private readonly data = inject<LobbyInviteSheetData>(MAT_BOTTOM_SHEET_DATA);
+  readonly sheet = inject(MatBottomSheetRef);
 
   readonly search = signal('');
   readonly loading = signal(true);
   readonly errorMessage = signal('');
   private readonly memberIds = new Set(this.data.memberIds);
-  private readonly friends = signal<{ profile: Profile; name: string }[]>([]);
+  readonly friends = signal<{ profile: Profile; name: string }[]>([]);
   private readonly invitedIds = signal<Set<string>>(new Set());
   private readonly pendingIds = signal<Set<string>>(new Set());
+
+  // Teilen-Menü des Geräts (WhatsApp, Nachrichten …); fehlt es (z. B. Firefox am Desktop),
+  // bleibt „Link kopieren“
+  readonly canShare = typeof globalThis.navigator?.share === 'function';
+  readonly shareIcon = /iPhone|iPad|Macintosh/.test(globalThis.navigator?.userAgent ?? '')
+    ? 'ios_share'
+    : 'share';
+  // Link zur Multiplayer-Seite mit vorausgefülltem Code; ohne Konto tritt man darüber als Gast bei
+  private readonly link = appUrl(`multiplayer?code=${this.data.code}`);
 
   // Suche und Zeilenzustand einmal pro Änderung statt bei jedem Rendern im Template
   readonly rows = computed<InviteRow[]>(() => {
@@ -69,18 +72,43 @@ export class LobbyInviteDialog {
           profile.username.toLowerCase().includes(filter) ||
           (profile.display_name ?? '').toLowerCase().includes(filter),
       )
-      .map(({ profile, name }) => {
-        const state: InviteState = this.memberIds.has(profile.id)
+      .map(({ profile, name }) => ({
+        profile,
+        name,
+        state: this.memberIds.has(profile.id)
           ? 'member'
           : invited.has(profile.id)
             ? 'invited'
-            : 'none';
-        return { profile, name, state, ...INVITE_STATES[state], pending: pending.has(profile.id) };
-      });
+            : 'none',
+        pending: pending.has(profile.id),
+      }));
   });
 
   constructor() {
     void this.loadFriends();
+  }
+
+  async share(): Promise<void> {
+    try {
+      await navigator.share({
+        title: 'Game Center',
+        text: `Spiel mit mir im Game Center! Lobby-Code: ${this.data.code}`,
+        url: this.link,
+      });
+    } catch (error) {
+      // Abbrechen im Teilen-Menü ist kein Fehler
+      if ((error as DOMException).name === 'AbortError') return;
+      console.error('Link konnte nicht geteilt werden.', error);
+      this.appErrors.report('Der Link konnte nicht geteilt werden.');
+    }
+  }
+
+  copyLink(): Promise<void> {
+    return this.copy(this.link, 'Link');
+  }
+
+  copyCode(): Promise<void> {
+    return this.copy(this.data.code, 'Code');
   }
 
   async invite(row: InviteRow): Promise<void> {
@@ -107,8 +135,14 @@ export class LobbyInviteDialog {
     }
   }
 
-  close(): void {
-    this.dialogRef.close();
+  private async copy(text: string, what: 'Link' | 'Code'): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.toastService.success(`${what} kopiert`);
+    } catch (error) {
+      console.error(`${what} konnte nicht kopiert werden.`, error);
+      this.appErrors.report(`Der ${what} konnte nicht kopiert werden.`);
+    }
   }
 
   private async loadFriends(): Promise<void> {

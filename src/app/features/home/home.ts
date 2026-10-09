@@ -25,7 +25,7 @@ const HELP_TOPICS: HelpTopic[] = [
     points: [
       'Mit Konto eröffnest du eine Lobby und lädst Freunde ein – oder teilst Code bzw. Link.',
       'Ohne Konto trittst du mit dem Code als Gast bei.',
-      'Der Host wählt das Spiel. Sobald die Hälfte bereit ist, kann er starten.',
+      'Der Host wählt das Spiel. Sobald alle bereit sind, kann er starten.',
       'Jeder spielt am eigenen Handy, alles läuft live.',
     ],
     link: { label: 'Zu den Lobbys', path: '/multiplayer' },

@@ -1,11 +1,4 @@
-import {
-  canStartLobby,
-  eveningWinners,
-  gameLabel,
-  LobbyMember,
-  requiredReadyCount,
-  startBlocker,
-} from './lobby.model';
+import { canStartLobby, eveningWinners, gameLabel, LobbyMember, startBlocker } from './lobby.model';
 
 function members(total: number, ready: number): LobbyMember[] {
   return Array.from({ length: total }, (_, index) => ({
@@ -18,23 +11,16 @@ function members(total: number, ready: number): LobbyMember[] {
 }
 
 describe('lobby start rule', () => {
-  it('needs at least half of the members to be ready', () => {
-    expect(canStartLobby(members(2, 1))).toBe(true);
-    expect(canStartLobby(members(3, 1))).toBe(false);
-    expect(canStartLobby(members(3, 2))).toBe(true);
-    expect(canStartLobby(members(4, 2))).toBe(true);
-    expect(canStartLobby(members(2, 0))).toBe(false);
+  it('needs every member to be ready', () => {
+    expect(canStartLobby(members(2, 2))).toBe(true);
+    expect(canStartLobby(members(4, 4))).toBe(true);
+    expect(canStartLobby(members(2, 1))).toBe(false);
+    expect(canStartLobby(members(4, 3))).toBe(false);
   });
 
   it('never starts with a single member', () => {
     expect(canStartLobby(members(1, 1))).toBe(false);
     expect(canStartLobby(members(1, 0))).toBe(false);
-  });
-
-  it('rounds the required ready count up', () => {
-    expect(requiredReadyCount(1)).toBe(1);
-    expect(requiredReadyCount(3)).toBe(2);
-    expect(requiredReadyCount(8)).toBe(4);
   });
 });
 
