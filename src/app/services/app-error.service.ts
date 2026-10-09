@@ -1,4 +1,6 @@
-import { ErrorHandler, Injectable, Injector, inject } from '@angular/core';
+import { ErrorHandler, Injectable, Injector, inject, isDevMode } from '@angular/core';
+import { version } from '../../../package.json';
+import { supabase } from '../supabase.client';
 import { NotificationsService } from './notifications.service';
 import { describeSupabaseError } from './supabase-errors';
 import { ToastService } from './toast.service';
@@ -42,9 +44,11 @@ export class AppErrorService {
 @Injectable()
 export class AppErrorHandler implements ErrorHandler {
   private readonly injector = inject(Injector);
+  private readonly stored = new Set<string>();
 
   handleError(error: unknown): void {
     console.error(error);
+    if (!isDevMode()) this.store(error);
 
     // Außerhalb der laufenden Change Detection melden
     setTimeout(() => {
@@ -56,6 +60,29 @@ export class AppErrorHandler implements ErrorHandler {
         console.error('Fehler konnte nicht gemeldet werden.', reportError);
       }
     });
+  }
+
+  // Für die Fehler-Überwachung der Admins; schlägt das fehl, bleibt es bei der Konsole
+  private store(error: unknown): void {
+    const cause = (error as { rejection?: unknown })?.rejection ?? error;
+    const message =
+      cause instanceof Error
+        ? `${cause.name}: ${cause.message}`
+        : String((cause as { message?: unknown })?.message ?? cause);
+    // ponytail: pro Seitenaufruf jeder Fehler nur einmal, reicht gegen Schleifen
+    if (this.stored.has(message)) return;
+    this.stored.add(message);
+
+    supabase
+      .from('client_errors')
+      .insert({
+        message: message.slice(0, 1000),
+        stack: cause instanceof Error ? cause.stack?.slice(0, 8000) : null,
+        url: location.href.slice(0, 500),
+        user_agent: navigator.userAgent.slice(0, 500),
+        app_version: version,
+      })
+      .then(({ error }) => error && console.error('Fehler nicht gespeichert.', error));
   }
 
   private describe(error: unknown): string {

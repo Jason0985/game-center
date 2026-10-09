@@ -28,7 +28,7 @@
             <span>&#64;{{ row.profile.username }}</span>
           </div>
           <button
-            mat-icon-button
+            class="ui-icon-button ui-stretch"
             type="button"
             [disabled]="row.state !== 'none' || row.pending"
             [attr.aria-label]="row.name + ': ' + row.label"

@@ -83,6 +83,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profile/stats/stats').then((module) => module.Stats),
   },
   {
+    path: 'profile/admin',
+    canActivate: [roleGuard('admin')],
+    loadComponent: () => import('./features/admin/admin').then((module) => module.Admin),
+  },
+  {
     path: 'profile/auth',
     loadComponent: () => import('./features/auth/auth').then((module) => module.Auth),
   },

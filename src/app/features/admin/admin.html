@@ -1,0 +1,60 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/profile">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Profil
+      </a>
+      <h1 class="ui-large-title">Admin</h1>
+    </header>
+
+    <section class="ui-section" aria-labelledby="errors-title">
+      <h2 id="errors-title" class="ui-section-title">Fehler-Überwachung</h2>
+      <div class="ui-group" aria-live="polite">
+        @if (errors() === null) {
+          <app-skeleton-rows label="Fehler werden geladen" />
+        } @else if (!errors()!.length) {
+          <p class="admin-message">Keine Fehler. 🎉</p>
+        } @else {
+          @for (entry of errors(); track entry.id) {
+            <div class="ui-row admin-error">
+              <details class="ui-row-text">
+                <summary>
+                  <span class="ui-row-title admin-error-message">{{ entry.message }}</span>
+                  <span class="ui-row-sub">
+                    {{ formatTime(entry.created_at) }} ·
+                    {{ entry.profile ? '@' + entry.profile.username : 'ohne Konto' }} ·
+                    v{{ entry.app_version }}
+                  </span>
+                </summary>
+                <p class="ui-row-sub">{{ entry.url }}</p>
+                <p class="ui-row-sub">{{ entry.user_agent }}</p>
+                @if (entry.stack) {
+                  <pre class="admin-stack">{{ entry.stack }}</pre>
+                }
+              </details>
+              <button
+                type="button"
+                class="ui-icon-button"
+                aria-label="Fehler als erledigt entfernen"
+                matTooltip="Erledigt"
+                (click)="resolve(entry)"
+              >
+                <mat-icon aria-hidden="true">check</mat-icon>
+              </button>
+            </div>
+          }
+        }
+      </div>
+      <p class="ui-section-footer">
+        Abstürze aus allen Browsern, die letzten 50. Nach 30 Tagen werden sie gelöscht.
+      </p>
+    </section>
+
+    <section class="ui-section" aria-labelledby="roles-title">
+      <h2 id="roles-title" class="ui-section-title">Rollenmanagement</h2>
+      <div class="ui-group admin-roles">
+        <app-role-management />
+      </div>
+    </section>
+  </div>
+</div>

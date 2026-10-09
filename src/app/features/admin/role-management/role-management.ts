@@ -1,5 +1,4 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -10,10 +9,10 @@ import { profileRoleConfigs } from '../../profile/profile-roles';
 import { openRoleEditDialog } from './role-edit-dialog';
 import { RoleOverviewDialog } from './role-overview-dialog';
 
-// Inhalt der Einstellungs-Karte für Admins: Nutzer suchen und Rollen anpassen
+// Karte auf der Admin-Seite: Nutzer suchen und Rollen anpassen
 @Component({
   selector: 'app-role-management',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [MatIconModule, MatTooltipModule],
   templateUrl: './role-management.html',
   styleUrl: './role-management.scss',
 })

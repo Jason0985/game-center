@@ -1046,6 +1046,22 @@ button.ui-row:active {
   color: var(--color-primary-light);
 }
 
+// Ganze Zeile/Karte klickbar: Die Klickfläche des Buttons reicht bis zum nächsten
+// positionierten Vorfahren (der Zeile). Gesperrt bleibt gesperrt, Tooltip bleibt am Button.
+.ui-stretch {
+  position: static;
+}
+
+.ui-stretch::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.ui-stretch:not(:disabled):active::after {
+  background: var(--color-white-04);
+}
+
 .ui-btn {
   display: flex;
   align-items: center;

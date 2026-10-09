@@ -54,6 +54,7 @@ describe('Lobby', () => {
     subscribeToChanges: ReturnType<typeof vi.fn>;
     setReady: ReturnType<typeof vi.fn>;
     kick: ReturnType<typeof vi.fn>;
+    transferHost: ReturnType<typeof vi.fn>;
     leave: ReturnType<typeof vi.fn>;
     start: ReturnType<typeof vi.fn>;
     setGame: ReturnType<typeof vi.fn>;
@@ -84,6 +85,7 @@ describe('Lobby', () => {
       subscribeToChanges: vi.fn().mockReturnValue(() => {}),
       setReady: vi.fn().mockResolvedValue({ ok: true }),
       kick: vi.fn().mockResolvedValue({ ok: true }),
+      transferHost: vi.fn().mockResolvedValue({ ok: true }),
       leave: vi.fn().mockResolvedValue({ ok: true }),
       start: vi.fn().mockResolvedValue({ ok: true }),
       setGame: vi.fn().mockResolvedValue({ ok: true }),
@@ -131,6 +133,34 @@ describe('Lobby', () => {
     fixture.destroy();
     await render('guest', lobbyDetail());
     expect(text()).not.toContain('Lobby-Code');
+  });
+
+  it('lets the host hand over to accounts but not to guests', async () => {
+    const anonymous = member('anon');
+    anonymous.profile!.is_guest = true;
+    await render('host', lobbyDetail({ members: [member('host'), member('bob'), anonymous] }));
+
+    const button = (name: string): HTMLButtonElement | null =>
+      fixture.nativeElement.querySelector(`[aria-label="${name} zum Host machen"]`);
+    expect(button('anon')).toBeNull();
+
+    button('bob')!.click();
+    await fixture.whenStable();
+    expect(lobbyService.transferHost).toHaveBeenCalledWith('lobby-1', 'bob');
+  });
+
+  it('tells a member when they became host', async () => {
+    await render('guest');
+    lobbyService.getLobby.mockResolvedValue({
+      ok: true,
+      value: lobbyDetail({ host_user_id: 'guest' }),
+    });
+    component.reload();
+    await fixture.whenStable();
+
+    expect(toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Du bist jetzt Host' }),
+    );
   });
 
   it('leaves the page when the user was kicked', async () => {

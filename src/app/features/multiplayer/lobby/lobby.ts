@@ -199,6 +199,22 @@ export class Lobby {
     }
   }
 
+  async transferHost(member: LobbyMember): Promise<void> {
+    const confirmed = await this.confirm({
+      title: 'Host abgeben?',
+      message: `${member.name} wird Host, sieht den Lobby-Code und startet das Spiel. Du bleibst als Spieler in der Lobby.`,
+      confirmLabel: 'Host abgeben',
+      icon: 'workspace_premium',
+    });
+
+    if (
+      confirmed &&
+      (await this.run(() => this.lobbyService.transferHost(this.lobbyId, member.user_id)))
+    ) {
+      this.toastService.success('Host abgegeben', `${member.name} ist jetzt Host.`);
+    }
+  }
+
   // Bestätigt werden: Schließen (Host, wirft alle raus) und Verlassen eines gestarteten
   // Spiels (endgültig, Rückkehr erst in der Warte-Lobby). Verlassen der Warte-Lobby nicht.
   async leave(gameOver = false): Promise<void> {
@@ -276,6 +292,18 @@ export class Lobby {
     } else if (!lobby.members.some((member) => member.user_id === this.userId())) {
       this.leaveView('Du bist nicht (mehr) in dieser Lobby.');
     } else {
+      const previousHost = this.lobby()?.host_user_id;
+      if (
+        previousHost &&
+        previousHost !== lobby.host_user_id &&
+        lobby.host_user_id === this.userId()
+      ) {
+        this.toastService.show({
+          tone: 'info',
+          icon: 'workspace_premium',
+          title: 'Du bist jetzt Host',
+        });
+      }
       this.lobby.set(lobby);
       this.loading.set(false);
     }

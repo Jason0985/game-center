@@ -138,6 +138,18 @@
               @if (member.user_id === lobby()!.host_user_id) {
                 <span class="lobby-host-badge">Host</span>
               } @else if (isHost()) {
+                @if (!member.profile?.is_guest) {
+                  <button
+                    type="button"
+                    class="ui-icon-button"
+                    [disabled]="busy()"
+                    [attr.aria-label]="member.name + ' zum Host machen'"
+                    matTooltip="Zum Host machen"
+                    (click)="transferHost(member)"
+                  >
+                    <mat-icon aria-hidden="true">workspace_premium</mat-icon>
+                  </button>
+                }
                 <button
                   type="button"
                   class="ui-icon-button lobby-kick-button"

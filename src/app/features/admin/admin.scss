@@ -1,0 +1,43 @@
+.admin-roles {
+  padding: 14px 16px 16px;
+}
+
+.admin-message {
+  margin: 0;
+  padding: 16px;
+  color: var(--color-text-muted);
+}
+
+.admin-error {
+  align-items: flex-start;
+}
+
+.admin-error summary {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-error-message {
+  overflow-wrap: anywhere;
+}
+
+.admin-error p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-stack {
+  margin: 8px 0 0;
+  padding: 8px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--color-white-04);
+  font-size: 11px;
+  white-space: pre;
+}
+
+.admin-error summary::-webkit-details-marker {
+  display: none;
+}

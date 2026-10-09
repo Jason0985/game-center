@@ -157,7 +157,7 @@
                     @if (myLobbyId() === lobby.id) {
                       <div class="lobby-card-actions">
                         <a
-                          class="ui-pill-btn lobby-button"
+                          class="ui-pill-btn lobby-button ui-stretch"
                           [routerLink]="['/multiplayer', lobby.id]"
                           >Öffnen</a
                         >
@@ -165,7 +165,7 @@
                     } @else if (!myLobbyId() && joiningLobbyId() !== lobby.id) {
                       <div class="lobby-card-actions">
                         <button
-                          class="ui-pill-btn lobby-button"
+                          class="ui-pill-btn lobby-button ui-stretch"
                           type="button"
                           [disabled]="busy() || isFull(lobby)"
                           (click)="openJoin(lobby)"

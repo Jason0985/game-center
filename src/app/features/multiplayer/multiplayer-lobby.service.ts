@@ -194,6 +194,15 @@ export class MultiplayerLobbyService {
     return error ? lobbyFailure('Spieler konnte nicht entfernt werden.', error) : { ok: true };
   }
 
+  // Nur in der Warte-Lobby und nur an Spieler mit Konto (Gäste können nicht hosten)
+  async transferHost(lobbyId: string, userId: string): Promise<ActionResult> {
+    const { error } = await supabase.rpc('transfer_lobby_host', {
+      p_lobby_id: lobbyId,
+      p_user_id: userId,
+    });
+    return error ? lobbyFailure('Host konnte nicht gewechselt werden.', error) : { ok: true };
+  }
+
   // Verlässt der Host die Lobby, wird sie geschlossen
   async leave(lobbyId: string): Promise<ActionResult> {
     const { error } = await supabase.rpc('leave_lobby', { p_lobby_id: lobbyId });
