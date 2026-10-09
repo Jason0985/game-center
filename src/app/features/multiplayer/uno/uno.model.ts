@@ -47,8 +47,6 @@ export interface UnoEvent {
   // reverse/rotate: Spielrichtung danach
   dir?: 1 | -1;
   round?: number;
-  // win: Punkte aus den Restkarten
-  points?: number;
   // Nur im round_log: Zugnummer und Zeitpunkt (Serverzeit)
   r?: number;
   at?: string;
@@ -60,9 +58,6 @@ export interface UnoPlayer {
   state: 'active' | 'left';
   hand_count: number;
   uno_called: boolean;
-  // Wert der Restkarten (Sieger: Summe der anderen); null während der Runde
-  round_points: number | null;
-  score: number;
   name: string;
 }
 
@@ -118,7 +113,6 @@ export const UNO_RULES = [
   'Aussetzen: der Nächste ist übersprungen. Richtungswechsel: die Spielrichtung dreht sich (zu zweit wie Aussetzen). +2/+4: der Nächste zieht so viele Karten und ist dann fertig.',
   'Du darfst immer 1 Karte ziehen. Passt sie, spielst du nur diese oder behältst sie (Stapel nochmal antippen).',
   'Bei 2 Karten oder direkt nach dem Ausspielen bis auf 1: Uno rufen. Wer es vergisst, zieht bei der nächsten Aktion 2 Karten.',
-  'Der Sieger bekommt die Punkte der Restkarten aller anderen: Zahlen ihren Wert, Aktionen 20, Farbwahl 50. Die Punkte zählen über alle Runden.',
 ];
 
 // Hausregeln in der Lobby; aktive kommen ins Regel-Menü im Spiel
@@ -241,18 +235,13 @@ export function handLayout(count: number, layout: TableLayout): HandLayout {
   };
 }
 
-// Sieger zuerst, dann wenigste Punkte (vorzeitig beendet: wenigste Karten). Gleich viel =
-// gleicher Rang (1, 2, 2, 4); wer das Spiel verlassen hat, steht am Ende
+// Sieger zuerst, dann wenigste Karten. Gleich viele = gleicher Rang (1, 2, 2, 4);
+// wer das Spiel verlassen hat, steht am Ende
 export function rankPlayers(
   players: readonly UnoPlayer[],
   winnerSeat: number | null,
 ): UnoRankedPlayer[] {
-  const key = (player: UnoPlayer) =>
-    player.seat === winnerSeat
-      ? -1
-      : winnerSeat === null
-        ? player.hand_count
-        : (player.round_points ?? 0);
+  const key = (player: UnoPlayer) => (player.seat === winnerSeat ? -1 : player.hand_count);
   const active = players
     .filter((player) => player.state !== 'left')
     .sort((a, b) => key(a) - key(b) || a.seat - b.seat);
@@ -310,7 +299,7 @@ export function describeEvent(
     case 'left':
       return `${nameOf(event.seat, 'Du')} hat das Spiel verlassen`;
     case 'win':
-      return `${verb('gewinnst', 'gewinnt')} die Runde – +${event.points ?? 0} Punkte`;
+      return `${verb('gewinnst', 'gewinnt')} die Runde`;
     case 'end':
       return 'Das Spiel wurde beendet';
   }

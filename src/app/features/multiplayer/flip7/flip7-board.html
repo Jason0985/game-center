@@ -45,18 +45,18 @@
         </div>
       }
     </div>
-    <!-- Unter dem Stapel: „Stehen bleiben“ am eigenen Zug, bei der Zielwahl der Hinweis an
+    <!-- Unter dem Stapel: „Sichern“ am eigenen Zug, bei der Zielwahl der Hinweis an
          derselben Stelle (der Button hält den Platz, damit der Stapel nicht springt) -->
     <div class="center-foot">
       <button
         type="button"
         class="stay"
-        [class.off]="!myTurn()"
-        [disabled]="busy() || !myTurn()"
+        [class.off]="!canStay()"
+        [disabled]="busy() || !canStay()"
         (click)="stay.emit()"
       >
-        <span class="material-symbols-rounded fill" aria-hidden="true">pan_tool</span>
-        Stehen bleiben
+        <span class="material-symbols-rounded fill" aria-hidden="true">lock</span>
+        Sichern
       </button>
       @if (chooser(); as c) {
         <div class="choose" [attr.data-card]="c.card" aria-hidden="true">
@@ -75,11 +75,9 @@
         class="opp"
         [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
         [player]="view.player"
-        [dealer]="view.player.seat === g.dealer_seat"
         [turn]="view.turn"
         [flip3Left]="view.flip3Left"
         [choice]="view.choice"
-        [scBreak]="view.scBreak"
         [style.left.%]="view.x"
         [style.top.%]="view.y"
         [disabled]="busy()"
@@ -94,13 +92,11 @@
         class="opp"
         [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
         [player]="view.player"
-        [dealer]="view.player.seat === g.dealer_seat"
         [turn]="view.turn"
         [flip3Left]="view.flip3Left"
         [dimmed]="view.dimmed"
         [waiting]="view.waiting"
         [celebrate]="view.celebrate"
-        [scBreak]="view.scBreak"
         [bonus]="view.bonus"
         [style.left.%]="view.x"
         [style.top.%]="view.y"
@@ -111,13 +107,43 @@
   }
 
   @for (flight of flights(); track flight.id) {
-    <app-flip7-card
-      class="flight"
-      [card]="flight.card"
-      [style.left.%]="(c.x / t.w) * 100"
-      [style.top.%]="(c.y / t.h) * 100"
-      (animate.enter)="flyAction($event, flight)"
-    />
+    @if (flight.card === 'SC') {
+      <div
+        class="flight sc-reveal"
+        aria-hidden="true"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="revealSc($event, flight)"
+      >
+        <app-flip7-card card="SC" variant="flat" />
+        <span class="sc-tag">
+          <span class="material-symbols-rounded fill">favorite</span>
+          Zweites Leben
+        </span>
+      </div>
+    } @else if (flight.card === 'SAVE') {
+      <div
+        class="flight sc-save"
+        aria-hidden="true"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="saveSc($event, flight)"
+      >
+        <app-flip7-card class="save-dup" [card]="flight.dup!" variant="flat" />
+        <span class="save-sc">
+          <app-flip7-card class="save-half save-half--start" card="SC" variant="flat" />
+          <app-flip7-card class="save-half save-half--end" card="SC" variant="flat" />
+        </span>
+      </div>
+    } @else {
+      <app-flip7-card
+        class="flight"
+        [card]="flight.card"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="flyAction($event, flight)"
+      />
+    }
   }
 
   <!-- Laptop: eigener Platz liegt auf dem Tisch -->
@@ -136,7 +162,7 @@
 </div>
 
 @if (layout() !== 'laptop' && mine(); as m) {
-  <section class="sheet" aria-label="Dein Platz">
+  <section class="sheet" [class.is-turn]="m.player.seat === activeSeat()" aria-label="Dein Platz">
     @if (layout() === 'quer') {
       <div class="sheet-col">
         <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
@@ -180,7 +206,7 @@
 
 <p class="sr-only" aria-live="polite">{{ srStatus() }}</p>
 
-<!-- Eingefroren: Frost legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
+<!-- Eingefroren bzw. gesichert: Frost oder Grau legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
 <ng-template #iceTpl let-m>
   @if (m.player.state === 'frozen') {
     <div class="ice" aria-hidden="true">
@@ -189,6 +215,14 @@
         Du wurdest eingefroren
       </span>
       <span class="ice-sub">{{ m.points }} Punkte gesichert</span>
+    </div>
+  } @else if (m.player.state === 'stayed') {
+    <div class="ice ice--locked" aria-hidden="true">
+      <span class="ice-text">
+        <span class="material-symbols-rounded fill">lock</span>
+        Punkte gesichert
+      </span>
+      <span class="ice-sub">{{ m.points }} Punkte</span>
     </div>
   }
 </ng-template>
@@ -219,12 +253,17 @@
   </div>
 </ng-template>
 
+<!-- Modifikatoren (und Zweites Leben) nur als Karten, darüber der Schriftzug mit Linie -->
 <ng-template #modsTpl let-m>
-  <div class="mods" role="group" [attr.aria-label]="'Modifikatoren ' + m.modText">
+  <div class="mods" role="group" [attr.aria-label]="m.modLabel">
+    <span class="mod-head" aria-hidden="true">Modifikatoren</span>
     <div class="mod-cards">
       @for (mod of m.mods; track mod.key) {
         <app-flip7-card
+          [class.mod-sc]="mod.card === 'SC'"
+          [class.sc-hidden]="mod.card === 'SC' && scFlying(m.player.seat)"
           [card]="mod.card"
+          [variant]="mod.card === 'SC' ? 'flat' : 'row'"
           [style.rotate.deg]="mod.tilt"
           (animate.enter)="fly($event, 'me:' + mod.key)"
         />
@@ -232,10 +271,6 @@
         <span class="slot slot--empty slot--mod" aria-hidden="true"></span>
       }
     </div>
-    <span class="mod-info">
-      <span class="mod-label">Modifikatoren</span>
-      <span class="mod-value">{{ m.modText }}</span>
-    </span>
   </div>
 </ng-template>
 
@@ -249,11 +284,9 @@
       [class.my-seat]="!variant"
       [class.my-tab]="variant === 'tab'"
       [player]="m.player"
-      [dealer]="m.player.seat === g.dealer_seat"
       [turn]="m.player.seat === activeSeat()"
       [flip3Left]="m.flip3Left"
       [choice]="m.choice"
-      [scBreak]="m.scBreak"
       [disabled]="busy()"
       (click)="pick(m.player.seat)"
     ></button>
@@ -264,11 +297,9 @@
       [class.my-seat]="!variant"
       [class.my-tab]="variant === 'tab'"
       [player]="m.player"
-      [dealer]="m.player.seat === g.dealer_seat"
       [turn]="m.player.seat === activeSeat()"
       [flip3Left]="m.flip3Left"
       [celebrate]="m.celebrate"
-      [scBreak]="m.scBreak"
       [bonus]="m.bonus"
     ></div>
   }
@@ -284,7 +315,7 @@
       [style.--dir-x]="view.spot.dirX"
       [style.--dir-y]="view.spot.dirY"
     >
-      @if (view.fan.length) {
+      @if (view.fan.length || view.sc) {
         <div class="fan-cards">
           @for (item of view.fan; track item.key) {
             <app-flip7-card
@@ -293,6 +324,15 @@
               [highlight]="item.highlight"
               [style.transform]="item.transform"
               (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
+            />
+          }
+          <!-- Zweites Leben als rote Karte hinter den Zahlen -->
+          @if (view.sc) {
+            <app-flip7-card
+              class="fan-sc"
+              [class.sc-hidden]="scFlying(view.player.seat)"
+              card="SC"
+              variant="flat"
             />
           }
           @if (view.player.state === 'frozen') {

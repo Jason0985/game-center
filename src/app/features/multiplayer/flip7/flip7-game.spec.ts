@@ -154,8 +154,10 @@ describe('Flip7GameView', () => {
   it('enables drawing from the pile and Stay only on the own turn', async () => {
     await render('host', makeGame());
     expect(el().textContent).not.toContain('ist am Zug');
-    expect(el().querySelector('.title-hint')?.textContent).toBe(
-      'Stapel antippen zum Ziehen – oder stehen bleiben',
+    // Kein Hinweis im Kopf (zu viel am Handy), nur für Screenreader
+    expect(el().querySelector('.title-hint')).toBeNull();
+    expect(el().querySelector('p.sr-only[aria-live]')?.textContent).toContain(
+      'Stapel antippen zum Ziehen – oder Punkte sichern',
     );
     expect(drawPile().disabled).toBe(false);
     expect(drawPile().classList).toContain('glow');
@@ -173,7 +175,33 @@ describe('Flip7GameView', () => {
     expect(el().textContent).toContain('Host ist am Zug');
     expect(el().querySelector('.title-hint')).toBeNull();
     expect(drawPile().disabled).toBe(true);
-    expect(button('Stehen bleiben')!.disabled).toBe(true);
+    expect(button('Sichern')!.disabled).toBe(true);
+  });
+
+  it('shows a second life as a card, for me with the modifiers and at the others', async () => {
+    await render(
+      'host',
+      makeGame({
+        players: [player(0, { cards: ['3', 'SC'] }), player(1, { cards: ['5', 'SC'] }), player(2)],
+      }),
+    );
+    expect(el().querySelector('.mod-sc')?.getAttribute('aria-label')).toBe(
+      'Aktionskarte Zweites Leben',
+    );
+    expect(el().querySelectorAll('.fan-sc').length).toBe(1);
+    expect(el().querySelector('.token--sc')).toBeNull();
+  });
+
+  it('lets you secure points only after drawing your first card', async () => {
+    await render(
+      'host',
+      makeGame({ players: [player(0), player(1, { cards: ['5'] }), player(2, { cards: ['7'] })] }),
+    );
+    expect(drawPile().disabled).toBe(false);
+    expect(button('Sichern')!.disabled).toBe(true);
+    expect(el().querySelector('p.sr-only[aria-live]')?.textContent).toContain(
+      'deine erste Karte ziehen',
+    );
   });
 
   it('keeps the buttons disabled until the new state is loaded', async () => {

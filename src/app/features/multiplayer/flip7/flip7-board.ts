@@ -55,18 +55,25 @@ interface Slot extends HandCard {
 
 interface Flight {
   id: number;
-  card: 'FREEZE' | 'FLIP3';
+  // SAVE: Zweites Leben fängt die doppelte Zahl (dup) ab
+  card: 'FREEZE' | 'FLIP3' | 'SC' | 'SAVE';
   target: number;
+  dup?: Flip7Card;
 }
+
+// Zweites Leben: groß in der Mitte zeigen, dann an seinen Platz (ms)
+const SC_REVEAL_MS = 1500;
+// Zweites Leben verbraucht: zusammenfliegen, kurz stehen, Herz zerbricht (ms)
+const SC_SAVE_MS = 1300;
 
 // Stapelmitte (Ring des Zug-Zeigers) und wohin der Zeiger zeigt, wenn ich dran bin
 // (auf meine Karten); Design-Pixel der Tischplatte
 const POINTER: Record<TableLayout, { x: number; y: number; r: number; meX: number; meY: number }> =
   {
-    phone: { x: 189, y: 380, r: 40, meX: 189, meY: 547 },
-    hoch: { x: 394, y: 550, r: 58, meX: 287, meY: 795 },
-    quer: { x: 532, y: 216, r: 58, meX: 570, meY: 507 },
-    laptop: { x: 572, y: 248, r: 58, meX: 603, meY: 512 },
+    phone: { x: 189, y: 360, r: 40, meX: 189, meY: 547 },
+    hoch: { x: 394, y: 530, r: 58, meX: 287, meY: 795 },
+    quer: { x: 532, y: 209, r: 58, meX: 570, meY: 507 },
+    laptop: { x: 572, y: 241, r: 58, meX: 603, meY: 512 },
   };
 
 // Bust: Karten liegen verdreht (fest pro Position, damit nichts springt)
@@ -76,9 +83,10 @@ const OWN_BUST_TILT = [-3, 4, -5, 4, -3, 5, -4];
 const CHOOSER_TITLES: Record<Flip7ActionCard, string> = {
   FREEZE: 'Freeze: Wen frierst du ein?',
   FLIP3: 'Flip 3: Wer zieht 3 Karten?',
-  SC: 'Second Chance: Wem gibst du sie?',
+  SC: 'Zweites Leben: Wem gibst du es?',
 };
-const TURN_HINT = 'Stapel antippen zum Ziehen – oder stehen bleiben';
+const TURN_HINT = 'Stapel antippen zum Ziehen – oder Punkte sichern';
+const FIRST_CARD_HINT = 'Stapel antippen und deine erste Karte ziehen';
 
 function handCards(player: Flip7Player): HandCard[] {
   const seen = new Map<string, number>();
@@ -91,7 +99,7 @@ function handCards(player: Flip7Player): HandCard[] {
 
 // Spieltisch einer laufenden Runde: ovale Platte mit Plätzen, Fächern und Stapel,
 // darunter (bzw. am Laptop darauf) der eigene Platz mit Karten. Ziehen per Antippen des
-// Stapels, „Stehen bleiben“ direkt darunter; Hinweis und Verlauf stehen im Kopf der Bühne.
+// Stapels, „Sichern“ darunter; Hinweis und Verlauf stehen im Kopf der Bühne.
 @Component({
   selector: 'app-flip7-board',
   imports: [NgTemplateOutlet, Flip7CardView, Flip7Seat, TableTop],
@@ -148,6 +156,8 @@ export class Flip7Board {
       this.me()?.state === 'active'
     );
   });
+  // Sichern erst mit mindestens einer Karte (die erste zieht jeder selbst)
+  readonly canStay = computed(() => this.myTurn() && !!this.me()?.cards.length);
   readonly choosing = computed(() => {
     const game = this.game();
     const me = this.me();
@@ -169,7 +179,7 @@ export class Flip7Board {
           .last_events.filter((event) => event.t === type)
           .map((event) => event.seat),
       );
-    return { flip7: seatsOf('flip7'), secondChance: seatsOf('second_chance') };
+    return { flip7: seatsOf('flip7') };
   });
 
   readonly seats = computed(() => {
@@ -192,8 +202,8 @@ export class Flip7Board {
           ...item,
           transform:
             layout === 'phone'
-              ? `rotate(${tilt ?? Math.round(offset * 3)}deg)`
-              : `translateY(${(1.3 * offset * offset).toFixed(1)}px) rotate(${tilt ?? offset * 6}deg)`,
+              ? `rotate(${busted ? OWN_BUST_TILT[index % OWN_BUST_TILT.length] : 0}deg)`
+              : `translateY(${(1.3 * offset * offset).toFixed(1)}px) rotate(${tilt ?? offset * 4}deg)`,
           highlight: busted ? (index === numbers.length - 1 ? 'dup' : 'bust') : null,
         };
       });
@@ -217,7 +227,7 @@ export class Flip7Board {
             ? formatClock(this.waitingSeconds())
             : null,
         celebrate: this.live() && events.flip7.has(player.seat),
-        scBreak: events.secondChance.has(player.seat),
+        sc: player.cards.includes('SC'),
         flip3Left: this.flip3Left(player.seat),
         bonus: game.status === 'round_over' && player.state === 'flip7',
       };
@@ -239,17 +249,22 @@ export class Flip7Board {
       tilt: busted ? OWN_BUST_TILT[index % OWN_BUST_TILT.length] : 0,
       dup: index === twin ? dup! : null,
     }));
-    const mods = cards.filter((item) => isModifierCard(item.card));
+    // Zweites Leben liegt als Karte bei den Modifikatoren (zuletzt)
+    const mods = [
+      ...cards.filter((item) => isModifierCard(item.card)),
+      ...cards.filter((item) => item.card === 'SC'),
+    ];
+    const modText = modifierText(me.cards);
+    const life = me.cards.includes('SC') ? 'Zweites Leben' : '';
     return {
       player: me,
       slots,
       empty: Array.from({ length: Math.max(0, 7 - slots.length) }),
       mods: mods.map((item, index) => ({ ...item, tilt: (index - (mods.length - 1) / 2) * 5 })),
-      modText: modifierText(me.cards) || '—',
+      modLabel: `Modifikatoren: ${[modText, life].filter(Boolean).join(', ') || 'keine'}`,
       flip3Left: this.flip3Left(me.seat),
       choice: this.choosing() && this.candidates().has(me.seat) ? this.choosing() : null,
       celebrate: this.live() && this.eventSeats().flip7.has(me.seat),
-      scBreak: this.eventSeats().secondChance.has(me.seat),
       bonus: this.game().status === 'round_over' && me.state === 'flip7',
       points: flip7Score(me.cards, me.state),
       // Rundenpunkte für das Bedienfeld (Handy, iPad hoch); gesichert: stehen, eingefroren, Flip 7
@@ -273,7 +288,7 @@ export class Flip7Board {
     }
     if (me && me.state !== 'active') {
       const points = flip7Score(me.cards, me.state);
-      if (me.state === 'stayed') return `Du bleibst stehen – ${points} Punkte gesichert`;
+      if (me.state === 'stayed') return `Gesichert – ${points} Punkte`;
       if (me.state === 'frozen') return `Du bist eingefroren – ${points} Punkte gesichert`;
       if (me.state === 'busted') return 'Bust – diese Runde 0 Punkte';
       if (me.state === 'flip7') return `Du schaffst Flip 7 – ${points} Punkte gesichert`;
@@ -296,9 +311,10 @@ export class Flip7Board {
   });
   // Hinweis im Kopf der Bühne: was ich gerade tun kann bzw. wie es um mich steht (wer
   // sonst am Zug ist, zeigt der Zeiger; die Zielwahl steht in der Mitte)
+  // Nur noch für Screenreader (im Kopf der Bühne war es am Handy zu viel)
   readonly hint = computed(() => {
     if (this.choosing()) return null;
-    if (this.myTurn()) return TURN_HINT;
+    if (this.myTurn()) return this.canStay() ? TURN_HINT : FIRST_CARD_HINT;
     const ownStatus = this.activeSeat() === null || this.me()?.state !== 'active';
     return ownStatus ? this.statusText() || null : null;
   });
@@ -334,6 +350,7 @@ export class Flip7Board {
   readonly flights = signal<Flight[]>([]);
   private flightId = 0;
   private eventsKey: string | null = null;
+  private scSeats: Set<number> | null = null;
 
   private readonly stack = viewChild<ElementRef<HTMLElement>>('stack');
   private readonly flyIn = new CardFlyIn(this.live);
@@ -349,19 +366,162 @@ export class Flip7Board {
       this.eventsKey = key;
       if (first || reducedMotion()) return;
 
-      const added = game.last_events
-        .filter(
-          (event) => (event.t === 'freeze' || event.t === 'flip3') && event.target !== undefined,
-        )
-        .map((event) => ({
-          id: ++this.flightId,
-          card: event.t === 'freeze' ? ('FREEZE' as const) : ('FLIP3' as const),
-          target: event.target!,
-        }));
+      const added: Flight[] = [];
+      for (const event of game.last_events) {
+        if ((event.t === 'freeze' || event.t === 'flip3') && event.target !== undefined) {
+          added.push({
+            id: ++this.flightId,
+            card: event.t === 'freeze' ? 'FREEZE' : 'FLIP3',
+            target: event.target,
+          });
+        } else if (event.t === 'second_chance' && event.seat !== undefined && event.card) {
+          added.push({ id: ++this.flightId, card: 'SAVE', target: event.seat, dup: event.card });
+        }
+      }
       if (added.length) {
         untracked(() => this.flights.update((list) => [...list, ...added]));
       }
     });
+
+    // Wer neu ein zweites Leben hat (gezogen oder geschenkt), bekommt es groß gezeigt
+    effect(() => {
+      const holders = new Set(
+        this.game()
+          .players.filter((player) => player.cards.includes('SC'))
+          .map((player) => player.seat),
+      );
+      const before = this.scSeats;
+      this.scSeats = holders;
+      if (!before || reducedMotion()) return;
+      const added = [...holders]
+        .filter((seat) => !before.has(seat))
+        .map((seat) => ({ id: ++this.flightId, card: 'SC' as const, target: seat }));
+      if (added.length) {
+        untracked(() => this.flights.update((list) => [...list, ...added]));
+      }
+    });
+  }
+
+  // Die Karte am Ziel bleibt unsichtbar, bis das große Zweite Leben dort ankommt
+  scFlying(seat: number): boolean {
+    return this.flights().some((flight) => flight.card === 'SC' && flight.target === seat);
+  }
+
+  // Zweites Leben verbraucht: die doppelte Zahl kommt vom Stapel, das Herz von seinem Platz;
+  // beide treffen sich über dem eigenen Feld (bzw. am Schild), das Herz zerbricht, beide weg
+  saveSc(event: AnimationCallbackEvent, flight: Flight): void {
+    const box = event.target as HTMLElement;
+    const host = this.host.nativeElement;
+    const seat = host.querySelector(`[data-seat="${flight.target}"]`);
+    const own = flight.target === this.me()?.seat;
+    const scFrom = own ? host.querySelector('.mod-cards') : seat?.querySelector('.fan-cards');
+    const meet = own ? host.querySelector('.slots') : seat;
+    const dup = box.querySelector<HTMLElement>('.save-dup');
+    const sc = box.querySelector<HTMLElement>('.save-sc');
+    const halves = [...box.querySelectorAll<HTMLElement>('.save-half')];
+    const done = () => {
+      event.animationComplete();
+      this.flights.update((list) => list.filter((item) => item !== flight));
+    };
+    if (!meet || !dup || !sc || typeof box.animate !== 'function') {
+      done();
+      return;
+    }
+
+    const mid = (rect: DOMRect) => ({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    });
+    const origin = mid(box.getBoundingClientRect());
+    const meetRect = meet.getBoundingClientRect();
+    const point = own ? { x: mid(meetRect).x, y: meetRect.top - 44 } : mid(meetRect);
+    const start = mid((scFrom ?? meet).getBoundingClientRect());
+    const mx = point.x - origin.x;
+    const my = point.y - origin.y;
+    const timing = { duration: SC_SAVE_MS, easing: 'ease-in-out', fill: 'forwards' as const };
+    const runs = [
+      dup.animate(
+        [
+          { transform: 'translate(0, 0) scale(0.9)' },
+          { transform: `translate(${mx - 14}px, ${my}px) rotate(-8deg)`, offset: 0.35 },
+          { transform: `translate(${mx - 10}px, ${my}px) rotate(-4deg)`, offset: 0.55 },
+          {
+            transform: `translate(${mx - 16}px, ${my + 16}px) rotate(-18deg) scale(0.8)`,
+            opacity: 0,
+          },
+        ],
+        timing,
+      ),
+      sc.animate(
+        [
+          { transform: `translate(${start.x - origin.x}px, ${start.y - origin.y}px) scale(0.6)` },
+          { transform: `translate(${mx + 14}px, ${my}px) rotate(8deg)`, offset: 0.35 },
+          { transform: `translate(${mx + 10}px, ${my}px) rotate(4deg)` },
+        ],
+        timing,
+      ),
+      ...halves.map((half, i) => {
+        const side = i === 0 ? -1 : 1;
+        return half.animate(
+          [
+            { transform: 'none', opacity: 1 },
+            { transform: 'none', opacity: 1, offset: 0.6 },
+            {
+              transform: `translate(${side * 3}px, 1px) rotate(${side * 6}deg)`,
+              opacity: 1,
+              offset: 0.7,
+            },
+            { transform: `translate(${side * 14}px, 14px) rotate(${side * 24}deg)`, opacity: 0 },
+          ],
+          timing,
+        );
+      }),
+    ];
+    void Promise.all(runs.map((run) => run.finished.catch(() => undefined))).finally(done);
+  }
+
+  // Zweites Leben: in der Mitte groß werden, kurz mit Schild stehen, dann klein an den Platz
+  revealSc(event: AnimationCallbackEvent, flight: Flight): void {
+    const reveal = event.target as HTMLElement;
+    const own = flight.target === this.me()?.seat;
+    const host = this.host.nativeElement;
+    const target =
+      (own
+        ? host.querySelector('.mod-sc')
+        : host.querySelector(`[data-seat="${flight.target}"] .fan-sc`)) ??
+      host.querySelector(`[data-seat="${flight.target}"]`);
+    const card = reveal.querySelector('app-flip7-card');
+    const tag = reveal.querySelector<HTMLElement>('.sc-tag');
+    const done = () => {
+      event.animationComplete();
+      this.flights.update((list) => list.filter((item) => item !== flight));
+    };
+    if (!target || !card || typeof reveal.animate !== 'function') {
+      done();
+      return;
+    }
+
+    const from = card.getBoundingClientRect();
+    const to = target.getBoundingClientRect();
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    const end = Math.max(0.3, to.width / (from.width || 1));
+    tag?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0, offset: 0.72 }], {
+      duration: SC_REVEAL_MS,
+      fill: 'forwards',
+    });
+    reveal
+      .animate(
+        [
+          { transform: 'scale(0.6)', opacity: 0 },
+          { transform: 'scale(2)', opacity: 1, offset: 0.18 },
+          { transform: 'scale(2)', opacity: 1, offset: 0.68 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${end})`, opacity: 1 },
+        ],
+        { duration: SC_REVEAL_MS, easing: 'ease-in-out', fill: 'forwards' },
+      )
+      .finished.catch(() => undefined)
+      .finally(done);
   }
 
   flip3Left(seat: number): number | null {

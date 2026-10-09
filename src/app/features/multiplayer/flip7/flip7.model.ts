@@ -92,11 +92,11 @@ export const FLIP7_BONUS = 15;
 
 // Kurzregeln für das ⋮-Menü im Spiel
 export const FLIP7_RULES = [
-  'Wer am Zug ist, zieht eine Karte oder bleibt stehen. Stehen bleiben sichert die Punkte dieser Runde.',
+  'Jede Runde zieht jeder seine erste Karte selbst. Danach zieht, wer am Zug ist, eine weitere Karte oder sichert: Dann ist die Runde für ihn vorbei, und die Punkte dieser Runde zählen.',
   'Zieht jemand eine Zahl, die er schon hat, ist das ein Bust: 0 Punkte in dieser Runde.',
   `Sieben verschiedene Zahlen sind Flip 7: +${FLIP7_BONUS} Punkte, und die Runde endet sofort.`,
   'Modifikatoren: ×2 verdoppelt die Zahlen, +2 bis +10 kommen danach dazu.',
-  'Freeze: Das Ziel muss sofort stehen bleiben. Flip 3: Das Ziel zieht drei Karten. Second Chance: fängt einen Bust einmal ab.',
+  'Freeze: Das Ziel muss sofort sichern. Flip 3: Das Ziel zieht drei Karten. Zweites Leben: fängt einen Bust einmal ab.',
   'Erreicht jemand am Rundenende das Punkteziel, ist das Spiel vorbei: Die meisten Punkte gewinnen, bei Gleichstand wird geteilt.',
 ];
 
@@ -109,7 +109,7 @@ export const isActionCard = (card: Flip7Card): card is Flip7ActionCard =>
 export const ACTION_NAMES: Record<Flip7ActionCard, string> = {
   FREEZE: 'Freeze',
   FLIP3: 'Flip 3',
-  SC: 'Second Chance',
+  SC: 'Zweites Leben',
 };
 
 // Kurzer Name, z. B. für Ereignisse: "7", "+4", "×2", "Freeze"
@@ -168,7 +168,7 @@ export function flip7Score(cards: readonly Flip7Card[], state: Flip7PlayerState)
 }
 
 // Spiegel von _flip7_candidates: Freeze/Flip 3 jeder Aktive inkl. Ziehendem,
-// Second Chance nur andere Aktive ohne eigene. Reihenfolge ab dem Ziehenden.
+// Zweites Leben nur andere Aktive ohne eigenes. Reihenfolge ab dem Ziehenden.
 export function targetCandidates(
   game: Pick<Flip7Game, 'players' | 'seat_count'>,
   card: Flip7ActionCard,
@@ -242,13 +242,13 @@ export function describeEvent(
     case 'bust':
       return `${verb('hast', 'hat')} Bust – doppelte ${card}`;
     case 'second_chance':
-      return `${verb('rettest dich', 'rettet sich')} mit Second Chance`;
+      return `${verb('rettest dich', 'rettet sich')} mit dem zweiten Leben`;
     case 'sc_given':
-      return `${verb('gibst', 'gibt')} ${targetMe ? 'dir' : name(event.target)} Second Chance`;
+      return `${verb('gibst', 'gibt')} ${targetMe ? 'dir' : name(event.target)} ein zweites Leben`;
     case 'sc_discarded':
       return me
-        ? 'Deine Second Chance wird abgelegt'
-        : `Second Chance von ${name(event.seat)} wird abgelegt`;
+        ? 'Dein zweites Leben wird abgelegt'
+        : `Das zweite Leben von ${name(event.seat)} wird abgelegt`;
     case 'freeze':
       return self
         ? `${verb('frierst dich', 'friert sich')} selbst ein`
@@ -267,7 +267,7 @@ export function describeEvent(
     case 'stay': {
       const stayed = player(event.seat);
       const points = stayed ? ` (+${flip7Score(stayed.cards, stayed.state)})` : '';
-      return `${verb('bleibst', 'bleibt')} stehen${points}`;
+      return `${verb('sicherst', 'sichert')}${points}`;
     }
     case 'reshuffle':
       return 'Die Ablage wird neu gemischt';

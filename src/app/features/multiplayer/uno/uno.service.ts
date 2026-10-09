@@ -11,7 +11,7 @@ const GAME_COLUMNS =
   'id, status, settings, seat_count, round_no, dealer_seat, turn_seat, turn_no, direction, color,' +
   ' discard_top, pending_draw, drew, uno_open_seat, winner_seat, last_events, round_log,' +
   ' waiting_since,' +
-  ' uno_players(user_id, seat, state, hand_count, uno_called, round_points, score),' +
+  ' uno_players(user_id, seat, state, hand_count, uno_called),' +
   ' uno_hands(cards, drawn)';
 
 type GameRow = Omit<UnoGame, 'players' | 'hand' | 'drawn'> & {

@@ -9,7 +9,7 @@
     <p class="kicker">Runde {{ game().round_no }} beendet</p>
     <h2 id="uno-final-title">{{ w ? w.name + ' gewinnt!' : 'Endstand' }}</h2>
     <p class="sub">
-      {{ w ? '+' + (w.round_points ?? 0) + ' Punkte aus den Restkarten' : 'Vorzeitig beendet' }}
+      {{ w ? 'Alle Karten losgeworden' : 'Vorzeitig beendet' }}
     </p>
   </div>
 
@@ -33,15 +33,6 @@
         </span>
         @if (row.rank !== null) {
           <span class="cards">{{ p.hand_count ? cardCount(p.hand_count) : 'leer' }}</span>
-          @if (w) {
-            <span class="points"
-              ><span class="sr-only">Punkte: </span>{{ p.seat === w.seat ? '+' : ''
-              }}{{ p.round_points ?? 0 }}</span
-            >
-          }
-        }
-        @if (game().round_no > 1) {
-          <span class="total"><span class="sr-only">Gesamt: </span>{{ p.score }}</span>
         }
       </li>
     }

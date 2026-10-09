@@ -101,7 +101,6 @@
         class="opp"
         [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
         [player]="view.player"
-        [dealer]="view.player.seat === g.dealer_seat"
         [fan]="layout() !== 'phone' || g.seat_count < 6"
         [swapTarget]="true"
         [style.left.%]="view.x"
@@ -116,7 +115,6 @@
         class="opp"
         [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
         [player]="view.player"
-        [dealer]="view.player.seat === g.dealer_seat"
         [turn]="view.turn"
         [winner]="view.winner"
         [celebrate]="view.celebrate"
@@ -141,7 +139,6 @@
       class="own-pill"
       variant="pill"
       [player]="m"
-      [dealer]="m.seat === g.dealer_seat"
       [turn]="myTurn()"
       [winner]="g.winner_seat === m.seat"
       [celebrate]="winSeatIsMe()"
@@ -150,14 +147,13 @@
 </div>
 
 @if (layout() !== 'laptop' && me(); as m) {
-  <section class="mine" aria-label="Dein Platz">
+  <section class="mine" [class.is-turn]="myTurn()" aria-label="Dein Platz">
     <div
       appUnoSeat
       role="group"
       class="tab"
       variant="tab"
       [player]="m"
-      [dealer]="m.seat === g.dealer_seat"
       [turn]="myTurn()"
       [winner]="g.winner_seat === m.seat"
       [celebrate]="winSeatIsMe()"

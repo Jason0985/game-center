@@ -27,7 +27,6 @@ import { cardName, SkipboCard, SkipboPlayer } from './skipbo.model';
 export class SkipboSeat {
   readonly player = input.required<SkipboPlayer>();
   readonly variant = input<'column' | 'row' | 'line' | 'tab' | 'pill'>('column');
-  readonly dealer = input(false);
   readonly turn = input(false);
   readonly winner = input(false);
   // Einmaliger Gold-Puls direkt nach dem Sieg

@@ -21,7 +21,6 @@ export class GameStage {
   readonly gameTitle = input.required<string>();
   readonly subtitle = input<string | null>(null);
   // Kurzer Hinweis, was gerade zu tun ist; ersetzt die Unterzeile
-  readonly hint = input<string | null>(null);
   // null: Spielerzahl nicht anzeigen (noch kein Spiel)
   readonly players = input<number | null>(null);
   readonly loading = input(false);

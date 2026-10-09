@@ -99,6 +99,31 @@ export const SKIPBO_RULES = [
 
 export const isJoker = (card: SkipboCard): boolean => card === 'SB';
 
+// Auswahl nach neuem Stand: bleibt, solange man dran ist und die Quelle noch eine Karte hat
+// (Spielstapel/Ablage nach dem Ausspielen also weiter gewählt). Eine Handkarte nur, wenn
+// die Hand unverändert ist, sonst könnte der Index auf eine andere Karte zeigen.
+export function keepSelection(
+  selected: SkipboSource | null,
+  before: SkipboGame,
+  after: SkipboGame,
+  userId: string,
+): SkipboSource | null {
+  const me = after.players.find((player) => player.user_id === userId);
+  if (!selected || !me || me.state !== 'active') return null;
+  if (after.status !== 'playing' || after.turn_seat !== me.seat) return null;
+  switch (selected.kind) {
+    case 'hand':
+      return before.hand.length === after.hand.length &&
+        before.hand.every((card, i) => card === after.hand[i])
+        ? selected
+        : null;
+    case 'stock':
+      return me.stock_top ? selected : null;
+    case 'discard':
+      return me.discards[selected.index]?.length ? selected : null;
+  }
+}
+
 // Passt die Karte auf den Aufbaustapel? Der Joker nimmt den nächsten Wert an (Länge + 1)
 export function canPlay(card: SkipboCard, pile: readonly SkipboCard[]): boolean {
   return pile.length < 12 && (isJoker(card) || Number(card) === pile.length + 1);

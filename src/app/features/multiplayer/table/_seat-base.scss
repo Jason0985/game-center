@@ -89,13 +89,6 @@
   font-size: calc(var(--token) * 0.58);
 }
 
-.token--dealer {
-  bottom: calc(var(--token) * -0.2);
-  left: calc(var(--token) * -0.2);
-  background: #f7f7f5;
-  color: #15171c;
-}
-
 .fill {
   font-variation-settings: 'FILL' 1;
 }
@@ -263,6 +256,8 @@
 }
 
 :host([data-variant='tab'].is-turn) {
+  // 2px länger: deckt den dickeren Rand des Bedienfelds unter dem Reiter ab
+  height: calc(var(--tab-h, 41px) + 2px);
   border-width: 2.5px;
   border-bottom-width: 0;
   box-shadow: 0 -8px 20px color-mix(in srgb, var(--table-turn) 16%, transparent);
