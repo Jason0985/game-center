@@ -32,6 +32,7 @@ const ROUNDED_SYMBOLS = [
   'move_to_inbox',
   'palette',
   'pan_tool',
+  'person_remove',
   'play_arrow',
   'refresh',
   'replay',
@@ -44,6 +45,7 @@ const ROUNDED_SYMBOLS = [
   'swap_horiz',
   'sync_alt',
   'warning',
+  'workspace_premium',
 ];
 
 const FONTS = [
