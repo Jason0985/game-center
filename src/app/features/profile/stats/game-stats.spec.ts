@@ -44,18 +44,18 @@ describe('computeStats', () => {
     expect(stats.bestEvening?.wins).toBe(3);
   });
 
-  it('only counts the top-3 rate from 4 players and the best Uno round from wins', () => {
+  it('only counts the top-3 rate from 4 players and keeps a best value for Flip 7 only', () => {
     const stats = computeStats([
       result('2026-10-01T20:00:00', false, { player_count: 4, placement: 4 }),
       result('2026-10-01T20:10:00', false, { player_count: 5, placement: 2 }),
       result('2026-10-01T20:20:00', false, { player_count: 3, placement: 3 }),
-      result('2026-10-01T20:30:00', true, { game_key: 'uno', score: 40 }),
-      result('2026-10-01T20:40:00', false, { game_key: 'uno', score: 90 }),
+      result('2026-10-01T20:30:00', true, { game_key: 'uno', score: 0 }),
+      result('2026-10-01T20:40:00', false, { game_key: 'uno', score: 5 }),
     ]);
 
     expect(stats.top3Rate).toBe(0.5);
     const uno = stats.perGame.find((game) => game.key === 'uno');
-    expect(uno?.best).toBe(40);
+    expect(uno?.best).toBeNull();
     expect(stats.favorite).toBe('Flip 7');
   });
 });

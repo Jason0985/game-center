@@ -111,6 +111,13 @@
           <span class="ui-row-text"><span class="ui-row-title">Status</span></span>
           <span class="ui-row-value settings-status"><span></span>Bereit</span>
         </div>
+        <button type="button" class="ui-row" (click)="pwa.reload()">
+          <span class="ui-row-text">
+            <span class="ui-row-title">App neu laden</span>
+            <span class="ui-row-sub">Hilft, wenn etwas hängt oder veraltet aussieht</span>
+          </span>
+          <mat-icon class="ui-chevron" aria-hidden="true">refresh</mat-icon>
+        </button>
       </div>
     </section>
   </div>

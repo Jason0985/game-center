@@ -210,6 +210,7 @@ export class UnoBoard {
     UNO_HOUSE_RULES.filter((rule) => this.game().settings[rule.key]),
   );
   // Sichtbarer Hinweis (im Kopf der Bühne) für Zustände, die man sonst leicht übersieht
+  // Für die Statuszeile (Screenreader)
   readonly hint = computed(() => {
     if (!this.myTurn()) return null;
     if (this.choice()?.kind === 'target') return 'Wähle, mit wem du die Karten tauschst';

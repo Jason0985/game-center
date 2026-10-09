@@ -19,8 +19,6 @@ function player(seat: number, overrides: Partial<UnoPlayer> = {}): UnoPlayer {
     state: 'active',
     hand_count: 5,
     uno_called: false,
-    round_points: null,
-    score: 0,
     name: ['Lea', 'Ben', 'Carl', 'Dana', 'Emil'][seat],
     ...overrides,
   };
@@ -152,14 +150,14 @@ describe('describeEvent', () => {
 });
 
 describe('rankPlayers', () => {
-  it('puts the winner first, then the fewest points, shares ties, leavers last', () => {
+  it('puts the winner first, then the fewest cards, shares ties, leavers last', () => {
     const ranked = rankPlayers(
       [
-        player(0, { round_points: 32 }),
-        player(1, { round_points: 117, hand_count: 0 }),
+        player(0, { hand_count: 4 }),
+        player(1, { hand_count: 0 }),
         player(2, { state: 'left' }),
-        player(3, { round_points: 14 }),
-        player(4, { round_points: 32 }),
+        player(3, { hand_count: 2 }),
+        player(4, { hand_count: 4 }),
       ],
       1,
     );

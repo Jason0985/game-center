@@ -164,11 +164,38 @@
   rotate: 9deg;
 }
 
-// Modifikatoren: eigener kleiner Stapel, Beitrag daneben
+// Modifikatoren: Schriftzug mit Linie nach rechts (wie die Ablagen bei Skip-Bo), darunter
+// nur die Karten; leicht überlappend, die Werte bleiben lesbar
 .mods {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sheet-row--between .mods {
+  flex: 1;
+}
+
+.mod-head {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 14px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mod-head::after {
+  flex-grow: 1;
+  min-width: 16px;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
 }
 
 .mod-cards {
@@ -183,7 +210,7 @@
 }
 
 .mod-cards app-flip7-card + app-flip7-card {
-  margin-left: calc(var(--mod-w) * -0.55);
+  margin-left: calc(var(--mod-w) * -0.2);
 }
 
 .slot--mod {
@@ -192,23 +219,75 @@
   border-radius: calc(var(--mod-w) * 0.145);
 }
 
-.mod-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+// Zweites Leben: bis die große Karte ankommt, ist der Platz leer
+.sc-hidden {
+  visibility: hidden;
 }
 
-.mod-label {
-  color: var(--color-text-muted);
-  font-size: var(--mod-label);
-  font-weight: 600;
+// Zweites Leben verbraucht (saveSc): doppelte Zahl und Herzkarte übereinander am Stapel,
+// die Herzkarte aus zwei Hälften, die beim Treffen auseinanderbrechen
+.sc-save {
+  width: var(--card-w);
+  height: var(--card-h);
 }
 
-.mod-value {
-  color: var(--f7-mod-text);
-  font-size: var(--mod-value);
-  font-variant-numeric: tabular-nums;
+.save-dup,
+.save-sc,
+.save-half {
+  position: absolute;
+  inset: 0;
+}
+
+.save-sc {
+  z-index: 1;
+}
+
+.save-half--start {
+  clip-path: polygon(0 0, 55% 0, 42% 35%, 58% 55%, 45% 100%, 0 100%);
+}
+
+.save-half--end {
+  clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%, 58% 55%, 42% 35%);
+}
+
+// Zweites Leben in der Mitte: Karte mit rotem Schild darunter (revealSc animiert)
+.sc-reveal {
+  z-index: 8;
+  width: var(--card-w);
+  height: var(--card-h);
+}
+
+.sc-tag {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #c8386d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  font-size: 9px;
   font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+
+  .material-symbols-rounded {
+    font-size: 11px;
+  }
+}
+
+// Am Zug: weißer Rand über die ganze Oberkante (wie .mine in table/_arc-table.scss)
+.sheet {
+  transition:
+    border-top-width 0s var(--turn-delay, 240ms),
+    border-top-color 0s var(--turn-delay, 240ms);
+}
+
+.sheet.is-turn {
+  border-top: 2.5px solid var(--table-turn);
 }
 
 // Handy, iPad hoch: Name als Reiter oben links am Bedienfeld (wie Skip-Bo und Uno)
@@ -329,8 +408,10 @@
   overflow: hidden;
   border-radius: inherit;
   background:
-    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.22) 0 1.5px, transparent 2px) 0 0 / 23px 19px,
-    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1.5px) 0 0 / 17px 29px,
+    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.22) 0 1.5px, transparent 2px) 0 0 /
+      23px 19px,
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1.5px) 0 0 /
+      17px 29px,
     repeating-linear-gradient(60deg, rgba(186, 230, 253, 0.07) 0 1px, transparent 1px 14px),
     repeating-linear-gradient(-60deg, rgba(186, 230, 253, 0.07) 0 1px, transparent 1px 14px),
     rgba(125, 211, 252, 0.14);
@@ -345,7 +426,12 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.22) 50%,
+      transparent 65%
+    );
     transform: translateX(110%);
   }
 }
@@ -382,6 +468,27 @@
   font-size: 13px;
   font-weight: 600;
   opacity: 0.85;
+}
+
+// Gesichert: wie eingefroren, nur schlicht ausgegraut
+.ice--locked {
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--color-border-subtle);
+  backdrop-filter: blur(2px) grayscale(1);
+
+  &::after {
+    content: none;
+  }
+
+  .ice-text,
+  .ice-sub {
+    color: var(--color-text-muted);
+    text-shadow: none;
+  }
+}
+
+:host(.live) .ice--locked {
+  animation: f7-fade-in 300ms ease-out both;
 }
 
 :host([data-layout='laptop']) .ice {

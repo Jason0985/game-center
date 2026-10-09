@@ -2,8 +2,8 @@ import { Component, computed, input, output } from '@angular/core';
 import { AVATAR_COLORS, cardCount } from '../table/table.model';
 import { rankPlayers, UnoGame } from './uno.model';
 
-// Rundenende (Endstand.dc): Sieger bekommt die Punkte der Restkarten aller anderen.
-// Ab Runde 2 auch die Summe über alle Runden. Wie es weitergeht, entscheidet der Host.
+// Rundenende: Sieger zuerst, dann nach Restkarten (bei Uno zählen keine Punkte).
+// Wie es weitergeht, entscheidet der Host.
 @Component({
   selector: 'app-uno-final',
   templateUrl: './uno-final.html',

@@ -23,7 +23,7 @@ export interface GameBreakdown {
   played: number;
   wins: number;
   winRate: number | null;
-  // Flip 7: höchster Endstand, Uno: meiste Punkte in einer gewonnenen Runde
+  // Nur Flip 7 hat Punkte: höchster Endstand
   best: number | null;
 }
 
@@ -83,7 +83,7 @@ export function computeStats(results: GameResult[]): GameStats {
   const perGame = GAMES.filter((game) => !game.url).map((game): GameBreakdown => {
     const own = results.filter((result) => result.game_key === game.key);
     const ownWins = own.filter((result) => result.won);
-    const scores = (game.key === 'uno' ? ownWins : own)
+    const scores = own
       .map((result) => result.score)
       .filter((score): score is number => score !== null);
     return {
@@ -93,7 +93,7 @@ export function computeStats(results: GameResult[]): GameStats {
       played: own.length,
       wins: ownWins.length,
       winRate: rate(ownWins.length, own.length),
-      best: game.key !== 'skip-bo' && scores.length ? Math.max(...scores) : null,
+      best: game.key === 'flip-7' && scores.length ? Math.max(...scores) : null,
     };
   });
   const favorite = perGame.reduce<GameBreakdown | null>(

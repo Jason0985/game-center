@@ -7,7 +7,6 @@ import {
   output,
   signal,
   untracked,
-  viewChild,
 } from '@angular/core';
 import { GameStage } from '../table/game-stage';
 import { injectTableGame, injectTableHistory } from '../table/table-game';
@@ -60,7 +59,7 @@ export class Flip7GameView {
     title: 'Flip 7',
     skipAfterS: FLIP7_SKIP_AFTER_S,
     skipMessage:
-      'Wer gerade am Zug ist, bleibt stehen. Eine offene Zielauswahl wird automatisch getroffen.',
+      'Wer gerade am Zug ist, sichert seine Punkte. Eine offene Zielauswahl wird automatisch getroffen.',
     endMessage: (game) =>
       game.status === 'playing'
         ? 'Die laufende Runde wird nicht gewertet.'
@@ -104,9 +103,6 @@ export class Flip7GameView {
     );
   });
   readonly rules = { title: 'Flip 7 – Regeln', rules: FLIP7_RULES };
-  // Hinweis des Tisches (z. B. Ziel wählen) steht im Kopf der Bühne
-  private readonly board = viewChild(Flip7Board);
-  readonly hint = computed(() => this.board()?.hint() ?? null);
 
   // Verlauf der laufenden Runde; "noch N Karten" nur beim neuesten Flip 3, ältere sind erledigt
   private readonly roundLog = computed(() => {

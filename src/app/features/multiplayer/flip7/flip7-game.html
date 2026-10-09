@@ -12,7 +12,6 @@
   [finished]="game()?.status === 'finished'"
   [endHint]="game()?.status === 'playing' ? 'Laufende Runde zählt nicht' : 'Zum Endstand'"
   [rules]="rules"
-  [hint]="hint()"
   [lastEvent]="lastEvent()"
   [historyNew]="historyNew()"
   (skip)="skip(game()!)"

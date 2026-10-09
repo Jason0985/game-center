@@ -57,7 +57,7 @@ export class Flip7Service {
   }
 
   stay(turn: TableTurn): Promise<ActionResult> {
-    return callRpc('flip7_stay', turnArgs(turn), 'Stehenbleiben fehlgeschlagen.');
+    return callRpc('flip7_stay', turnArgs(turn), 'Sichern fehlgeschlagen.');
   }
 
   chooseTarget(turn: TableTurn, seat: number): Promise<ActionResult> {

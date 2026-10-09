@@ -19,10 +19,10 @@
   --table-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
   --mark-size: 180px;
   --mark-x: 50%;
-  --mark-y: 73.21%;
+  --mark-y: 71.43%;
   --center-x: 50%;
-  --center-y: 72.5%;
-  --center-gap: 10px;
+  --center-y: 70.71%;
+  --center-gap: 30px;
   --center-max: 260px;
   --pile-w: 40px;
   --pile-h: 56px;
@@ -34,7 +34,6 @@
   --fan-w: calc(14px * var(--fan-k));
   --fan-h: calc(20px * var(--fan-k));
   --fan-gap: 6px;
-  --fan-overlap: -0.45;
   --dot: 4px;
   --mod-chip-size: 10px;
   --mod-chip-lh: 14px;
@@ -46,7 +45,6 @@
   --mod-h: 36px;
   --mod-font: 15px;
   --mod-label: 11px;
-  --mod-value: 15px;
 
   // Tisch oben verankert, das Sheet überlappt ihn und füllt den Rest nach unten
   display: grid;
@@ -79,9 +77,9 @@
   --rim: 14px;
   --table-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
   --mark-size: 300px;
-  --mark-y: 74.25%;
-  --center-y: 73%;
-  --center-gap: 14px;
+  --mark-y: 73%;
+  --center-y: 71.75%;
+  --center-gap: 34px;
   --center-max: 420px;
   --pile-w: 52px;
   --pile-h: 72px;
@@ -89,7 +87,7 @@
   --chip-icon: 18px;
   --fan-w: calc(28px * var(--fan-k));
   --fan-h: calc(40px * var(--fan-k));
-  --fan-overlap: -0.39;
+  --fan-overlap: -0.2;
   --dot: 5px;
   --mod-chip-size: 12px;
   --mod-chip-lh: 17px;
@@ -101,7 +99,6 @@
   --mod-h: 54px;
   --mod-font: 18px;
   --mod-label: 12px;
-  --mod-value: 16px;
 }
 
 :host([data-layout='quer']) {
@@ -117,7 +114,7 @@
   --mark-size: 300px;
   --mark-y: 50%;
   --center-y: 48.08%;
-  --center-gap: 14px;
+  --center-gap: 28px;
   --center-max: 420px;
   --pile-w: 52px;
   --pile-h: 72px;
@@ -125,7 +122,7 @@
   --chip-icon: 18px;
   --fan-w: calc(28px * var(--fan-k));
   --fan-h: calc(40px * var(--fan-k));
-  --fan-overlap: -0.39;
+  --fan-overlap: -0.2;
   --dot: 5px;
   --mod-chip-size: 11px;
   --mod-chip-lh: 15px;
@@ -152,7 +149,7 @@
   --mark-size: 300px;
   --mark-y: 40.56%;
   --center-y: 39.17%;
-  --center-gap: 14px;
+  --center-gap: 28px;
   --center-max: 420px;
   --pile-w: 60px;
   --pile-h: 84px;
@@ -161,7 +158,7 @@
   --chip-icon: 18px;
   --fan-w: calc(36px * var(--fan-k));
   --fan-h: calc(50px * var(--fan-k));
-  --fan-overlap: -0.39;
+  --fan-overlap: -0.2;
   --dot: 5px;
   --mod-chip-size: 12px;
   --mod-chip-lh: 17px;
@@ -173,7 +170,6 @@
   --mod-h: 54px;
   --mod-font: 18px;
   --mod-label: 12px;
-  --mod-value: 16px;
 }
 
 :host([data-layout='hoch'][data-size='m']) {
@@ -219,7 +215,7 @@
   align-items: flex-end;
 }
 
-// Mitte: Stapel (zum Ziehen antippen), Ablage, darunter „Stehen bleiben“
+// Mitte: Stapel (zum Ziehen antippen), Ablage, darunter „Sichern“
 .center {
   position: absolute;
   top: var(--center-y);
@@ -281,7 +277,7 @@
 }
 
 // Zielwahl: farbiger Hinweis in der Farbe der Aktionskarte, direkt unter dem Stapel (wo
-// sonst „Stehen bleiben“ steht); am Handy, wo darunter das Bedienfeld beginnt, auf dem
+// sonst „Sichern“ steht); am Handy, wo darunter das Bedienfeld beginnt, auf dem
 // Stapel. So überdeckt er keine Fächer der Mitspieler.
 .center-foot {
   position: relative;
@@ -441,11 +437,29 @@
   --card-h: var(--fan-h);
 }
 
-.fan-cards app-flip7-card + app-flip7-card {
+// Handy: höchstens 4 je Reihe nebeneinander, darunter die nächste. Die Zahl steht oben, so
+// darf die zweite Reihe das untere Drittel der ersten verdecken und spart Höhe.
+:host([data-layout='phone']) .fan-cards {
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 2px;
+  max-width: calc(var(--fan-w) * 4 + 6px);
+}
+
+:host([data-layout='phone']) .fan-cards app-flip7-card {
+  justify-content: flex-start;
+  padding-top: calc(var(--fan-h) * 0.08);
+}
+
+:host([data-layout='phone']) .fan-cards app-flip7-card:nth-of-type(n + 5) {
+  margin-top: calc(var(--fan-h) * -0.38);
+}
+
+// Ab iPad: Zahl oben links, Karten überlappen leicht im Handbogen, Drehpunkt unten
+:host(:not([data-layout='phone'])) .fan-cards app-flip7-card + app-flip7-card {
   margin-left: calc(var(--fan-w) * var(--fan-overlap));
 }
 
-// Ab iPad: Handbogen, Drehpunkt unten
 :host(:not([data-layout='phone'])) .fan-cards {
   align-items: flex-start;
   padding: 2px 0 3px;

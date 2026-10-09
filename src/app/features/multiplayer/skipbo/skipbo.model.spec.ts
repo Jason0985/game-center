@@ -2,8 +2,10 @@ import {
   canPlay,
   describeEvent,
   fanView,
+  keepSelection,
   rankPlayers,
   SkipboCard,
+  SkipboGame,
   SkipboPlayer,
   validPiles,
 } from './skipbo.model';
@@ -34,6 +36,51 @@ describe('canPlay / validPiles', () => {
     const full = Array.from({ length: 12 }, (_, i) => String(i + 1)) as SkipboCard[];
     expect(validPiles('SB', [[], ['1', '2'], full, ['1']])).toEqual([0, 1, 3]);
     expect(validPiles('2', [[], ['1'], full, ['SB']])).toEqual([1, 3]);
+  });
+});
+
+describe('keepSelection', () => {
+  const game = (
+    overrides: Partial<SkipboGame> = {},
+    me: Partial<SkipboPlayer> = {},
+  ): SkipboGame => ({
+    id: 'g',
+    status: 'playing',
+    seat_count: 2,
+    dealer_seat: 1,
+    turn_seat: 0,
+    turn_no: 1,
+    build_piles: [[], [], [], []],
+    winner_seat: null,
+    last_events: [],
+    round_log: [],
+    waiting_since: 't1',
+    players: [player(0, me), player(1)],
+    hand: ['3', '7', 'SB'],
+    ...overrides,
+  });
+
+  it('keeps stock and discard selected after playing from them', () => {
+    const before = game();
+    const after = game({ waiting_since: 't2' }, { stock_top: '2', discards: [['4'], [], [], []] });
+    expect(keepSelection({ kind: 'stock', index: 0 }, before, after, 'user-0')).toEqual({
+      kind: 'stock',
+      index: 0,
+    });
+    expect(keepSelection({ kind: 'discard', index: 0 }, before, after, 'user-0')).not.toBeNull();
+    expect(keepSelection({ kind: 'discard', index: 1 }, before, after, 'user-0')).toBeNull();
+  });
+
+  it('keeps a hand card only while the hand is unchanged', () => {
+    const hand = { kind: 'hand' as const, index: 1 };
+    expect(keepSelection(hand, game(), game({ waiting_since: 't2' }), 'user-0')).toEqual(hand);
+    expect(keepSelection(hand, game(), game({ hand: ['3', 'SB'] }), 'user-0')).toBeNull();
+  });
+
+  it('drops the selection when the stock is empty or the turn is over', () => {
+    const stock = { kind: 'stock' as const, index: 0 };
+    expect(keepSelection(stock, game(), game({}, { stock_top: null }), 'user-0')).toBeNull();
+    expect(keepSelection(stock, game(), game({ turn_seat: 1 }), 'user-0')).toBeNull();
   });
 });
 

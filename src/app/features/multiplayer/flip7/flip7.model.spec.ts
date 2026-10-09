@@ -80,7 +80,7 @@ describe('targetCandidates', () => {
     expect(targetCandidates(game(players), 'FLIP3', 0)).toEqual([0, 1, 3]);
   });
 
-  it('offers Second Chance only to other active players without one', () => {
+  it('offers a second life only to other active players without one', () => {
     expect(targetCandidates(game(players), 'SC', 0)).toEqual([1]);
     expect(targetCandidates(game(players), 'SC', 1)).toEqual([]);
   });
@@ -133,10 +133,10 @@ describe('describeEvent', () => {
     [{ t: 'draw', seat: 2, card: 'FREEZE' }, 'Du ziehst Freeze'],
     [{ t: 'draw', seat: 0, card: 'x2' }, 'Anna zieht ×2'],
     [{ t: 'bust', seat: 1, card: '9' }, 'Ben hat Bust – doppelte 9'],
-    [{ t: 'second_chance', seat: 0, card: '5' }, 'Anna rettet sich mit Second Chance'],
-    [{ t: 'sc_given', seat: 0, target: 1 }, 'Anna gibt Ben Second Chance'],
-    [{ t: 'sc_given', seat: 0, target: 2 }, 'Anna gibt dir Second Chance'],
-    [{ t: 'sc_discarded', seat: 0 }, 'Second Chance von Anna wird abgelegt'],
+    [{ t: 'second_chance', seat: 0, card: '5' }, 'Anna rettet sich mit dem zweiten Leben'],
+    [{ t: 'sc_given', seat: 0, target: 1 }, 'Anna gibt Ben ein zweites Leben'],
+    [{ t: 'sc_given', seat: 0, target: 2 }, 'Anna gibt dir ein zweites Leben'],
+    [{ t: 'sc_discarded', seat: 0 }, 'Das zweite Leben von Anna wird abgelegt'],
     [{ t: 'freeze', seat: 0, target: 1 }, 'Anna friert Ben ein'],
     [{ t: 'freeze', seat: 1, target: 1 }, 'Ben friert sich selbst ein'],
     [{ t: 'freeze', seat: 0, target: 2 }, 'Anna friert dich ein'],
@@ -144,8 +144,8 @@ describe('describeEvent', () => {
     [{ t: 'flip3', seat: 0, target: 1 }, 'Anna gibt Ben Flip 3'],
     [{ t: 'set_aside', seat: 1, card: 'FREEZE' }, 'Ben legt Freeze zur Seite'],
     [{ t: 'flip7', seat: 1 }, 'Ben schafft Flip 7! +15'],
-    [{ t: 'stay', seat: 1 }, 'Ben bleibt stehen (+20)'],
-    [{ t: 'stay', seat: 2 }, 'Du bleibst stehen (+0)'],
+    [{ t: 'stay', seat: 1 }, 'Ben sichert (+20)'],
+    [{ t: 'stay', seat: 2 }, 'Du sicherst (+0)'],
     [{ t: 'reshuffle' }, 'Die Ablage wird neu gemischt'],
     [{ t: 'left', seat: 1 }, 'Ben hat das Spiel verlassen'],
     [{ t: 'skip', seat: 0 }, 'Anna wurde übersprungen'],
@@ -166,7 +166,7 @@ describe('cardAriaLabel', () => {
       'Modifikator ×2',
       'Aktionskarte Freeze',
       'Aktionskarte Flip 3',
-      'Aktionskarte Second Chance',
+      'Aktionskarte Zweites Leben',
     ]);
   });
 });

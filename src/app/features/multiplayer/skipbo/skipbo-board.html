@@ -22,7 +22,6 @@
                 role="group"
                 variant="line"
                 [player]="view.player"
-                [dealer]="view.player.seat === g.dealer_seat"
                 [turn]="view.turn"
                 [winner]="view.winner"
                 [celebrate]="view.celebrate"
@@ -90,7 +89,6 @@
         class="opp"
         [variant]="layout() === 'hoch' ? 'column' : 'row'"
         [player]="view.player"
-        [dealer]="view.player.seat === g.dealer_seat"
         [turn]="view.turn"
         [winner]="view.winner"
         [celebrate]="view.celebrate"
@@ -111,7 +109,6 @@
         class="own-pill"
         variant="pill"
         [player]="m"
-        [dealer]="m.seat === g.dealer_seat"
         [turn]="myTurn()"
         [winner]="g.winner_seat === m.seat"
         [celebrate]="winSeatIsMe()"
@@ -120,14 +117,13 @@
   </div>
 
   @if (layout() !== 'laptop' && me(); as m) {
-    <section class="mine" aria-label="Dein Platz">
+    <section class="mine" [class.is-turn]="myTurn()" aria-label="Dein Platz">
       <div
         appSkipboSeat
         role="group"
         class="tab"
         variant="tab"
         [player]="m"
-        [dealer]="m.seat === g.dealer_seat"
         [turn]="myTurn()"
         [winner]="g.winner_seat === m.seat"
         [celebrate]="winSeatIsMe()"

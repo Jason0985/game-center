@@ -25,7 +25,6 @@ const MAX_FAN = 10;
 export class UnoSeat {
   readonly player = input.required<UnoPlayer>();
   readonly variant = input<'column' | 'row' | 'tab' | 'pill'>('column');
-  readonly dealer = input(false);
   readonly turn = input(false);
   readonly winner = input(false);
   // Einmaliger Gold-Puls direkt nach dem Sieg

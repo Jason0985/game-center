@@ -16,8 +16,6 @@ function player(seat: number, overrides: Partial<UnoPlayer> = {}): UnoPlayer {
     state: 'active',
     hand_count: 5,
     uno_called: false,
-    round_points: null,
-    score: 0,
     name: ['Host', 'Gast', 'Dritte'][seat],
     ...overrides,
   };
@@ -159,15 +157,16 @@ describe('UnoGameView', () => {
       turn_seat: null,
       winner_seat: 1,
       players: [
-        player(0, { round_points: 14 }),
-        player(1, { hand_count: 0, round_points: 46, score: 46 }),
-        player(2, { round_points: 32 }),
+        player(0, { hand_count: 3 }),
+        player(1, { hand_count: 0 }),
+        player(2, { hand_count: 6 }),
       ],
     });
     await render('guest', finished);
     expect(el().querySelector('app-uno-final')).not.toBeNull();
     expect(el().textContent).toContain('Gast gewinnt!');
-    expect(el().textContent).toContain('+46 Punkte aus den Restkarten');
+    expect(el().textContent).toContain('Alle Karten losgeworden');
+    expect(el().textContent).not.toContain('Punkte');
   });
 
   it('keeps the table for a moment when the round ends live', async () => {
@@ -221,7 +220,7 @@ describe('UnoGameView', () => {
     expect(el().querySelector('.house-rules li')?.textContent).toBe('7 tauscht, 0 dreht');
     tap('Rot 7 spielen');
     expect(uno['play']).not.toHaveBeenCalled();
-    expect(el().querySelector('.title-hint')?.textContent).toBe(
+    expect(el().querySelector('p.sr-only[aria-live]')?.textContent).toContain(
       'Wähle, mit wem du die Karten tauschst',
     );
     const target = el().querySelector<HTMLButtonElement>('button[appunoseat][data-seat="2"]')!;

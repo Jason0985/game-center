@@ -38,6 +38,7 @@ import {
   fanView,
   HAND_ARC,
   isJoker,
+  keepSelection,
   LAPTOP_SMALL_POINTER_Y,
   POINTER,
   SkipboCard,
@@ -123,11 +124,13 @@ export class SkipboBoard {
       this.me()?.state === 'active',
   );
 
-  // Gewählte Karte und aufgeklappte Ablage gelten nur für den angezeigten Stand
-  readonly selected = linkedSignal<string | null, SkipboSource | null>({
-    source: () => this.game().waiting_since,
-    computation: () => null,
+  // Gewählte Karte bleibt, bis man eine andere wählt, ablegt oder die Quelle leer ist
+  readonly selected = linkedSignal<SkipboGame, SkipboSource | null>({
+    source: this.game,
+    computation: (game, previous) =>
+      previous ? keepSelection(previous.value, previous.source, game, this.userId()) : null,
   });
+  // Aufgeklappte Ablage gilt nur für den angezeigten Stand
   readonly expanded = linkedSignal<string | null, number | null>({
     source: () => this.game().waiting_since,
     computation: () => null,

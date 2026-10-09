@@ -28,27 +28,9 @@
       >3</span
     >
   }
-  @if (hasSc()) {
-    <span
-      class="token token--sc"
-      role="img"
-      aria-label="Second Chance"
-      (animate.leave)="breakSc($event)"
-    >
-      <span class="half half--start"
-        ><span class="material-symbols-rounded fill">favorite</span></span
-      >
-      <span class="half half--end"
-        ><span class="material-symbols-rounded fill">favorite</span></span
-      >
-    </span>
-  }
-  @if (dealer()) {
-    <span class="token token--dealer" role="img" aria-label="Geber">G</span>
-  }
   @if (p.state === 'stayed') {
-    <span class="token token--stay" role="img" aria-label="Stehen geblieben">
-      <span class="material-symbols-rounded fill">pan_tool</span>
+    <span class="token token--stay" role="img" aria-label="Gesichert">
+      <span class="material-symbols-rounded fill">lock</span>
     </span>
   }
 </span>
