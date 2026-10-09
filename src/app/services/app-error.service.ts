@@ -6,6 +6,26 @@ import { describeSupabaseError } from './supabase-errors';
 import { ToastService } from './toast.service';
 
 const DEFAULT_TITLE = 'Das hat nicht geklappt';
+
+// ponytail: pro Seitenaufruf jeder Fehler nur einmal, reicht gegen Schleifen
+const storedErrors = new Set<string>();
+
+// Für die Fehler-Überwachung der Admins (client_errors); schlägt das fehl, bleibt es bei der
+// Konsole. Nur im Live-Build, nicht lokal.
+export function logClientError(message: string, stack: string | null = null): void {
+  if (isDevMode() || storedErrors.has(message)) return;
+  storedErrors.add(message);
+  supabase
+    .from('client_errors')
+    .insert({
+      message: message.slice(0, 1000),
+      stack: stack?.slice(0, 8000) ?? null,
+      url: location.href.slice(0, 500),
+      user_agent: navigator.userAgent.slice(0, 500),
+      app_version: version,
+    })
+    .then(({ error }) => error && console.error('Fehler nicht gespeichert.', error));
+}
 const DUPLICATE_WINDOW_MS = 5000;
 
 export interface ReportOptions {
@@ -44,11 +64,10 @@ export class AppErrorService {
 @Injectable()
 export class AppErrorHandler implements ErrorHandler {
   private readonly injector = inject(Injector);
-  private readonly stored = new Set<string>();
 
   handleError(error: unknown): void {
     console.error(error);
-    if (!isDevMode()) this.store(error);
+    this.store(error);
 
     // Außerhalb der laufenden Change Detection melden
     setTimeout(() => {
@@ -62,27 +81,13 @@ export class AppErrorHandler implements ErrorHandler {
     });
   }
 
-  // Für die Fehler-Überwachung der Admins; schlägt das fehl, bleibt es bei der Konsole
   private store(error: unknown): void {
     const cause = (error as { rejection?: unknown })?.rejection ?? error;
     const message =
       cause instanceof Error
         ? `${cause.name}: ${cause.message}`
         : String((cause as { message?: unknown })?.message ?? cause);
-    // ponytail: pro Seitenaufruf jeder Fehler nur einmal, reicht gegen Schleifen
-    if (this.stored.has(message)) return;
-    this.stored.add(message);
-
-    supabase
-      .from('client_errors')
-      .insert({
-        message: message.slice(0, 1000),
-        stack: cause instanceof Error ? cause.stack?.slice(0, 8000) : null,
-        url: location.href.slice(0, 500),
-        user_agent: navigator.userAgent.slice(0, 500),
-        app_version: version,
-      })
-      .then(({ error }) => error && console.error('Fehler nicht gespeichert.', error));
+    logClientError(message, cause instanceof Error ? (cause.stack ?? null) : null);
   }
 
   private describe(error: unknown): string {

@@ -98,6 +98,60 @@
       </div>
     </section>
 
+    <!-- Kurze Erklärung der App: Themen zum Aufklappen, immer nur eins offen -->
+    <section class="ui-section" aria-labelledby="home-help-title">
+      <h2 id="home-help-title" class="ui-section-title">So funktioniert's</h2>
+      <div class="ui-group ui-group--icons">
+        <details class="help-item" name="home-help">
+          <summary class="ui-row">
+            <span class="ui-row-icon" style="--tile: var(--tile-pink)">
+              <mat-icon aria-hidden="true">sports_esports</mat-icon>
+            </span>
+            <span class="ui-row-text">
+              <span class="ui-row-title">Was kann ich spielen?</span>
+              <span class="ui-row-sub">{{ games.length }} Spiele online, ab 2 Spielern</span>
+            </span>
+            <mat-icon class="ui-chevron help-chevron" aria-hidden="true">expand_more</mat-icon>
+          </summary>
+          <ul class="help-games">
+            @for (game of games; track game.key) {
+              <li>
+                <mat-icon aria-hidden="true">{{ game.icon }}</mat-icon>
+                <span>
+                  <strong>{{ game.name }}</strong>
+                  {{ game.blurb }}
+                </span>
+              </li>
+            }
+          </ul>
+        </details>
+        @for (topic of helpTopics; track topic.title) {
+          <details class="help-item" name="home-help">
+            <summary class="ui-row">
+              <span class="ui-row-icon" [style.--tile]="topic.tile">
+                <mat-icon aria-hidden="true">{{ topic.icon }}</mat-icon>
+              </span>
+              <span class="ui-row-text">
+                <span class="ui-row-title">{{ topic.title }}</span>
+                <span class="ui-row-sub">{{ topic.sub }}</span>
+              </span>
+              <mat-icon class="ui-chevron help-chevron" aria-hidden="true">expand_more</mat-icon>
+            </summary>
+            <ul class="help-points">
+              @for (point of topic.points; track $index) {
+                <li>{{ point }}</li>
+              }
+            </ul>
+            @if (topic.link; as link) {
+              <a class="help-link" [routerLink]="link.path">
+                {{ link.label }}<mat-icon aria-hidden="true">chevron_right</mat-icon>
+              </a>
+            }
+          </details>
+        }
+      </div>
+    </section>
+
     <section class="ui-section" aria-labelledby="home-activity-title">
       <h2 id="home-activity-title" class="ui-section-title">
         <span>Letzte Aktivität</span>

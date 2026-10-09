@@ -1,8 +1,10 @@
 @use '../table/seat-base';
 
-// Flip-7-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Ring, Zustände,
+// Flip-7-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Zustände, Fortschritt,
 // Aktions-Tokens, Rundenchip. Der Tisch setzt die Variablen je Layout und Spielerzahl.
 :host {
+  // Ohne Fortschrittsring füllt der Avatar den Platz (Tokens sitzen an seinen Ecken)
+  --avatar-k: 0.9;
   --freeze: #7dd3fc;
   --flip3: #ff9150;
   --sc: #c8386d;
@@ -90,57 +92,36 @@
   cursor: default;
 }
 
-// Avatar mit Ring und Tokens an festen Ecken
-.ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.ring path {
-  fill: none;
-  stroke: var(--f7-ring-off);
-  stroke-linecap: round;
-  stroke-width: 4;
-}
-
-.ring path.on {
-  stroke: var(--f7-ring-on);
-}
-
-:host([data-state='busted']) .ring path.on,
+// Rausgeflogen: Avatar grau; Flip 7: Goldrand um den Avatar
 :host([data-state='busted']) .avatar {
-  stroke: var(--f7-bust-bg);
   background: var(--f7-bust-bg) !important;
 }
 
-:host([data-state='flip7']) .ring {
-  filter: drop-shadow(0 0 var(--glow, 6px) var(--table-gold));
+:host([data-state='flip7']) .avatar {
+  box-shadow: 0 0 0 2px var(--table-gold);
 }
 
-:host([data-state='flip7']) .ring path {
-  stroke: var(--table-gold);
+// Fortschritt zu Flip 7 (--dot setzt der Tisch je Layout)
+.dots {
+  display: flex;
+  gap: 2px;
 }
 
-// Flip-7-Moment: einmal kurz pulsieren (Klasse nur direkt nach der Aktion)
-.ring--pulse {
-  animation: f7-ring-pulse 600ms ease-out;
+.dots span {
+  width: var(--dot, 4px);
+  height: var(--dot, 4px);
+  box-sizing: border-box;
+  border: 1px solid var(--table-slot-border);
+  border-radius: 50%;
 }
 
-// Weniger Bewegung: Gold-Ring ohne Leuchten (das Pulsieren kürzt styles.scss global)
-@media (prefers-reduced-motion: reduce) {
-  :host([data-state='flip7']) .ring {
-    filter: none;
-  }
+.dots span.on {
+  border: 0;
+  background: var(--f7-ring-on);
 }
 
-@keyframes f7-ring-pulse {
-  40% {
-    transform: scale(1.12);
-    filter: drop-shadow(0 0 16px var(--table-gold));
-  }
+:host([data-state='flip7']) .dots span.on {
+  background: var(--table-gold);
 }
 
 .token--start {

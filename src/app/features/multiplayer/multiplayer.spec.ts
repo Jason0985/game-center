@@ -27,6 +27,7 @@ describe('Multiplayer', () => {
   };
   let authService: {
     signInAsGuest: ReturnType<typeof vi.fn>;
+    nameAllowed: ReturnType<typeof vi.fn>;
     endGuestSession: ReturnType<typeof vi.fn>;
   };
   let authUser: ReturnType<typeof signal<{ id: string; is_anonymous?: boolean } | null>>;
@@ -60,6 +61,7 @@ describe('Multiplayer', () => {
     };
     authService = {
       signInAsGuest: vi.fn().mockResolvedValue({ error: null }),
+      nameAllowed: vi.fn().mockResolvedValue(true),
       endGuestSession: vi.fn().mockResolvedValue(true),
     };
     appErrors = { report: vi.fn() };
@@ -218,6 +220,19 @@ describe('Multiplayer', () => {
     expect(authService.signInAsGuest).toHaveBeenCalledWith('Alex');
     expect(lobbyService.joinLobbyByCode).toHaveBeenCalledWith('ABC234');
     expect(router.navigate).toHaveBeenCalledWith(['/multiplayer', 'lobby-3']);
+  });
+
+  it('blocks an inappropriate guest name before signing in', async () => {
+    authUser.set(null);
+    await render();
+    authService.nameAllowed.mockResolvedValue(false);
+
+    component.directCode.set('ABC234');
+    component.guestName.set('Fiesling');
+    await component.joinByCode(new Event('submit'));
+
+    expect(authService.signInAsGuest).not.toHaveBeenCalled();
+    expect(lobbyService.joinLobbyByCode).not.toHaveBeenCalled();
   });
 
   it('needs a display name to join without an account', async () => {

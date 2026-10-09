@@ -8,15 +8,6 @@ import {
   FLIP7_BONUS,
 } from './flip7.model';
 
-// 7 Ringsegmente (viewBox 48, Radius 22) im Uhrzeigersinn ab 12 Uhr, 4,5° Lücke je Seite
-const RING_PATHS = Array.from({ length: 7 }, (_, i) => {
-  const point = (degrees: number) => {
-    const rad = (degrees * Math.PI) / 180;
-    return `${(24 + 22 * Math.sin(rad)).toFixed(2)} ${(24 - 22 * Math.cos(rad)).toFixed(2)}`;
-  };
-  return `M${point((i * 360) / 7 + 4.5)} A22 22 0 0 1 ${point(((i + 1) * 360) / 7 - 4.5)}`;
-});
-
 const CHOICE_LABELS: Record<Flip7ActionCard, string> = {
   FREEZE: 'Einfrieren',
   FLIP3: 'Flip 3',
@@ -28,7 +19,7 @@ const CHOICE_ARIA: Record<Flip7ActionCard, (name: string) => string> = {
   SC: (name) => `${name} ein zweites Leben geben`,
 };
 
-// Namensschild am Tisch: Avatar mit Flip-7-Ring, Tokens, Name, ★ Gesamt und Rundenchip.
+// Namensschild am Tisch: Avatar, Tokens, Name, ★ Gesamt und Rundenchip.
 // Eigener Platz als Pille (mine) bzw. als Reiter am Bedienfeld (tab: nur Avatar und Name,
 // die Punkte stehen darunter im Bedienfeld). Als <button> während der Zielwahl, sonst
 // <div>. Größen kommen vom Tisch (CSS-Variablen).
@@ -65,11 +56,14 @@ export class Flip7Seat {
   // Rundenende-Tisch: Flip-7-Bonus am Chip zeigen
   readonly bonus = input(false);
 
-  readonly ringPaths = RING_PATHS;
   readonly flip7Bonus = FLIP7_BONUS;
   readonly choiceLabels = CHOICE_LABELS;
 
-  readonly filled = computed(() => distinctNumbers(this.player().cards));
+  // Verschiedene Zahlen auf dem Weg zu Flip 7, als 7 Punkte unter dem Namen
+  readonly dots = computed(() => {
+    const filled = distinctNumbers(this.player().cards);
+    return Array.from({ length: 7 }, (_, dot) => dot < filled);
+  });
   readonly points = computed(() => flip7Score(this.player().cards, this.player().state));
   readonly initial = computed(() => this.player().name.trim().charAt(0).toUpperCase() || '?');
   readonly color = computed(() => AVATAR_COLORS[this.player().seat % AVATAR_COLORS.length]);

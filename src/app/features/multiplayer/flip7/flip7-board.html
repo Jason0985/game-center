@@ -340,21 +340,10 @@
           }
         </div>
       }
-      @if (view.dots || view.mods) {
-        <div class="fan-meta">
-          @if (view.dots; as dots) {
-            <span class="dots" aria-hidden="true">
-              @for (on of dots; track $index) {
-                <span [class.on]="on"></span>
-              }
-            </span>
-          }
-          @if (view.mods) {
-            <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
-              view.mods
-            }}</span>
-          }
-        </div>
+      @if (view.mods) {
+        <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
+          view.mods
+        }}</span>
       }
     </div>
   }

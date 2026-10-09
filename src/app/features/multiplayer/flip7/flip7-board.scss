@@ -437,13 +437,16 @@
   --card-h: var(--fan-h);
 }
 
-// Handy: höchstens 4 je Reihe nebeneinander, darunter die nächste. Die Zahl steht oben, so
+// Handy: höchstens 3 je Reihe nebeneinander, darunter die nächste. Die Zahl steht oben, so
 // darf die zweite Reihe das untere Drittel der ersten verdecken und spart Höhe.
 :host([data-layout='phone']) .fan-cards {
   flex-wrap: wrap;
   justify-content: center;
   column-gap: 2px;
-  max-width: calc(var(--fan-w) * 4 + 6px);
+  // Der Fächer hängt absolut am schmalen Schild: ohne feste Breite schrumpft er auf eine
+  // Karte und jede Karte bekäme eine eigene Reihe
+  width: max-content;
+  max-width: calc(var(--fan-w) * 3 + 4px);
 }
 
 :host([data-layout='phone']) .fan-cards app-flip7-card {
@@ -451,7 +454,7 @@
   padding-top: calc(var(--fan-h) * 0.08);
 }
 
-:host([data-layout='phone']) .fan-cards app-flip7-card:nth-of-type(n + 5) {
+:host([data-layout='phone']) .fan-cards app-flip7-card:nth-of-type(n + 4) {
   margin-top: calc(var(--fan-h) * -0.38);
 }
 
@@ -487,30 +490,6 @@
   from {
     opacity: 0;
   }
-}
-
-.fan-meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.dots {
-  display: flex;
-  gap: 2px;
-}
-
-.dots span {
-  width: var(--dot);
-  height: var(--dot);
-  box-sizing: border-box;
-  border: 1px solid var(--table-slot-border);
-  border-radius: 50%;
-}
-
-.dots span.on {
-  border: 0;
-  background: var(--f7-ring-on);
 }
 
 .mod-chip {

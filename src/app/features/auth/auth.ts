@@ -168,6 +168,18 @@ export class Auth {
     this.errorMessage.set('');
     this.successMessage.set('');
 
+    const [usernameOk, displayNameOk] = await Promise.all([
+      this.authService.nameAllowed(values.username),
+      this.authService.nameAllowed(values.displayName),
+    ]);
+    if (!usernameOk || !displayNameOk) {
+      this.loading.set(false);
+      this.errorMessage.set(
+        `Dieser ${usernameOk ? 'Anzeigename' : 'Benutzername'} ist nicht erlaubt. Bitte wähle einen anderen.`,
+      );
+      return;
+    }
+
     const { error, data, guestCleanupFailed } = await this.authService.register(
       values.email,
       values.password,

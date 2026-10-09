@@ -18,6 +18,14 @@ export interface RecoveryLinkError {
   providedIn: 'root',
 })
 export class AuthService {
+  // Gleiche Namensprüfung wie in der Datenbank (name_is_allowed). Vorab, weil ein abgelehnter
+  // Name bei Registrierung und Gast-Anmeldung sonst nur als allgemeiner Fehler ankommt.
+  // Ohne Antwort true: die Datenbank prüft trotzdem.
+  async nameAllowed(name: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('name_is_allowed', { p_name: name });
+    return error ? true : data !== false;
+  }
+
   async register(email: string, password: string, username: string, displayName: string) {
     const guestToken = await this.guestAccessToken();
     const result = await supabase.auth.signUp({

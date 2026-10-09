@@ -17,12 +17,24 @@ export function turnArgs(turn: TableTurn): Record<string, unknown> {
   return { p_game_id: turn.id, p_waiting_since: turn.waiting_since };
 }
 
+// Abgebrochen statt gespeichert: Sperrkonflikt, Deadlock, Zeitüberschreitung
+const NOT_SAVED = ['40001', '40P01', '55P03', '57014'];
+const RETRY_MS = 800;
+
+// Kurze Aussetzer einmal wiederholen statt gleich zu melden. Sicher, weil abgebrochene Aufrufe
+// nichts gespeichert haben; ohne Antwort (Netz, Server) nur bei Zügen mit waiting_since, denn
+// einen schon gespeicherten Zug ignoriert die Datenbank beim zweiten Mal.
 export async function callRpc(
   fn: string,
   args: Record<string, unknown>,
   context: string,
 ): Promise<ActionResult> {
-  const { error } = await supabase.rpc(fn, args);
+  let { error } = await supabase.rpc(fn, args);
+  const code = error?.code ?? '';
+  if (error && (NOT_SAVED.includes(code) || (!code && 'p_waiting_since' in args))) {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+    ({ error } = await supabase.rpc(fn, args));
+  }
   return error ? lobbyFailure(context, error) : { ok: true };
 }
 
