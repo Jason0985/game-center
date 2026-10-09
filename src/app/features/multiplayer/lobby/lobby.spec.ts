@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -13,7 +14,8 @@ import { SkipboService } from '../skipbo/skipbo.service';
 import { UnoService } from '../uno/uno.service';
 import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
-import { LobbyGameDialog } from './lobby-game-dialog';
+import { LobbyGameSheet } from './lobby-game-sheet';
+import { LobbyInviteSheet } from './lobby-invite-sheet';
 
 function member(userId: string, ready = false): LobbyMember {
   return {
@@ -48,6 +50,7 @@ describe('Lobby', () => {
   let user: ReturnType<typeof signal<{ id: string } | null>>;
   let confirmResult: boolean;
   let dialog: { open: ReturnType<typeof vi.fn> };
+  let bottomSheet: { open: ReturnType<typeof vi.fn> };
   let toast: { success: ReturnType<typeof vi.fn>; show: ReturnType<typeof vi.fn> };
   let appErrors: { report: ReturnType<typeof vi.fn> };
   let lobbyService: {
@@ -79,6 +82,7 @@ describe('Lobby', () => {
     user = signal<{ id: string } | null>(null);
     confirmResult = true;
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(confirmResult) })) };
+    bottomSheet = { open: vi.fn() };
     toast = { success: vi.fn(), show: vi.fn() };
     appErrors = { report: vi.fn() };
     lobbyService = {
@@ -118,6 +122,7 @@ describe('Lobby', () => {
         { provide: SkipboService, useValue: skipbo },
         { provide: UnoService, useValue: uno },
         { provide: MatDialog, useValue: dialog },
+        { provide: MatBottomSheet, useValue: bottomSheet },
         { provide: ToastService, useValue: toast },
         { provide: AppErrorService, useValue: appErrors },
       ],
@@ -289,77 +294,52 @@ describe('Lobby', () => {
     expect(flip7.load).not.toHaveBeenCalled();
   });
 
-  it('saves the Uno house rules when picking Uno and toggling a rule', async () => {
-    const off = { stacking: false, sevenZero: false, drawUntilPlayable: false };
-    await render('host');
-    dialog.open.mockReturnValueOnce({ afterClosed: () => of('uno') });
-    (fixture.nativeElement.querySelector('.game-switch') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'uno', off);
+  it('opens game and invite sheets for the host only', async () => {
+    await render('host', lobbyDetail({ code: 'ABC234' }));
+    const button = (label: string): HTMLButtonElement =>
+      [...fixture.nativeElement.querySelectorAll('button')].find((item: HTMLButtonElement) =>
+        item.textContent?.includes(label),
+      );
 
-    fixture.destroy();
-    await render('host', lobbyDetail({ game_key: 'uno', game_settings: off }));
-    const switches = [
-      ...fixture.nativeElement.querySelectorAll('[role="switch"]'),
-    ] as HTMLButtonElement[];
-    expect(switches.map((button) => button.textContent?.trim())).toEqual([
-      '+2/+4 stapeln',
-      '7 tauscht, 0 dreht',
-      'Ziehen, bis es passt',
-    ]);
-    switches[0].click();
-    await fixture.whenStable();
-    expect(lobbyService.setGame).toHaveBeenLastCalledWith('lobby-1', 'uno', {
-      ...off,
-      stacking: true,
-    });
-
-    fixture.destroy();
-    await render(
-      'guest',
-      lobbyDetail({ game_key: 'uno', game_settings: { ...off, sevenZero: true } }),
+    button('Flip 7').click();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(
+      LobbyGameSheet,
+      expect.objectContaining({ data: expect.objectContaining({ lobbyId: 'lobby-1' }) }),
     );
-    expect(fixture.nativeElement.querySelector('[role="switch"]')).toBeNull();
+    button('Freie Plätze: 6').click();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(
+      LobbyInviteSheet,
+      expect.objectContaining({
+        data: expect.objectContaining({ code: 'ABC234', memberIds: ['host', 'guest'] }),
+      }),
+    );
+
+    fixture.destroy();
+    await render('guest');
+    expect(fixture.nativeElement.querySelector('.lobby-game')).toBeNull();
+    expect(text()).not.toContain('Freie Plätze');
+  });
+
+  it('shows guests the chosen settings', async () => {
+    await render('guest');
+    expect(text()).toContain('200 Punkte');
+
+    fixture.destroy();
+    const off = { stacking: false, sevenZero: true, drawUntilPlayable: false };
+    await render('guest', lobbyDetail({ game_key: 'uno', game_settings: off }));
+    expect(fixture.nativeElement.querySelectorAll('.lobby-chip').length).toBe(1);
     expect(text()).toContain('7 tauscht, 0 dreht');
   });
 
-  it('lets only the host change the game settings', async () => {
-    await render('host');
-    const segments = [
-      ...fixture.nativeElement.querySelectorAll('.segments button'),
-    ] as HTMLButtonElement[];
-    expect(segments.map((button) => button.textContent?.trim())).toEqual([
-      '100',
-      '150',
-      '200',
-      '300',
-      'Offen',
-    ]);
-    expect(segments[2].getAttribute('aria-pressed')).toBe('true');
-
-    segments[4].click();
-    await fixture.whenStable();
-    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'flip-7', { targetScore: null });
+  it('shows evening wins only once someone has won', async () => {
+    await render('guest');
+    expect(fixture.nativeElement.querySelector('.lobby-wins')).toBeNull();
 
     fixture.destroy();
-    await render('guest');
-    expect(fixture.nativeElement.querySelector('.segments')).toBeNull();
-    expect(text()).toContain('200 Punkte');
-  });
-
-  it('lets the host switch the game via the dialog', async () => {
-    await render('host');
-    expect(text()).toContain('Flip 7');
-    dialog.open.mockReturnValueOnce({ afterClosed: () => of('skip-bo') });
-
-    (fixture.nativeElement.querySelector('.game-switch') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    expect(dialog.open).toHaveBeenCalledWith(LobbyGameDialog, expect.anything());
-    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'skip-bo', {});
-
-    fixture.destroy();
-    await render('guest');
-    expect(fixture.nativeElement.querySelector('.game-switch')).toBeNull();
+    await render('guest', lobbyDetail({ wins: { guest: 2 } }));
+    const wins = [...fixture.nativeElement.querySelectorAll('.lobby-wins')] as HTMLElement[];
+    expect(wins.map((chip) => chip.getAttribute('aria-label'))).toEqual(['2 Siege', '0 Siege']);
+    expect(wins[0].classList).toContain('lobby-wins--leader');
   });
 
   it('cannot start without a chosen game', async () => {

@@ -1,55 +1,177 @@
-@use 'game-tile';
-
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 88dvh;
+  box-sizing: border-box;
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  letter-spacing: normal;
 }
 
-h2 {
-  margin: 0 0 10px;
+.done {
+  min-height: 44px;
+  margin-right: -6px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--color-primary-light);
+  font: inherit;
   font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// Gruppierte Zeilen im Sheet: eine Stufe heller als der Sheet-Grund
+.group {
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--radius-large);
+  background: var(--color-surface-raised);
+}
+
+.game,
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game + .game,
+.switch-row + .switch-row {
+  box-shadow: inset 0 0.5px 0 var(--color-border);
+}
+
+.game:disabled,
+.switch-row:disabled {
+  cursor: default;
+}
+
+.game:focus-visible,
+.switch-row:focus-visible,
+.segments button:focus-visible,
+.rules summary:focus-visible,
+.done:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.game {
+  min-height: 60px;
+  padding: 8px 14px;
+}
+
+.game[aria-checked='true'] {
+  background: color-mix(in srgb, var(--color-primary-light) 12%, transparent);
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--tile);
+  color: #fff;
+}
+
+.tile mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.game-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.game-name {
+  font-size: 16px;
   font-weight: 600;
 }
 
+.game-meta {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+// Gefüllter Haken: Kreis in Akzentfarbe statt eigener Icon-Variante
+.check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-on-primary-light);
+}
+
+.check mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .label {
-  margin: 16px 0 6px;
+  margin: 0 4px;
   color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 600;
 }
 
-.value {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
 .hint {
-  margin: 6px 0 0;
+  margin: 0 4px;
   color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.45;
 }
 
-// Segmentierte Auswahl ohne Material, damit sie auf dem Handy in eine Zeile passt
+// Segmentierte Auswahl, passt auf dem Handy in eine Zeile
 .segments {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
   padding: 2px;
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--color-fill);
 }
 
 .segments button {
-  min-height: 32px;
-  padding: 0 4px;
+  min-height: 40px;
+  padding: 0 2px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
@@ -63,88 +185,12 @@ h2 {
   cursor: default;
 }
 
-.segments button:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: -2px;
-}
-
-.rules {
-  margin-top: 14px;
-  font-size: 14px;
-}
-
-.rules summary {
-  min-height: 32px;
-  color: var(--color-primary-light);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.rules ul {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  color: var(--color-text-muted);
-  line-height: 1.55;
-}
-
-.game-tile {
-  padding: 10px 12px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--color-fill);
-}
-
-.game-tile--selected {
-  background: var(--color-primary-soft);
-}
-
-.game-switch {
-  flex: 0 0 auto;
-}
-
-.game-copy a {
-  color: var(--color-primary-light);
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
 // Uno-Hausregeln als Schalterzeilen
-.switches {
-  display: grid;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--color-fill);
-}
-
 .switch-row {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  min-height: 48px;
-  padding: 0 12px;
-  border: 0;
-  border-top: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
+  min-height: 52px;
+  padding: 0 14px 0 16px;
   font-size: 16px;
-  font-weight: 400;
-  text-align: left;
-  cursor: pointer;
-}
-
-.switch-row:first-child {
-  border-top: 0;
-}
-
-.switch-row:disabled {
-  cursor: default;
-}
-
-.switch-row:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: -2px;
 }
 
 .switch {
@@ -152,8 +198,8 @@ h2 {
   flex: none;
   width: 51px;
   height: 31px;
-  border-radius: 999px;
-  background: var(--color-fill);
+  border-radius: 16px;
+  background: rgba(118, 118, 128, 0.32);
   transition: background 120ms ease;
 }
 
@@ -164,7 +210,7 @@ h2 {
   width: 27px;
   height: 27px;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   content: '';
   transition: translate 120ms ease;
@@ -178,11 +224,13 @@ h2 {
   translate: 20px 0;
 }
 
-// Skip-Bo: Regler für die Stapelgröße mit Wert daneben
+// Skip-Bo: Regler mit Wert daneben
 .stock {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
 }
 
 .stock input {
@@ -191,8 +239,52 @@ h2 {
   accent-color: var(--color-primary-light);
 }
 
-.stock .value {
+.stock output {
   min-width: 2ch;
+  font-size: 16px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.rules summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 12px 0 16px;
+  font-size: 16px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.rules summary::-webkit-details-marker {
+  display: none;
+}
+
+.rules summary span {
+  flex: 1;
+}
+
+.rules-icon {
+  color: var(--color-primary-light);
+}
+
+.rules-chevron {
+  color: var(--color-text-subtle);
+  transition: rotate 120ms ease;
+}
+
+.rules[open] .rules-chevron {
+  rotate: 180deg;
+}
+
+.rules ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 16px 16px 34px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
 }

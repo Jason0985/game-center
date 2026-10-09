@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { vi } from 'vitest';
 import { FriendRelation, FriendsService } from '../../../services/friends.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ToastService } from '../../../services/toast.service';
 import { Profile, ProfileRole } from '../../profile/profile.model';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
-import { LobbyInviteDialog, LobbyInviteDialogData } from './lobby-invite-dialog';
+import { LobbyInviteSheet, LobbyInviteSheetData } from './lobby-invite-sheet';
 
 function relation(
   id: string,
@@ -24,9 +24,9 @@ function relation(
   return { friendshipId: `f-${id}`, profile, status, outgoing: false };
 }
 
-describe('LobbyInviteDialog', () => {
-  let fixture: ComponentFixture<LobbyInviteDialog>;
-  let component: LobbyInviteDialog;
+describe('LobbyInviteSheet', () => {
+  let fixture: ComponentFixture<LobbyInviteSheet>;
+  let component: LobbyInviteSheet;
   let inviteFriend: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -39,43 +39,51 @@ describe('LobbyInviteDialog', () => {
     ];
 
     await TestBed.configureTestingModule({
-      imports: [LobbyInviteDialog],
+      imports: [LobbyInviteSheet],
       providers: [
         {
-          provide: MAT_DIALOG_DATA,
-          useValue: { lobbyId: 'lobby-1', userId: 'host', memberIds: ['host', 'ben'] } satisfies LobbyInviteDialogData,
+          provide: MAT_BOTTOM_SHEET_DATA,
+          useValue: {
+            lobbyId: 'lobby-1',
+            userId: 'host',
+            code: 'ABC234',
+            memberIds: ['host', 'ben'],
+          } satisfies LobbyInviteSheetData,
         },
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: FriendsService, useValue: { getRelations: vi.fn().mockResolvedValue(relations) } },
+        { provide: MatBottomSheetRef, useValue: { dismiss: vi.fn() } },
+        {
+          provide: FriendsService,
+          useValue: { getRelations: vi.fn().mockResolvedValue(relations) },
+        },
         { provide: MultiplayerLobbyService, useValue: { inviteFriend } },
         { provide: AppErrorService, useValue: { report: vi.fn() } },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(LobbyInviteDialog);
+    fixture = TestBed.createComponent(LobbyInviteSheet);
     component = fixture.componentInstance;
     await fixture.whenStable();
     fixture.detectChanges();
   });
 
-  const buttonLabels = (): (string | null)[] =>
-    [...fixture.nativeElement.querySelectorAll('.user-row button')].map((button) =>
-      (button as HTMLButtonElement).getAttribute('aria-label'),
-    );
+  // Je Freund: Einladen-Knopf oder Status
+  const buttonLabels = (): (string | null | undefined)[] =>
+    [...fixture.nativeElement.querySelectorAll('.row')].map((row) => {
+      const button = (row as HTMLElement).querySelector('button');
+      return button
+        ? button.getAttribute('aria-label')
+        : (row as HTMLElement).querySelector('.row-state')?.textContent?.trim();
+    });
 
   it('lists accepted friends with their invite state', () => {
-    expect(buttonLabels()).toEqual([
-      'Anna: Einladen',
-      'Ben: Bereits in der Lobby',
-      'Carl: Einladen',
-    ]);
+    expect(buttonLabels()).toEqual(['Anna einladen', 'In der Lobby', 'Carl einladen']);
   });
 
   it('filters friends by name', () => {
     component.search.set('CA');
     fixture.detectChanges();
 
-    expect(buttonLabels()).toEqual(['Carl: Einladen']);
+    expect(buttonLabels()).toEqual(['Carl einladen']);
 
     component.search.set('xyz');
     fixture.detectChanges();
@@ -89,7 +97,7 @@ describe('LobbyInviteDialog', () => {
     fixture.detectChanges();
 
     expect(inviteFriend).toHaveBeenCalledWith('lobby-1', 'anna');
-    expect(buttonLabels()[0]).toBe('Anna: Eingeladen');
+    expect(buttonLabels()[0]).toBe('checkEingeladen');
     expect(success).toHaveBeenCalledWith('Einladung gesendet', 'Anna kann jetzt beitreten.');
   });
 

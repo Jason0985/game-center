@@ -1,139 +1,120 @@
-<h2 id="lobby-game-title">Spiel</h2>
+<div class="sheet-grip" aria-hidden="true"></div>
+<div class="sheet-head">
+  <h2>Spiel &amp; Regeln</h2>
+  <button type="button" class="done" (click)="sheet.dismiss()">Fertig</button>
+</div>
 
-@if (selectedGame() || isHost()) {
-  <div class="game-tile" [class.game-tile--selected]="selectedGame()">
-    <mat-icon class="game-icon" aria-hidden="true">{{ selectedGame()?.icon ?? 'casino' }}</mat-icon>
-    <span class="game-copy">
-      <strong>{{ selectedGame()?.name ?? 'Noch kein Spiel' }}</strong>
-      @if (selectedGame()?.url; as url) {
-        <a [href]="url" target="_blank" rel="noopener">{{ url }}</a>
+<div class="group" role="radiogroup" aria-label="Spiel">
+  @for (option of games; track option.key) {
+    <button
+      type="button"
+      role="radio"
+      class="game"
+      [attr.aria-checked]="option.key === gameKey()"
+      [disabled]="locked()"
+      (click)="selectGame(option.key)"
+    >
+      <span class="tile" [style.--tile]="option.tile">
+        <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+      </span>
+      <span class="game-text">
+        <span class="game-name">{{ option.name }}</span>
+        <span class="game-meta">{{ option.meta }}</span>
+      </span>
+      @if (option.key === gameKey()) {
+        <span class="check" aria-hidden="true"><mat-icon>check</mat-icon></span>
       }
-    </span>
-    @if (isHost()) {
-      <button
-        mat-stroked-button
-        type="button"
-        class="game-switch"
-        [disabled]="disabled() || saving()"
-        (click)="openGameDialog()"
-      >
-        {{ selectedGame() ? 'Spiel wechseln' : 'Spiel wählen' }}
-      </button>
-    }
-  </div>
-} @else {
-  <p class="hint">Der Host wählt noch ein Spiel aus.</p>
-}
+    </button>
+  }
+</div>
 
-<!-- Punkteziel und Kurzregeln gibt es nur für Flip 7 (ohne Spiel sieht der Host sie schon) -->
-@if (flip7() || (isHost() && !gameKey())) {
-  <p class="label" id="lobby-target-label">Punkteziel</p>
-  @if (isHost()) {
-    <div class="segments" role="group" aria-labelledby="lobby-target-label">
-      @for (option of targetOptions; track option) {
+@switch (gameKey()) {
+  @case ('flip-7') {
+    <div class="field">
+      <span class="label" id="lobby-target-label">Punkteziel</span>
+      <div class="segments" role="group" aria-labelledby="lobby-target-label">
+        @for (option of targetOptions; track option) {
+          <button
+            type="button"
+            [attr.aria-pressed]="target() === option"
+            [disabled]="locked()"
+            (click)="selectTarget(option)"
+          >
+            {{ option }}
+          </button>
+        }
         <button
           type="button"
-          [attr.aria-pressed]="flip7() && target() === option"
-          [disabled]="disabled() || saving()"
-          (click)="selectTarget(option)"
+          [attr.aria-pressed]="target() === null"
+          [disabled]="locked()"
+          (click)="selectTarget(null)"
         >
-          {{ option }}
+          Offen
         </button>
+      </div>
+      @if (target() === null) {
+        <p class="hint">Ohne Punkteziel – der Host beendet das Spiel.</p>
       }
-      <button
-        type="button"
-        [attr.aria-pressed]="flip7() && target() === null"
-        [disabled]="disabled() || saving()"
-        (click)="selectTarget(null)"
-      >
-        Offen
-      </button>
     </div>
-  } @else {
-    <p class="value">{{ target() === null ? 'Offen' : target() + ' Punkte' }}</p>
   }
-  @if (target() === null) {
-    <p class="hint">Ohne Punkteziel – der Host beendet das Spiel.</p>
-  }
-
-  <details class="rules">
-    <summary>Kurzregeln</summary>
-    <ul>
-      <li>Wer am Zug ist, zieht eine Karte oder bleibt stehen und sichert seine Punkte.</li>
-      <li>Eine Zahl doppelt? Dann bist du raus und bekommst 0 Punkte für die Runde.</li>
-      <li>7 verschiedene Zahlen sind ein Flip 7: Die Runde endet sofort, +15 Bonus.</li>
-      <li>×2 verdoppelt die Summe deiner Zahlen, Plus-Karten kommen oben drauf.</li>
-      <li>
-        Aktionen: Einfrieren (Punkte sichern, raus), Drei ziehen und Zweite Chance (rettet einmal
-        vor einer doppelten Zahl).
-      </li>
-    </ul>
-  </details>
-}
-
-<!-- Skip-Bo: Karten im eigenen Spielstapel (der Host stellt ein, die anderen sehen den Wert) -->
-@if (skipBo()) {
-  <p class="label" id="lobby-stock-label">Karten im Spielstapel</p>
-  @if (isHost()) {
-    <div class="stock">
-      <input
-        type="range"
-        [min]="stockMin"
-        [max]="stockMax"
-        step="1"
-        [value]="stockDraft()"
-        [disabled]="disabled() || saving()"
-        aria-labelledby="lobby-stock-label"
-        (input)="stockDraft.set(+$any($event.target).value)"
-        (change)="selectStockSize(+$any($event.target).value)"
-      />
-      <output class="value">{{ stockDraft() }}</output>
+  @case ('uno') {
+    <div class="field">
+      <span class="label" id="lobby-rules-label">Hausregeln</span>
+      <div class="group" role="group" aria-labelledby="lobby-rules-label">
+        @for (rule of houseRules; track rule.key) {
+          <button
+            type="button"
+            role="switch"
+            class="switch-row"
+            [attr.aria-checked]="unoRules()[rule.key]"
+            [disabled]="locked()"
+            (click)="toggleHouseRule(rule.key)"
+          >
+            <span>{{ rule.label }}</span>
+            <span class="switch" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
     </div>
-  } @else {
-    <p class="value">{{ stockSize() === null ? 'Standard' : stockSize() + ' Karten' }}</p>
   }
-  @if (stockSize() === null) {
-    <p class="hint">Standard: 30 Karten, ab 5 Spielern 20.</p>
+  @case ('skip-bo') {
+    <div class="field">
+      <label class="label" for="lobby-stock">Karten im Spielstapel</label>
+      <div class="group stock">
+        <input
+          id="lobby-stock"
+          type="range"
+          [min]="stockMin"
+          [max]="stockMax"
+          step="1"
+          [value]="stockDraft()"
+          [disabled]="locked()"
+          (input)="stockDraft.set(+$any($event.target).value)"
+          (change)="selectStockSize(+$any($event.target).value)"
+        />
+        <output for="lobby-stock">{{ stockDraft() }}</output>
+      </div>
+      @if (stockSize() === null) {
+        <p class="hint">Standard: 30 Karten, ab 5 Spielern 20.</p>
+      }
+    </div>
   }
 }
 
-<!-- Uno: Hausregeln (der Host schaltet sie, die anderen sehen die aktiven) -->
-@if (uno()) {
-  <p class="label" id="lobby-rules-label">Hausregeln</p>
-  @if (isHost()) {
-    <div class="switches" role="group" aria-labelledby="lobby-rules-label">
-      @for (rule of houseRules; track rule.key) {
-        <button
-          type="button"
-          role="switch"
-          class="switch-row"
-          [attr.aria-checked]="unoRules()[rule.key]"
-          [disabled]="disabled() || saving()"
-          (click)="toggleHouseRule(rule.key)"
-        >
-          <span>{{ rule.label }}</span>
-          <span class="switch" aria-hidden="true"></span>
-        </button>
-      }
-    </div>
-  } @else {
-    <p class="value">
-      @for (rule of activeHouseRules(); track rule.key; let last = $last) {
-        {{ rule.label }}{{ last ? '' : ' · ' }}
-      } @empty {
-        Standardregeln
-      }
-    </p>
-  }
+@if (game()?.url) {
+  <p class="hint">{{ game()?.name }} läuft extern – die Lobby zeigt allen den Link.</p>
+}
 
-  <details class="rules">
-    <summary>Kurzregeln</summary>
+@if (rules().length) {
+  <details class="group rules">
+    <summary>
+      <mat-icon class="rules-icon" aria-hidden="true">menu_book</mat-icon>
+      <span>Kurzregeln</span>
+      <mat-icon class="rules-chevron" aria-hidden="true">expand_more</mat-icon>
+    </summary>
     <ul>
-      @for (rule of unoRulesText; track $index) {
+      @for (rule of rules(); track $index) {
         <li>{{ rule }}</li>
-      }
-      @for (rule of activeHouseRules(); track rule.key) {
-        <li>{{ rule.rule }}</li>
       }
     </ul>
   </details>

@@ -151,8 +151,8 @@ export class HistorySheet {
 export function openHistorySheet(sheet: MatBottomSheet, data: HistoryData): MatBottomSheetRef {
   return sheet.open(HistorySheet, {
     data,
-    panelClass: 'game-history-panel',
-    backdropClass: 'game-history-backdrop',
+    panelClass: 'app-sheet-panel',
+    backdropClass: 'app-sheet-backdrop',
     ariaLabel: 'Verlauf',
   });
 }

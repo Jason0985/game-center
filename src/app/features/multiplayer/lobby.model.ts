@@ -1,5 +1,7 @@
 import { Profile } from '../profile/profile.model';
-import { UNO_HOUSE_RULES } from './uno/uno.model';
+import { UNO_DEFAULT_SETTINGS, UNO_HOUSE_RULES, UNO_RULES, UnoSettings } from './uno/uno.model';
+import { FLIP7_DEFAULT_TARGET, FLIP7_RULES } from './flip7/flip7.model';
+import { SKIPBO_RULES } from './skipbo/skipbo.model';
 
 export type LobbyStatus = 'open' | 'started';
 
@@ -69,17 +71,16 @@ export function eveningWinners(
   return { names, wins };
 }
 
-// Entspricht ready * 2 >= Mitglieder in start_lobby
-export const requiredReadyCount = (memberCount: number): number => Math.ceil(memberCount / 2);
-
+// Wie start_lobby: mindestens 2 Spieler und alle bereit
 export const canStartLobby = (members: LobbyMember[]): boolean =>
-  members.length >= LOBBY_MIN_MEMBERS &&
-  members.filter((member) => member.ready).length >= requiredReadyCount(members.length);
+  members.length >= LOBBY_MIN_MEMBERS && members.every((member) => member.ready);
 
 // Wählbare Spiele; Grenzen wie in der DB (start_lobby)
 export const GAMES = [
   {
     key: 'flip-7',
+    tile: 'var(--tile-pink)',
+    tagline: 'Karten ziehen, nicht doppeln',
     name: 'Flip 7',
     icon: 'style',
     blurb: 'Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!',
@@ -88,6 +89,8 @@ export const GAMES = [
   },
   {
     key: 'skip-bo',
+    tile: 'var(--tile-blue)',
+    tagline: 'Stapel leer spielen',
     name: 'Skip-Bo',
     icon: 'layers',
     blurb: 'Spielstapel leer spielen – Karten von 1 bis 12 in die Mitte legen.',
@@ -96,6 +99,8 @@ export const GAMES = [
   },
   {
     key: 'uno',
+    tile: 'var(--tile-orange)',
+    tagline: 'Farbe oder Zahl bedienen',
     name: 'Uno',
     icon: 'view_carousel',
     blurb: 'Farbe oder Zahl bedienen – wer zuerst alle Karten los ist, gewinnt.',
@@ -105,6 +110,8 @@ export const GAMES = [
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
+    tile: 'var(--tile-green)',
+    tagline: 'Extern auf richup.io',
     name: 'Monopoly',
     icon: 'apartment',
     blurb: 'Straßen kaufen, Häuser bauen, Miete kassieren – gespielt auf richup.io.',
@@ -132,6 +139,24 @@ export function startBlocker(
     : null;
 }
 
+// Einstellungen kurz, z. B. "bis 200 Punkte", "Offen", "15 Karten" oder "Stapeln, 7-0"; null ohne
+export function settingsLabel(
+  gameKey: string | null | undefined,
+  settings: LobbyGameSettings | null | undefined,
+): string | null {
+  if (gameKey === 'uno') {
+    const rules = UNO_HOUSE_RULES.filter((rule) => settings?.[rule.key]).map((rule) => rule.short);
+    return rules.length ? rules.join(', ') : null;
+  }
+  if (gameKey === 'skip-bo') {
+    return settings?.stockSize ? `${settings.stockSize} Karten` : null;
+  }
+  if (gameKey !== 'flip-7') return null;
+
+  const target = settings?.targetScore;
+  return typeof target === 'number' ? `bis ${target} Punkte` : 'Offen';
+}
+
 // z. B. "Flip 7 · bis 200 Punkte", "Flip 7 · Offen", "Skip-Bo · 15 Karten" oder "Uno · Stapeln, 7-0"
 export function gameLabel(
   gameKey: string | null | undefined,
@@ -141,16 +166,28 @@ export function gameLabel(
   if (!name) {
     return 'Noch kein Spiel gewählt';
   }
+  const detail = settingsLabel(gameKey, settings);
+  return detail ? `${name} · ${detail}` : name;
+}
 
-  if (gameKey === 'uno') {
-    const rules = UNO_HOUSE_RULES.filter((rule) => settings?.[rule.key]).map((rule) => rule.short);
-    return rules.length ? `${name} · ${rules.join(', ')}` : name;
-  }
-  if (gameKey === 'skip-bo') {
-    return settings?.stockSize ? `${name} · ${settings.stockSize} Karten` : name;
-  }
-  if (gameKey !== 'flip-7') return name;
+// Punkteziel einer Flip-7-Lobby: ohne Eintrag der Standard, null = offen
+export const flip7TargetOf = (settings: LobbyGameSettings | null | undefined): number | null =>
+  settings?.targetScore === undefined ? FLIP7_DEFAULT_TARGET : settings.targetScore;
 
-  const target = settings?.targetScore;
-  return typeof target === 'number' ? `${name} · bis ${target} Punkte` : `${name} · Offen`;
+export const unoRulesOf = (settings: LobbyGameSettings | null | undefined): UnoSettings => ({
+  stacking: settings?.stacking ?? UNO_DEFAULT_SETTINGS.stacking,
+  sevenZero: settings?.sevenZero ?? UNO_DEFAULT_SETTINGS.sevenZero,
+  drawUntilPlayable: settings?.drawUntilPlayable ?? UNO_DEFAULT_SETTINGS.drawUntilPlayable,
+});
+
+// Kurzregeln je Spiel (Uno mit den aktiven Hausregeln); leer für externe Spiele
+export function rulesOf(
+  gameKey: string | null | undefined,
+  settings: LobbyGameSettings | null | undefined,
+): readonly string[] {
+  if (gameKey === 'flip-7') return FLIP7_RULES;
+  if (gameKey === 'skip-bo') return SKIPBO_RULES;
+  if (gameKey !== 'uno') return [];
+  const active = unoRulesOf(settings);
+  return [...UNO_RULES, ...UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.rule)];
 }

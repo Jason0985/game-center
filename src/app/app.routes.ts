@@ -36,6 +36,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'collection/table-tennis',
+    loadComponent: () =>
+      import('./features/collection/table-tennis/tt-counter').then((module) => module.TtCounter),
+  },
+  {
+    path: 'collection/table-tennis-tournament',
+    loadComponent: () =>
+      import('./features/collection/table-tennis/tt-tournament').then(
+        (module) => module.TtTournament,
+      ),
+  },
+  {
     path: 'collection/arrival-planner',
     loadComponent: () =>
       import('./features/collection/arrival-planner/arrival-planner').then(

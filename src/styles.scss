@@ -743,16 +743,41 @@ button.mat-mdc-button-base:not(.mat-mdc-fab):not(.mat-mdc-mini-fab):not(.mat-mdc
   outline-offset: -3px;
 }
 
-// Spieltisch: Verlauf als Bottom-Sheet
-.mat-bottom-sheet-container.game-history-panel {
+// Bottom-Sheets (Spielverlauf, Lobby: Einladen, Spiel & Regeln)
+.app-sheet-panel .mat-bottom-sheet-container {
   --mat-bottom-sheet-container-background-color: var(--color-surface);
-  --mat-bottom-sheet-container-shape: 24px;
+  // Material rundet nur ab Tablet-Breite (-medium/-large), am Handy sonst eckig
+  border-radius: 24px 24px 0 0;
   max-height: none;
   padding: 0;
   box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.4);
 }
 
-.game-history-backdrop {
+// Griff und Kopfzeile der Lobby-Sheets
+.app-sheet-panel .sheet-grip {
+  flex: none;
+  align-self: center;
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-border-strong);
+}
+
+.app-sheet-panel .sheet-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -6px;
+}
+
+.app-sheet-panel .sheet-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.app-sheet-backdrop {
   background: rgba(5, 6, 8, 0.6);
 }
 
