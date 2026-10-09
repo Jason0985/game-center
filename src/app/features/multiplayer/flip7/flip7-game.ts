@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame, injectTableHistory } from '../table/table-game';
+import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
 import { Flip7Board } from './flip7-board';
 import { Flip7Final } from './flip7-final';
 import { Flip7RoundSummary } from './flip7-round-summary';
@@ -95,12 +95,16 @@ export class Flip7GameView {
     if (!game) return null;
     return `Runde ${game.round_no} · ${game.target_score ? 'Ziel ' + game.target_score : 'Offen'}`;
   });
+  // Endet das Spiel mit dem letzten Zug, bleibt der Tisch so lange wie am Rundenende stehen
+  readonly showFinal = injectFinalDelay(
+    computed(() => this.game()?.status ?? null),
+    ROUND_END_TABLE_S * 1000,
+  );
   // Tisch statt Übersicht/Endstand (nimmt die volle Höhe, scrollt nicht)
   readonly boardView = computed(() => {
     const game = this.game();
-    return (
-      !!game && game.status !== 'finished' && (game.status === 'playing' || this.showRoundTable())
-    );
+    if (!game || this.showFinal()) return false;
+    return game.status !== 'round_over' || this.showRoundTable();
   });
   readonly rules = { title: 'Flip 7 – Regeln', rules: FLIP7_RULES };
 

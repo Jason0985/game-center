@@ -1,5 +1,5 @@
 // Skip-Bo: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261001130000_skipbo.sql); hier wird nur gespiegelt,
+// (supabase/migrations/20260918220000_core_schema.sql, Abschnitt Skip-Bo); hier wird nur gespiegelt,
 // was für Anzeige und Zielwahl nötig ist.
 
 import { cardCount, TableLayout } from '../table/table.model';

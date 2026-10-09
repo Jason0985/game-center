@@ -64,11 +64,14 @@ Geräten synchronisiert. Beim Löschen der Browserdaten können sie verloren geh
 
 ## Supabase-Datenbank
 
-Die versionierten Migrationen liegen in `supabase/migrations/`:
+Die Datenbank steckt in `supabase/migrations/20260918220000_core_schema.sql`. Die Datei
+baut alles auf einem leeren Supabase-Projekt auf: Profile, Rollen, Freunde, Mitteilungen,
+Lobbys mit Gästen, Flip 7, Skip-Bo, Uno, Statistik, Push-Nachrichten, Fehler-Überwachung
+und Namensfilter. Sie lässt sich gefahrlos erneut ausführen.
 
-- `20260918220000_core_schema.sql`: Profile, Ranking-Spiele, Freundschaften,
-  RLS-Policies und automatisches Erstellen eines Profils bei Registrierung
-- `20260918221000_notifications.sql`: Benachrichtigungen und RLS-Policies
+Neue Änderungen kommen als kleine Datei `<JJJJMMTTHHMMSS>_<was>.sql` daneben und werden
+nach dem Core-Schema ausgeführt. Für Push zusätzlich die Vault-Secrets `project_url` und
+`push_webhook_secret` anlegen (siehe Abschnitt Push im Schema).
 
 Die Migrationen wurden als Grundlage für ein getrenntes Staging- und
 Produktionsprojekt erstellt. Für Live sollte Entwicklung nicht dauerhaft gegen

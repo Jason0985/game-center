@@ -285,20 +285,21 @@ export function injectTableHistory<E extends { at?: string }>(options: {
   };
 }
 
-// Endstand: beim Laden eines beendeten Spiels sofort, endet es live, bleibt der Tisch
-// noch delayMs stehen (letzter Flug, Sieg-Puls)
+// Endstand: beim Laden eines beendeten Spiels sofort; endet es live mit dem letzten Zug, bleibt
+// der Tisch noch delayMs stehen (letzter Flug, Bust oder Sieg sehen). Nur direkt aus 'playing',
+// nicht z. B. bei Flip 7 aus der Rundenübersicht heraus.
 export function injectFinalDelay(status: Signal<string | null>, delayMs: number): Signal<boolean> {
   const show = signal(false);
-  // Spiel lief schon in dieser Ansicht: dann kommt der Endstand verzögert
-  let seenPlaying = false;
+  let previous: string | null = null;
   effect((onCleanup) => {
     const current = status();
-    if (current === 'playing') seenPlaying = true;
+    const fromPlaying = previous === 'playing';
+    previous = current;
     if (current !== 'finished') {
       show.set(false);
       return;
     }
-    if (!seenPlaying) {
+    if (!fromPlaying) {
       show.set(true);
       return;
     }
