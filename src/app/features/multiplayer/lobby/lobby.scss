@@ -8,6 +8,47 @@
   margin-top: 24px;
 }
 
+.lobby-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+// Schließen/Verlassen klein oben rechts statt als großer Knopf unten
+.lobby-leave {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-danger-light);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lobby-leave mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.lobby-leave:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lobby-leave:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
 .lobby-title {
   font-size: 28px;
   overflow-wrap: anywhere;
@@ -21,7 +62,7 @@
 .lobby-code-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 2px;
   padding: 10px 6px 10px 16px;
 }
 
@@ -61,7 +102,8 @@
 }
 
 .lobby-member {
-  padding-right: 8px;
+  gap: 10px;
+  padding-right: 6px;
 }
 
 .lobby-member-you {
@@ -91,23 +133,83 @@
   background: var(--color-success-light);
 }
 
-.lobby-host-badge {
-  flex: none;
-  margin-right: 6px;
-  padding: 3px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
+.lobby-host {
   color: var(--color-primary-light);
-  font-size: 12px;
   font-weight: 600;
 }
 
-.lobby-kick-button:hover:not(:disabled) {
-  color: var(--color-danger-light);
+// Siege an diesem Abend; die meisten (auch geteilt) in Gold
+.lobby-wins {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  min-width: 44px;
+  box-sizing: border-box;
+  justify-content: center;
+  padding: 4px 9px 4px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
+// Ohne Menü-Knopf (Host-Zeile, Nicht-Hosts) bündig mit den anderen Zeilen
+.lobby-wins:last-child {
+  margin-right: 8px;
+}
+
+.lobby-wins mat-icon {
+  width: 17px;
+  height: 17px;
+  font-size: 17px;
+}
+
+.lobby-wins--none {
+  color: var(--color-text-subtle);
+}
+
+.lobby-wins--leader {
+  background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+  color: var(--color-warning);
+}
+
+.lobby-member-menu {
+  flex: none;
+  width: 44px;
+  margin-left: -6px;
+}
+
+// Klebt über der Tab-Leiste (~62px hoch), solange man weiter oben scrollt
 .lobby-actions {
+  position: sticky;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  padding: 10px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.lobby-status {
+  margin: 0 4px 10px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.lobby-buttons {
   display: flex;
-  flex-direction: column;
   gap: 10px;
+}
+
+.lobby-buttons .ui-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  white-space: nowrap;
 }

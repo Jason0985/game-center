@@ -15,29 +15,33 @@
       />
     </label>
 
+    <!-- Abschnitte zum Auf- und Zuklappen (Überschrift antippen) -->
     @for (group of groups(); track group.title) {
-      <section class="ui-section" [attr.aria-label]="group.title">
-        <h2 class="ui-section-title">{{ group.title }}</h2>
+      <details
+        class="ui-section collection-section"
+        [open]="group.open"
+        (toggle)="toggleGroup(group.title, $event)"
+      >
+        <summary class="ui-section-title collection-summary">
+          <span>{{ group.title }}</span>
+          <mat-icon class="collection-summary-icon" aria-hidden="true">expand_more</mat-icon>
+        </summary>
         <div class="ui-group collection-group">
           @for (item of group.items; track item.title) {
-            <a class="ui-row collection-row" [routerLink]="item.path">
-              <span class="ui-row-icon ui-row-icon--large" [style.--tile]="item.tile">
-                <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
-              </span>
-              <span class="ui-row-text">
-                <span class="collection-title">
-                  <span class="ui-row-title">{{ item.title }}</span>
-                  @for (tag of item.roleTags; track tag.role) {
-                    <span class="collection-tag" [attr.data-role]="tag.role">{{ tag.label }}</span>
-                  }
-                </span>
-                <span class="ui-row-sub collection-sub">{{ item.description }}</span>
-              </span>
-              <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
-            </a>
+            @if (item.href) {
+              <a class="ui-row collection-row" [href]="item.href" target="_blank" rel="noopener">
+                <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: item }" />
+                <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+              </a>
+            } @else {
+              <a class="ui-row collection-row" [routerLink]="item.path">
+                <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: item }" />
+                <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+              </a>
+            }
           }
         </div>
-      </section>
+      </details>
     } @empty {
       <div class="ui-group ui-empty">
         <mat-icon aria-hidden="true">search_off</mat-icon>
@@ -47,3 +51,18 @@
     }
   </div>
 </div>
+
+<ng-template #rowTpl let-item>
+  <span class="ui-row-icon ui-row-icon--large" [style.--tile]="item.tile">
+    <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+  </span>
+  <span class="ui-row-text">
+    <span class="collection-title">
+      <span class="ui-row-title">{{ item.title }}</span>
+      @for (tag of item.roleTags; track tag.role) {
+        <span class="collection-tag" [attr.data-role]="tag.role">{{ tag.label }}</span>
+      }
+    </span>
+    <span class="ui-row-sub collection-sub">{{ item.description }}</span>
+  </span>
+</ng-template>

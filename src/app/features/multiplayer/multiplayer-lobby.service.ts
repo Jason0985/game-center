@@ -108,7 +108,7 @@ export class MultiplayerLobbyService {
     const { data, error } = await supabase
       .from('multiplayer_lobbies')
       .select(
-        'id, host_user_id, status, game_key, game_settings, created_at, started_at,' +
+        'id, host_user_id, status, game_key, game_settings, created_at, started_at, wins,' +
           ' multiplayer_lobby_members(user_id, ready, joined_at), multiplayer_lobby_codes(code)',
       )
       .eq('id', lobbyId)

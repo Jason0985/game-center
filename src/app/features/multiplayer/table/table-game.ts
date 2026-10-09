@@ -22,6 +22,10 @@ import { eventAge, formatClock } from './table.model';
 
 const CUE_PRIORITY: readonly FeedbackCue[] = ['win', 'bust', 'alert', 'turn', 'tap'];
 const LOAD_RETRY_MS = 1500;
+// Sicherheitsnetz, falls ein Realtime-Event verloren geht: ohne neues Laden so lange
+// sichtbar am Tisch, wird einmal nachgeladen (sonst wartet der Tisch ewig auf jemanden,
+// dessen App den Zug nie mitbekommen hat)
+const STALE_RELOAD_MS = 15_000;
 
 // Gemeinsamer Rahmen der Spielansichten (Flip 7, Skip-Bo, Uno). Nur im Injection Context
 // (Feld-Initialisierer der Komponente).
@@ -67,11 +71,13 @@ export function injectTableGame<
   let destroyed = false;
 
   // retry: ein kurzer Aussetzer beim Nachladen soll nicht gleich als Fehler auftauchen
+  let loadedAt = Date.now();
   const load = async (retry = true): Promise<void> => {
     if (destroyed) return;
 
     const sequence = ++loadSequence;
     const result = await service.load(lobbyId());
+    loadedAt = Date.now();
     if (sequence !== loadSequence || destroyed) return;
 
     if (!result.ok && retry) {
@@ -97,7 +103,18 @@ export function injectTableGame<
   // Sekundentakt für Countdown, Überspringen und Alter im Verlauf; gemessen in lokaler
   // Zeit, damit eine falsch gehende Uhr am Gerät nichts ausmacht
   const now = signal(Date.now());
-  const clock = setInterval(() => now.set(Date.now()), 1000);
+  const clock = setInterval(() => {
+    now.set(Date.now());
+    const status = untracked(game)?.status;
+    if (
+      document.visibilityState === 'visible' &&
+      status !== undefined &&
+      status !== 'finished' &&
+      Date.now() - loadedAt > STALE_RELOAD_MS
+    ) {
+      void load();
+    }
+  }, 1000);
   inject(DestroyRef).onDestroy(() => {
     destroyed = true;
     clearInterval(clock);

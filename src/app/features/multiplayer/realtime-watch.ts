@@ -11,6 +11,9 @@ export interface WatchedTable {
 // Mitglieder) lösen nur ein Neuladen aus
 const CHANGE_DEBOUNCE_MS = 100;
 
+// Toter Kanal (Fehler, Zeitüberschreitung, vom Server geschlossen): nach kurzer Pause neu
+const RESUBSCRIBE_MS = 2000;
+
 // Kanalnamen pro Ansicht eindeutig halten: supabase.channel() gibt sonst den noch
 // nicht ganz entfernten alten Kanal zurück, und das neue Abo bleibt stumm
 let channelCounter = 0;
@@ -33,17 +36,40 @@ export function watchTables(
     if (document.visibilityState === 'visible') notify();
   };
 
-  const channel = supabase.channel(`${name}-${++channelCounter}`);
-  for (const { table, filter } of tables) {
-    channel.on('postgres_changes', { event: '*', schema: 'public', table, filter }, notify);
+  // Schließt der Server den Kanal (z. B. Sitzung abgelaufen, während das Handy schlief),
+  // kämen sonst nie wieder Änderungen an: dann einen neuen Kanal aufbauen. Dessen
+  // SUBSCRIBED lädt neu und holt so Verpasstes nach.
+  let stopped = false;
+  let retry: ReturnType<typeof setTimeout> | undefined;
+  let channel = open();
+
+  function open() {
+    const current = supabase.channel(`${name}-${++channelCounter}`);
+    for (const { table, filter } of tables) {
+      current.on('postgres_changes', { event: '*', schema: 'public', table, filter }, notify);
+    }
+    current.subscribe((status) => {
+      if (stopped || current !== channel) return;
+      if (status === 'SUBSCRIBED') {
+        notify();
+      } else {
+        clearTimeout(retry);
+        retry = setTimeout(() => {
+          if (stopped || current !== channel) return;
+          // Erst den neuen Kanal merken, dann den alten entfernen (dessen CLOSED zählt nicht)
+          channel = open();
+          void supabase.removeChannel(current);
+        }, RESUBSCRIBE_MS);
+      }
+    });
+    return current;
   }
-  channel.subscribe((status) => {
-    if (status === 'SUBSCRIBED') notify();
-  });
   document.addEventListener('visibilitychange', onVisible);
 
   return () => {
+    stopped = true;
     clearTimeout(timer);
+    clearTimeout(retry);
     document.removeEventListener('visibilitychange', onVisible);
     void supabase.removeChannel(channel);
   };

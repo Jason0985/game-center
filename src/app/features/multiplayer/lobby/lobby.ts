@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, effect, inject, signal } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +15,7 @@ import { appUrl } from '../../../app-url';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import {
   canStartLobby,
+  eveningWinners,
   LOBBY_MAX_MEMBERS,
   LOBBY_MIN_MEMBERS,
   LobbyDetail,
@@ -34,6 +36,7 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
   imports: [
     MatButtonModule,
     MatIconModule,
+    MatMenuModule,
     MatTooltipModule,
     RouterLink,
     LobbyGameSetup,
@@ -84,6 +87,28 @@ export class Lobby {
     startBlocker(this.lobby()?.game_key, this.members().length),
   );
   readonly canStart = computed(() => canStartLobby(this.members()) && !this.startBlocker());
+  // Eine Zeile über den Knöpfen: was dem Start noch fehlt
+  readonly status = computed(() => {
+    const count = this.members().length;
+    if (count < this.minMembers)
+      return `Zum Starten braucht es mindestens ${this.minMembers} Spieler.`;
+    return (
+      this.startBlocker() ??
+      `${this.readyCount()} von ${count} bereit – mindestens ${this.requiredReady()} nötig`
+    );
+  });
+
+  // Abend-Wertung: Siege seit Eröffnen der Lobby, Spieler danach sortiert (sonst Beitritt)
+  readonly wins = computed(() => this.lobby()?.wins ?? {});
+  readonly ranking = computed(() =>
+    [...this.members()].sort(
+      (a, b) => (this.wins()[b.user_id] ?? 0) - (this.wins()[a.user_id] ?? 0),
+    ),
+  );
+  readonly leaderWins = computed(() => {
+    const lobby = this.lobby();
+    return (lobby && eveningWinners(lobby)?.wins) || 0;
+  });
 
   // Nach eigenem Verlassen/Schließen (oder Weg-Navigieren) keine Meldungen und Umleitungen mehr
   private leaving = false;
@@ -219,10 +244,13 @@ export class Lobby {
   // Spiels (endgültig, Rückkehr erst in der Warte-Lobby). Verlassen der Warte-Lobby nicht.
   async leave(gameOver = false): Promise<void> {
     if (this.busy()) return;
+    const winner = this.isHost() ? this.winnerLine() : undefined;
     const confirmation: ConfirmationDialogData | null = this.isHost()
       ? {
           title: 'Lobby schließen?',
-          message: 'Alle Spieler werden entfernt.',
+          message: winner
+            ? `Alle Spieler werden entfernt. ${winner}.`
+            : 'Alle Spieler werden entfernt.',
           confirmLabel: 'Schließen',
           icon: 'logout',
         }
@@ -242,6 +270,12 @@ export class Lobby {
 
     this.leaving = true;
     if (await this.run(() => this.lobbyService.leave(this.lobbyId))) {
+      if (winner) {
+        this.toastService.show(
+          { tone: 'success', icon: 'emoji_events', title: 'Lobby geschlossen', message: winner },
+          8000,
+        );
+      }
       void this.router.navigateByUrl('/multiplayer');
     } else {
       this.leaving = false;
@@ -288,7 +322,7 @@ export class Lobby {
 
     const lobby = result.value;
     if (!lobby) {
-      this.leaveView('Die Lobby wurde geschlossen.');
+      this.leaveView('Die Lobby wurde geschlossen.', this.winnerLine());
     } else if (!lobby.members.some((member) => member.user_id === this.userId())) {
       this.leaveView('Du bist nicht (mehr) in dieser Lobby.');
     } else {
@@ -309,9 +343,23 @@ export class Lobby {
     }
   }
 
-  private leaveView(message: string): void {
+  // z. B. „Abend-Gewinner: Anna mit 4 Siegen“ aus dem zuletzt geladenen Stand; ohne Siege leer
+  private winnerLine(): string | undefined {
+    const lobby = this.lobby();
+    const winners = lobby && eveningWinners(lobby);
+    if (!winners) return undefined;
+    const wins = winners.wins === 1 ? '1 Sieg' : `${winners.wins} Siegen`;
+    const each = winners.names.length > 1 ? 'je ' : '';
+    return `Abend-Gewinner: ${winners.names.join(' & ')} mit ${each}${wins}`;
+  }
+
+  private leaveView(title: string, winner?: string): void {
     this.leaving = true;
-    this.toastService.show({ tone: 'info', icon: 'info', title: message });
+    if (winner) {
+      this.toastService.show({ tone: 'info', icon: 'emoji_events', title, message: winner }, 8000);
+    } else {
+      this.toastService.show({ tone: 'info', icon: 'info', title });
+    }
     void this.router.navigateByUrl('/multiplayer');
   }
 }

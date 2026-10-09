@@ -49,11 +49,25 @@ export interface LobbyDetail {
   started_at: string | null;
   // Nur für den Host lesbar (RLS), sonst null
   code: string | null;
+  // Siege seit Eröffnen der Lobby je user_id (Uno: je Runde), zählen die Ergebnis-Trigger
+  wins: Record<string, number>;
   members: LobbyMember[];
 }
 
 export const displayNameOf = (profile: LobbyProfile | null | undefined): string =>
   profile ? profile.display_name || profile.username : 'Unbekannt';
+
+// Abend-Gewinner: die Mitglieder mit den meisten Siegen (Gleichstand = mehrere); null ohne Siege
+export function eveningWinners(
+  lobby: Pick<LobbyDetail, 'wins' | 'members'>,
+): { names: string[]; wins: number } | null {
+  const wins = Math.max(0, ...lobby.members.map((member) => lobby.wins[member.user_id] ?? 0));
+  if (!wins) return null;
+  const names = lobby.members
+    .filter((member) => lobby.wins[member.user_id] === wins)
+    .map((member) => member.name);
+  return { names, wins };
+}
 
 // Entspricht ready * 2 >= Mitglieder in start_lobby
 export const requiredReadyCount = (memberCount: number): number => Math.ceil(memberCount / 2);
