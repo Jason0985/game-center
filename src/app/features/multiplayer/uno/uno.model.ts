@@ -1,5 +1,5 @@
 // Uno: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261002140000_uno.sql); hier wird nur gespiegelt, was für
+// (supabase/migrations/20260918220000_core_schema.sql, Abschnitt Uno); hier wird nur gespiegelt, was für
 // Anzeige und Hervorheben nötig ist.
 
 import { cardCount, TableLayout } from '../table/table.model';

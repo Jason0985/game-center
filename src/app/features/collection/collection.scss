@@ -33,3 +33,27 @@
   font-size: 11px;
   font-weight: 600;
 }
+
+// Aufklappbare Abschnitte: Überschrift als summary, Pfeil dreht sich
+.collection-summary {
+  justify-content: flex-start;
+  min-height: 32px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.collection-summary::-webkit-details-marker {
+  display: none;
+}
+
+.collection-summary-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  transition: rotate var(--transition-fast);
+}
+
+.collection-section:not([open]) .collection-summary-icon {
+  rotate: -90deg;
+}

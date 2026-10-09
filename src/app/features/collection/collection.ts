@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../services/session.service';
 import { ProfileRole } from '../profile/profile.model';
 import { profileRoleConfig } from '../profile/profile-roles';
+import { GAMES } from '../multiplayer/lobby.model';
 
 interface CollectionItem {
   title: string;
@@ -14,17 +16,39 @@ interface CollectionItem {
   tile: string;
   group: CollectionGroup;
   path: string;
+  // Externer Link (neuer Tab) statt einer Seite der App, z. B. Monopoly auf richup.io
+  href?: string;
   // Nur für diese Rollen (und Admins) sichtbar, die Route ist zusätzlich per roleGuard geschützt
   roles?: ProfileRole[];
 }
 
-type CollectionGroup = 'Punkte & Tabellen' | 'Racing' | 'Werkzeuge';
+type CollectionGroup = 'Punkte & Tabellen' | 'Racing' | 'Werkzeuge' | 'Multiplayer';
 
-const GROUP_ORDER: CollectionGroup[] = ['Punkte & Tabellen', 'Racing', 'Werkzeuge'];
+const GROUP_ORDER: CollectionGroup[] = ['Punkte & Tabellen', 'Racing', 'Werkzeuge', 'Multiplayer'];
+// Abschnitte zum Auf- und Zuklappen; anfangs ist nur Multiplayer zu
+const INITIALLY_CLOSED: CollectionGroup[] = ['Multiplayer'];
+const GAME_TILES = [
+  'var(--tile-pink)',
+  'var(--tile-blue)',
+  'var(--tile-orange)',
+  'var(--tile-green)',
+];
+
+// Alle Online-Spiele aus der Lobby-Liste: führen in die Lobbys, externe direkt zum Anbieter
+const MULTIPLAYER_ITEMS: CollectionItem[] = GAMES.map((game, index) => ({
+  title: game.name,
+  tile: GAME_TILES[index % GAME_TILES.length],
+  group: 'Multiplayer',
+  category: 'Multiplayer',
+  description: game.blurb,
+  icon: game.icon,
+  path: '/multiplayer',
+  href: game.url ?? undefined,
+}));
 
 @Component({
   selector: 'app-collection',
-  imports: [MatIcon, RouterLink],
+  imports: [MatIcon, NgTemplateOutlet, RouterLink],
   templateUrl: './collection.html',
   styleUrl: './collection.scss',
 })
@@ -80,7 +104,9 @@ export class Collection {
       path: '/collection/race-results',
       roles: ['race_results'],
     },
+    ...MULTIPLAYER_ITEMS,
   ];
+  private readonly closed = signal(new Set<CollectionGroup>(INITIALLY_CLOSED));
 
   readonly filteredItems = computed(() => {
     const searchTerm = this.searchTerm().trim().toLowerCase();
@@ -98,15 +124,29 @@ export class Collection {
     );
   });
 
-  /** Gefilterte Einträge nach Abschnitt, leere Abschnitte entfallen. */
-  readonly groups = computed(() =>
-    GROUP_ORDER.map((title) => ({
+  /** Gefilterte Einträge nach Abschnitt, leere Abschnitte entfallen. Beim Suchen ist alles offen. */
+  readonly groups = computed(() => {
+    const searching = !!this.searchTerm().trim();
+    return GROUP_ORDER.map((title) => ({
       title,
+      open: searching || !this.closed().has(title),
       items: this.filteredItems().filter((item) => item.group === title),
-    })).filter((group) => group.items.length),
-  );
+    })).filter((group) => group.items.length);
+  });
 
   updateSearch(event: Event): void {
     this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  // Auf- und Zuklappen merken; beim Suchen erzwungene Zustände nicht übernehmen
+  toggleGroup(title: CollectionGroup, event: Event): void {
+    if (this.searchTerm().trim()) return;
+    const open = (event.target as HTMLDetailsElement).open;
+    this.closed.update((closed) => {
+      const next = new Set(closed);
+      if (open) next.delete(title);
+      else next.add(title);
+      return next;
+    });
   }
 }

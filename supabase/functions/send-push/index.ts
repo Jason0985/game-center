@@ -1,5 +1,5 @@
-// Schickt eine Mitteilung als Push-Nachricht an alle Geräte des Empfängers. Aufgerufen nur vom
-// Trigger notifications_push (pg_net) mit dem gemeinsamen Geheimnis, deshalb ohne JWT-Prüfung
+// Schickt eine Push-Nachricht an alle Geräte des Empfängers. Aufgerufen nur aus der Datenbank
+// (_send_push über pg_net: Mitteilungen, „Du bist dran“, Spielstart) mit dem gemeinsamen Geheimnis, deshalb ohne JWT-Prüfung
 // deployen (verify_jwt = false). Abgelaufene Geräte (404/410 vom Push-Dienst) werden gelöscht.
 //
 // Secrets: PUSH_WEBHOOK_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, optional VAPID_SUBJECT.
@@ -31,6 +31,10 @@ Deno.serve(async (request) => {
     recipient_id?: string;
     title?: string;
     message?: string;
+    // Ziel beim Antippen, relativ zur App (Standard: Mitteilungen)
+    url?: string;
+    // Gleicher Tag ersetzt die vorige Benachrichtigung (z. B. alle Spiel-Pushes einer Lobby)
+    tag?: string;
   } | null;
   if (!body?.recipient_id || !body.title) {
     return jsonResponse({ error: 'Empfänger oder Titel fehlt.' }, 400);
@@ -51,7 +55,7 @@ Deno.serve(async (request) => {
   }
 
   // Format des Angular-Service-Workers: er zeigt die Benachrichtigung selbst an, ein Tipp
-  // darauf öffnet die Mitteilungen (URLs relativ zum Scope /game-center/)
+  // darauf öffnet url (relativ zum Scope /game-center/)
   const payload = JSON.stringify({
     notification: {
       title: body.title,
@@ -60,9 +64,10 @@ Deno.serve(async (request) => {
       // Android-Statusleiste: weiße Silhouette (scripts/make-badge.mjs)
       badge: 'icons/badge-96.png',
       lang: 'de',
+      ...(body.tag ? { tag: body.tag, renotify: true } : {}),
       data: {
         onActionClick: {
-          default: { operation: 'navigateLastFocusedOrOpen', url: 'notifications' },
+          default: { operation: 'navigateLastFocusedOrOpen', url: body.url ?? 'notifications' },
         },
       },
     },

@@ -35,6 +35,7 @@ function lobbyDetail(overrides: Partial<LobbyDetail> = {}): LobbyDetail {
     created_at: '2026-09-30T12:00:00Z',
     started_at: null,
     code: null,
+    wins: {},
     members: [member('host'), member('guest')],
     ...overrides,
   };
@@ -140,11 +141,19 @@ describe('Lobby', () => {
     anonymous.profile!.is_guest = true;
     await render('host', lobbyDetail({ members: [member('host'), member('bob'), anonymous] }));
 
-    const button = (name: string): HTMLButtonElement | null =>
-      fixture.nativeElement.querySelector(`[aria-label="${name} zum Host machen"]`);
-    expect(button('anon')).toBeNull();
+    // Host-Abgabe steckt im ⋮-Menü der Zeile (Overlay außerhalb der Komponente)
+    const hostItem = async (name: string): Promise<HTMLButtonElement | undefined> => {
+      document.querySelector<HTMLElement>('.cdk-overlay-backdrop')?.click();
+      fixture.nativeElement.querySelector(`[aria-label="Optionen für ${name}"]`).click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return [...document.querySelectorAll<HTMLButtonElement>('[mat-menu-item]')].find((item) =>
+        item.textContent?.includes('Zum Host machen'),
+      );
+    };
+    expect(await hostItem('anon')).toBeUndefined();
 
-    button('bob')!.click();
+    (await hostItem('bob'))!.click();
     await fixture.whenStable();
     expect(lobbyService.transferHost).toHaveBeenCalledWith('lobby-1', 'bob');
   });
@@ -179,6 +188,21 @@ describe('Lobby', () => {
       expect.objectContaining({ title: 'Die Lobby wurde geschlossen.' }),
     );
     expect(router.navigateByUrl).toHaveBeenCalledWith('/multiplayer');
+  });
+
+  it('names the evening winner when the lobby closes', async () => {
+    await render('guest', lobbyDetail({ wins: { host: 3, guest: 1 } }));
+    lobbyService.getLobby.mockResolvedValue({ ok: true, value: null });
+    component.reload();
+    await fixture.whenStable();
+
+    expect(toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Die Lobby wurde geschlossen.',
+        message: 'Abend-Gewinner: host mit 3 Siegen',
+      }),
+      8000,
+    );
   });
 
   it('asks the host before closing the lobby', async () => {

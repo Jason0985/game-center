@@ -1,5 +1,6 @@
 import {
   canStartLobby,
+  eveningWinners,
   gameLabel,
   LobbyMember,
   requiredReadyCount,
@@ -84,5 +85,13 @@ describe('startBlocker', () => {
 
   it('never starts Monopoly here (played on richup.io)', () => {
     expect(startBlocker('monopoly', 2)).toBe('Monopoly spielt ihr direkt über den Link oben.');
+  });
+});
+
+describe('eveningWinners', () => {
+  it('picks the members with the most wins, ties included', () => {
+    const lobby = { members: members(3, 0), wins: { 'user-0': 2, 'user-2': 2, gone: 5 } };
+    expect(eveningWinners(lobby)).toEqual({ names: ['User 0', 'User 2'], wins: 2 });
+    expect(eveningWinners({ members: members(2, 0), wins: {} })).toBeNull();
   });
 });

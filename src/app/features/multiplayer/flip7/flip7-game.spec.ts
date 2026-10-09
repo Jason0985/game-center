@@ -151,6 +151,27 @@ describe('Flip7GameView', () => {
     expect(el().querySelector('app-flip7-board')).toBe(board);
   });
 
+  it('shows the last move on the table before the final standings', async () => {
+    vi.useFakeTimers();
+    await render('guest', makeGame());
+    flip7['load'].mockResolvedValue({
+      ok: true,
+      value: makeGame({ status: 'finished', phase: null, turn_seat: null }),
+    });
+    // Der letzte Zug beendet das Spiel: erst den Tisch (Bust oder Sieg sehen), dann den Endstand
+    flip7['subscribe'].mock.calls[0][1]();
+    await vi.advanceTimersByTimeAsync(200);
+    fixture.detectChanges();
+    expect(component.game()?.status).toBe('finished');
+    expect(el().querySelector('app-flip7-board')).not.toBeNull();
+    expect(el().querySelector('app-flip7-final')).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(3_000);
+    fixture.detectChanges();
+    expect(el().querySelector('app-flip7-final')).not.toBeNull();
+    vi.useRealTimers();
+  });
+
   it('enables drawing from the pile and Stay only on the own turn', async () => {
     await render('host', makeGame());
     expect(el().textContent).not.toContain('ist am Zug');

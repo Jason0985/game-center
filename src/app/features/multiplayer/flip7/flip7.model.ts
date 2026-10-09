@@ -1,5 +1,5 @@
 // Flip 7: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20260930161000_flip7.sql); hier wird nur gespiegelt,
+// (supabase/migrations/20260918220000_core_schema.sql, Abschnitt Flip 7); hier wird nur gespiegelt,
 // was für die Anzeige nötig ist.
 
 import { arcSpots, TableGeometry, TableLayout } from '../table/table.model';

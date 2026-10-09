@@ -21,7 +21,7 @@
   (history)="openHistory()"
 >
   @if (game(); as g) {
-    @if (g.status === 'finished') {
+    @if (showFinal()) {
       <app-flip7-final
         [game]="g"
         [userId]="userId()"

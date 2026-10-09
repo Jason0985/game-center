@@ -19,6 +19,8 @@ const OPT_OUT_KEY = 'push-opt-out';
 const ASKED_KEY = 'push-asked';
 // Erst nach dem Start fragen, nicht mitten ins Anmelden
 const OFFER_DELAY_MS = 3000;
+// Anwesenheit erneuern; der Server zählt 45 s (set_app_active), danach gilt man als weg
+const PRESENCE_MS = 30_000;
 
 // unsupported: kein Service Worker/keine Notification-API (Entwicklung, iPhone ohne Installation)
 export type PushState = 'unsupported' | 'blocked' | 'off' | 'on';
@@ -67,6 +69,26 @@ export class PushService {
   });
 
   constructor() {
+    // Solange die App sichtbar ist, kommen keine Push-Nachrichten (die App zeigt alles selbst).
+    // Beim Verlassen sofort abmelden; klappt das nicht mehr (Handy friert die App ein), läuft
+    // die Anwesenheit nach spätestens 45 s ab.
+    const userId = computed(() => this.session.user()?.id ?? null);
+    effect((onCleanup) => {
+      if (!userId()) return;
+      const mark = () =>
+        void supabase.rpc('set_app_active', { p_active: document.visibilityState === 'visible' });
+      mark();
+      const timer = setInterval(
+        () => document.visibilityState === 'visible' && mark(),
+        PRESENCE_MS,
+      );
+      document.addEventListener('visibilitychange', mark);
+      onCleanup(() => {
+        clearInterval(timer);
+        document.removeEventListener('visibilitychange', mark);
+      });
+    });
+
     // Einzige Stelle, die speichert: nach dem Aktivieren und bei jedem Start bzw. Kontowechsel,
     // damit das Gerät immer dem angemeldeten Konto gehört
     effect(() => {

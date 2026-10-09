@@ -10,10 +10,25 @@ import { describeSupabaseError } from '../../../services/supabase-errors';
 import { NOTIFICATION_TYPES } from '../../notifications/notification-types';
 import { NotificationType } from '../../notifications/notification.model';
 
-type PushType = Exclude<NotificationType, 'app_error'>;
+// Mitteilungsarten plus reine Spiel-Pushes (ohne Eintrag in den Mitteilungen)
+type PushType = Exclude<NotificationType, 'app_error'> | 'your_turn' | 'game_started';
 
 // Reihenfolge und Texte der Liste; Arten wie in der DB (push_preferences.muted_types)
-const PUSH_TYPES: { type: PushType; title: string; sub: string; tile: string }[] = [
+const PUSH_TYPES: { type: PushType; title: string; sub: string; tile: string; icon?: string }[] = [
+  {
+    type: 'your_turn',
+    title: 'Du bist dran',
+    sub: 'In laufenden Spielen, auch die Zielwahl bei Flip 7',
+    tile: 'var(--tile-pink)',
+    icon: 'touch_app',
+  },
+  {
+    type: 'game_started',
+    title: 'Spielstart',
+    sub: 'Der Host startet das Spiel in deiner Lobby',
+    tile: 'var(--tile-green)',
+    icon: 'play_circle',
+  },
   {
     type: 'game_invite',
     title: 'Spiel-Einladungen',
@@ -59,7 +74,7 @@ export class PushSettings {
   private readonly toasts = inject(ToastService);
   readonly types = PUSH_TYPES.map((entry) => ({
     ...entry,
-    icon: NOTIFICATION_TYPES[entry.type].icon,
+    icon: entry.icon ?? NOTIFICATION_TYPES[entry.type as NotificationType].icon,
   }));
   // Stumme Arten; null = noch nicht geladen
   readonly muted = signal<PushType[] | null>(null);
