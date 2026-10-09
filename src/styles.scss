@@ -1046,6 +1046,14 @@ button.ui-row:active {
   color: var(--color-primary-light);
 }
 
+// matTooltip setzt auf Handys (iOS/Android) touch-action: none an den Button, damit langes
+// Drücken den Tooltip zeigt. Das blockiert Wischen: In Listen ließ sich nicht mehr scrollen,
+// sobald der Finger auf so einem Button (bzw. einer ganzen .ui-stretch-Zeile) startete.
+// Scrollen erlauben; langes Drücken ohne Bewegung zeigt den Tooltip weiterhin.
+.mat-mdc-tooltip-trigger {
+  touch-action: pan-x pan-y !important;
+}
+
 // Ganze Zeile/Karte klickbar: Die Klickfläche des Buttons reicht bis zum nächsten
 // positionierten Vorfahren (der Zeile). Gesperrt bleibt gesperrt, Tooltip bleibt am Button.
 .ui-stretch {

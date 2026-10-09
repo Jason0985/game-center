@@ -3,17 +3,18 @@
   <span class="badge-flip7" aria-hidden="true">FLIP 7</span>
 }
 <span class="avatar-wrap">
-  <svg class="ring" [class.ring--pulse]="celebrate()" viewBox="0 0 48 48" aria-hidden="true">
-    @for (path of ringPaths; track $index) {
-      <path [attr.d]="path" [class.on]="$index < filled()" />
-    }
-  </svg>
   @if (p.state === 'left') {
     <span class="avatar avatar--left" aria-hidden="true">
       <span class="material-symbols-rounded">event_seat</span>
     </span>
   } @else {
-    <span class="avatar" [style.background]="color()" aria-hidden="true">{{ initial() }}</span>
+    <span
+      class="avatar"
+      [class.avatar--pulse]="celebrate()"
+      [style.background]="color()"
+      aria-hidden="true"
+      >{{ initial() }}</span
+    >
   }
 
   @if (p.state === 'frozen') {
@@ -64,6 +65,14 @@
       </span>
       @if (bonus()) {
         <span class="bonus">inkl. +{{ flip7Bonus }}<span class="sr-only"> Flip-7-Bonus</span></span>
+      }
+    </span>
+  }
+  <!-- Fortschritt zu Flip 7: immer direkt unter Name und Punkten (auch ohne Karten) -->
+  @if (!own() && p.state !== 'left') {
+    <span class="dots" aria-hidden="true">
+      @for (on of dots(); track $index) {
+        <span [class.on]="on"></span>
       }
     </span>
   }

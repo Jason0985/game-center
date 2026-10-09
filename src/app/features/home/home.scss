@@ -50,3 +50,88 @@
   width: 55%;
   margin: 4px 0 3px;
 }
+
+// So funktioniert's: aufklappbare Zeilen (details), Trennlinie wie zwischen .ui-row
+.help-item summary {
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.help-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-item + .help-item summary::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--ui-row-inset, 16px);
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+.help-chevron {
+  transition: rotate var(--transition-fast);
+}
+
+.help-item[open] .help-chevron {
+  rotate: 180deg;
+}
+
+// Inhalt eingerückt unter den Titel (Icon-Spalte frei lassen)
+.help-points,
+.help-games {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 16px 12px 58px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.help-points {
+  padding-left: 76px;
+}
+
+.help-games {
+  list-style: none;
+}
+
+.help-games li {
+  display: flex;
+  gap: 10px;
+}
+
+.help-games mat-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-subtle);
+  font-size: 20px;
+}
+
+.help-games strong {
+  color: var(--color-text);
+}
+
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 16px 14px 58px;
+  color: var(--color-primary-light);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.help-link mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}

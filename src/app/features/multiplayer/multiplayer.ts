@@ -123,6 +123,11 @@ export class Multiplayer {
 
     this.startAction();
     if (needsGuest) {
+      if (!(await this.authService.nameAllowed(name))) {
+        this.busy.set(false);
+        this.fail('Dieser Name ist nicht erlaubt. Bitte wähle einen anderen.');
+        return;
+      }
       const { error } = await this.authService.signInAsGuest(name);
       if (error) {
         console.error('Gast-Anmeldung fehlgeschlagen.', error);

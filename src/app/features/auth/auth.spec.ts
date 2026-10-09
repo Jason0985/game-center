@@ -14,6 +14,7 @@ describe('Auth', () => {
   let authService: {
     login: ReturnType<typeof vi.fn>;
     register: ReturnType<typeof vi.fn>;
+    nameAllowed: ReturnType<typeof vi.fn>;
     requestPasswordReset: ReturnType<typeof vi.fn>;
   };
   let appErrors: { report: ReturnType<typeof vi.fn> };
@@ -22,6 +23,7 @@ describe('Auth', () => {
     authService = {
       login: vi.fn().mockResolvedValue({ error: null }),
       register: vi.fn(),
+      nameAllowed: vi.fn().mockResolvedValue(true),
       requestPasswordReset: vi.fn().mockResolvedValue({ error: null }),
     };
     appErrors = { report: vi.fn() };
@@ -182,6 +184,23 @@ describe('Auth', () => {
     expect(component.mode()).toBe('login');
     expect(text()).toContain('Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.');
     expect(appErrors.report).not.toHaveBeenCalled();
+  });
+
+  it('blocks an inappropriate display name before registering', async () => {
+    authService.nameAllowed.mockImplementation(async (name: string) => name !== 'Fiesling');
+    component.setMode('register');
+    component.registerForm.setValue({
+      email: 'alex@example.de',
+      username: 'alex',
+      displayName: 'Fiesling',
+      password: 'geheim123',
+      passwordConfirmation: 'geheim123',
+    });
+
+    await component.submitRegistration();
+
+    expect(authService.register).not.toHaveBeenCalled();
+    expect(text()).toContain('Dieser Anzeigename ist nicht erlaubt.');
   });
 });
 

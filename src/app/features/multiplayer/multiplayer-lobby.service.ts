@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from '../../supabase.client';
 import { ActionResult, describeSupabaseError } from '../../services/supabase-errors';
+import { logClientError } from '../../services/app-error.service';
 import {
   displayNameOf,
   LobbyDetail,
@@ -39,6 +40,10 @@ export function lobbyFailure(
   error: PostgrestError,
 ): { ok: false; message: string } {
   console.error(context, error);
+  // Eigene Meldungen der Datenbank (P0001, z. B. „Du bist nicht am Zug.“) sind kein Fehler der App
+  if (error.code !== 'P0001') {
+    logClientError(`${context} [${error.code || 'ohne Code'}] ${error.message}`);
+  }
   return {
     ok: false,
     message: error.code === 'P0001' ? error.message : describeSupabaseError(error),

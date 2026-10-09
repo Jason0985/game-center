@@ -28,7 +28,6 @@ import {
   Flip7Player,
   flip7Score,
   FLIP7_TABLES,
-  distinctNumbers,
   isModifierCard,
   isNumberCard,
   modifierText,
@@ -207,17 +206,12 @@ export class Flip7Board {
           highlight: busted ? (index === numbers.length - 1 ? 'dup' : 'bust') : null,
         };
       });
-      const distinct = distinctNumbers(player.cards);
       return {
         player,
         spot,
         x: (spot.x / table.w) * 100,
         y: (spot.y / table.h) * 100,
         fan,
-        dots:
-          busted || player.state === 'flip7' || player.state === 'left'
-            ? null
-            : Array.from({ length: 7 }, (_, dot) => dot < distinct),
         mods: modifierText(player.cards),
         choice: choosing && candidates.has(player.seat) ? choosing : null,
         dimmed: !!choosing && !candidates.has(player.seat),

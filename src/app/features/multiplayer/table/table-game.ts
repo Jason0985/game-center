@@ -21,6 +21,7 @@ import { TableTurn } from './table-data';
 import { eventAge, formatClock } from './table.model';
 
 const CUE_PRIORITY: readonly FeedbackCue[] = ['win', 'bust', 'alert', 'turn', 'tap'];
+const LOAD_RETRY_MS = 1500;
 
 // Gemeinsamer Rahmen der Spielansichten (Flip 7, Skip-Bo, Uno). Nur im Injection Context
 // (Feld-Initialisierer der Komponente).
@@ -65,12 +66,19 @@ export function injectTableGame<
   let loadSequence = 0;
   let destroyed = false;
 
-  const load = async (): Promise<void> => {
+  // retry: ein kurzer Aussetzer beim Nachladen soll nicht gleich als Fehler auftauchen
+  const load = async (retry = true): Promise<void> => {
     if (destroyed) return;
 
     const sequence = ++loadSequence;
     const result = await service.load(lobbyId());
     if (sequence !== loadSequence || destroyed) return;
+
+    if (!result.ok && retry) {
+      await new Promise((resolve) => setTimeout(resolve, LOAD_RETRY_MS));
+      if (sequence === loadSequence) await load(false);
+      return;
+    }
 
     loading.set(false);
     if (result.ok) {

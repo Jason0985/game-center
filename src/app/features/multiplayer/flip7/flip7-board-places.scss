@@ -16,7 +16,7 @@
   --radius: 16px;
   --gap: 4px;
   --ring: round(calc(50px * var(--s)), 1px);
-  --avatar-k: 0.72;
+  --avatar-k: 0.9;
   --name-size: 13px;
   --stat-size: 12px;
   --chip-pad: 1px 6px;
@@ -32,7 +32,7 @@
 :host([data-layout='quer']) .opp {
   --w: calc(160px * var(--s));
   --ring: round(calc(42px * var(--s)), 1px);
-  --avatar-k: 0.72;
+  --avatar-k: 0.9;
   --gap: 7px;
   --name-size: 13px;
   --stat-size: 11px;
@@ -49,7 +49,7 @@
 :host([data-layout='laptop']) .opp {
   --w: calc(186px * var(--s));
   --ring: round(calc(50px * var(--s)), 1px);
-  --avatar-k: 0.72;
+  --avatar-k: 0.9;
   --gap: 8px;
   --name-size: 14px;
   --stat-size: 12px;
@@ -165,7 +165,7 @@
 }
 
 // Modifikatoren: Schriftzug mit Linie nach rechts (wie die Ablagen bei Skip-Bo), darunter
-// nur die Karten; leicht überlappend, die Werte bleiben lesbar
+// nur die Karten
 .mods {
   display: flex;
   flex-direction: column;
@@ -209,8 +209,9 @@
   --card-font: var(--mod-font);
 }
 
-.mod-cards app-flip7-card + app-flip7-card {
-  margin-left: calc(var(--mod-w) * -0.2);
+// Nebeneinander statt überlappend: Werte wie „×2“ sind fast so breit wie die Karte
+.mod-cards {
+  gap: 4px;
 }
 
 .slot--mod {
@@ -384,7 +385,7 @@
 
 :host([data-layout='laptop']) .my-seat {
   --ring: 52px;
-  --avatar-k: 0.72;
+  --avatar-k: 0.9;
 }
 
 :host([data-layout='quer']) .my-seat {
