@@ -59,7 +59,7 @@
         Sichern
       </button>
       @if (chooser(); as c) {
-        <div class="choose" [attr.data-card]="c.card" aria-hidden="true">
+        <div class="choose" [class.held]="picking()" [attr.data-card]="c.card" aria-hidden="true">
           <span class="choose-title">{{ c.title }}</span>
           <span class="choose-sub">{{ c.sub }}</span>
         </div>
@@ -107,21 +107,7 @@
   }
 
   @for (flight of flights(); track flight.id) {
-    @if (flight.card === 'SC') {
-      <div
-        class="flight sc-reveal"
-        aria-hidden="true"
-        [style.left.%]="(c.x / t.w) * 100"
-        [style.top.%]="(c.y / t.h) * 100"
-        (animate.enter)="revealSc($event, flight)"
-      >
-        <app-flip7-card card="SC" variant="flat" />
-        <span class="sc-tag">
-          <span class="material-symbols-rounded fill">favorite</span>
-          Zweites Leben
-        </span>
-      </div>
-    } @else if (flight.card === 'SAVE') {
+    @if (flight.card === 'SAVE') {
       <div
         class="flight sc-save"
         aria-hidden="true"
@@ -133,6 +119,20 @@
         <span class="save-sc">
           <app-flip7-card class="save-half save-half--start" card="SC" variant="flat" />
           <app-flip7-card class="save-half save-half--end" card="SC" variant="flat" />
+        </span>
+      </div>
+    } @else if (flight.pick || flight.card === 'SC') {
+      <div
+        class="flight sc-reveal"
+        aria-hidden="true"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="reveal($event, flight)"
+      >
+        <app-flip7-card [card]="flight.card" variant="flat" />
+        <span class="sc-tag" [attr.data-card]="flight.card">
+          <span class="material-symbols-rounded fill">{{ actionIcons[flight.card].icon }}</span>
+          {{ actionNames[flight.card] }}
         </span>
       </div>
     } @else {

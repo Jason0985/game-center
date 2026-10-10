@@ -311,7 +311,13 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
   text-align: center;
   transform: translateX(-50%);
+  transition: opacity 200ms ease-out;
   animation: f7-choose-in 220ms ease-out;
+}
+
+// Solange die gezogene Karte noch groß in der Mitte steht (reveal)
+.choose.held {
+  opacity: 0;
 }
 
 .choose[data-card='FLIP3'] {

@@ -251,7 +251,8 @@
   clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%, 58% 55%, 42% 35%);
 }
 
-// Zweites Leben in der Mitte: Karte mit rotem Schild darunter (revealSc animiert)
+// Zweites Leben bzw. Karte zur Zielwahl in der Mitte: Karte mit Schild in ihrer Farbe
+// darunter (reveal animiert)
 .sc-reveal {
   z-index: 8;
   width: var(--card-w);
@@ -278,6 +279,16 @@
   .material-symbols-rounded {
     font-size: 11px;
   }
+}
+
+.sc-tag[data-card='FLIP3'] {
+  background: #ff9150;
+  color: #2a1204;
+}
+
+.sc-tag[data-card='FREEZE'] {
+  background: #7dd3fc;
+  color: #0b2533;
 }
 
 // Am Zug: weißer Rand über die ganze Oberkante (wie .mine in table/_arc-table.scss)
