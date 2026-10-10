@@ -26,6 +26,8 @@
   --center-max: 260px;
   --pile-w: 40px;
   --pile-h: 56px;
+  // Stapel und Ablage sind kleiner als die eigenen Karten, runden aber gleich stark
+  --pile-radius: calc(var(--slot-w) * 0.145);
   --pile-label: 11px;
   --chip-size: 13px;
   --chip-icon: 17px;
@@ -248,6 +250,12 @@
   position: absolute;
 }
 
+.draw app-flip7-card,
+.discard app-flip7-card,
+.discard-empty {
+  border-radius: var(--pile-radius);
+}
+
 .discard-below {
   top: 4px;
   left: 4px;
@@ -268,7 +276,6 @@
   height: var(--pile-h);
   box-sizing: border-box;
   border: 1.5px dashed var(--table-slot-border);
-  border-radius: calc(var(--pile-w) * 0.145);
   background: var(--table-slot-bg);
 }
 
@@ -358,7 +365,7 @@
 .draw {
   padding: 0;
   border: 0;
-  border-radius: calc(var(--pile-w) * 0.15);
+  border-radius: var(--pile-radius);
   background: transparent;
   cursor: pointer;
 }
