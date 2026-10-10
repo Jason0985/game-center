@@ -1,0 +1,37 @@
+// Farben der Rundenstände (Token, Tags, Wert-Pillen, Ergebnisse) für Brett, Plätze und
+// Übersicht: [data-tone] setzt --tone-bg/--tone-fg, das Element nutzt sie.
+[data-tone] {
+  --tone-bg: var(--color-surface-raised);
+  --tone-fg: var(--color-text);
+}
+
+[data-tone='muted'] {
+  --tone-bg: color-mix(in srgb, var(--color-text) 8%, transparent);
+  --tone-fg: var(--color-text-muted);
+}
+
+[data-tone='ready'] {
+  --tone-bg: var(--table-chip-bg);
+  --tone-fg: var(--table-chip-text);
+}
+
+[data-tone='turn'] {
+  --tone-bg: var(--table-turn);
+  --tone-fg: var(--color-background);
+}
+
+[data-tone='bust'],
+[data-tone='lose'] {
+  --tone-bg: color-mix(in srgb, var(--table-danger) 18%, transparent);
+  --tone-fg: var(--table-danger);
+}
+
+[data-tone='bj'] {
+  --tone-bg: color-mix(in srgb, var(--table-gold) 16%, transparent);
+  --tone-fg: var(--table-gold);
+}
+
+[data-tone='win'] {
+  --tone-bg: color-mix(in srgb, var(--color-success-light) 16%, transparent);
+  --tone-fg: var(--color-success-light);
+}

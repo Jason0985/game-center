@@ -50,6 +50,7 @@ describe('LobbyGameSheet', () => {
       expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('2–6 Spieler'),
       expect.stringContaining('2–8 Spieler'),
+      expect.stringContaining('1–5 Spieler'),
       expect.stringContaining('richup.io'),
     ]);
     expect(games[1].getAttribute('aria-checked')).toBe('true');
@@ -85,6 +86,31 @@ describe('LobbyGameSheet', () => {
     segments[4].click();
     await fixture.whenStable();
     expect(setGame).toHaveBeenCalledWith('lobby-1', 'flip-7', { targetScore: null });
+  });
+
+  it('saves the Blackjack start money and switches to it with the default', async () => {
+    await render('blackjack', {});
+
+    const segments = buttons('.segments button');
+    expect(segments.map((button) => button.textContent?.trim())).toEqual([
+      '500',
+      '1.000',
+      '2.500',
+      '5.000',
+      '10.000',
+    ]);
+    expect(segments[1].getAttribute('aria-pressed')).toBe('true');
+    segments[3].click();
+    await fixture.whenStable();
+    expect(setGame).toHaveBeenCalledWith('lobby-1', 'blackjack', { startMoney: 5000 });
+  });
+
+  it('switches to Blackjack with the default start money', async () => {
+    await render('uno', { stacking: true, sevenZero: false, drawUntilPlayable: false });
+
+    buttons('[role="radio"]')[3].click();
+    await fixture.whenStable();
+    expect(setGame).toHaveBeenCalledWith('lobby-1', 'blackjack', {});
   });
 
   it('toggles Uno house rules', async () => {

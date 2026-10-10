@@ -1,0 +1,116 @@
+@use '../table/seat-base';
+@use 'blackjack-tones';
+
+// Blackjack-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Karten über dem
+// Schild, Token (Handy) bzw. Tags (Laptop). Der Tisch setzt die Größen je Layout
+// (blackjack-board-places.scss).
+:host(button) {
+  cursor: pointer;
+}
+
+:host(button:focus-visible) {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+// Karten aller Hände über dem Schild, Hände mit kleinem Abstand
+.cards {
+  position: absolute;
+  bottom: calc(100% + var(--cards-gap, 4px));
+  left: 50%;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--hand-gap, 4px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hand {
+  display: flex;
+}
+
+.hand app-blackjack-card {
+  --card-w: var(--seat-card-w, 22px);
+  --card-h: var(--seat-card-h, 31px);
+}
+
+.hand app-blackjack-card + app-blackjack-card {
+  margin-left: calc(var(--seat-card-overlap, 12px) * -1);
+}
+
+.more {
+  align-self: center;
+  margin-left: 2px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+// Handy: ein Token am unteren Rand
+.token {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 17px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--color-surface);
+  border-radius: 999px;
+  // Deckend auf der Platte, der (halbtransparente) Ton liegt in ::before darüber
+  background: var(--color-surface);
+  color: var(--tone-fg);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.token::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tone-bg);
+  content: '';
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1.5px dashed rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
+
+// Laptop: Status- und Einsatz-Tag unter dem Namen
+.tags {
+  display: flex;
+  gap: 4px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+:host([data-variant='row']) {
+  white-space: nowrap;
+}
+
+:host([data-variant='row']) .name {
+  font-size: 13px;
+}

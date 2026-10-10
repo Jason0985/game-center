@@ -1,0 +1,55 @@
+@let p = player();
+@if (!own() && p.hands.length) {
+  <span class="cards" aria-hidden="true">
+    @for (hand of hands(); track hand.key) {
+      <span class="hand" [attr.data-hand]="hand.key">
+        @for (item of hand.cards; track item.key) {
+          <app-blackjack-card
+            [card]="item.card"
+            [attr.data-card]="item.key"
+            [attr.data-size]="variant() === 'column' ? 'mini' : null"
+          />
+        }
+      </span>
+    }
+    @if (more()) {
+      <span class="more">+{{ more() }}</span>
+    }
+  </span>
+}
+
+<span class="avatar-wrap">
+  @if (p.state === 'left') {
+    <span class="avatar avatar--left" aria-hidden="true">
+      <span class="material-symbols-rounded">event_seat</span>
+    </span>
+  } @else {
+    <span class="avatar" [style.background]="color()" aria-hidden="true">{{ initial() }}</span>
+  }
+</span>
+
+<span class="info">
+  <span class="name">
+    <span class="name-text">{{ p.name }}</span>
+    @if (own()) {
+      <span class="you">du</span>
+    }
+  </span>
+  @if (variant() === 'row' && status(); as s) {
+    <span class="tags">
+      <span class="tag" [attr.data-tone]="s.tone">{{ s.long }}</span>
+      @if (stake()) {
+        <span class="tag" data-tone="muted">Einsatz {{ formatMoney(stake()) }}</span>
+      }
+    </span>
+  }
+</span>
+
+@if (variant() === 'column' && status(); as s) {
+  <span class="token" [attr.data-tone]="s.tone" aria-hidden="true">
+    @if (s.dot) {
+      <span class="dot" [style.background]="s.dot"></span>
+    }
+    {{ s.short }}
+  </span>
+}

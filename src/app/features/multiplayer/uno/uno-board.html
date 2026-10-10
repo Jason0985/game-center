@@ -169,6 +169,7 @@
 @for (flight of handFlights(); track flight.id) {
   <app-uno-card
     class="hand-flight"
+    [attr.data-flight]="flight.id"
     aria-hidden="true"
     [card]="null"
     [style.left.px]="flight.to.x"
