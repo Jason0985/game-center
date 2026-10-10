@@ -124,20 +124,35 @@ export function cardAriaLabel(card: Flip7Card): string {
   return `Aktionskarte ${ACTION_NAMES[card]}`;
 }
 
-// Kartenfarben: Zahlen reihum nach Wert, Aktionskarten fest (in allen Farbschemas gleich)
-export const NUMBER_COLORS = [
-  '#38c6de',
-  '#5b8cff',
-  '#4cc38a',
-  '#f2c94c',
-  '#ff9150',
-  '#a78bfa',
-  '#f472b6',
-] as const;
-export const ACTION_COLORS: Record<Flip7ActionCard, { bg: string; fg: string }> = {
-  FREEZE: { bg: '#7dd3fc', fg: '#0b2533' },
-  FLIP3: { bg: '#ff9150', fg: '#2a1204' },
-  SC: { bg: '#c8386d', fg: '#ffffff' },
+// Kartenfarben (Palette von Uno und Skip-Bo, in allen Farbschemas gleich): jede Zahl
+// eine eigene Fläche; Aktionskarten dunkel mit farbigem Symbol wie die Uno-Farbwahl
+export interface Flip7CardColors {
+  bg: string;
+  fg: string;
+}
+export const NUMBER_COLORS: readonly Flip7CardColors[] = [
+  { bg: '#8e97a8', fg: '#0f1115' },
+  { bg: '#5fd3e6', fg: '#0f1115' },
+  { bg: '#43b77a', fg: '#0b1f14' },
+  { bg: '#f2c230', fg: '#1a1300' },
+  { bg: '#ff9150', fg: '#2a1204' },
+  { bg: '#f472b6', fg: '#0f1115' },
+  { bg: '#6d5bd0', fg: '#ffffff' },
+  { bg: '#d1373b', fg: '#ffffff' },
+  { bg: '#2a4fc1', fg: '#ffffff' },
+  { bg: '#14968a', fg: '#ffffff' },
+  { bg: '#c8386d', fg: '#ffffff' },
+  { bg: '#b5652a', fg: '#ffffff' },
+  { bg: '#3d4452', fg: '#ffffff' },
+];
+export const MODIFIER_COLORS: Record<'bonus' | 'double', Flip7CardColors> = {
+  bonus: { bg: '#f4f1ea', fg: '#3f33a3' },
+  double: { bg: '#f5c84b', fg: '#2a1d00' },
+};
+export const ACTION_COLORS: Record<Flip7ActionCard, Flip7CardColors> = {
+  FREEZE: { bg: '#15171c', fg: '#7dd3fc' },
+  FLIP3: { bg: '#15171c', fg: '#ffb07a' },
+  SC: { bg: '#15171c', fg: '#f27ba5' },
 };
 
 // Modifikatoren als Kurztext, z. B. "×2 +6"; "" ohne Modifikatoren

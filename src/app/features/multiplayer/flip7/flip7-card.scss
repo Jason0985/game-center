@@ -1,21 +1,64 @@
 @use '../table/card-base';
 
-// Flip-7-Gesichter (Grundlage in table/_card-base.scss)
+// Flip-7-Gesichter (Grundlage in table/_card-base.scss), im Stil der Uno-Karten:
+// volle Farbfläche, Innenrahmen und Eckindizes in row; Farben aus flip7.model.ts
+:host {
+  border-color: rgba(0, 0, 0, 0.18);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
 :host(.underline) .value,
 :host(.underline) .fan-value {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-thickness: max(2px, calc(var(--card-w) * 0.04));
+  text-underline-offset: calc(var(--card-w) * 0.05);
 }
 
-:host([data-kind='modifier']) {
-  border: 1.5px solid var(--f7-mod-border);
-  background: var(--f7-mod-bg);
-  color: var(--f7-mod-text);
-  letter-spacing: normal;
+.inner {
+  position: absolute;
+  inset: calc(var(--card-w) * 0.085) calc(var(--card-w) * 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.38);
+  border-radius: max(2px, calc(var(--card-w) * 0.11));
+}
+
+.corner {
+  top: calc(var(--card-w) * 0.15);
+  left: calc(var(--card-w) * 0.16);
+  font-size: max(8px, calc(var(--card-w) * 0.2));
+  font-weight: 900;
+  opacity: 1;
+}
+
+.corner--end {
+  top: auto;
+  right: calc(var(--card-w) * 0.16);
+  bottom: calc(var(--card-w) * 0.15);
+  left: auto;
 }
 
 :host([data-kind='modifier']) .value {
-  font-size: var(--card-font, calc(var(--card-w) * 0.47));
+  font-size: var(--card-font, calc(var(--card-w) * 0.42));
+}
+
+:host([data-kind='modifier']) .inner {
+  border-color: rgba(123, 107, 230, 0.55);
+}
+
+:host([data-kind='modifier']) .corner {
+  font-size: max(7px, calc(var(--card-w) * 0.17));
+}
+
+:host(.double) .inner {
+  border-color: rgba(42, 29, 0, 0.25);
+}
+
+:host([data-kind='action']) {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+:host([data-kind='action']) .inner {
+  border-color: color-mix(in srgb, var(--ink) 55%, transparent);
 }
 
 .icon {
@@ -23,8 +66,22 @@
   font-variation-settings: 'FILL' 1;
 }
 
-.three {
-  font-size: calc(var(--card-w) * 0.64);
+.flip3 {
+  width: calc(var(--card-w) * 0.6);
+  height: calc(var(--card-w) * 0.6);
+  overflow: visible;
+}
+
+.flip3 rect {
+  fill: var(--face);
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.flip3 text {
+  fill: currentColor;
+  font-size: 8px;
   font-weight: 900;
 }
 
@@ -46,6 +103,10 @@
   border-color: rgba(0, 0, 0, 0.1);
   background: var(--f7-bust-bg);
   color: var(--f7-bust-text);
+}
+
+:host([data-highlight='bust']) .inner {
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 :host([data-highlight='dup']) {

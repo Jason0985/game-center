@@ -19,6 +19,7 @@ import { TableTop } from '../table/table-top';
 import { Flip7CardView } from './flip7-card';
 import { Flip7Seat } from './flip7-seat';
 import {
+  ACTION_ICONS,
   ACTION_NAMES,
   activeSeatOf,
   Flip7ActionCard,
@@ -58,9 +59,12 @@ interface Flight {
   card: 'FREEZE' | 'FLIP3' | 'SC' | 'SAVE';
   target: number;
   dup?: Flip7Card;
+  // Eigene Zielwahl: groß zeigen, dann in den Hinweis-Kasten (statt zu einem Platz)
+  pick?: boolean;
 }
 
-// Zweites Leben: groß in der Mitte zeigen, dann an seinen Platz (ms)
+// Zweites Leben bzw. Aktionskarte zur Zielwahl: groß in der Mitte zeigen, dann an seinen
+// Platz bzw. in den Hinweis-Kasten (ms)
 const SC_REVEAL_MS = 1500;
 // Zweites Leben verbraucht: zusammenfliegen, kurz stehen, Herz zerbricht (ms)
 const SC_SAVE_MS = 1300;
@@ -342,9 +346,14 @@ export class Flip7Board {
 
   // Freeze/Flip 3 fliegt von der Mitte zum Ziel
   readonly flights = signal<Flight[]>([]);
+  // Der Hinweis zur Zielwahl erscheint erst, wenn die Karte bei ihm ankommt
+  readonly picking = computed(() => this.flights().some((flight) => flight.pick));
+  readonly actionIcons = ACTION_ICONS;
+  readonly actionNames = ACTION_NAMES;
   private flightId = 0;
   private eventsKey: string | null = null;
   private scSeats: Set<number> | null = null;
+  private pickCard: Flip7ActionCard | null = null;
 
   private readonly stack = viewChild<ElementRef<HTMLElement>>('stack');
   private readonly flyIn = new CardFlyIn(this.live);
@@ -393,6 +402,22 @@ export class Flip7Board {
       if (added.length) {
         untracked(() => this.flights.update((list) => [...list, ...added]));
       }
+    });
+
+    // Ich habe eine Aktionskarte gezogen und wähle das Ziel: Karte groß zeigen (wie das
+    // Zweite Leben), dann wandert sie in den Hinweis „Tippe einen Spieler an“
+    effect(() => {
+      const card = this.choosing();
+      const before = this.pickCard;
+      this.pickCard = card;
+      if (!card || card === before || !untracked(this.live) || reducedMotion()) return;
+      const seat = untracked(this.me)!.seat;
+      untracked(() =>
+        this.flights.update((list) => [
+          ...list,
+          { id: ++this.flightId, card, target: seat, pick: true },
+        ]),
+      );
     });
   }
 
@@ -474,16 +499,18 @@ export class Flip7Board {
     void Promise.all(runs.map((run) => run.finished.catch(() => undefined))).finally(done);
   }
 
-  // Zweites Leben: in der Mitte groß werden, kurz mit Schild stehen, dann klein an den Platz
-  revealSc(event: AnimationCallbackEvent, flight: Flight): void {
+  // Zweites Leben bzw. Zielwahl: in der Mitte groß werden, kurz mit Schild stehen, dann klein
+  // an den Platz bzw. in den Hinweis-Kasten (dort ausblenden)
+  reveal(event: AnimationCallbackEvent, flight: Flight): void {
     const reveal = event.target as HTMLElement;
     const own = flight.target === this.me()?.seat;
     const host = this.host.nativeElement;
-    const target =
-      (own
-        ? host.querySelector('.mod-sc')
-        : host.querySelector(`[data-seat="${flight.target}"] .fan-sc`)) ??
-      host.querySelector(`[data-seat="${flight.target}"]`);
+    const target = flight.pick
+      ? host.querySelector('.choose')
+      : ((own
+          ? host.querySelector('.mod-sc')
+          : host.querySelector(`[data-seat="${flight.target}"] .fan-sc`)) ??
+        host.querySelector(`[data-seat="${flight.target}"]`));
     const card = reveal.querySelector('app-flip7-card');
     const tag = reveal.querySelector<HTMLElement>('.sc-tag');
     const done = () => {
@@ -499,7 +526,7 @@ export class Flip7Board {
     const to = target.getBoundingClientRect();
     const dx = to.left + to.width / 2 - (from.left + from.width / 2);
     const dy = to.top + to.height / 2 - (from.top + from.height / 2);
-    const end = Math.max(0.3, to.width / (from.width || 1));
+    const end = flight.pick ? 0.7 : Math.max(0.3, to.width / (from.width || 1));
     tag?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0, offset: 0.72 }], {
       duration: SC_REVEAL_MS,
       fill: 'forwards',
@@ -510,7 +537,7 @@ export class Flip7Board {
           { transform: 'scale(0.6)', opacity: 0 },
           { transform: 'scale(2)', opacity: 1, offset: 0.18 },
           { transform: 'scale(2)', opacity: 1, offset: 0.68 },
-          { transform: `translate(${dx}px, ${dy}px) scale(${end})`, opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${end})`, opacity: flight.pick ? 0 : 1 },
         ],
         { duration: SC_REVEAL_MS, easing: 'ease-in-out', fill: 'forwards' },
       )

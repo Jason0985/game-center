@@ -1,5 +1,5 @@
 // Schickt eine Push-Nachricht an alle Geräte des Empfängers. Aufgerufen nur aus der Datenbank
-// (_send_push über pg_net: Mitteilungen, „Du bist dran“, Spielstart) mit dem gemeinsamen Geheimnis, deshalb ohne JWT-Prüfung
+// (_send_push über pg_net: Mitteilungen) mit dem gemeinsamen Geheimnis, deshalb ohne JWT-Prüfung
 // deployen (verify_jwt = false). Abgelaufene Geräte (404/410 vom Push-Dienst) werden gelöscht.
 //
 // Secrets: PUSH_WEBHOOK_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, optional VAPID_SUBJECT.
