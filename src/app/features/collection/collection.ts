@@ -27,17 +27,10 @@ type CollectionGroup = 'Punkte & Tabellen' | 'Racing' | 'Werkzeuge' | 'Multiplay
 const GROUP_ORDER: CollectionGroup[] = ['Punkte & Tabellen', 'Racing', 'Werkzeuge', 'Multiplayer'];
 // Abschnitte zum Auf- und Zuklappen; anfangs ist nur Multiplayer zu
 const INITIALLY_CLOSED: CollectionGroup[] = ['Multiplayer'];
-const GAME_TILES = [
-  'var(--tile-pink)',
-  'var(--tile-blue)',
-  'var(--tile-orange)',
-  'var(--tile-green)',
-];
-
 // Alle Online-Spiele aus der Lobby-Liste: führen in die Lobbys, externe direkt zum Anbieter
-const MULTIPLAYER_ITEMS: CollectionItem[] = GAMES.map((game, index) => ({
+const MULTIPLAYER_ITEMS: CollectionItem[] = GAMES.map((game) => ({
   title: game.name,
-  tile: GAME_TILES[index % GAME_TILES.length],
+  tile: game.tile,
   group: 'Multiplayer',
   category: 'Multiplayer',
   description: game.blurb,

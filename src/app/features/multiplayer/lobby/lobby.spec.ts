@@ -353,6 +353,21 @@ describe('Lobby', () => {
     expect(component.canStart()).toBe(true);
   });
 
+  it('lets a host start Blackjack alone, but not with 6 players', async () => {
+    await render(
+      'host',
+      lobbyDetail({ members: [member('host', true)], game_key: 'blackjack', game_settings: {} }),
+    );
+    expect(component.canStart()).toBe(true);
+    expect(text()).toContain('1.000 Startgeld');
+
+    fixture.destroy();
+    const six = ['host', 'a', 'b', 'c', 'd', 'e'].map((id) => member(id, true));
+    await render('host', lobbyDetail({ members: six, game_key: 'blackjack', game_settings: {} }));
+    expect(component.canStart()).toBe(false);
+    expect(text()).toContain('Blackjack geht mit höchstens 5 Spielern.');
+  });
+
   it('shows a way back when the lobby cannot be loaded', async () => {
     user.set({ id: 'guest' });
     lobbyService.getLobby.mockResolvedValue({ ok: false, message: 'Keine Verbindung.' });

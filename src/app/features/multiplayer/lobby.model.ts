@@ -2,22 +2,24 @@ import { Profile } from '../profile/profile.model';
 import { UNO_DEFAULT_SETTINGS, UNO_HOUSE_RULES, UNO_RULES, UnoSettings } from './uno/uno.model';
 import { FLIP7_DEFAULT_TARGET, FLIP7_RULES } from './flip7/flip7.model';
 import { SKIPBO_RULES } from './skipbo/skipbo.model';
+import { BLACKJACK_RULES, formatMoney, START_MONEY_DEFAULT } from './blackjack/blackjack.model';
 
 export type LobbyStatus = 'open' | 'started';
 
 // Rahmenbedingungen des Spiels (set_lobby_game). Flip 7: targetScore null = offen ohne
-// Punkteziel; Uno: die drei Hausregeln; Skip-Bo: stockSize 5–50, ohne = Standard
+// Punkteziel; Uno: die drei Hausregeln; Skip-Bo: stockSize 5–50, ohne = Standard;
+// Blackjack: startMoney 100–10.000, ohne = 1.000
 export interface LobbyGameSettings {
   targetScore?: number | null;
   stockSize?: number;
+  startMoney?: number;
   stacking?: boolean;
   sevenZero?: boolean;
   drawUntilPlayable?: boolean;
 }
 
-// Gleiche Grenzen wie in der DB (_add_lobby_member / start_lobby)
+// Gleiche Grenze wie in der DB (_add_lobby_member); die Mindestzahl hängt vom Spiel ab
 export const LOBBY_MAX_MEMBERS = 8;
-export const LOBBY_MIN_MEMBERS = 2;
 
 // Nur die Profilfelder, die die Lobby anzeigt
 export type LobbyProfile = Pick<Profile, 'id' | 'username' | 'display_name' | 'is_guest'>;
@@ -71,9 +73,9 @@ export function eveningWinners(
   return { names, wins };
 }
 
-// Wie start_lobby: mindestens 2 Spieler und alle bereit
+// Wie start_lobby: alle bereit (Spielerzahl prüft startBlocker je Spiel)
 export const canStartLobby = (members: LobbyMember[]): boolean =>
-  members.length >= LOBBY_MIN_MEMBERS && members.every((member) => member.ready);
+  members.length > 0 && members.every((member) => member.ready);
 
 // Wählbare Spiele; Grenzen wie in der DB (start_lobby)
 export const GAMES = [
@@ -84,6 +86,7 @@ export const GAMES = [
     name: 'Flip 7',
     icon: 'style',
     blurb: 'Karten ziehen, Punkte sammeln – aber keine Zahl doppelt!',
+    minPlayers: 2,
     maxPlayers: LOBBY_MAX_MEMBERS,
     url: null,
   },
@@ -94,6 +97,7 @@ export const GAMES = [
     name: 'Skip-Bo',
     icon: 'layers',
     blurb: 'Spielstapel leer spielen – Karten von 1 bis 12 in die Mitte legen.',
+    minPlayers: 2,
     maxPlayers: 6,
     url: null,
   },
@@ -104,7 +108,20 @@ export const GAMES = [
     name: 'Uno',
     icon: 'view_carousel',
     blurb: 'Farbe oder Zahl bedienen – wer zuerst alle Karten los ist, gewinnt.',
+    minPlayers: 2,
     maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
+  },
+  // Gegen den Dealer, daher auch allein
+  {
+    key: 'blackjack',
+    tile: 'var(--tile-purple)',
+    tagline: 'Gegen den Dealer bis 21',
+    name: 'Blackjack',
+    icon: 'casino',
+    blurb: 'Gegen den Dealer an 21 heran, ohne zu überkaufen – allein oder zu fünft.',
+    minPlayers: 1,
+    maxPlayers: 5,
     url: null,
   },
   // Läuft extern; die Lobby zeigt nur den Link
@@ -115,6 +132,7 @@ export const GAMES = [
     name: 'Monopoly',
     icon: 'apartment',
     blurb: 'Straßen kaufen, Häuser bauen, Miete kassieren – gespielt auf richup.io.',
+    minPlayers: 2,
     maxPlayers: LOBBY_MAX_MEMBERS,
     url: 'https://richup.io',
   },
@@ -134,12 +152,16 @@ export function startBlocker(
   const game = gameOf(gameKey);
   if (!game) return 'Der Host muss noch ein Spiel auswählen.';
   if (game.url) return `${game.name} spielt ihr direkt über den Link oben.`;
+  if (memberCount < game.minPlayers) {
+    return `${game.name} braucht mindestens ${game.minPlayers} Spieler.`;
+  }
   return memberCount > game.maxPlayers
     ? `${game.name} geht mit höchstens ${game.maxPlayers} Spielern.`
     : null;
 }
 
-// Einstellungen kurz, z. B. "bis 200 Punkte", "Offen", "15 Karten" oder "Stapeln, 7-0"; null ohne
+// Einstellungen kurz, z. B. "bis 200 Punkte", "Offen", "15 Karten", "Stapeln, 7-0" oder
+// "1.000 Startgeld"; null ohne
 export function settingsLabel(
   gameKey: string | null | undefined,
   settings: LobbyGameSettings | null | undefined,
@@ -151,6 +173,7 @@ export function settingsLabel(
   if (gameKey === 'skip-bo') {
     return settings?.stockSize ? `${settings.stockSize} Karten` : null;
   }
+  if (gameKey === 'blackjack') return `${formatMoney(startMoneyOf(settings))} Startgeld`;
   if (gameKey !== 'flip-7') return null;
 
   const target = settings?.targetScore;
@@ -174,6 +197,9 @@ export function gameLabel(
 export const flip7TargetOf = (settings: LobbyGameSettings | null | undefined): number | null =>
   settings?.targetScore === undefined ? FLIP7_DEFAULT_TARGET : settings.targetScore;
 
+export const startMoneyOf = (settings: LobbyGameSettings | null | undefined): number =>
+  settings?.startMoney ?? START_MONEY_DEFAULT;
+
 export const unoRulesOf = (settings: LobbyGameSettings | null | undefined): UnoSettings => ({
   stacking: settings?.stacking ?? UNO_DEFAULT_SETTINGS.stacking,
   sevenZero: settings?.sevenZero ?? UNO_DEFAULT_SETTINGS.sevenZero,
@@ -187,6 +213,7 @@ export function rulesOf(
 ): readonly string[] {
   if (gameKey === 'flip-7') return FLIP7_RULES;
   if (gameKey === 'skip-bo') return SKIPBO_RULES;
+  if (gameKey === 'blackjack') return BLACKJACK_RULES;
   if (gameKey !== 'uno') return [];
   const active = unoRulesOf(settings);
   return [...UNO_RULES, ...UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.rule)];

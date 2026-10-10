@@ -18,14 +18,15 @@ import {
   flip7TargetOf,
   gameOf,
   LOBBY_MAX_MEMBERS,
-  LOBBY_MIN_MEMBERS,
   LobbyDetail,
   LobbyMember,
   rulesOf,
   settingsLabel,
   startBlocker,
+  startMoneyOf,
   unoRulesOf,
 } from '../lobby.model';
+import { formatMoney } from '../blackjack/blackjack.model';
 import { UNO_HOUSE_RULES } from '../uno/uno.model';
 import { RulesDialog, RulesDialogData } from '../table/rules-dialog';
 import { LobbyInviteSheet, LobbyInviteSheetData } from './lobby-invite-sheet';
@@ -33,6 +34,7 @@ import { LobbyGameSheet, LobbyGameSheetData } from './lobby-game-sheet';
 import { Flip7GameView } from '../flip7/flip7-game';
 import { SkipboGameView } from '../skipbo/skipbo-game';
 import { UnoGameView } from '../uno/uno-game';
+import { BlackjackGameView } from '../blackjack/blackjack-game';
 
 import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
 
@@ -46,6 +48,7 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
     Flip7GameView,
     SkipboGameView,
     UnoGameView,
+    BlackjackGameView,
     InitialsPipe,
     AvatarColorPipe,
   ],
@@ -64,7 +67,6 @@ export class Lobby {
 
   readonly lobbyId = this.route.snapshot.paramMap.get('lobbyId') ?? '';
   readonly maxMembers = LOBBY_MAX_MEMBERS;
-  readonly minMembers = LOBBY_MIN_MEMBERS;
   readonly lobby = signal<LobbyDetail | null>(null);
   readonly loading = signal(true);
   readonly busy = signal(false);
@@ -90,10 +92,11 @@ export class Lobby {
     startBlocker(this.lobby()?.game_key, this.members().length),
   );
   readonly canStart = computed(() => canStartLobby(this.members()) && !this.startBlocker());
-  // Eine Zeile über den Knöpfen: was dem Start noch fehlt; allein in der Lobby keine
+  // Eine Zeile über den Knöpfen: was dem Start noch fehlt; unter der Mindestzahl des
+  // Spiels (allein in der Lobby) keine
   readonly status = computed(() => {
     const count = this.members().length;
-    if (count < this.minMembers) return null;
+    if (count < (this.game()?.minPlayers ?? 2)) return null;
     return (
       this.startBlocker() ?? `${this.readyCount()} von ${count} bereit – alle müssen bereit sein`
     );
@@ -135,6 +138,8 @@ export class Lobby {
           label: 'Spielstapel',
           chips: [settings?.stockSize ? `${settings.stockSize} Karten` : 'Standard'],
         };
+      case 'blackjack':
+        return { label: 'Startgeld', chips: [formatMoney(startMoneyOf(settings))] };
       case 'uno': {
         const active = unoRulesOf(settings);
         const chips = UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.label);

@@ -77,6 +77,24 @@
       </div>
     </div>
   }
+  @case ('blackjack') {
+    <div class="field">
+      <span class="label" id="lobby-money-label">Startgeld</span>
+      <div class="segments" role="group" aria-labelledby="lobby-money-label">
+        @for (option of moneyOptions; track option) {
+          <button
+            type="button"
+            [attr.aria-pressed]="startMoney() === option"
+            [disabled]="locked()"
+            (click)="selectStartMoney(option)"
+          >
+            {{ formatMoney(option) }}
+          </button>
+        }
+      </div>
+      <p class="hint">Alle starten mit diesem Guthaben. Einsatz 10 bis 500 pro Hand.</p>
+    </div>
+  }
   @case ('skip-bo') {
     <div class="field">
       <label class="label" for="lobby-stock">Karten im Spielstapel</label>

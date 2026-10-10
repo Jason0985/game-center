@@ -5,6 +5,7 @@ import { SessionService } from '../../../services/session.service';
 import { computeStats, GameResult, GameResultsService, resultGameName } from './game-stats';
 import { gameOf } from '../../multiplayer/lobby.model';
 import { cardCount } from '../../multiplayer/table/table.model';
+import { formatMoney } from '../../multiplayer/blackjack/blackjack.model';
 import { SkeletonRows } from '../../../ui/skeleton-rows';
 
 const percentFormat = new Intl.NumberFormat('de-DE', { style: 'percent' });
@@ -77,6 +78,8 @@ export class Stats {
     if (result.score === null || result.game_key === 'skip-bo') return null;
     // Uno: keine Punkte; ein Sieg ist ein Sieg, sonst die Karten, die noch übrig waren
     if (result.game_key === 'uno') return result.won ? null : `${cardCount(result.score)} übrig`;
+    // Blackjack: Guthaben am Ende
+    if (result.game_key === 'blackjack') return `Guthaben ${formatMoney(result.score)}`;
     return `${result.score} P.`;
   }
 }

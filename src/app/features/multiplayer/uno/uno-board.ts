@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { flyFrom, reducedMotion } from '../table/table-motion';
+import { flyFrom, injectFlights, reducedMotion } from '../table/table-motion';
 import {
   ARC_TABLES,
   cardCount,
@@ -104,10 +104,9 @@ export class UnoBoard {
   readonly live = signal(false);
   readonly colors: UnoColor[] = ['R', 'Y', 'B', 'G'];
   readonly colorNames = COLOR_NAMES;
-  // Weitergegebene Hände: Rücken, die von Platz zu Platz fliegen (fest am Ziel, fliegen
-  // per flyFrom von der Quelle ein und verschwinden danach)
-  readonly handFlights = signal<{ id: number; from: DOMRect; to: DOMRect; delay: number }[]>([]);
-  private flightId = 0;
+  // Weitergegebene Hände: Rücken, die von Platz zu Platz fliegen
+  private readonly flights = injectFlights('.hand-flight');
+  readonly handFlights = this.flights.list;
 
   readonly me = computed(
     () => this.game().players.find((player) => player.user_id === this.userId()) ?? null,
@@ -424,38 +423,18 @@ export class UnoBoard {
         HAND_FLY_H,
       );
 
-    const flights = transfers.flatMap(([giver, taker]) => {
-      const from = seatRect(giver);
-      const to = seatRect(taker);
-      if (!from || !to) return [];
-      return Array.from({ length: HAND_FLY_CARDS }, (_, i) => ({
-        id: ++this.flightId,
-        from: card(from),
-        to: card(to),
-        delay: delay + i * HAND_STAGGER_MS,
-      }));
-    });
-    if (!flights.length) return;
-
-    this.handFlights.set(flights);
-    afterNextRender(
-      () => {
-        const elements = this.host.nativeElement.querySelectorAll<HTMLElement>('.hand-flight');
-        const done = flights.map((flight, i) => {
-          const element = elements[i];
-          return element && typeof element.animate === 'function'
-            ? flyFrom(element, flight.from, {
-                flip: false,
-                delay: flight.delay,
-                duration: HAND_FLY_MS,
-              })
-            : Promise.resolve();
-        });
-        void Promise.all(done).then(() =>
-          this.handFlights.update((current) => (current === flights ? [] : current)),
-        );
-      },
-      { injector: this.injector },
+    this.flights.launch(
+      transfers.flatMap(([giver, taker]) => {
+        const from = seatRect(giver);
+        const to = seatRect(taker);
+        if (!from || !to) return [];
+        return Array.from({ length: HAND_FLY_CARDS }, (_, i) => ({
+          from: card(from),
+          to: card(to),
+          delay: delay + i * HAND_STAGGER_MS,
+        }));
+      }),
+      HAND_FLY_MS,
     );
   }
 }

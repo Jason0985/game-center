@@ -7,12 +7,13 @@ import {
   flip7TargetOf,
   gameOf,
   GAMES,
-  LOBBY_MIN_MEMBERS,
   LobbyDetail,
   LobbyGameSettings,
   rulesOf,
+  startMoneyOf,
   unoRulesOf,
 } from '../lobby.model';
+import { formatMoney, START_MONEY_OPTIONS } from '../blackjack/blackjack.model';
 import { FLIP7_TARGET_OPTIONS } from '../flip7/flip7.model';
 import { UNO_HOUSE_RULES, UnoSettings } from '../uno/uno.model';
 import { SKIPBO_STOCK_DEFAULT, SKIPBO_STOCK_MAX, SKIPBO_STOCK_MIN } from '../skipbo/skipbo.model';
@@ -43,12 +44,14 @@ export class LobbyGameSheet {
     ...game,
     meta: game.url
       ? game.tagline
-      : `${LOBBY_MIN_MEMBERS}–${game.maxPlayers} Spieler · ${game.tagline}`,
+      : `${game.minPlayers}–${game.maxPlayers} Spieler · ${game.tagline}`,
   }));
   readonly targetOptions = FLIP7_TARGET_OPTIONS;
   readonly houseRules = UNO_HOUSE_RULES;
   readonly stockMin = SKIPBO_STOCK_MIN;
   readonly stockMax = SKIPBO_STOCK_MAX;
+  readonly moneyOptions = START_MONEY_OPTIONS;
+  readonly formatMoney = formatMoney;
   readonly saving = signal(false);
   readonly locked = computed(() => this.data.busy() || this.saving());
 
@@ -62,6 +65,7 @@ export class LobbyGameSheet {
   readonly stockSize = linkedSignal<number | null>(() => this.settings()?.stockSize ?? null);
   // Wert beim Ziehen des Reglers, gespeichert wird erst beim Loslassen
   readonly stockDraft = linkedSignal(() => this.stockSize() ?? SKIPBO_STOCK_DEFAULT);
+  readonly startMoney = linkedSignal(() => startMoneyOf(this.settings()));
   readonly rules = computed(() => rulesOf(this.gameKey(), this.unoRules()));
 
   async selectGame(gameKey: string): Promise<void> {
@@ -76,14 +80,24 @@ export class LobbyGameSheet {
     if (stockSize !== this.stockSize()) await this.save('skip-bo', { stockSize });
   }
 
+  async selectStartMoney(startMoney: number): Promise<void> {
+    if (startMoney !== this.startMoney()) await this.save('blackjack', { startMoney });
+  }
+
   async toggleHouseRule(key: keyof UnoSettings): Promise<void> {
     await this.save('uno', { unoRules: { ...this.unoRules(), [key]: !this.unoRules()[key] } });
   }
 
-  // Flip 7 speichert das Punkteziel, Uno die Hausregeln, Skip-Bo die Stapelgröße, sonst nichts
+  // Flip 7 speichert das Punkteziel, Uno die Hausregeln, Skip-Bo die Stapelgröße, Blackjack
+  // das Startgeld, sonst nichts
   private async save(
     gameKey: string,
-    change: { target?: number | null; unoRules?: UnoSettings; stockSize?: number },
+    change: {
+      target?: number | null;
+      unoRules?: UnoSettings;
+      stockSize?: number;
+      startMoney?: number;
+    },
   ): Promise<void> {
     if (this.locked()) return;
 
@@ -92,12 +106,14 @@ export class LobbyGameSheet {
       target: this.target(),
       unoRules: this.unoRules(),
       stockSize: this.stockSize(),
+      startMoney: this.startMoney(),
     };
     const switching = gameKey !== previous.gameKey;
     this.gameKey.set(gameKey);
     if (change.target !== undefined) this.target.set(change.target);
     if (change.unoRules) this.unoRules.set(change.unoRules);
     if (change.stockSize !== undefined) this.stockSize.set(change.stockSize);
+    if (change.startMoney !== undefined) this.startMoney.set(change.startMoney);
     this.saving.set(true);
     const result = await this.lobbyService.setGame(
       this.data.lobbyId,
@@ -112,15 +128,17 @@ export class LobbyGameSheet {
       this.unoRules.set(previous.unoRules);
       this.stockSize.set(previous.stockSize);
       this.stockDraft.set(previous.stockSize ?? SKIPBO_STOCK_DEFAULT);
+      this.startMoney.set(previous.startMoney);
       this.appErrors.report(result.message, { title: 'Lobby' });
     }
     this.data.changed();
   }
 
-  // Beim Wechsel zu Skip-Bo gilt der Standard-Stapel
+  // Beim Wechsel zu Skip-Bo bzw. Blackjack gilt der Standard-Stapel bzw. das Standard-Startgeld
   private settingsFor(gameKey: string, switching: boolean): LobbyGameSettings {
     if (gameKey === 'flip-7') return { targetScore: this.target() };
     if (gameKey === 'uno') return { ...this.unoRules() };
+    if (gameKey === 'blackjack' && !switching) return { startMoney: this.startMoney() };
     const stockSize = this.stockSize();
     if (gameKey === 'skip-bo' && !switching && stockSize !== null) return { stockSize };
     return {};

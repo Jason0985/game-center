@@ -1,0 +1,53 @@
+// Mitspieler-Plätze (Aufbau in blackjack-seat.scss). Drittes Stylesheet von BlackjackBoard
+// (Budget pro Datei). Handy: kompakt (Schild 68 breit, Mini-Karten 22 × 31 darüber, ein
+// Token für den Rundenstand); quer/Laptop: Pille mit Karten 56 × 78 darüber (Laptop.dc).
+.opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  --w: 68px;
+  --pad: 4px 3px 9px;
+  --gap: 2px;
+  --radius: 12px;
+  --ring: 22px;
+  --avatar: 22px;
+  --avatar-font: 11px;
+  --name-size: 11px;
+  --seat-card-w: 22px;
+  --seat-card-h: 31px;
+  --seat-card-overlap: 8px;
+}
+
+:host([data-layout='hoch']) .opp {
+  --w: 96px;
+  --pad: 7px 4px 12px;
+  --ring: 30px;
+  --avatar: 30px;
+  --avatar-font: 14px;
+  --name-size: 13px;
+  --seat-card-w: 28px;
+  --seat-card-h: 40px;
+  --seat-card-overlap: 10px;
+}
+
+:host([data-layout='quer']) .opp,
+:host([data-layout='laptop']) .opp {
+  --w: auto;
+  --gap: 8px;
+  --ring: 32px;
+  --avatar: 32px;
+  --avatar-font: 13px;
+  --name-size: 13px;
+  --info-gap: 3px;
+  --seat-card-w: 56px;
+  --seat-card-h: 78px;
+  --seat-card-overlap: 26px;
+  --cards-gap: 10px;
+  --hand-gap: 8px;
+}
+
+:host([data-layout='quer']) .opp {
+  --seat-card-w: 44px;
+  --seat-card-h: 62px;
+  --seat-card-overlap: 20px;
+}

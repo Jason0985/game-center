@@ -1,0 +1,300 @@
+@let g = game();
+@let t = table();
+<div class="table-area" appTableTop mark="21" [w]="t.w" [h]="t.h" [center]="noPointer">
+  <section class="dealer" aria-label="Dealer">
+    <div class="plate">
+      <span class="plate-avatar" aria-hidden="true">
+        <span class="material-symbols-rounded fill">person</span>
+      </span>
+      <span class="plate-name">Dealer</span>
+      @if (dealer(); as d) {
+        <span class="pill" [attr.data-tone]="d.tone">{{ d.value }}</span>
+      }
+    </div>
+    <div class="cards dealer-cards">
+      @if (dealer(); as d) {
+        @for (item of d.cards; track item.key) {
+          <app-blackjack-card [card]="item.card" [attr.data-card]="item.key" />
+        }
+      } @else {
+        <span class="slot" aria-hidden="true"></span>
+        <span class="slot" aria-hidden="true"></span>
+      }
+    </div>
+  </section>
+
+  <!-- Schuh, daneben die Regeln (allein, Laptop) bzw. der Setz-Ring (Laptop) -->
+  <div class="middle" [class.middle--result]="!!banner()">
+    <div class="shoe-box" role="img" [attr.aria-label]="'Kartenschuh, ' + g.shoe_count + ' Karten'">
+      <span class="stack shoe">
+        <app-blackjack-card class="back--3" [card]="null" />
+        <app-blackjack-card class="back--2" [card]="null" />
+        <app-blackjack-card class="back--1" [card]="null" />
+      </span>
+      <span class="pile-label"> {{ g.shoe_count }}<span class="pile-unit"> Karten</span> </span>
+    </div>
+    @if (ring(); as r) {
+      <div
+        class="ring"
+        role="timer"
+        [attr.aria-label]="(r.clock ? 'Austeilen in ' + r.clock + ', ' : '') + r.ready"
+      >
+        <span class="ring-dial">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="ring-track" cx="32" cy="32" r="28" />
+            <circle
+              class="ring-bar"
+              cx="32"
+              cy="32"
+              r="28"
+              [attr.stroke-dasharray]="ringLength"
+              [attr.stroke-dashoffset]="ringLength * (1 - r.share)"
+            />
+          </svg>
+          <span class="ring-clock">{{ r.clock ?? '…' }}</span>
+        </span>
+        <span class="ring-text">
+          <strong>Einsätze setzen</strong>
+          <span>{{ r.ready }}<span class="ring-more"> · dann wird ausgeteilt</span></span>
+          <span class="ring-more">Ohne Einsatz setzt du diese Runde aus</span>
+        </span>
+      </div>
+    } @else {
+      <div class="rules" aria-hidden="true">
+        <strong>Blackjack zahlt 3 zu 2</strong>
+        <span>Dealer steht auf allen 17</span>
+        <span>Unentschieden: Einsatz zurück</span>
+      </div>
+    }
+  </div>
+
+  @if (banner(); as b) {
+    <div class="banner" role="status">
+      <span class="banner-title" [attr.data-tone]="b.tone">{{ b.title }}</span>
+      <span class="banner-sub">{{ b.sub }}</span>
+    </div>
+  }
+
+  @for (view of seats(); track view.player.seat) {
+    @if (wide()) {
+      <div
+        appBlackjackSeat
+        role="group"
+        class="opp"
+        variant="row"
+        [player]="view.player"
+        [status]="view.status"
+        [turn]="view.turn"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+      ></div>
+    } @else {
+      <button
+        type="button"
+        appBlackjackSeat
+        class="opp"
+        variant="column"
+        [player]="view.player"
+        [status]="view.status"
+        [turn]="view.turn"
+        [opensSheet]="true"
+        [style.left.%]="view.x"
+        [style.top.%]="view.y"
+        (click)="openTable()"
+      ></button>
+    }
+  }
+
+  @if (me(); as m) {
+    <section class="own" [class.own--split]="hands().length > 1" aria-label="Deine Hand">
+      @if (betView()) {
+        @let s = spot();
+        <div class="own-hand own-hand--bet">
+          <span class="bet-text">{{ s.placed ? 'Dein Einsatz' : 'Setze deinen Einsatz' }}</span>
+          <div
+            class="bet-spot"
+            [class.bet-spot--open]="!s.placed"
+            role="img"
+            [attr.aria-label]="'Einsatz ' + formatMoney(s.amount)"
+          >
+            <app-blackjack-chips class="bet-chips" [amount]="s.amount" />
+          </div>
+          @if (!s.placed) {
+            <button type="button" class="clear" [disabled]="!draft()" (click)="clearDraft()">
+              <span class="material-symbols-rounded" aria-hidden="true">undo</span>
+              {{ formatMoney(draft()) }} · Löschen
+            </button>
+          }
+        </div>
+      } @else {
+        @for (h of hands(); track h.key) {
+          <div class="own-hand" [class.active]="h.active" [attr.data-hand]="h.key">
+            <span class="pill" [attr.data-tone]="h.tone">{{ h.value }}</span>
+            <div class="cards own-cards">
+              @for (item of h.cards; track item.key) {
+                <app-blackjack-card [card]="item.card" [attr.data-card]="item.key" />
+              }
+            </div>
+            <div
+              class="bet-spot"
+              role="img"
+              [attr.aria-label]="'Einsatz ' + formatMoney(h.hand.bet)"
+            >
+              <app-blackjack-chips class="bet-chips" [amount]="h.hand.bet" />
+            </div>
+            <span class="stake" [attr.data-tone]="h.stakeTone">{{ h.stake }}</span>
+          </div>
+        }
+      }
+    </section>
+
+    @if (wide()) {
+      <div
+        appBlackjackSeat
+        role="group"
+        class="own-pill"
+        variant="pill"
+        [player]="m"
+        [turn]="myTurn()"
+      ></div>
+    }
+  }
+</div>
+
+@if (me(); as m) {
+  @if (wide()) {
+    <section class="controls" aria-label="Steuerung">
+      <div class="wallet">
+        <span class="wallet-label">Guthaben</span>
+        <span class="balance">{{ formatMoney(balance()) }}</span>
+      </div>
+      <div class="actions-row" [attr.data-panel]="panel()">
+        <ng-container *ngTemplateOutlet="actionsTpl" />
+      </div>
+      <div class="hint-box">
+        <span class="hint">{{ hint() }}</span>
+        @if (turnRing(); as tr) {
+          <span class="turn-ring" role="img" [attr.aria-label]="'Noch ' + tr.left + ' Sekunden'">
+            <svg viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="19" />
+              <circle
+                class="ring-bar"
+                cx="22"
+                cy="22"
+                r="19"
+                [attr.stroke-dasharray]="turnRingLength"
+                [attr.stroke-dashoffset]="turnRingLength * (1 - tr.share)"
+              />
+            </svg>
+            <span>{{ tr.left }}</span>
+          </span>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="mine" [class.is-turn]="myTurn()" aria-label="Dein Platz">
+      <div
+        appBlackjackSeat
+        role="group"
+        class="tab"
+        variant="tab"
+        [player]="m"
+        [turn]="myTurn()"
+      ></div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="wallet">
+            <span class="wallet-label">Guthaben</span>
+            <span class="balance">{{ formatMoney(balance()) }}</span>
+          </span>
+          <span class="hint">{{ hint() }}</span>
+        </div>
+        <div class="actions-row" [attr.data-panel]="panel()">
+          <ng-container *ngTemplateOutlet="actionsTpl" />
+        </div>
+      </div>
+    </section>
+  }
+}
+
+<p class="sr-only" aria-live="polite">{{ status() }}</p>
+
+@for (flight of chipFlights(); track flight.id) {
+  <app-blackjack-chips
+    class="chip-flight"
+    [attr.data-flight]="flight.id"
+    [value]="flight.value"
+    [style.left.px]="flight.to.x"
+    [style.top.px]="flight.to.y"
+    [style.--chip.px]="flight.to.width"
+  />
+}
+
+<!-- Bedienfeld: Züge, nach der Runde „Einsatz ändern / Nochmal“, sonst Chips zum Setzen -->
+<ng-template #actionsTpl>
+  @switch (panel()) {
+    @case ('actions') {
+      @let a = actions();
+      <button type="button" class="act act--primary" [disabled]="!a.hit" (click)="doAction('hit')">
+        <span class="material-symbols-rounded" aria-hidden="true">add</span>Ziehen
+        @if (wide()) {
+          <kbd>H</kbd>
+        }
+      </button>
+      <button type="button" class="act" [disabled]="!a.stand" (click)="doAction('stand')">
+        <span class="material-symbols-rounded" aria-hidden="true">front_hand</span>Halten
+        @if (wide()) {
+          <kbd>S</kbd>
+        }
+      </button>
+      <button type="button" class="act" [disabled]="!a.double" (click)="doAction('double')">
+        <span class="material-symbols-rounded" aria-hidden="true">exposure_plus_2</span>Verdoppeln
+        @if (wide()) {
+          <kbd>D</kbd>
+        }
+      </button>
+      <button type="button" class="act" [disabled]="!a.split" (click)="doAction('split')">
+        <span class="material-symbols-rounded" aria-hidden="true">call_split</span>Teilen
+        @if (wide()) {
+          <kbd>P</kbd>
+        }
+      </button>
+    }
+    @case ('again') {
+      <button type="button" class="btn" [disabled]="busy()" (click)="editing.set(true)">
+        Einsatz ändern
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="!again().enabled"
+        (click)="rebet()"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">replay</span>Nochmal ·
+        {{ formatMoney(again().amount) }}
+      </button>
+    }
+    @case ('chips') {
+      @for (chip of chipButtons(); track chip.value) {
+        <button
+          #chipButton
+          type="button"
+          class="chip-button"
+          [attr.aria-label]="chip.label"
+          [disabled]="chip.disabled"
+          (click)="addChip(chip.value, chipButton)"
+        >
+          <app-blackjack-chips [value]="chip.value" />
+        </button>
+      }
+      <button
+        type="button"
+        class="btn btn--primary set"
+        [disabled]="busy() || !!me()?.bet || draft() < 10"
+        (click)="placeBet()"
+      >
+        {{ setLabel() }}
+      </button>
+    }
+  }
+</ng-template>

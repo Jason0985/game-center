@@ -18,9 +18,10 @@ describe('lobby start rule', () => {
     expect(canStartLobby(members(4, 3))).toBe(false);
   });
 
-  it('never starts with a single member', () => {
-    expect(canStartLobby(members(1, 1))).toBe(false);
+  it('leaves the player count to the game (startBlocker)', () => {
+    expect(canStartLobby(members(1, 1))).toBe(true);
     expect(canStartLobby(members(1, 0))).toBe(false);
+    expect(canStartLobby([])).toBe(false);
   });
 });
 
@@ -42,6 +43,11 @@ describe('gameLabel', () => {
     expect(gameLabel('uno', { ...off, stacking: true, sevenZero: true })).toBe(
       'Uno · Stapeln, 7-0',
     );
+  });
+
+  it('names the Blackjack start money', () => {
+    expect(gameLabel('blackjack', {})).toBe('Blackjack · 1.000 Startgeld');
+    expect(gameLabel('blackjack', { startMoney: 5000 })).toBe('Blackjack · 5.000 Startgeld');
   });
 
   it('handles lobbies without a game', () => {
@@ -67,6 +73,13 @@ describe('startBlocker', () => {
 
   it('lets Uno start with the full lobby', () => {
     expect(startBlocker('uno', 8)).toBeNull();
+  });
+
+  it('needs 2 players except for Blackjack, which allows 1 to 5', () => {
+    expect(startBlocker('flip-7', 1)).toBe('Flip 7 braucht mindestens 2 Spieler.');
+    expect(startBlocker('blackjack', 1)).toBeNull();
+    expect(startBlocker('blackjack', 5)).toBeNull();
+    expect(startBlocker('blackjack', 6)).toBe('Blackjack geht mit höchstens 5 Spielern.');
   });
 
   it('never starts Monopoly here (played on richup.io)', () => {

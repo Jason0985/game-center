@@ -1,0 +1,68 @@
+@let top = winners();
+<section class="final" aria-labelledby="blackjack-final-title">
+  <div class="banner">
+    @if (solo()) {
+      @if (me(); as m) {
+        <p class="kicker">
+          Spiel beendet · {{ rounds() }} {{ rounds() === 1 ? 'Runde' : 'Runden' }}
+        </p>
+        <h2 id="blackjack-final-title">Dein Endstand</h2>
+        <p class="money">{{ formatMoney(m.balance) }}</p>
+        <p class="sub" [attr.data-tone]="tone(m)">{{ delta(m) }} seit dem Start</p>
+      }
+    } @else {
+      @if (top.length === 1) {
+        <span class="avatar" [style.background]="winnerColor()" aria-hidden="true">{{
+          top[0].name.trim().charAt(0).toUpperCase() || '?'
+        }}</span>
+      }
+      <p class="kicker">Spiel beendet · {{ rounds() }} {{ rounds() === 1 ? 'Runde' : 'Runden' }}</p>
+      <h2 id="blackjack-final-title">
+        {{ top.length === 1 ? top[0].name + ' gewinnt!' : 'Gleichstand!' }}
+      </h2>
+      @if (top.length) {
+        <p class="sub">
+          {{ top.length > 1 ? winnerNames() + ' mit je' : 'mit' }}
+          {{ formatMoney(top[0].balance) }}
+        </p>
+      }
+    }
+  </div>
+
+  @if (!solo()) {
+    <ol class="ranking">
+      @for (row of ranking(); track row.player.user_id) {
+        @let p = row.player;
+        <li
+          [class.top]="row.rank === 1"
+          [class.mine]="p.user_id === userId()"
+          [class.gone]="row.rank === null"
+        >
+          <span class="rank">{{ row.rank ?? '–' }}</span>
+          <span class="name">
+            <strong>{{ p.name }}</strong>
+            @if (p.user_id === userId()) {
+              <span class="note">(du)</span>
+            }
+            @if (row.rank === null) {
+              <span class="note">verlassen</span>
+            }
+          </span>
+          <span class="money-col">
+            <span class="balance">{{ formatMoney(p.balance) }}</span>
+            <span class="delta" [attr.data-tone]="tone(p)">{{ delta(p) }}</span>
+          </span>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (isHost()) {
+    <button type="button" class="back" [disabled]="busy()" (click)="backToLobby.emit()">
+      <span class="material-symbols-rounded" aria-hidden="true">meeting_room</span>
+      Zurück zur Warte-Lobby
+    </button>
+  } @else {
+    <p class="hint">Der Host entscheidet, wie es weitergeht.</p>
+  }
+</section>
