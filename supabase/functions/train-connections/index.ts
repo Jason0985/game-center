@@ -212,11 +212,12 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'Nur POST ist erlaubt.' }, 405);
   }
 
-  // Nur angemeldete Nutzer, damit die offene Transitous-API nicht über uns zugespammt wird
+  // Nur angemeldete Nutzer, damit die offene Transitous-API nicht über uns zugespammt wird.
+  // Gäste zählen nicht: anonyme Anmeldung kann jeder mit dem Publishable Key auslösen.
   const token = request.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!);
   const { data: userData } = await supabase.auth.getUser(token);
-  if (!userData.user) {
+  if (!userData.user || userData.user.is_anonymous) {
     return jsonResponse({ error: 'Bitte melde dich an, um Verbindungen zu suchen.' }, 401);
   }
 

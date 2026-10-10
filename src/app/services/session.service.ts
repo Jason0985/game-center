@@ -17,17 +17,20 @@ export class SessionService {
   private readonly openedFromRecoveryLink = inject(OPENED_FROM_RECOVERY_LINK);
 
   private readonly currentUser = signal<User | null>(null);
-  private readonly currentProfile = signal<Profile | null>(null);
+  // Inhaltsvergleich: das stündliche Nachladen meldet sich nur, wenn sich etwas geändert hat
+  private readonly currentProfile = signal<Profile | null>(null, { equal: sameProfile });
 
   private readonly sessionInitialized = signal(false);
   readonly initialized = this.sessionInitialized.asReadonly();
 
-  // Jede Sitzung, auch Gäste (anonyme Anmeldung über den Lobby-Code); nur für Lobby und Spiele
-  readonly authUser = this.currentUser.asReadonly();
+  // Jede Sitzung, auch Gäste (anonyme Anmeldung über den Lobby-Code); nur für Lobby und Spiele.
+  // Die stündliche Token-Erneuerung liefert ein neues User-Objekt für dasselbe Konto: gleich
+  // bleiben, damit Effekte, die den Nutzer lesen, nicht jedes Mal neu laufen.
+  readonly authUser = computed(() => this.currentUser(), { equal: sameUser });
   readonly isGuest = computed(() => this.currentUser()?.is_anonymous === true);
   readonly hasSession = computed(() => this.currentUser() !== null);
   // Nur echte Konten: Gäste gelten überall sonst als nicht angemeldet
-  readonly user = computed(() => (this.isGuest() ? null : this.currentUser()));
+  readonly user = computed(() => (this.isGuest() ? null : this.currentUser()), { equal: sameUser });
   readonly profile = this.currentProfile.asReadonly();
   readonly isLoggedIn = computed(() => this.user() !== null);
 
@@ -80,10 +83,15 @@ export class SessionService {
     this.currentProfile.set(profile);
   }
 
-  // User setzen und passendes Profil aus der Tabelle nachladen
+  // User setzen und passendes Profil aus der Tabelle nachladen; auch bei der Token-Erneuerung,
+  // damit vom Admin geänderte Rollen eine offene App erreichen
   private async setUser(user: User | null): Promise<void> {
+    const sameAccount = user !== null && user.id === this.currentUser()?.id;
     this.currentUser.set(user);
-    this.currentProfile.set(user ? await this.profileService.getProfile(user.id) : null);
+    const profile = user ? await this.profileService.getProfile(user.id) : null;
+    if (user?.id !== this.currentUser()?.id) return; // inzwischen ab- oder umgemeldet
+    if (sameAccount && !profile) return; // Ladefehler: bekanntes Profil behalten
+    this.currentProfile.set(profile);
   }
 
   private setRecoveryUser(userId: string | null): void {
@@ -95,6 +103,14 @@ export class SessionService {
       // ohne Speicher gilt es nur bis zum Neuladen
     }
   }
+}
+
+function sameUser(a: User | null, b: User | null): boolean {
+  return a?.id === b?.id && a?.is_anonymous === b?.is_anonymous;
+}
+
+function sameProfile(a: Profile | null, b: Profile | null): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function readRecoveryUserId(): string | null {

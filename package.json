@@ -26,9 +26,7 @@
     "@angular/router": "^22.1.0",
     "@angular/service-worker": "^22.1.0",
     "@supabase/supabase-js": "^2.116.0",
-    "claude": "^0.1.1",
     "flag-icons": "^7.5.0",
-    "graphifyy": "^0.10.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -38,6 +36,7 @@
     "@angular/compiler-cli": "^22.1.0",
     "@types/node": "^20.17.19",
     "angular-cli-ghpages": "^3.1.0",
+    "graphifyy": "^0.10.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

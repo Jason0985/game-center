@@ -13,6 +13,12 @@ import { AppErrorService } from './app-error.service';
 const LOCAL_STORAGE_KEY_PREFIX = 'gameroster:local-notifications:';
 const LOCAL_ID_PREFIX = 'local-';
 const MAX_LOCAL_NOTIFICATIONS = 20;
+// Toter Kanal (Fehler, Zeitüberschreitung, vom Server geschlossen): nach kurzer Pause neu
+const RESUBSCRIBE_MS = 2000;
+
+// Kanalnamen eindeutig halten: supabase.channel() gibt sonst den noch nicht ganz
+// entfernten alten Kanal zurück, und das neue Abo bleibt stumm
+let channelCounter = 0;
 
 @Injectable({
   providedIn: 'root',
@@ -36,9 +42,12 @@ export class NotificationsService {
 
   private loadedUserId: string | null = null;
   private channel: RealtimeChannel | null = null;
+  private retry: ReturnType<typeof setTimeout> | undefined;
 
   // Anzahl für das Badge im Header
-  readonly unreadCount = computed(() => this.notifications().filter((item) => !item.read_at).length);
+  readonly unreadCount = computed(
+    () => this.notifications().filter((item) => !item.read_at).length,
+  );
 
   constructor() {
     // Bei Login/Logout Benachrichtigungen und Live-Updates umstellen
@@ -52,7 +61,7 @@ export class NotificationsService {
       this.loadedFor.set(null);
       this.remote.set([]);
       this.local.set(userId ? this.loadLocal(userId) : []);
-      void this.subscribe(userId);
+      this.subscribe(userId);
 
       if (userId) {
         this.loading.set(true);
@@ -61,11 +70,18 @@ export class NotificationsService {
         this.loading.set(false);
       }
     });
+
+    // Supabase liefert verpasste Events nicht nach (Handy gesperrt, Verbindung weg)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') void this.reload();
+    });
   }
 
+  // Hintergrund-Abgleich: bei Fehler (z. B. Netz nach dem Aufwachen noch weg) still die
+  // bisherige Liste behalten
   async reload(): Promise<void> {
     if (this.loadedUserId) {
-      await this.load(this.loadedUserId);
+      await this.load(this.loadedUserId, true);
     }
   }
 
@@ -112,7 +128,10 @@ export class NotificationsService {
     const remoteIds = [...unreadIds].filter((id) => !this.isLocal(id));
     if (!remoteIds.length) return;
 
-    const { error } = await supabase.from('notifications').update({ read_at: readAt }).in('id', remoteIds);
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: readAt })
+      .in('id', remoteIds);
 
     // Nicht kritisch: beim nächsten Laden stimmt der Status wieder
     if (error) {
@@ -203,7 +222,7 @@ export class NotificationsService {
     this.remote.update((items) => items.filter((item) => item.id !== notificationId));
   }
 
-  private async load(userId: string): Promise<void> {
+  private async load(userId: string, quiet = false): Promise<void> {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
@@ -214,6 +233,7 @@ export class NotificationsService {
 
     if (error) {
       console.error('Benachrichtigungen konnten nicht geladen werden.', error);
+      if (quiet) return;
       // Lazy, da AppErrorService seinerseits diesen Service nutzt
       this.injector
         .get(AppErrorService)
@@ -225,18 +245,19 @@ export class NotificationsService {
     this.loadedFor.set(userId);
   }
 
-  private async subscribe(userId: string | null): Promise<void> {
-    if (this.channel) {
-      const channel = this.channel;
-      this.channel = null;
-      await supabase.removeChannel(channel);
-    }
+  // Erst den neuen Kanal merken, dann den alten entfernen (dessen CLOSED zählt nicht).
+  // Synchron, damit schnelles Ab- und Anmelden keinen Kanal übrig lässt.
+  private subscribe(userId: string | null, reconnect = false): void {
+    clearTimeout(this.retry);
+    const old = this.channel;
+    this.channel = userId ? this.open(userId, reconnect) : null;
+    if (old) void supabase.removeChannel(old);
+  }
 
-    if (!userId) return;
-
+  private open(userId: string, reconnect: boolean): RealtimeChannel {
     const filter = `recipient_id=eq.${userId}`;
-    this.channel = supabase
-      .channel(`notifications:${userId}`)
+    const channel: RealtimeChannel = supabase
+      .channel(`notifications:${userId}:${++channelCounter}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter },
@@ -260,7 +281,20 @@ export class NotificationsService {
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (channel !== this.channel) return;
+        if (status === 'SUBSCRIBED') {
+          // Nach dem Wiederverbinden Verpasstes nachladen
+          if (reconnect) void this.reload();
+        } else {
+          // Schließt der Server den Kanal, kämen sonst nie wieder Benachrichtigungen an
+          clearTimeout(this.retry);
+          this.retry = setTimeout(() => {
+            if (channel === this.channel) this.subscribe(userId, true);
+          }, RESUBSCRIBE_MS);
+        }
+      });
+    return channel;
   }
 
   private loadLocal(userId: string): NotificationItem[] {

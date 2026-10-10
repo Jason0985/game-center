@@ -54,6 +54,40 @@ describe('SessionService', () => {
     expect(getSession).not.toHaveBeenCalled();
   });
 
+  it('keeps the user on a token refresh and only takes over a changed profile', async () => {
+    getProfile.mockResolvedValue({ id: 'user-1', username: 'anna', roles: [] });
+    const service = setup();
+    callback('INITIAL_SESSION', session);
+    await vi.waitFor(() => expect(service.profile()).not.toBeNull());
+    const user = service.user();
+    const profile = service.profile();
+
+    // Unverändert: gleiche Objekte, Leser laufen nicht neu
+    getProfile.mockResolvedValue({ id: 'user-1', username: 'anna', roles: [] });
+    callback('TOKEN_REFRESHED', { user: { ...session.user } } as Session);
+    await vi.waitFor(() => expect(getProfile).toHaveBeenCalledTimes(2));
+    await Promise.resolve();
+    expect(service.user()).toBe(user);
+    expect(service.profile()).toBe(profile);
+
+    // Ladefehler: bekanntes Profil bleibt
+    getProfile.mockResolvedValue(null);
+    callback('TOKEN_REFRESHED', { user: { ...session.user } } as Session);
+    await vi.waitFor(() => expect(getProfile).toHaveBeenCalledTimes(3));
+    await Promise.resolve();
+    expect(service.profile()).toBe(profile);
+
+    // Vom Admin vergebene Rolle kommt an
+    getProfile.mockResolvedValue({ id: 'user-1', username: 'anna', roles: ['admin'] });
+    callback('TOKEN_REFRESHED', { user: { ...session.user } } as Session);
+    await vi.waitFor(() => expect(service.isAdmin()).toBe(true));
+    expect(service.user()).toBe(user);
+
+    callback('SIGNED_IN', otherSession);
+    await vi.waitFor(() => expect(getProfile).toHaveBeenCalledTimes(5));
+    expect(service.user()?.id).toBe('user-2');
+  });
+
   it('opens the password form after the link from the reset mail', () => {
     const service = setup();
 
