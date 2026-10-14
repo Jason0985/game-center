@@ -3,6 +3,7 @@ import { UNO_DEFAULT_SETTINGS, UNO_HOUSE_RULES, UNO_RULES, UnoSettings } from '.
 import { FLIP7_DEFAULT_TARGET, FLIP7_RULES } from './flip7/flip7.model';
 import { SKIPBO_RULES } from './skipbo/skipbo.model';
 import { BLACKJACK_RULES, formatMoney, START_MONEY_DEFAULT } from './blackjack/blackjack.model';
+import { NIMM6_RULES } from './nimm6/nimm6.model';
 
 export type LobbyStatus = 'open' | 'started';
 
@@ -124,6 +125,17 @@ export const GAMES = [
     maxPlayers: 5,
     url: null,
   },
+  {
+    key: 'nimm-6',
+    tile: 'var(--tile-blue)',
+    tagline: 'Wer die 6. Karte legt, nimmt',
+    name: 'Nimm 6',
+    icon: 'view_week',
+    blurb: 'Alle legen gleichzeitig – wer die 6. Karte einer Reihe legt, kassiert Hornochsen.',
+    minPlayers: 2,
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
+  },
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
@@ -214,6 +226,7 @@ export function rulesOf(
   if (gameKey === 'flip-7') return FLIP7_RULES;
   if (gameKey === 'skip-bo') return SKIPBO_RULES;
   if (gameKey === 'blackjack') return BLACKJACK_RULES;
+  if (gameKey === 'nimm-6') return NIMM6_RULES;
   if (gameKey !== 'uno') return [];
   const active = unoRulesOf(settings);
   return [...UNO_RULES, ...UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.rule)];

@@ -1,0 +1,53 @@
+<app-game-stage
+  gameTitle="Nimm 6!"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="view() !== 'play'"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [finished]="game()?.status === 'finished'"
+  endHint="Zum Endstand"
+  [rules]="rules"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+  (history)="openHistory()"
+>
+  @if (game(); as g) {
+    @switch (view()) {
+      @case ('final') {
+        <app-nimm6-final
+          [game]="g"
+          [userId]="userId()"
+          [isHost]="isHost()"
+          [busy]="busy()"
+          (backToLobby)="backToLobby()"
+        />
+      }
+      @case ('round') {
+        <app-nimm6-round
+          [game]="g"
+          [userId]="userId()"
+          [busy]="busy()"
+          [secondsLeft]="roundSecondsLeft()"
+          (next)="nextRound(g)"
+        />
+      }
+      @default {
+        <!-- Derselbe Tisch bleibt nach dem letzten Zug stehen, bis das Anlegen nachgespielt ist -->
+        <app-nimm6-board
+          [game]="g"
+          [userId]="userId()"
+          [busy]="busy() || g.status !== 'playing'"
+          [secondsLeft]="secondsLeft()"
+          (choose)="choose(g, $event)"
+          (takeRow)="takeRow(g, $event)"
+        />
+      }
+    }
+  }
+</app-game-stage>
