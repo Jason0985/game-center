@@ -4,7 +4,9 @@ import {
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
+  Injector,
   input,
   linkedSignal,
   output,
@@ -12,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { reducedMotion } from '../table/table-motion';
+import { flyFrom, injectFlights, reducedMotion } from '../table/table-motion';
 import {
   ARC_TABLES,
   AVATAR_COLORS,
@@ -24,13 +26,19 @@ import {
 } from '../table/table.model';
 import { TableTop } from '../table/table-top';
 import { Nimm6CardView } from './nimm6-card';
-import { Nimm6Seat } from './nimm6-seat';
+import { N6Laid, Nimm6Seat } from './nimm6-seat';
 import {
   BULL_PATH,
   bullsLabel,
   bullsOf,
+  COUNT_AT_MS,
+  FLIP_MS,
+  FLY_MS,
+  GATHER_AT_MS,
   N6Game,
   N6Step,
+  PILE_AT_MS,
+  PILE_FLY_MS,
   placementOf,
   replaySteps,
   REVEAL_MS,
@@ -38,11 +46,19 @@ import {
   stepMs,
 } from './nimm6.model';
 
-// Karte in einer Reihe: liegt (card), kommt gerade dazu (new), wird gerade genommen (gone)
+// Karte in einer Reihe: liegt (card), kommt gerade dazu (new), schiebt sich zum Haufen
+// (gather; i: ihr Platz in der Reihe), rückt nach dem Nehmen an den Anfang (shift; from: so
+// viele Plätze weiter rechts lag sie)
 interface RowCard {
   card: number;
-  state: 'card' | 'new' | 'gone';
+  state: 'card' | 'new' | 'gather' | 'shift';
+  i?: number;
+  from?: number;
 }
+
+// Reihe nehmen, Teilschritte: Karte fliegt hin (fly), Reihe schiebt sich zusammen (gather),
+// Haufen fliegt zum Spieler (pile), Hornochsen zählen dazu (count)
+type TakePhase = 'fly' | 'gather' | 'pile' | 'count';
 
 // Platz rechts der Karten: leer, Ziel der gewählten Karte (ghost), 6. Platz
 interface RowSlot {
@@ -54,9 +70,11 @@ interface RowSlot {
 const ROWS_TOP: Record<'hoch' | 'quer' | 'laptop', number> = { hoch: 37, quer: 19, laptop: 15 };
 
 // Spieltisch: vier Reihen in der Mitte, rundherum die Mitspieler (Handy: oben in einer
-// Zeile), darunter die eigene Hand. Karte antippen wählt, „Karte legen“ legt sie verdeckt.
-// Nach dem Aufdecken wird das Anlegen aus last_events Schritt für Schritt nachgespielt
-// (replaySteps); bei zu kleiner Karte werden die Reihen zu Buttons.
+// Zeile), darunter die eigene Hand. Karte antippen wählt, „Karte legen“ legt sie verdeckt;
+// am Platz liegt dann ein Rücken. Nach dem Aufdecken (die Rücken drehen sich um) wird das
+// Anlegen aus last_events Schritt für Schritt nachgespielt (replaySteps): jede Karte fliegt
+// vom Platz in ihre Reihe; wer eine Reihe nimmt, bekommt sie als Haufen mit den Hornochsen
+// zugeflogen. Bei zu kleiner Karte werden die Reihen zu Buttons.
 @Component({
   selector: 'app-nimm6-board',
   imports: [NgTemplateOutlet, TableTop, Nimm6CardView, Nimm6Seat],
@@ -69,6 +87,9 @@ const ROWS_TOP: Record<'hoch' | 'quer' | 'laptop', number> = { hoch: 37, quer: 1
   },
 })
 export class Nimm6Board {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
   readonly game = input.required<N6Game>();
   readonly userId = input.required<string>();
   readonly busy = input(false);
@@ -113,7 +134,14 @@ export class Nimm6Board {
     const cursor = this.cursor();
     return this.animating() && cursor >= 0 ? this.replay().steps[cursor] : null;
   });
+  // Teilschritt beim Nehmen einer Reihe (beim Anlegen immer fly)
+  readonly phase = signal<TakePhase>('fly');
+  // Aufdecken: false, solange sich die Rücken wegdrehen
+  private readonly flipped = signal(true);
   private timers: ReturnType<typeof setTimeout>[] = [];
+  // Haufen auf dem Weg zum Spieler
+  private readonly flights = injectFlights<{ card: number; bulls: number }>('.pile-flight');
+  readonly pileFlights = this.flights.list;
 
   // Reihen wie gerade zu sehen: während des Nachspielens der Stand vor der Aktion plus die
   // Schritte bis zum laufenden (dessen Karte kommt gerade dazu bzw. nimmt die Reihe)
@@ -130,23 +158,35 @@ export class Nimm6Board {
     const view = rows.map((row) => row.map(plain));
     const current = this.step();
     if (current) {
-      view[current.row] =
-        current.kind === 'place'
-          ? [...view[current.row], { card: current.card, state: 'new' }]
-          : [
-              ...current.taken.map((card): RowCard => ({ card, state: 'gone' })),
-              { card: current.card, state: 'new' },
-            ];
+      const phase = this.phase();
+      const arriving: RowCard = { card: current.card, state: 'new' };
+      if (current.kind === 'place') {
+        view[current.row] = [...view[current.row], arriving];
+      } else if (phase === 'fly' || phase === 'gather') {
+        view[current.row] = [
+          ...current.taken.map((card, i): RowCard => ({
+            card,
+            state: phase === 'gather' ? 'gather' : 'card',
+            i,
+          })),
+          arriving,
+        ];
+      } else {
+        view[current.row] = [{ card: current.card, state: 'shift', from: current.taken.length }];
+      }
     }
     return view;
   });
 
-  // Hornochsen je Sitz wie gerade zu sehen (kommende Reihen noch nicht gezählt)
+  // Hornochsen je Sitz wie gerade zu sehen (kommende Reihen noch nicht gezählt, die
+  // laufende erst, wenn der Haufen angekommen ist)
   readonly shownScores = computed(() => {
     const scores = new Map(this.game().players.map((p) => [p.seat, p.score]));
     if (this.animating()) {
+      const cursor = this.cursor();
+      const arrived = this.phase() === 'count';
       this.replay().steps.forEach((step, i) => {
-        if (i >= this.cursor() && step.kind !== 'place') {
+        if ((i > cursor || (i === cursor && !arrived)) && step.kind !== 'place') {
           scores.set(step.seat, (scores.get(step.seat) ?? 0) - step.bulls);
         }
       });
@@ -176,6 +216,37 @@ export class Nimm6Board {
         state: i < done && i !== nowIndex ? 'done' : i === nowIndex ? 'now' : 'next',
       };
     });
+  });
+
+  // Karte je Platz: verdeckt gewählt, beim Aufdecken umgedreht, bis sie in der Reihe liegt
+  readonly laid = computed((): Map<number, N6Laid> => {
+    const map = new Map<number, N6Laid>();
+    const strip = this.strip();
+    if (strip) {
+      const turning = this.cursor() === -1 && !this.flipped();
+      for (const item of strip) {
+        if (item.state === 'done') continue;
+        map.set(item.seat, {
+          card: turning ? null : item.card,
+          turning,
+          now: item.state === 'now',
+          hidden: item.state === 'now' && this.animating(),
+        });
+      }
+      return map;
+    }
+    const game = this.game();
+    if (game.status === 'playing' && game.phase === 'choose' && !this.animating()) {
+      const back: N6Laid = { card: null, turning: false, now: false, hidden: false };
+      for (const player of this.active()) if (player.ready) map.set(player.seat, back);
+      const me = this.me();
+      if (me && this.chosen() !== null) map.set(me.seat, back);
+    }
+    return map;
+  });
+  readonly myLaid = computed(() => {
+    const me = this.me();
+    return me ? (this.laid().get(me.seat) ?? null) : null;
   });
 
   // ---- Wählen ---------------------------------------------------------------------------
@@ -262,6 +333,7 @@ export class Nimm6Board {
     const step = this.step();
     const takeMine = this.takeMine();
     const takePick = this.takePick();
+    const pile = step && step.kind !== 'place' && this.phase() === 'gather' ? step : null;
     return shown.map((cards, i) => {
       const sum = cards.filter((c) => c.state !== 'new').reduce((s, c) => s + bullsOf(c.card), 0);
       const slots: RowSlot[] = [];
@@ -282,6 +354,8 @@ export class Nimm6Board {
         cards,
         slots,
         sum,
+        // Haufen beim Nehmen: Hornochsen obendrauf
+        pile: pile?.row === i ? pile.bulls : null,
         tone,
         label: `Reihe ${i + 1} nehmen, ${cards.length} Karten, ${bullsLabel(sum)}`,
         text: `Reihe ${i + 1}: ${cards.map((c) => c.card).join(', ')}, ${bullsLabel(sum)}`,
@@ -296,7 +370,8 @@ export class Nimm6Board {
     const spots = seatSpots(this.layout(), this.others().length);
     const table = this.table();
     const scores = this.shownScores();
-    const step = this.step();
+    const hit = this.hit();
+    const laid = this.laid();
     const waiting = game.status === 'playing' && game.phase === 'choose' && !this.animating();
     return this.others().map((player, i) => ({
       player,
@@ -305,16 +380,24 @@ export class Nimm6Board {
       score: scores.get(player.seat) ?? player.score,
       status: waiting && player.state === 'active' ? (player.ready ? 'ready' : 'choosing') : null,
       turn: game.phase === 'take' && game.take_seat === player.seat && !this.animating(),
-      hit: step && step.kind !== 'place' && step.seat === player.seat ? step.bulls : null,
+      hit: hit?.seat === player.seat ? hit.bulls : null,
+      laid: laid.get(player.seat) ?? null,
     }));
+  });
+  // Haufen ist beim Spieler angekommen: „+8“ am Platz
+  private readonly hit = computed(() => {
+    const step = this.step();
+    return step && step.kind !== 'place' && this.phase() === 'count'
+      ? { seat: step.seat, bulls: step.bulls }
+      : null;
   });
   readonly myScore = computed(() => {
     const me = this.me();
     return me ? (this.shownScores().get(me.seat) ?? me.score) : 0;
   });
   readonly myHit = computed(() => {
-    const step = this.step();
-    return step && step.kind !== 'place' && step.seat === this.me()?.seat ? step.bulls : null;
+    const hit = this.hit();
+    return hit && hit.seat === this.me()?.seat ? hit.bulls : null;
   });
 
   // ---- Hinweis --------------------------------------------------------------------------
@@ -405,7 +488,8 @@ export class Nimm6Board {
     const me = this.me();
     const player = this.game().players.find((p) => p.seat === step.seat);
     const who = step.seat === me?.seat ? 'Du' : (player?.name ?? 'Jemand');
-    const score = this.shownScores().get(step.seat) ?? 0;
+    const shown = this.shownScores().get(step.seat) ?? 0;
+    const score = this.phase() === 'count' ? shown - step.bulls : shown;
     return {
       six: step.kind === 'six',
       title: step.kind === 'six' ? '6. Karte!' : 'Zu klein!',
@@ -446,23 +530,93 @@ export class Nimm6Board {
     });
   }
 
+  // Zeitleiste der Aktion: Aufdecken, dann je Karte Flug in die Reihe bzw. Reihe nehmen
+  // (Summe wie replayMs, darauf wartet auch die Zugzeit)
   private play(skip: boolean): void {
     this.timers.forEach(clearTimeout);
     this.timers = [];
+    this.phase.set('fly');
+    this.flipped.set(true);
     const { steps } = untracked(this.replay);
     if (skip || !steps.length) {
       this.cursor.set(Number.MAX_SAFE_INTEGER);
       return;
     }
+    const at = (ms: number, run: () => void) => {
+      if (ms <= 0) run();
+      else this.timers.push(setTimeout(run, ms));
+    };
     const revealed = untracked(this.game).last_events.some((event) => event.t === 'reveal');
     let t = 0;
-    this.cursor.set(revealed ? -1 : 0);
-    if (revealed) t += REVEAL_MS;
+    if (revealed) {
+      this.cursor.set(-1);
+      this.flipped.set(false);
+      at(FLIP_MS, () => this.flipped.set(true));
+      t = REVEAL_MS;
+    }
     steps.forEach((step, i) => {
-      if (i > 0 || revealed) this.timers.push(setTimeout(() => this.cursor.set(i), t));
+      at(t, () => {
+        this.phase.set('fly');
+        this.cursor.set(i);
+        afterNextRender(() => this.flyIn(step), { injector: this.injector });
+      });
+      if (step.kind !== 'place') {
+        at(t + GATHER_AT_MS, () => this.phase.set('gather'));
+        at(t + PILE_AT_MS, () => this.sendPile(step));
+        at(t + COUNT_AT_MS, () => this.phase.set('count'));
+      }
       t += stepMs(step);
     });
-    this.timers.push(setTimeout(() => this.cursor.set(Number.MAX_SAFE_INTEGER), t));
+    at(t, () => this.cursor.set(Number.MAX_SAFE_INTEGER));
+  }
+
+  // Karte vom Platz in die Reihe (ohne Platz, z. B. verlassen: von oben hinein)
+  private flyIn(step: N6Step): void {
+    const card = this.find(`.row[data-row="${step.row}"] .row-card.new`);
+    if (!card || typeof card.animate !== 'function') return;
+    const from = this.find(`[data-laid="${step.seat}"]`);
+    if (from) {
+      void flyFrom(card, from, { flip: false, duration: FLY_MS });
+    } else {
+      card.animate(
+        [
+          { opacity: 0, transform: 'translateY(-24px) scale(1.15)' },
+          { opacity: 1, transform: 'none' },
+        ],
+        { duration: 380, easing: 'ease-out' },
+      );
+    }
+  }
+
+  // Haufen aus der Reihe zum Avatar des Spielers
+  private sendPile(step: N6Step): void {
+    const pile = this.find(`.row[data-row="${step.row}"] .row-card.gather`);
+    const seat = [
+      ...this.host.nativeElement.querySelectorAll<HTMLElement>(`[data-seat="${step.seat}"]`),
+    ]
+      .map((element) => element.querySelector('.avatar') ?? element)
+      .find((element) => element.getBoundingClientRect().width > 0);
+    if (pile && seat) {
+      const from = pile.getBoundingClientRect();
+      const avatar = seat.getBoundingClientRect();
+      const w = from.width * 0.6;
+      const h = from.height * 0.6;
+      const to = new DOMRect(
+        avatar.left + avatar.width / 2 - w / 2,
+        avatar.top + avatar.height / 2 - h / 2,
+        w,
+        h,
+      );
+      this.flights.launch(
+        [{ from, to, delay: 0, card: step.taken.at(-1) ?? step.card, bulls: step.bulls }],
+        PILE_FLY_MS,
+      );
+    }
+    this.phase.set('pile');
+  }
+
+  private find(selector: string): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>(selector);
   }
 
   tapCard(card: number): void {

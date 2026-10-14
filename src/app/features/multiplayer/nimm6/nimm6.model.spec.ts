@@ -82,8 +82,9 @@ describe('replaySteps', () => {
       ['six', 63, 8],
       ['place', 64, 0],
     ]);
-    // Aufdecken, zwei Karten legen, einmal Reihe nehmen
-    expect(replayMs({ card_rows: after, last_events: events })).toBe(900 + 750 + 1900 + 750);
+    // Aufdecken, zwei Karten legen, einmal Reihe nehmen; dieselben Zahlen wie in
+    // _nimm6_replay_ms (20261014180000_nimm6_fairness.sql)
+    expect(replayMs({ card_rows: after, last_events: events })).toBe(1800 + 1000 + 4300 + 1000);
   });
 
   it('has nothing to replay after a plain choice', () => {

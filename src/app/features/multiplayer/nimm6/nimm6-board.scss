@@ -118,6 +118,7 @@
 }
 
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--row-gap);
@@ -201,15 +202,13 @@ button.row:disabled {
   --card-w: var(--row-w);
 }
 
-// Gerade gelegt: fällt von oben in die Reihe, mit Ring
+// Gerade gelegt (fliegt vom Platz herein, per Web Animations im Board): mit Ring
 .row-card.new {
+  position: relative;
+  z-index: 1;
   box-shadow:
     0 0 0 3px var(--color-primary-light),
     0 8px 16px rgba(0, 0, 0, 0.5);
-}
-
-:host(.live) .row-card.new {
-  animation: n6-drop 380ms ease-out;
 }
 
 .row[data-tone='hot'] .row-card.new {
@@ -218,21 +217,94 @@ button.row:disabled {
     0 0 20px color-mix(in srgb, var(--table-danger) 55%, transparent);
 }
 
-// Wird genommen: verblasst und kippt
-.row-card.gone {
-  opacity: 0.55;
-  transform: translateY(-3px) rotate(-3deg);
+// Reihe nehmen: die Karten schieben sich auf dem ersten Platz zu einem Haufen zusammen
+.row-card.gather {
+  transform: translateX(calc(var(--i) * -1 * (var(--row-w) + var(--row-gap))))
+    rotate(calc(var(--i) * 3deg - 6deg));
+  transition: transform 500ms cubic-bezier(0.5, 0, 0.3, 1);
 }
 
-@keyframes n6-drop {
+// Danach rückt die neue Karte an den Anfang der Reihe
+.row-card.shift {
+  animation: n6-shift 400ms ease-out;
+}
+
+@keyframes n6-shift {
   from {
-    opacity: 0;
-    transform: translateY(-24px) scale(1.15);
+    transform: translateX(calc(var(--from) * (var(--row-w) + var(--row-gap))));
   }
 }
 
+// Hornochsen auf dem Haufen (über dem ersten Platz)
+.pile-badge {
+  position: absolute;
+  top: 3px;
+  left: calc(3px + var(--sum-w) + var(--row-gap));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--row-w);
+  height: calc(var(--row-w) * 1.42);
+  pointer-events: none;
+  animation: n6-badge 300ms 350ms ease-out backwards;
+}
+
+.pile-bulls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--table-danger);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font-size: max(12px, calc(var(--row-w) * 0.3));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pile-bulls svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+}
+
+@keyframes n6-badge {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+
+// Fliegender Haufen: fest am Avatar des Spielers, kommt von der Reihe
+.pile-flight {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.pile-flight app-nimm6-card {
+  --card-w: var(--pile-w);
+}
+
+.pile-flight .pile-bulls {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  :host(.live) .row-card.new {
+  .row-card.gather {
+    transition: none;
+  }
+
+  .row-card.shift,
+  .pile-badge {
     animation: none;
   }
 }
@@ -269,108 +341,6 @@ button.row:disabled {
   border: 2px dashed var(--table-danger);
   background: color-mix(in srgb, var(--table-danger) 16%, transparent);
   color: var(--table-danger);
-}
-
-// Handy: aufgedeckte Karten statt der Mitspieler-Zeile
-.strip {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 12px 14px;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 20px;
-  background: var(--color-surface);
-}
-
-.strip-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.strip-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.strip-title .material-symbols-rounded {
-  color: var(--table-target);
-  font-size: 18px;
-}
-
-.strip-sub {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.strip-cards {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 4px;
-  margin: 0;
-  padding: 6px 0 0;
-  list-style: none;
-}
-
-.strip-cards li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  transition:
-    opacity 200ms,
-    transform 200ms;
-}
-
-.strip-cards app-nimm6-card {
-  --card-w: min(44px, calc((100vw - 80px) / 8));
-}
-
-.strip-cards li[data-state='done'] {
-  opacity: 0.4;
-}
-
-.strip-cards li[data-state='now'] {
-  transform: translateY(-6px);
-}
-
-.strip-cards li[data-state='now'] app-nimm6-card {
-  box-shadow:
-    0 0 0 3px var(--color-primary-light),
-    0 8px 16px rgba(0, 0, 0, 0.5);
-}
-
-.strip-cards li.own app-nimm6-card {
-  outline: 2px solid var(--table-turn);
-  outline-offset: 1px;
-}
-
-.strip-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.strip-name {
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 // Hinweiszeile in der Farbe der Lage
@@ -459,8 +429,7 @@ button.row:disabled {
   --name-size: 14px;
   --stat-size: 12px;
   --gap: 9px;
-  --back-w: 26px;
-  --back-h: 36px;
+  --laid-w: 26px;
 }
 
 :host([data-layout='laptop']) .opp {
@@ -468,8 +437,7 @@ button.row:disabled {
   --name-size: 15px;
   --stat-size: 12px;
   --gap: 10px;
-  --back-w: 28px;
-  --back-h: 40px;
+  --laid-w: 28px;
 }
 
 // Laptop: eigenes Schild mittig auf der Unterkante der Platte

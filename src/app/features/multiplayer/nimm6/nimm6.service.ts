@@ -6,16 +6,17 @@ import { watchTables } from '../realtime-watch';
 import { callRpc, TableTurn, turnArgs, withNames } from '../table/table-data';
 import { N6Game, N6Player } from './nimm6.model';
 
-// Genau die Felder von N6Game; die eigene Hand kommt per RLS nur für mich mit
+// Genau die Felder von N6Game; die eigene Hand kommt per RLS nur für mich mit (zusätzlich
+// nach user_id gefiltert, falls die Regel je zu weit gefasst wäre)
 const GAME_COLUMNS =
   'id, status, phase, seat_count, end_score, round_no, turn_no, card_rows, revealed, resolve_at,' +
   ' take_seat, last_events, round_log, waiting_since,' +
   ' nimm6_players(user_id, seat, state, score, round_bulls, ready, rows_taken, sixths),' +
-  ' nimm6_hands(cards, chosen)';
+  ' nimm6_hands(user_id, cards, chosen)';
 
 type GameRow = Omit<N6Game, 'players' | 'hand' | 'chosen' | 'turn_seat'> & {
   nimm6_players: Omit<N6Player, 'name'>[];
-  nimm6_hands: { cards: number[]; chosen: number | null }[];
+  nimm6_hands: { user_id: string; cards: number[]; chosen: number | null }[];
 };
 
 // Alle Züge laufen über RPCs; die Regeln prüft ausschließlich die Datenbank
@@ -25,10 +26,13 @@ export class Nimm6Service {
 
   // value null = zur Lobby gibt es (noch) kein Spiel
   async load(lobbyId: string): Promise<LobbyResult<N6Game | null>> {
+    // Aus der lokalen Sitzung, ohne Netz
+    const userId = (await supabase.auth.getSession()).data.session?.user.id ?? '';
     const { data, error } = await supabase
       .from('nimm6_games')
       .select(GAME_COLUMNS)
       .eq('lobby_id', lobbyId)
+      .eq('nimm6_hands.user_id', userId)
       .order('seat', { referencedTable: 'nimm6_players' })
       .maybeSingle();
 
@@ -41,6 +45,7 @@ export class Nimm6Service {
 
     const { nimm6_players: playerRows, nimm6_hands: hands, ...game } = data as unknown as GameRow;
     const players = await withNames(this.lobbyService, playerRows);
+    const hand = hands.find((row) => row.user_id === userId);
     return players.ok
       ? {
           ok: true,
@@ -48,8 +53,8 @@ export class Nimm6Service {
             ...game,
             turn_seat: game.phase === 'take' ? game.take_seat : null,
             players: players.value,
-            hand: hands[0]?.cards ?? [],
-            chosen: hands[0]?.chosen ?? null,
+            hand: hand?.cards ?? [],
+            chosen: hand?.chosen ?? null,
           },
         }
       : players;

@@ -116,10 +116,11 @@ export class Nimm6Final {
     const over = game.players.filter((p) => p.state === 'active' && p.score >= game.end_score);
     const rounds = `nach ${game.round_no} ${game.round_no === 1 ? 'Runde' : 'Runden'}`;
     if (!winner) return `Vorzeitig beendet ${rounds}`;
+    const mine = over.some((p) => p.user_id === this.userId());
+    // „du hast“, „Anna hat“, „du und Anna habt“, „Anna und Ben haben“
+    const verb = over.length > 1 ? (mine ? 'habt' : 'haben') : mine ? 'hast' : 'hat';
     const reason = over.length
-      ? ` · ${over.map((p) => (p.user_id === this.userId() ? 'du' : p.name)).join(' und ')} ${
-          over.length === 1 && over[0].user_id !== this.userId() ? 'hat' : 'habt'
-        } die ${game.end_score} geknackt`
+      ? ` · ${over.map((p) => (p.user_id === this.userId() ? 'du' : p.name)).join(' und ')} ${verb} die ${game.end_score} geknackt`
       : ' · vorzeitig beendet';
     return `mit ${winner.player.score} Hornochsen ${rounds}${reason}`;
   });

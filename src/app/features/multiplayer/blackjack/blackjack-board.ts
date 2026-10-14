@@ -161,12 +161,12 @@ export class BlackjackBoard {
   });
   // „Einsatz ändern“ statt der Karten der letzten Runde
   readonly editing = linkedSignal({ source: () => this.game().round_no, computation: () => false });
-  // Leeres Einsatzfeld statt der Karten der letzten Runde
-  readonly betView = computed(
-    () =>
-      this.betting() &&
-      (this.editing() || this.draft() > 0 || !!this.me()?.bet || !this.myHands().length),
+  // Tisch für die neue Runde abgeräumt: erst, wenn man selbst wieder setzt
+  private readonly cleared = computed(
+    () => this.betting() && (this.editing() || this.draft() > 0 || !!this.me()?.bet),
   );
+  // Leeres Einsatzfeld statt der Karten der letzten Runde
+  readonly betView = computed(() => this.cleared() || (this.betting() && !this.myHands().length));
 
   readonly balance = computed(() => {
     const me = this.me();
@@ -182,10 +182,12 @@ export class BlackjackBoard {
     () => Math.min(BET_MAX, this.me()?.balance ?? 0) - this.draft(),
   );
 
-  // Dealer: offene Karten, dahinter der Rücken; beim Setzen zwei leere Felder
+  // Dealer: offene Karten, dahinter der Rücken; beim Setzen zwei leere Felder. Wer die
+  // Runde nur zuschaut (ausgesetzt, pleite, gar nicht am Tisch), sieht den Dealer weiter
+  // ziehen und seine Karten bis zum nächsten Austeilen
   readonly dealer = computed(() => {
     const game = this.game();
-    if (this.betView() || !game.dealer_cards.length) return null;
+    if (this.cleared() || !game.dealer_cards.length) return null;
     const counted = this.dealerCount();
     const cards = game.dealer_cards.map((card, i) => ({
       key: `d:${i}`,
