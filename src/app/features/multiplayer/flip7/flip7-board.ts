@@ -210,10 +210,13 @@ export class Flip7Board {
           highlight: busted ? (index === numbers.length - 1 ? 'dup' : 'bust') : null,
         };
       });
+      const x = (spot.x / table.w) * 100;
       return {
         player,
         spot,
-        x: (spot.x / table.w) * 100,
+        // Schild ist fest in Pixeln breit, die Platte skaliert: darf über die Platte ragen,
+        // aber nicht aus dem Bild (Platte steht mittig, 100% = ihre Breite)
+        left: `clamp(calc(var(--w) / 2 + 8px - (100vw - 100%) / 2), ${x}%, calc((100vw + 100%) / 2 - var(--w) / 2 - 8px))`,
         y: (spot.y / table.h) * 100,
         fan,
         mods: modifierText(player.cards),

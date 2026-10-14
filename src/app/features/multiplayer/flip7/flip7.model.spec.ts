@@ -182,55 +182,57 @@ describe('seatSpots', () => {
     });
   };
 
+  // Außen nach Artboard, aber mit Mindestabstand zum Plattenrand (inset); am Laptop
+  // höchstens bis floor herunter, damit der Fächer darunter über meinen Karten bleibt
   it('matches the laptop artboards (3, 5 and 8 players)', () => {
     near(
       seatSpots('laptop', 2),
       [
-        [121.8, 143],
-        [1097.4, 142.3],
+        [125, 143],
+        [1095, 142.3],
       ],
       2,
     );
     near(
       seatSpots('laptop', 4),
       [
-        [50.7, 504.5],
-        [303.9, 46.9],
-        [915, 46.5],
-        [1169.8, 503.8],
+        [125, 420],
+        [305.3, 48.1],
+        [914.7, 48.1],
+        [1095, 420],
       ],
       2,
     );
     near(
       seatSpots('laptop', 7),
       [
-        [50.7, 504.5],
-        [50.2, 216.2],
-        [303.9, 46.9],
+        [125, 420],
+        [125, 216.4],
+        [305.3, 48.1],
         [610, -2],
-        [915, 46.5],
-        [1169.3, 215.5],
-        [1169.8, 503.8],
+        [914.7, 48.1],
+        [1095, 216.4],
+        [1095, 420],
       ],
       2,
     );
   });
 
-  it('hangs each fan on the seat side facing the table centre', () => {
-    const sides = (layout: 'phone' | 'laptop', count: number) =>
+  it('hangs each fan below the seat from iPad on, on the phone towards the centre', () => {
+    const sides = (layout: 'phone' | 'quer' | 'laptop', count: number) =>
       seatSpots(layout, count).map((spot) => [+spot.dirX.toFixed(1), +spot.dirY.toFixed(1)]);
     // Handy: beide Plätze oben, Fächer darunter, leicht zur Mitte
     expect(sides('phone', 2)).toEqual([
       [0.4, 1],
       [-0.4, 1],
     ]);
-    // Laptop: seitliche Plätze außen (Fächer daneben, etwas höher), obere darunter
-    expect(sides('laptop', 4)).toEqual([
-      [1, -0.7],
-      [0.3, 1],
-      [-0.3, 1],
-      [-1, -0.7],
-    ]);
+    // iPad quer und Laptop: auch die seitlichen und unteren Plätze tragen den Fächer
+    // darunter, nicht daneben
+    const below = (count: number) => Array.from({ length: count }, () => [0, 1]);
+    expect(sides('quer', 4)).toEqual(below(4));
+    expect(sides('laptop', 3)).toEqual(below(3));
+    expect(sides('laptop', 4)).toEqual(below(4));
+    expect(sides('laptop', 7)).toEqual(below(7));
   });
 
   it('matches the phone and iPad landscape artboards', () => {
@@ -255,10 +257,10 @@ describe('seatSpots', () => {
     near(
       seatSpots('quer', 4),
       [
-        [70.7, 226.3],
+        [150, 224.5],
         [382.1, 41.1],
         [758.8, 41.3],
-        [1069.4, 226.8],
+        [990, 224.5],
       ],
       6,
     );
