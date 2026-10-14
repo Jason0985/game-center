@@ -49,11 +49,17 @@ import {
   valueLabel,
 } from './blackjack.model';
 
-// Austeilen: 140 ms Abstand, 400 ms Flug; Aufdecken 220 ms, Dealerkarten mit Spannung
-const DEAL_STAGGER_MS = 140;
-const FLY_MS = 400;
-const FLIP_MS = 220;
-const DEALER_STEP_MS = 500;
+// Spannung statt alles auf einmal: Karten einzeln nacheinander (die nächste startet erst,
+// wenn die vorige liegt), vor dem Aufdecken und jeder Dealerkarte eine Pause, die Chips
+// erst, wenn der Dealerwert eine Weile stand
+const FLY_MS = 450;
+const DEAL_STEP_MS = FLY_MS + 150;
+// Gezogene Karte (Hit, Double): etwas langsamer, sie dreht sich erst kurz vor dem Ablegen
+const DRAW_MS = 600;
+const FLIP_MS = 600;
+const REVEAL_PAUSE_MS = 700;
+const DEALER_STEP_MS = 1100;
+const RESULT_PAUSE_MS = 900;
 const CHIP_MS = 420;
 const CHIP_TAP_MS = 320;
 // Mit Mitspielern steht das eigene Ergebnis so lange in der Mitte, dann der Setz-Ring
@@ -142,6 +148,9 @@ export class BlackjackBoard {
   readonly dealing = signal(false);
   // Verdeckte Dealerkarte bleibt Rücken, bis sie in der Animation aufgedeckt wird
   private readonly concealHole = signal(false);
+  // Abrechnung: so viele Dealerkarten zählen schon zum Wert (wächst mit jeder gelandeten
+  // Karte); null: alle bzw. wie ohne Animation
+  private readonly dealerCount = signal<number | null>(null);
   // Mit Mitspielern: eigenes Ergebnis kurz in der Mitte
   private readonly freshResult = signal(false);
 
@@ -177,15 +186,18 @@ export class BlackjackBoard {
   readonly dealer = computed(() => {
     const game = this.game();
     if (this.betView() || !game.dealer_cards.length) return null;
-    const conceal = this.concealHole() || this.settling();
+    const counted = this.dealerCount();
     const cards = game.dealer_cards.map((card, i) => ({
       key: `d:${i}`,
       card: i === 1 && this.concealHole() ? null : card,
     }));
     if (game.dealer_hole) cards.push({ key: `d:${cards.length}`, card: null });
-    // Wert erst nach dem Aufdecken (vorher nur die offene Karte, Ass als "1 / 11")
-    const hidden = game.dealer_hole || conceal;
-    const shown = hidden ? game.dealer_cards.slice(0, 1) : game.dealer_cards;
+    // Wert erst nach dem Aufdecken (vorher nur die offene Karte, Ass als "1 / 11"), dann
+    // Karte für Karte, wie sie landen
+    const hidden = game.dealer_hole || this.concealHole() || (this.settling() && counted === null);
+    const shown = hidden
+      ? game.dealer_cards.slice(0, 1)
+      : game.dealer_cards.slice(0, counted ?? game.dealer_cards.length);
     const { total } = handValue(shown);
     const blackjack = shown.length === 2 && total === 21;
     return {
@@ -246,7 +258,8 @@ export class BlackjackBoard {
   readonly actions = computed(() => {
     const hand = this.activeHand();
     const balance = this.me()?.balance ?? 0;
-    const free = !this.busy() && !!hand;
+    // Erst handeln, wenn alle Karten liegen
+    const free = !this.busy() && !this.dealing() && !!hand;
     return {
       hit: free,
       stand: free,
@@ -404,6 +417,7 @@ export class BlackjackBoard {
         this.settling.set(motion && settles);
         this.dealing.set(motion && events.some((event) => event.t === 'deal'));
         this.concealHole.set(motion && events.some((event) => event.t === 'reveal'));
+        this.dealerCount.set(null);
         if (!motion && settles) this.showResult();
       });
       if (motion) afterNextRender(() => this.animate(game, settles), { injector: this.injector });
@@ -541,14 +555,15 @@ export class BlackjackBoard {
     const playerHand = (seat?: number, hand?: number) =>
       game.players.find((p) => p.seat === seat)?.hands.find((h) => h.hand_no === hand);
     let t = 0;
-    const fly = (key: string, source: Element | null = shoe, flip = true) => {
+    const fly = (key: string, source: Element | null = shoe, flip = true, duration = FLY_MS) => {
       const card = this.find(`[data-card="${key}"]`);
       if (card && source && typeof card.animate === 'function') {
-        void flyFrom(card, source, { flip, delay: t, duration: FLY_MS, hidden: true });
+        void flyFrom(card, source, { flip, delay: t, duration, hidden: true });
       }
     };
     const later = (ms: number, run: () => void) => this.timers.push(setTimeout(run, ms));
     const chips: { from: DOMRect; to: DOMRect; delay: number; value: number }[] = [];
+    let resultPause = false;
 
     for (const event of game.last_events) {
       switch (event.t) {
@@ -579,7 +594,7 @@ export class BlackjackBoard {
           ];
           for (const key of order) {
             fly(key);
-            t += DEAL_STAGGER_MS;
+            t += DEAL_STEP_MS;
           }
           fly('d:1', shoe, false);
           t += FLY_MS;
@@ -594,8 +609,8 @@ export class BlackjackBoard {
         case 'double': {
           const hand = playerHand(event.seat, event.hand);
           const index = hand?.cards.lastIndexOf(event.card ?? '') ?? -1;
-          fly(`s${event.seat}:${event.hand}:${index}`);
-          t += FLY_MS;
+          fly(`s${event.seat}:${event.hand}:${index}`, shoe, true, DRAW_MS);
+          t += DRAW_MS;
           if ((event.n ?? 0) > 21) this.shake(`[data-hand="s${event.seat}:${event.hand}"]`, t);
           break;
         }
@@ -603,12 +618,13 @@ export class BlackjackBoard {
           fly(`s${event.seat}:1:0`, this.find(`[data-card="s${event.seat}:0:0"]`), false);
           t += FLY_MS;
           fly(`s${event.seat}:0:1`);
-          t += DEAL_STAGGER_MS;
+          t += DEAL_STEP_MS;
           fly(`s${event.seat}:1:1`);
           t += FLY_MS;
           break;
         case 'reveal': {
-          // Rücken dreht weg, dann die Vorderseite herein
+          // Kurz warten, dann dreht der Rücken langsam weg und die Vorderseite herein
+          t += REVEAL_PAUSE_MS;
           const at = t;
           later(at, () => {
             const card = this.find('[data-card="d:1"]');
@@ -618,6 +634,7 @@ export class BlackjackBoard {
             });
             const show = () => {
               this.concealHole.set(false);
+              this.dealerCount.set(2);
               card?.animate?.([{ transform: 'rotateY(90deg)' }, { transform: 'none' }], {
                 duration: FLIP_MS / 2,
                 easing: 'ease-out',
@@ -626,16 +643,27 @@ export class BlackjackBoard {
             if (turn) turn.finished.then(show, show);
             else show();
           });
-          t += FLIP_MS + DEALER_STEP_MS / 2;
+          t += FLIP_MS;
           break;
         }
         case 'dealer':
+          // Jede weitere Dealerkarte nach einer Pause; der Wert wächst, wenn sie liegt
           for (let i = 2; i < game.dealer_cards.length; i++) {
+            t += DEALER_STEP_MS - FLY_MS;
             fly(`d:${i}`);
-            t += DEALER_STEP_MS;
+            t += FLY_MS;
+            later(t, () => this.dealerCount.set(i + 1));
+          }
+          if (game.dealer_cards.length > 2 && handValue(game.dealer_cards).total > 21) {
+            this.shake('.dealer-cards', t);
           }
           break;
         case 'result': {
+          // Erst den Dealerwert wirken lassen, dann rechnen die Chips ab
+          if (!resultPause) {
+            resultPause = true;
+            t += RESULT_PAUSE_MS;
+          }
           const own = event.seat === mySeat;
           // Eigene Hand: Einsatzfeld (geteilt mit Mitspielern nur der Betrag), sonst das Schild
           const hand = `[data-hand="s${event.seat}:${event.hand}"]`;
@@ -677,6 +705,7 @@ export class BlackjackBoard {
       later(t, () => {
         this.settling.set(false);
         this.concealHole.set(false);
+        this.dealerCount.set(null);
         this.showResult();
       });
     }
