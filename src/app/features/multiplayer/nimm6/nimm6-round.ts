@@ -73,7 +73,7 @@ import { BULL_PATH, N6Game, rankPlayers } from './nimm6.model';
       </div>
 
       <div class="actions">
-        <button type="button" class="primary" [disabled]="busy()" (click)="next.emit()">
+        <button type="button" class="primary" [disabled]="busy() || locked()" (click)="next.emit()">
           <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
           Runde {{ g.round_no + 1 }} starten
         </button>
@@ -93,6 +93,8 @@ export class Nimm6Round {
   readonly userId = input.required<string>();
   readonly busy = input(false);
   readonly secondsLeft = input<number | null>(null);
+  // Erst kurz lesen lassen, bevor jemand für alle weiterschaltet
+  readonly locked = input(false);
 
   readonly next = output<void>();
 

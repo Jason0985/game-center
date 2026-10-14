@@ -13,7 +13,6 @@
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
-  transition: color 200ms;
 }
 
 .bulls svg {
@@ -44,26 +43,91 @@
   opacity: 0.8;
 }
 
-// Hat gewählt: verdeckte Karte am Schild
-.mini-back {
+// Gelegte Karte am Schild: erscheint verdeckt (fällt kurz ein), dreht sich beim Aufdecken
+// um (erst weg, dann mit der Zahl zurück); die gerade gelegte bzw. wartende leuchtet
+.laid {
+  --card-w: var(--laid-w, 28px);
   flex: none;
-  width: var(--back-w, 28px);
-  height: var(--back-h, 40px);
-  box-sizing: border-box;
-  border: 1.5px solid var(--table-back-frame);
-  border-radius: 5px;
-  background: var(--table-card-back);
-  box-shadow: var(--table-card-shadow);
   rotate: 8deg;
+  animation: n6-laid-in 320ms ease-out;
+  transition: rotate 200ms;
 }
 
-:host([data-variant='column']) .mini-back {
+.laid.turning {
+  animation: n6-turn-away var(--flip-ms, 250ms) ease-in forwards;
+}
+
+.laid.face {
+  rotate: 0deg;
+  animation: n6-turn-up var(--flip-ms, 250ms) ease-out;
+}
+
+.laid.now {
+  box-shadow:
+    0 0 0 2px var(--color-primary-light),
+    0 6px 14px rgba(0, 0, 0, 0.5);
+}
+
+// Fliegt gerade in die Reihe: der Platz bleibt, damit der Flug hier startet
+.laid.hidden {
+  visibility: hidden;
+}
+
+// Spalte (Handy, iPad hoch) und eigenes Schild: oben rechts über dem Schild
+:host([data-variant='column']) .laid,
+:host([data-variant='tab']) .laid,
+:host([data-variant='pill']) .laid {
   position: absolute;
-  top: -10px;
-  right: -12px;
-  width: 22px;
-  height: 31px;
-  rotate: 10deg;
+  top: -12px;
+  right: -10px;
+  z-index: 2;
+  --laid-w: 24px;
+}
+
+:host([data-variant='column']) .laid.face,
+:host([data-variant='tab']) .laid.face,
+:host([data-variant='pill']) .laid.face {
+  --laid-w: 28px;
+}
+
+@keyframes n6-laid-in {
+  from {
+    opacity: 0;
+    translate: 0 -14px;
+    scale: 0.5;
+  }
+}
+
+@keyframes n6-turn-away {
+  to {
+    transform: rotateY(90deg);
+  }
+}
+
+@keyframes n6-turn-up {
+  from {
+    transform: rotateY(90deg);
+  }
+}
+
+// Hornochsen zählen gerade hoch
+.bulls.counting {
+  color: color-mix(in srgb, var(--table-danger) 70%, var(--color-text));
+  scale: 1.15;
+}
+
+.bulls {
+  transition:
+    color 200ms,
+    scale 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .laid,
+  .laid.turning,
+  .laid.face {
+    animation: none;
+  }
 }
 
 .choosing {

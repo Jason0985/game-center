@@ -23,13 +23,12 @@ import {
   N6Game,
   NIMM6_HAND,
   NIMM6_NEXT_ROUND_S,
+  NIMM6_RESULTS_PAUSE_MS,
+  NIMM6_ROUND_MIN_S,
   NIMM6_RULES,
   NIMM6_TURN_S,
   replayMs,
 } from './nimm6.model';
-
-// Nach dem letzten Anlegen der Runde noch so lange den Tisch zeigen
-const RESULTS_PAUSE_MS = 800;
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und schaltet zwischen
 // Spieltisch, Rundenübersicht und Endstand um. Zwei Uhren laufen bei allen am Tisch: nach
@@ -112,11 +111,14 @@ export class Nimm6GameView {
       ? Math.max(0, Math.min(NIMM6_TURN_S, this.turnBudget() - this.table.waitingSeconds()))
       : null,
   );
+  private readonly roundShown = computed(() =>
+    this.view() === 'round' ? Math.floor((this.table.now() - this.viewSince()) / 1000) : null,
+  );
   readonly roundSecondsLeft = computed(() => {
-    if (this.view() !== 'round') return null;
-    const shown = Math.floor((this.table.now() - this.viewSince()) / 1000);
-    return Math.max(0, NIMM6_NEXT_ROUND_S - shown);
+    const shown = this.roundShown();
+    return shown === null ? null : Math.max(0, NIMM6_NEXT_ROUND_S - shown);
   });
+  readonly roundLocked = computed(() => (this.roundShown() ?? 0) < NIMM6_ROUND_MIN_S);
 
   private readonly history = injectTableHistory<N6Event>({
     log: computed(() => this.game()?.round_log ?? []),
@@ -150,7 +152,7 @@ export class Nimm6GameView {
         untracked(show);
         return;
       }
-      const delay = replayMs(untracked(this.game)!) + RESULTS_PAUSE_MS;
+      const delay = replayMs(untracked(this.game)!) + NIMM6_RESULTS_PAUSE_MS;
       const timer = setTimeout(show, delay);
       onCleanup(() => clearTimeout(timer));
     });

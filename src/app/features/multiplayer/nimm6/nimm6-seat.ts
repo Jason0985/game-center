@@ -1,13 +1,28 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, effect, input, signal } from '@angular/core';
+import { reducedMotion } from '../table/table-motion';
 import { AVATAR_COLORS } from '../table/table.model';
-import { BULL_PATH, bullsLabel, N6Player } from './nimm6.model';
+import { Nimm6CardView } from './nimm6-card';
+import { BULL_PATH, bullsLabel, COUNT_UP_MS, N6Player } from './nimm6.model';
+
+// Karte am Platz: verdeckt gelegt (card null), aufgedeckt, oder gerade auf dem Weg in die
+// Reihe (hidden: Platz bleibt, damit der Flug dort starten kann)
+export interface N6Laid {
+  card: number | null;
+  // Aufdecken, erste Hälfte: Rücken dreht sich weg
+  turning: boolean;
+  // Wird gerade gelegt bzw. wartet auf die Reihenwahl
+  now: boolean;
+  hidden: boolean;
+}
 
 // Namensschild am Tisch (Spieltisch-Artboards): Avatar mit Bereit-Token (grüner Haken bzw.
-// grau „wählt …“), Name und Hornochsen. Mitspieler als Spalte (Handy, iPad hoch) bzw. Pille
+// grau „wählt …“), Name und Hornochsen (zählen hoch, wenn eine Reihe ankommt), daneben die
+// gelegte Karte (verdeckt, beim Aufdecken umgedreht). Mitspieler als Spalte (Handy, iPad hoch) bzw. Pille
 // (quer, Laptop), eigener Platz als Reiter (tab) bzw. Pille (pill). Beim Nehmen einer Reihe
 // roter Rand und „+8“. Größen kommen vom Tisch (CSS-Variablen).
 @Component({
   selector: '[appNimm6Seat]',
+  imports: [Nimm6CardView],
   template: `
     @let p = player();
     <span class="avatar-wrap">
@@ -34,9 +49,9 @@ import { BULL_PATH, bullsLabel, N6Player } from './nimm6.model';
       @if (p.state === 'left') {
         <span class="gone">hat verlassen</span>
       } @else {
-        <span class="bulls">
+        <span class="bulls" [class.counting]="counting()">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="bull" /></svg>
-          {{ score() }}
+          {{ shownScore() }}
           @if (long()) {
             <span class="unit">&nbsp;Hornochsen</span>
           }
@@ -44,8 +59,16 @@ import { BULL_PATH, bullsLabel, N6Player } from './nimm6.model';
       }
     </span>
 
-    @if (status() === 'ready' && variant() === 'row') {
-      <span class="mini-back" aria-hidden="true"></span>
+    @if (laid(); as l) {
+      <app-nimm6-card
+        class="laid"
+        [class.face]="l.card !== null"
+        [class.turning]="l.turning"
+        [class.now]="l.now"
+        [class.hidden]="l.hidden"
+        [card]="l.card"
+        [attr.data-laid]="p.seat"
+      />
     } @else if (status() === 'choosing' && variant() === 'row') {
       <span class="choosing" aria-hidden="true">wählt …</span>
     }
@@ -85,8 +108,13 @@ export class Nimm6Seat {
   readonly waiting = input<string | null>(null);
   // "12 Hornochsen" statt nur der Zahl
   readonly long = input(false);
+  // Gelegte Karte am Platz
+  readonly laid = input<N6Laid | null>(null);
 
   readonly bull = BULL_PATH;
+  // Angezeigte Hornochsen: wachsen in COUNT_UP_MS auf score (fallen sofort)
+  readonly shownScore = signal(0);
+  readonly counting = signal(false);
   readonly own = computed(() => this.variant() === 'tab' || this.variant() === 'pill');
   readonly initial = computed(() => this.player().name.trim().charAt(0).toUpperCase() || '?');
   readonly color = computed(() => AVATAR_COLORS[this.player().seat % AVATAR_COLORS.length]);
@@ -105,4 +133,37 @@ export class Nimm6Seat {
       .filter(Boolean)
       .join(', ');
   });
+
+  constructor() {
+    let current: number | null = null;
+    effect((onCleanup) => {
+      const target = this.score();
+      const from = current;
+      if (
+        from === null ||
+        target <= from ||
+        reducedMotion() ||
+        typeof requestAnimationFrame !== 'function'
+      ) {
+        current = target;
+        this.shownScore.set(target);
+        return;
+      }
+      const start = performance.now();
+      let frame = 0;
+      const tick = (time: number) => {
+        const k = Math.min(1, (time - start) / COUNT_UP_MS);
+        current = Math.round(from + (target - from) * k);
+        this.shownScore.set(current);
+        this.counting.set(k < 1);
+        if (k < 1) frame = requestAnimationFrame(tick);
+      };
+      this.counting.set(true);
+      frame = requestAnimationFrame(tick);
+      onCleanup(() => {
+        cancelAnimationFrame(frame);
+        this.counting.set(false);
+      });
+    });
+  }
 }

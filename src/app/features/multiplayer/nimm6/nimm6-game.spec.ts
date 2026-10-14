@@ -161,6 +161,84 @@ describe('Nimm6GameView', () => {
     expect(button('Reihe 1 nehmen')).toBeUndefined();
   });
 
+  it('shows a face-down card at every seat that has chosen', async () => {
+    await render(
+      'guest',
+      makeGame({ chosen: 24, players: [player(0, { ready: true }), player(1, { ready: true })] }),
+    );
+    const laid = (seat: number) => el().querySelector(`[data-laid="${seat}"]`);
+    expect(laid(0)?.classList.contains('face')).toBe(false);
+    expect(laid(1)?.classList.contains('face')).toBe(false);
+    fixture.destroy();
+
+    await render('guest', makeGame({ players: [player(0, { ready: true }), player(1)] }));
+    expect(laid(0)).not.toBeNull();
+    expect(laid(1)).toBeNull();
+  });
+
+  it('turns the cards over, flies them in and hands a taken row over as a pile', async () => {
+    vi.useFakeTimers();
+    let changed = () => {};
+    nimm6['subscribe'].mockImplementation((_id: string, onChange: () => void) => {
+      changed = onChange;
+      return () => {};
+    });
+    await render(
+      'guest',
+      makeGame({ chosen: 77, players: [player(0, { ready: true }), player(1, { ready: true })] }),
+    );
+
+    // Host legt die 64 als 6. Karte in Reihe 2 (8 Hornochsen), Gast die 77 an Reihe 3
+    nimm6['load'].mockResolvedValue({
+      ok: true,
+      value: makeGame({
+        turn_no: 2,
+        waiting_since: '2026-10-14T12:00:40Z',
+        card_rows: [[12, 18, 33], [64], [70, 72, 77], [85, 90, 99]],
+        revealed: [
+          { s: 0, c: 64 },
+          { s: 1, c: 77 },
+        ],
+        resolve_at: 2,
+        last_events: [
+          {
+            t: 'reveal',
+            played: [
+              { s: 0, c: 64 },
+              { s: 1, c: 77 },
+            ],
+          },
+          { t: 'six', seat: 0, card: 64, row: 1, n: 8, cards: [41, 45, 52, 60, 62] },
+          { t: 'place', seat: 1, card: 77, row: 2 },
+        ],
+        players: [player(0, { score: 8, round_bulls: 8, rows_taken: 1, sixths: 1 }), player(1)],
+        hand: [7, 24, 64],
+      }),
+    });
+    changed();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+    const laid = (seat: number) => el().querySelector(`[data-laid="${seat}"]`)!;
+    expect(laid(0).classList.contains('turning')).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(300);
+    fixture.detectChanges();
+    expect(laid(0).classList.contains('face')).toBe(true);
+    expect(laid(0).getAttribute('aria-label')).toMatch(/^64,/);
+
+    // Reihe schiebt sich zum Haufen, darauf die Hornochsen
+    await vi.advanceTimersByTimeAsync(1_800 - 300 + 1_250);
+    fixture.detectChanges();
+    expect(el().querySelector('.pile-badge')?.textContent).toContain('+8');
+    expect(el().querySelector('.hit')).toBeNull();
+
+    // Haufen ist beim Host angekommen: „+8“ am Platz
+    await vi.advanceTimersByTimeAsync(1_800);
+    fixture.detectChanges();
+    expect(el().querySelector('.pile-badge')).toBeNull();
+    expect(el().querySelector('[data-seat="0"] .hit')?.textContent).toContain('+8');
+  });
+
   it('plays for the slow ones once after the turn time', async () => {
     vi.useFakeTimers();
     await render('guest', makeGame());
@@ -186,8 +264,28 @@ describe('Nimm6GameView', () => {
     );
     expect(el().textContent).toContain('Runde 1 vorbei');
     expect(el().textContent).toContain('Sauberste: Gast +5');
+    // Erst kurz lesen lassen, dann per Knopf weiter
+    const start = () => buttons().find((b) => b.textContent?.includes('Runde 2 starten'))!;
+    expect(start().disabled).toBe(true);
+    // Uhr im Sekundentakt: frei nach 3 bis 4 s
+    await vi.advanceTimersByTimeAsync(4_000);
+    fixture.detectChanges();
+    expect(start().disabled).toBe(false);
     await vi.advanceTimersByTimeAsync(8_500);
     expect(nimm6['nextRound']).toHaveBeenCalledWith('game-1', 1);
+  });
+
+  it('shows "du hast" when only you passed the limit', async () => {
+    await render(
+      'guest',
+      makeGame({
+        status: 'finished',
+        phase: 'round_over',
+        round_no: 4,
+        players: [player(0, { score: 31 }), player(1, { score: 70 })],
+      }),
+    );
+    expect(el().textContent).toContain('du hast die 66 geknackt');
   });
 
   it('ranks the fewest bulls first when the game is over', async () => {

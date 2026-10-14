@@ -74,8 +74,13 @@ export interface N6Game {
 export const NIMM6_HAND = 10;
 // Zeit zum Wählen bzw. für die Reihenwahl; danach handelt der Tisch
 export const NIMM6_TURN_S = 30;
-// Rundenübersicht: so lange, dann startet die nächste Runde von selbst
-export const NIMM6_NEXT_ROUND_S = 8;
+// Nach dem letzten Anlegen der Runde noch so lange den Tisch zeigen
+export const NIMM6_RESULTS_PAUSE_MS = 2000;
+// Rundenübersicht: so lange, dann startet die nächste Runde von selbst; der Knopf geht erst
+// nach NIMM6_ROUND_MIN_S (die Datenbank lässt die Übersicht mindestens 4 s nach dem
+// Nachspielen stehen)
+export const NIMM6_NEXT_ROUND_S = 12;
+export const NIMM6_ROUND_MIN_S = 3;
 
 export const NIMM6_RULES = [
   'Ziel: möglichst wenige Hornochsen. Jede Karte trägt 1 bis 7 (endet auf 5: 2, endet auf 0: 3, Schnapszahl: 5, die 55: 7).',
@@ -175,11 +180,26 @@ export function replaySteps(game: Pick<N6Game, 'card_rows' | 'last_events'>): {
   return { before, steps };
 }
 
-// Animation des Anlegens: kurz die aufgedeckten Karten zeigen, dann je Karte ein Schritt
-// (Reihe nehmen dauert länger, damit man sieht, wen es trifft)
-export const REVEAL_MS = 900;
-export const PLACE_MS = 750;
-export const TAKE_MS = 1900;
+// Animation des Anlegens. Dieselben Dauern rechnet die Datenbank in _nimm6_replay_ms
+// (supabase/migrations/20261014180000_nimm6_fairness.sql) auf die Zugzeit drauf – beide
+// Stellen zusammen ändern.
+// Aufdecken: die verdeckten Karten an den Plätzen drehen sich um (FLIP_MS je Hälfte), dann
+// kurz lesen
+export const REVEAL_MS = 1800;
+export const FLIP_MS = 250;
+// Anlegen: die Karte fliegt vom Platz in die Reihe, dann kurz stehen lassen
+export const PLACE_MS = 1000;
+export const FLY_MS = 550;
+// Reihe nehmen (ab Beginn des Schritts): Karte fliegt hin und liegt kurz, die Reihe schiebt
+// sich zum Haufen (GATHER_AT_MS), der Haufen fliegt zum Spieler (PILE_AT_MS, PILE_FLY_MS),
+// dort zählen die Hornochsen dazu (COUNT_AT_MS) und bleiben bis TAKE_MS stehen
+export const GATHER_AT_MS = 1200;
+export const PILE_AT_MS = 2300;
+export const PILE_FLY_MS = 700;
+export const COUNT_AT_MS = PILE_AT_MS + PILE_FLY_MS;
+export const TAKE_MS = 4300;
+// Hornochsen am Platz hochzählen
+export const COUNT_UP_MS = 600;
 export const stepMs = (step: N6Step): number => (step.kind === 'place' ? PLACE_MS : TAKE_MS);
 
 export function replayMs(game: Pick<N6Game, 'card_rows' | 'last_events'>): number {

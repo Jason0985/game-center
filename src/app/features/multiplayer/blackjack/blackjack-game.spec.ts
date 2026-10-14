@@ -154,6 +154,28 @@ describe('BlackjackGameView', () => {
     await vi.waitFor(() => expect(blackjack['bet']).toHaveBeenCalledWith('game-1', 2, 50));
   });
 
+  it('keeps the dealer cards on the table for players who sat the round out', async () => {
+    const settled = hand(['10C', '9H'], { state: 'stood', result: 'win', payout: 100 });
+    const dealerCards = () => el().querySelectorAll('.dealer-cards app-blackjack-card').length;
+    const round = {
+      round_no: 2,
+      dealer_cards: ['9S', '7D', '5C'],
+      players: [player(0, { hands: [settled] }), player(1, { balance: 0 })],
+    };
+    // Pleite, nur noch Zuschauer
+    await render('guest', makeGame(round));
+    expect(dealerCards()).toBe(3);
+    expect(el().textContent).toContain('21');
+    fixture.destroy();
+
+    // Wer selbst wieder setzt, bekommt den abgeräumten Tisch
+    await render(
+      'host',
+      makeGame({ ...round, players: [player(0, { bet: 50, hands: [settled] })] }),
+    );
+    expect(dealerCards()).toBe(0);
+  });
+
   it('plays the hand on turn and only then', async () => {
     await render('host', playingGame());
     expect(button('Teilen')!.disabled).toBe(true);

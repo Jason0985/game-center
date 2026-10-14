@@ -1,15 +1,11 @@
 @let g = game();
 @let t = table();
 @if (layout() === 'phone') {
-  <!-- Handy: Mitspieler in einer Zeile (beim Anlegen die aufgedeckten Karten), darunter
-       die Reihen und der Hinweis mit der Uhr -->
+  <!-- Handy: Mitspieler in einer Zeile (mit ihren gelegten Karten), darunter die Reihen
+       und der Hinweis mit der Uhr -->
   <div class="phone">
-    @if (takeMine()) {
-      <!-- Reihe wählen: nur die Reihen, der Kasten darunter braucht den Platz -->
-    } @else if (!taken() && strip(); as cards) {
-      <!-- Beim Nehmen einer Reihe stattdessen die Mitspieler (wen es trifft, „+8“) -->
-      <ng-container *ngTemplateOutlet="stripTpl; context: { $implicit: cards }" />
-    } @else {
+    @if (!takeMine()) {
+      <!-- Beim Reihe wählen nur die Reihen, der Kasten darunter braucht den Platz -->
       <div class="opps">
         @for (view of seats(); track view.player.seat) {
           <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: view }" />
@@ -53,6 +49,7 @@
         [player]="m"
         [score]="myScore()"
         [hit]="myHit()"
+        [laid]="myLaid()"
         [long]="true"
       ></div>
     }
@@ -141,6 +138,24 @@
 
 <p class="sr-only" aria-live="polite">{{ srStatus() }}</p>
 
+<!-- Genommene Reihe als Haufen auf dem Weg zum Spieler (fest am Ziel, fliegt von der Reihe) -->
+@for (flight of pileFlights(); track flight.id) {
+  <div
+    class="pile-flight"
+    aria-hidden="true"
+    [attr.data-flight]="flight.id"
+    [style.left.px]="flight.to.left"
+    [style.top.px]="flight.to.top"
+    [style.--pile-w]="flight.to.width + 'px'"
+  >
+    <app-nimm6-card [card]="flight.card" />
+    <span class="pile-bulls">
+      <svg viewBox="0 0 24 24"><path [attr.d]="bull" /></svg>
+      +{{ flight.bulls }}
+    </span>
+  </div>
+}
+
 <ng-template #myPillTpl let-m>
   <div
     appNimm6Seat
@@ -150,6 +165,7 @@
     [player]="m"
     [score]="myScore()"
     [hit]="myHit()"
+    [laid]="myLaid()"
     [turn]="takeMine()"
     [long]="!choosing()"
   ></div>
@@ -164,6 +180,7 @@
     [player]="m"
     [score]="myScore()"
     [hit]="myHit()"
+    [laid]="myLaid()"
     [turn]="takeMine()"
   ></div>
 </ng-template>
@@ -180,6 +197,7 @@
     [status]="view.status"
     [turn]="view.turn"
     [hit]="view.hit"
+    [laid]="view.laid"
     [long]="layout() === 'laptop'"
     [style.left.%]="layout() === 'phone' ? null : view.x"
     [style.top.%]="layout() === 'phone' ? null : view.y"
@@ -195,6 +213,7 @@
         <button
           type="button"
           class="row"
+          [attr.data-row]="row.index"
           [attr.data-tone]="row.tone"
           [attr.aria-label]="row.label"
           [attr.aria-pressed]="takePick() === row.index"
@@ -204,7 +223,13 @@
           <ng-container *ngTemplateOutlet="rowInnerTpl; context: { $implicit: row }" />
         </button>
       } @else {
-        <div class="row" role="img" [attr.data-tone]="row.tone" [attr.aria-label]="row.text">
+        <div
+          class="row"
+          role="img"
+          [attr.data-row]="row.index"
+          [attr.data-tone]="row.tone"
+          [attr.aria-label]="row.text"
+        >
           <ng-container *ngTemplateOutlet="rowInnerTpl; context: { $implicit: row }" />
         </div>
       }
@@ -221,38 +246,26 @@
     <app-nimm6-card
       class="row-card"
       [class.new]="item.state === 'new'"
-      [class.gone]="item.state === 'gone'"
+      [class.gather]="item.state === 'gather'"
+      [class.shift]="item.state === 'shift'"
+      [style.--i]="item.i ?? null"
+      [style.--from]="item.from ?? null"
       [card]="item.card"
       aria-hidden="true"
     />
   }
+  @if (row.pile !== null) {
+    <!-- Reihe zum Haufen geschoben: Hornochsen obendrauf -->
+    <span class="pile-badge" aria-hidden="true">
+      <span class="pile-bulls">
+        <svg viewBox="0 0 24 24"><path [attr.d]="bull" /></svg>
+        +{{ row.pile }}
+      </span>
+    </span>
+  }
   @for (slot of row.slots; track $index) {
     <span class="slot" [attr.data-kind]="slot.kind" aria-hidden="true">{{ slot.mark }}</span>
   }
-</ng-template>
-
-<!-- Handy: aufgedeckte Karten mit Spieler, die gerade gelegte hebt sich -->
-<ng-template #stripTpl let-cards>
-  <div class="strip">
-    <div class="strip-head">
-      <span class="strip-title">
-        <span class="material-symbols-rounded fill" aria-hidden="true">visibility</span>
-        Aufgedeckt
-      </span>
-      <span class="strip-sub">kleinste Karte zuerst</span>
-    </div>
-    <ol class="strip-cards">
-      @for (item of cards; track item.card) {
-        <li [attr.data-state]="item.state" [class.own]="item.mine">
-          <app-nimm6-card [card]="item.card" />
-          <span class="strip-avatar" [style.background]="item.color" aria-hidden="true">{{
-            item.initial
-          }}</span>
-          <span class="strip-name">{{ item.name }}</span>
-        </li>
-      }
-    </ol>
-  </div>
 </ng-template>
 
 <!-- iPad, Laptop: Reihenfolge des Anlegens als Zahlen -->
