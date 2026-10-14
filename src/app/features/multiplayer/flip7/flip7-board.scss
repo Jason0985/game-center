@@ -450,28 +450,20 @@
   --card-h: var(--fan-h);
 }
 
-// Handy: höchstens 3 je Reihe nebeneinander, darunter die nächste. Die Zahl steht oben, so
-// darf die zweite Reihe das untere Drittel der ersten verdecken und spart Höhe.
+// Handy: höchstens 3 je Reihe nebeneinander, darunter die nächste (Wert mittig wie bei
+// den eigenen Karten, daher ohne Überlappung)
 :host([data-layout='phone']) .fan-cards {
   flex-wrap: wrap;
   justify-content: center;
-  column-gap: 2px;
+  gap: 2px;
   // Der Fächer hängt absolut am schmalen Schild: ohne feste Breite schrumpft er auf eine
   // Karte und jede Karte bekäme eine eigene Reihe
   width: max-content;
   max-width: calc(var(--fan-w) * 3 + 4px);
 }
 
-:host([data-layout='phone']) .fan-cards app-flip7-card {
-  justify-content: flex-start;
-  padding-top: calc(var(--fan-h) * 0.08);
-}
-
-:host([data-layout='phone']) .fan-cards app-flip7-card:nth-of-type(n + 4) {
-  margin-top: calc(var(--fan-h) * -0.38);
-}
-
-// Ab iPad: Zahl oben links, Karten überlappen leicht im Handbogen, Drehpunkt unten
+// Ab iPad: Karten überlappen leicht im Handbogen (Eckindex oben links bleibt frei),
+// Drehpunkt unten
 :host(:not([data-layout='phone'])) .fan-cards app-flip7-card + app-flip7-card {
   margin-left: calc(var(--fan-w) * var(--fan-overlap));
 }

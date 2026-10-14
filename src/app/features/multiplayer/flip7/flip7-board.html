@@ -78,7 +78,7 @@
         [turn]="view.turn"
         [flip3Left]="view.flip3Left"
         [choice]="view.choice"
-        [style.left.%]="view.x"
+        [style.left]="view.left"
         [style.top.%]="view.y"
         [disabled]="busy()"
         (click)="pick(view.player.seat)"
@@ -98,7 +98,7 @@
         [waiting]="view.waiting"
         [celebrate]="view.celebrate"
         [bonus]="view.bonus"
-        [style.left.%]="view.x"
+        [style.left]="view.left"
         [style.top.%]="view.y"
       >
         <ng-container *ngTemplateOutlet="fanTpl; context: { $implicit: view }" />
@@ -320,7 +320,6 @@
           @for (item of view.fan; track item.key) {
             <app-flip7-card
               [card]="item.card"
-              [variant]="layout() === 'phone' ? 'flat' : 'fan'"
               [highlight]="item.highlight"
               [style.transform]="item.transform"
               (animate.enter)="fly($event, view.player.seat + ':' + item.key)"

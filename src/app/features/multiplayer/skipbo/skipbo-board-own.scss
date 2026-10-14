@@ -224,12 +224,13 @@ div.my-stock {
   font-size: calc(var(--own-chip) + 2px);
 }
 
-// Gewählt: Ring in Zielfarbe
+// Gewählt: Ring in Zielfarbe mit Abstand zur Karte (die rosa Karten haben fast dieselbe
+// Farbe, direkt am Rand verschwamm der Ring mit ihnen)
 .my-stock.selected .top,
 .hand-card.selected app-skipbo-card {
-  box-shadow:
-    0 0 0 3px var(--table-target),
-    0 12px 22px rgba(200, 56, 109, 0.45);
+  outline: 3px solid var(--table-target);
+  outline-offset: 3px;
+  box-shadow: 0 12px 22px rgba(200, 56, 109, 0.45);
 }
 
 // Ablagen: senkrechte Fächer

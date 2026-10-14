@@ -341,10 +341,18 @@ export function eventIcon(event: Flip7Event): Flip7Icon {
 
 // Tischgeometrie je Layout (Design-Pixel der Platte). seat: ungefähre Breite/Höhe der
 // Mitspieler-Schilder (Spalte bis iPad hoch, Pille ab iPad quer); fanReach: vom
-// Schildrand bis etwa zur Fächermitte (nur für den Zug-Zeiger)
+// Schildrand bis etwa zur Fächermitte (nur für den Zug-Zeiger); inset: so weit bleibt die
+// Schildmitte mindestens vom linken/rechten Plattenrand (Schilder sind fest in Pixeln breit,
+// auf schmaler Platte ragten die äußeren sonst aus dem Bild); floor: tiefste Schildmitte
+// (Laptop: Schild samt Fächer darunter bleibt über meinen Karten)
 export const FLIP7_TABLES: Record<
   TableLayout,
-  TableGeometry & { seat: readonly [number, number]; fanReach: number }
+  TableGeometry & {
+    seat: readonly [number, number];
+    fanReach: number;
+    inset: number;
+    floor: number;
+  }
 > = {
   phone: {
     w: 378,
@@ -357,6 +365,8 @@ export const FLIP7_TABLES: Record<
     to: 22,
     seat: [72, 92],
     fanReach: 28,
+    inset: 0,
+    floor: 560,
   },
   hoch: {
     w: 788,
@@ -369,6 +379,8 @@ export const FLIP7_TABLES: Record<
     to: 8,
     seat: [108, 116],
     fanReach: 38,
+    inset: 95,
+    floor: 800,
   },
   quer: {
     w: 1140,
@@ -381,6 +393,8 @@ export const FLIP7_TABLES: Record<
     to: -32,
     seat: [168, 60],
     fanReach: 42,
+    inset: 150,
+    floor: 520,
   },
   // Ganzer Tischrand, ich sitze unten (270°)
   laptop: {
@@ -394,12 +408,16 @@ export const FLIP7_TABLES: Record<
     to: -90,
     seat: [196, 68],
     fanReach: 46,
+    inset: 125,
+    floor: 420,
   },
 };
 
 // Plätze der Mitspieler auf dem Bogen, dazu je Platz die Seite des Schilds, an der der
 // Kartenfächer hängt: Richtung zur Tischmitte, auf den Schildrand gestreckt (größere
-// Komponente 1; [0, 1] = mittig unten, [1, 1] = Ecke unten rechts).
+// Komponente 1; [0, 1] = mittig unten, [1, 1] = Ecke unten rechts). Ab iPad hängt er
+// immer senkrecht unter dem Schild ([0, 1]), neben den breiten Schildern drängte er sie
+// nach außen.
 // Laptop: neben mir mindestens ein Stück frei (Platz für meine Karten).
 export function seatSpots(
   layout: TableLayout,
@@ -407,14 +425,17 @@ export function seatSpots(
 ): { x: number; y: number; dirX: number; dirY: number; fanX: number; fanY: number }[] {
   const table = FLIP7_TABLES[layout];
   const [seatW, seatH] = table.seat;
-  const gap = layout === 'laptop' ? (count + 1 >= 7 ? 0.2 : 0.17) : null;
-  return arcSpots(table, count, gap).map(({ x, y }) => {
+  const gap = layout === 'laptop' ? 0.2 : null;
+  return arcSpots(table, count, gap).map((spot) => {
+    const x = Math.min(Math.max(spot.x, table.inset), table.w - table.inset);
+    const y = Math.min(spot.y, table.floor);
     // In Schild-Einheiten: ein breites Schild ist seitlich schneller zu Ende
     const dx = (table.cx - x) / seatW;
     const dy = (table.cy - y) / seatH;
     const edge = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
-    const dirX = dx / edge;
-    const dirY = dy / edge;
+    const upright = layout !== 'phone';
+    const dirX = upright ? 0 : dx / edge;
+    const dirY = upright ? 1 : dy / edge;
     return {
       x,
       y,

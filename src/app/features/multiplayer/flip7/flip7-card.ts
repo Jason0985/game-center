@@ -12,9 +12,8 @@ import {
 } from './flip7.model';
 
 // Eine Karte; card null = Rückseite. Größe kommt vom Elternteil über --card-w/--card-h.
-// row: eigene Karten, Ablage (Innenrahmen wie Uno, Wert mittig, zwei Eckindizes); fan:
-// Mitspieler ab iPad (Zahl oben links, Mini-Index unten rechts); flat: kleine Karten nur
-// mit Wert.
+// row: eigene Karten, Fächer der Mitspieler, Ablage (Innenrahmen wie Uno, Wert mittig,
+// zwei Eckindizes; sehr kleine Karten ohne Eckindizes); flat: kleine Karten nur mit Wert.
 @Component({
   selector: 'app-flip7-card',
   template: `
@@ -27,16 +26,11 @@ import {
         <span class="frame"><span class="seven">7</span></span>
       }
       @case ('number') {
-        @if (variant() === 'fan') {
-          <span class="fan-value">{{ value }}</span>
-          <span class="fan-index">{{ value }}</span>
-        } @else {
-          @if (variant() === 'row') {
-            <span class="corner corner--start">{{ value }}</span>
-            <span class="corner corner--end">{{ value }}</span>
-          }
-          <span class="value">{{ value }}</span>
+        @if (variant() === 'row') {
+          <span class="corner corner--start">{{ value }}</span>
+          <span class="corner corner--end">{{ value }}</span>
         }
+        <span class="value">{{ value }}</span>
       }
       @case ('modifier') {
         @if (variant() === 'row') {
@@ -78,7 +72,7 @@ import {
 })
 export class Flip7CardView {
   readonly card = input.required<Flip7Card | null>();
-  readonly variant = input<'row' | 'fan' | 'flat'>('row');
+  readonly variant = input<'row' | 'flat'>('row');
   // bust: graue Karte eines rausgeflogenen Spielers; dup: die doppelte Zahl
   readonly highlight = input<'dup' | 'bust' | null>(null);
 
