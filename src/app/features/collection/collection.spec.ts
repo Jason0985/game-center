@@ -30,10 +30,11 @@ describe('Collection', () => {
       'Skip-Bo',
       'Uno',
       'Blackjack',
+      'Nimm 6',
       'Monopoly',
     ]);
     expect(multiplayer.items[0].path).toBe('/multiplayer');
-    expect(multiplayer.items[4].href).toBe('https://richup.io');
+    expect(multiplayer.items[5].href).toBe('https://richup.io');
     expect(
       component
         .groups()

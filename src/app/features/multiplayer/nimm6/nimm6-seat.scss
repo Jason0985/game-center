@@ -1,0 +1,139 @@
+@use '../table/seat-base';
+
+// Nimm-6-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Hornochsen in Gold,
+// Bereit-Token, kleiner Rücken nach der Wahl, roter Treffer-Chip. Der Tisch setzt die
+// Variablen je Layout und Spielerzahl (nimm6-board-places.scss).
+.bulls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--table-gold);
+  font-size: var(--stat-size, 11px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color 200ms;
+}
+
+.bulls svg {
+  width: calc(var(--stat-size, 11px) + 1px);
+  height: calc(var(--stat-size, 11px) + 1px);
+  flex: none;
+  fill: currentColor;
+}
+
+.unit {
+  font-weight: 800;
+}
+
+// Bereit: grüner Haken unten rechts am Avatar, sonst grau
+.token--ready {
+  right: calc(var(--token) * -0.15);
+  bottom: calc(var(--token) * -0.1);
+  background: var(--color-text-subtle, #636366);
+  color: #ffffff;
+}
+
+.token--ready.on {
+  background: var(--color-success-light);
+}
+
+// Wählt noch: etwas zurückgenommen
+:host(.is-waiting) {
+  opacity: 0.8;
+}
+
+// Hat gewählt: verdeckte Karte am Schild
+.mini-back {
+  flex: none;
+  width: var(--back-w, 28px);
+  height: var(--back-h, 40px);
+  box-sizing: border-box;
+  border: 1.5px solid var(--table-back-frame);
+  border-radius: 5px;
+  background: var(--table-card-back);
+  box-shadow: var(--table-card-shadow);
+  rotate: 8deg;
+}
+
+:host([data-variant='column']) .mini-back {
+  position: absolute;
+  top: -10px;
+  right: -12px;
+  width: 22px;
+  height: 31px;
+  rotate: 10deg;
+}
+
+.choosing {
+  color: var(--color-text-subtle, #98989f);
+  font-size: var(--stat-size, 11px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+// Hat gerade eine Reihe genommen: roter Rand, Hornochsen rot, „+8“ oben rechts
+:host(.is-hit) {
+  border: 1.5px solid var(--table-danger);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--table-danger) 20%, transparent),
+    var(--table-seat-shadow);
+}
+
+:host(.is-hit) .bulls {
+  color: color-mix(in srgb, var(--table-danger) 70%, var(--color-text));
+}
+
+.hit {
+  position: absolute;
+  top: -9px;
+  right: -6px;
+  z-index: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--table-danger);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  font-size: calc(var(--stat-size, 11px) + 1px);
+  font-weight: 800;
+  animation: n6-hit 400ms ease-out;
+}
+
+@keyframes n6-hit {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hit {
+    animation: none;
+  }
+}
+
+.fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+:host([data-variant='tab']) .info,
+:host([data-variant='pill']) .info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+:host([data-variant='tab']) {
+  align-items: center;
+}
+
+:host([data-variant='tab']) .info {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+:host([data-variant='tab']) .name {
+  line-height: 1.2;
+}

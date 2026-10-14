@@ -1,0 +1,486 @@
+@use '../table/table-base';
+@use '../table/arc-table';
+
+// Nimm-6-Tisch nach den Artboards Handy (390, ohne Platte), iPad hoch (820), iPad quer (1180)
+// und Laptop (1440). Platte aus table/_arc-table.scss, Reihen mittig darauf; auf der Platte
+// wachsen die Reihenkarten mit ihr (--tbl-h wie in table-top.scss), damit sie nie über die
+// Plätze ragen. Eigener Bereich, Hand und Kästen: nimm6-board-own.scss.
+:host {
+  // Grid-Element der Bühne: nicht breiter als der Bildschirm werden, auch wenn die
+  // Mitspieler-Zeile mehr Platz wollte (die Schilder schrumpfen dann)
+  min-width: 0;
+  // Höhe der Platte, wie TableTop sie rechnet
+  --tbl-h: min(
+    calc(var(--table-h) * 1px),
+    calc(100dvh - var(--head-h) - var(--area-top) - var(--below)),
+    calc((100vw - var(--table-margin)) * var(--table-h) / var(--table-w))
+  );
+  // Handy: Reihen passen in die Breite (Rand, Polster, Summe und Lücken abgezogen) und in
+  // die Höhe (alles außer den Reihen ~535 px, die Reihen 5,68 × Kartenbreite + 62 px);
+  // auf sehr kurzen Bildschirmen scrollt der Bereich über der Hand
+  --row-w: clamp(30px, min(calc((100vw - 96px) / 6), calc((100dvh - 535px) / 5.68)), 46px);
+  --row-gap: 4px;
+  --sum-w: 30px;
+  --sum-size: 13px;
+  --sum-icon: 15px;
+}
+
+:host([data-layout='hoch']) {
+  --below: 250px;
+  --row-w: calc(var(--tbl-h) * 64 / var(--table-h));
+  --row-gap: 6px;
+  --sum-w: 40px;
+  --sum-size: 15px;
+  --sum-icon: 18px;
+}
+
+:host([data-layout='quer']) {
+  --below: 226px;
+  --row-w: calc(var(--tbl-h) * 52 / var(--table-h));
+  --row-gap: 5px;
+  --sum-w: 34px;
+  --sum-size: 14px;
+  --sum-icon: 16px;
+}
+
+:host([data-layout='laptop']) {
+  --below: 190px;
+  --row-w: calc(var(--tbl-h) * 62 / var(--table-h));
+  --row-gap: 6px;
+  --sum-w: 40px;
+  --sum-size: 15px;
+  --sum-icon: 18px;
+}
+
+// Handy: keine Platte, alles untereinander (scrollt, wenn der Bildschirm zu kurz ist)
+:host([data-layout='phone']) {
+  display: flex;
+  flex-direction: column;
+}
+
+.phone {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 10px 10px;
+  overflow-y: auto;
+}
+
+.opps {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.felt {
+  padding: 10px 8px;
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 50% 40%, var(--table-center) 0%, var(--table-edge) 70%);
+  box-shadow:
+    inset 0 0 0 5px var(--table-rim),
+    inset 0 0 0 6px var(--table-rim-line);
+}
+
+// Handy: Hinweis mit der Uhr daneben
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-row .status {
+  flex: 1;
+}
+
+.status-row .ready {
+  display: none;
+}
+
+// Reihen mittig auf der Platte
+.center {
+  position: absolute;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--row-w) * 0.2);
+  transform: translateX(-50%);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--row-gap) + 2px);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--row-gap);
+  padding: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition:
+    background 200ms,
+    box-shadow 200ms;
+}
+
+button.row {
+  cursor: pointer;
+}
+
+button.row:disabled {
+  cursor: default;
+}
+
+.row[data-tone='target'] {
+  background: color-mix(in srgb, var(--color-primary-light) 7%, transparent);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--color-primary-light) 45%, transparent);
+}
+
+.row[data-tone='sixth'],
+.row[data-tone='hot'] {
+  background: color-mix(in srgb, var(--table-danger) 11%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--table-danger) 65%, transparent);
+}
+
+.row[data-tone='take'] {
+  box-shadow: inset 0 0 0 1.5px var(--color-warning-border);
+}
+
+.row[data-tone='pick'] {
+  background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.row-sum {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: var(--sum-w);
+  align-self: stretch;
+  border-radius: 8px;
+  color: var(--table-gold);
+  font-size: var(--sum-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.row-sum svg {
+  width: var(--sum-icon);
+  height: var(--sum-icon);
+  fill: currentColor;
+}
+
+.row[data-tone='hot'] .row-sum,
+.row[data-tone='sixth'] .row-sum {
+  color: var(--table-danger);
+}
+
+.row[data-tone='pick'] .row-sum {
+  background: var(--color-primary-light);
+  color: #2b0716;
+}
+
+.row[data-tone='take'] .row-sum {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.row-card {
+  --card-w: var(--row-w);
+}
+
+// Gerade gelegt: fällt von oben in die Reihe, mit Ring
+.row-card.new {
+  box-shadow:
+    0 0 0 3px var(--color-primary-light),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+:host(.live) .row-card.new {
+  animation: n6-drop 380ms ease-out;
+}
+
+.row[data-tone='hot'] .row-card.new {
+  box-shadow:
+    0 0 0 3px var(--table-danger),
+    0 0 20px color-mix(in srgb, var(--table-danger) 55%, transparent);
+}
+
+// Wird genommen: verblasst und kippt
+.row-card.gone {
+  opacity: 0.55;
+  transform: translateY(-3px) rotate(-3deg);
+}
+
+@keyframes n6-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.live) .row-card.new {
+    animation: none;
+  }
+}
+
+.slot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--row-w);
+  height: calc(var(--row-w) * 1.42);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: calc(var(--row-w) * 0.12);
+  background: var(--table-slot-bg);
+  font-size: calc(var(--row-w) * 0.36);
+  font-style: italic;
+  font-weight: 900;
+}
+
+.slot[data-kind='six'] {
+  border-color: color-mix(in srgb, var(--table-danger) 45%, transparent);
+  background: color-mix(in srgb, var(--table-danger) 6%, transparent);
+  color: color-mix(in srgb, var(--table-danger) 70%, transparent);
+}
+
+.slot[data-kind='ghost'] {
+  border: 2px dashed var(--color-primary-light);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
+  color: var(--color-primary-light);
+}
+
+.slot[data-kind='ghost-six'] {
+  border: 2px dashed var(--table-danger);
+  background: color-mix(in srgb, var(--table-danger) 16%, transparent);
+  color: var(--table-danger);
+}
+
+// Handy: aufgedeckte Karten statt der Mitspieler-Zeile
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 12px 14px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.strip-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.strip-title .material-symbols-rounded {
+  color: var(--table-target);
+  font-size: 18px;
+}
+
+.strip-sub {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.strip-cards {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 0 0;
+  list-style: none;
+}
+
+.strip-cards li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  transition:
+    opacity 200ms,
+    transform 200ms;
+}
+
+.strip-cards app-nimm6-card {
+  --card-w: min(44px, calc((100vw - 80px) / 8));
+}
+
+.strip-cards li[data-state='done'] {
+  opacity: 0.4;
+}
+
+.strip-cards li[data-state='now'] {
+  transform: translateY(-6px);
+}
+
+.strip-cards li[data-state='now'] app-nimm6-card {
+  box-shadow:
+    0 0 0 3px var(--color-primary-light),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.strip-cards li.own app-nimm6-card {
+  outline: 2px solid var(--table-turn);
+  outline-offset: 1px;
+}
+
+.strip-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.strip-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Hinweiszeile in der Farbe der Lage
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.status .material-symbols-rounded {
+  flex: none;
+  font-size: 18px;
+}
+
+.status[data-tone='warn'] {
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-warning);
+}
+
+.status[data-tone='danger'] {
+  background: color-mix(in srgb, var(--table-danger) 14%, transparent);
+  color: color-mix(in srgb, var(--table-danger) 75%, var(--color-text));
+}
+
+.status[data-tone='accent'] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+}
+
+:host([data-layout='hoch']) .status,
+:host([data-layout='quer']) .status {
+  font-size: 14px;
+}
+
+:host([data-layout='laptop']) .status {
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+// Mitspieler (Maße für table/_seat-base.scss)
+.opp {
+  --ring: 34px;
+  --avatar-k: 0.94;
+  --name-size: 12px;
+  --stat-size: 11px;
+  --pad: 7px 4px 6px;
+  --gap: 3px;
+  flex: 0 1 64px;
+  min-width: 0;
+}
+
+:host(:not([data-layout='phone'])) .opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+}
+
+:host([data-layout='hoch']) .opp {
+  --w: 92px;
+  --ring: 42px;
+  --name-size: 14px;
+  --stat-size: 12px;
+  --pad: 9px 6px 8px;
+  --gap: 4px;
+  --radius: 16px;
+}
+
+:host([data-layout='quer']) .opp,
+:host([data-layout='laptop']) .opp {
+  // Pille so breit wie ihr Inhalt
+  --w: auto;
+  white-space: nowrap;
+}
+
+:host([data-layout='quer']) .opp {
+  --ring: 38px;
+  --name-size: 14px;
+  --stat-size: 12px;
+  --gap: 9px;
+  --back-w: 26px;
+  --back-h: 36px;
+}
+
+:host([data-layout='laptop']) .opp {
+  --ring: 44px;
+  --name-size: 15px;
+  --stat-size: 12px;
+  --gap: 10px;
+  --back-w: 28px;
+  --back-h: 40px;
+}
+
+// Laptop: eigenes Schild mittig auf der Unterkante der Platte
+.own-pill {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 4;
+  --ring: 44px;
+  --avatar-k: 0.88;
+  --name-size: 15px;
+  --stat-size: 12px;
+  transform: translate(-50%, -50%);
+}

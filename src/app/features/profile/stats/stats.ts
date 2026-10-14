@@ -6,6 +6,7 @@ import { computeStats, GameResult, GameResultsService, resultGameName } from './
 import { gameOf } from '../../multiplayer/lobby.model';
 import { cardCount } from '../../multiplayer/table/table.model';
 import { formatMoney } from '../../multiplayer/blackjack/blackjack.model';
+import { bullsLabel } from '../../multiplayer/nimm6/nimm6.model';
 import { SkeletonRows } from '../../../ui/skeleton-rows';
 
 const percentFormat = new Intl.NumberFormat('de-DE', { style: 'percent' });
@@ -80,6 +81,8 @@ export class Stats {
     if (result.game_key === 'uno') return result.won ? null : `${cardCount(result.score)} übrig`;
     // Blackjack: Guthaben am Ende
     if (result.game_key === 'blackjack') return `Guthaben ${formatMoney(result.score)}`;
+    // Nimm 6: Hornochsen am Ende (weniger ist besser)
+    if (result.game_key === 'nimm-6') return bullsLabel(result.score);
     return `${result.score} P.`;
   }
 }

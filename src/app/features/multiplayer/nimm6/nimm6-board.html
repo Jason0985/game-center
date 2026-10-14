@@ -1,0 +1,415 @@
+@let g = game();
+@let t = table();
+@if (layout() === 'phone') {
+  <!-- Handy: Mitspieler in einer Zeile (beim Anlegen die aufgedeckten Karten), darunter
+       die Reihen und der Hinweis mit der Uhr -->
+  <div class="phone">
+    @if (takeMine()) {
+      <!-- Reihe wählen: nur die Reihen, der Kasten darunter braucht den Platz -->
+    } @else if (!taken() && strip(); as cards) {
+      <!-- Beim Nehmen einer Reihe stattdessen die Mitspieler (wen es trifft, „+8“) -->
+      <ng-container *ngTemplateOutlet="stripTpl; context: { $implicit: cards }" />
+    } @else {
+      <div class="opps">
+        @for (view of seats(); track view.player.seat) {
+          <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: view }" />
+        }
+      </div>
+    }
+    <div class="felt">
+      <ng-container *ngTemplateOutlet="rowsTpl" />
+    </div>
+    <div class="status-row">
+      <ng-container *ngTemplateOutlet="statusTpl" />
+      @if (choosing()) {
+        <ng-container *ngTemplateOutlet="clockTpl" />
+      }
+    </div>
+  </div>
+} @else {
+  <div
+    class="table-area"
+    appTableTop
+    mark="6"
+    [w]="t.w"
+    [h]="t.h"
+    [center]="{ x: t.w / 2, y: t.h / 2, r: 0 }"
+  >
+    @for (view of seats(); track view.player.seat) {
+      <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: view }" />
+    }
+    <div class="center" [style.top.%]="rowsTop()">
+      <ng-container *ngTemplateOutlet="rowsTpl" />
+      @if (layout() === 'laptop') {
+        <ng-container *ngTemplateOutlet="statusTpl" />
+      }
+    </div>
+    @if (layout() === 'laptop' && me(); as m) {
+      <div
+        appNimm6Seat
+        role="group"
+        class="own-pill"
+        variant="pill"
+        [player]="m"
+        [score]="myScore()"
+        [hit]="myHit()"
+        [long]="true"
+      ></div>
+    }
+  </div>
+}
+
+@if (me(); as m) {
+  <section class="mine" [class.is-turn]="takeMine()" aria-label="Dein Platz">
+    @switch (layout()) {
+      @case ('phone') {
+        <!-- Beim Wählen: Hand, darunter Schild und Knopf; sonst Schild und Uhr (beim
+             Anlegen braucht der Tisch den Platz) -->
+        @if (choosing()) {
+          <ng-container *ngTemplateOutlet="handTpl" />
+          <div class="mine-foot">
+            <ng-container *ngTemplateOutlet="myPillTpl; context: { $implicit: m }" />
+            <ng-container *ngTemplateOutlet="layTpl" />
+          </div>
+        } @else {
+          <div class="mine-head">
+            <ng-container *ngTemplateOutlet="myPillTpl; context: { $implicit: m }" />
+            <ng-container *ngTemplateOutlet="clockTpl" />
+          </div>
+          @if (takeMine()) {
+            <ng-container *ngTemplateOutlet="takeTpl" />
+          }
+        }
+      }
+      @case ('hoch') {
+        <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
+        <div class="mine-head">
+          <ng-container *ngTemplateOutlet="statusTpl" />
+          <ng-container *ngTemplateOutlet="clockTpl" />
+        </div>
+        @if (takeMine()) {
+          <ng-container *ngTemplateOutlet="takeTpl" />
+        } @else if (taken()) {
+          <ng-container *ngTemplateOutlet="takenTpl" />
+        } @else if (strip(); as cards) {
+          <!-- Beim Anlegen die Reihenfolge statt der Hand -->
+          <ng-container *ngTemplateOutlet="queueTpl; context: { $implicit: cards }" />
+        } @else {
+          <div class="mine-row">
+            <ng-container *ngTemplateOutlet="handTpl" />
+            <div class="side side--end">
+              <ng-container *ngTemplateOutlet="layTpl" />
+            </div>
+          </div>
+        }
+      }
+      @default {
+        <!-- quer, Laptop: links Hinweis bzw. Uhr oder die Reihenfolge beim Anlegen, in der
+             Mitte die Hand, rechts der Knopf -->
+        @if (layout() === 'quer') {
+          <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
+        }
+        @if (takeMine()) {
+          <ng-container *ngTemplateOutlet="takeTpl" />
+        } @else if (taken()) {
+          <ng-container *ngTemplateOutlet="takenTpl" />
+        } @else {
+          <div class="mine-row">
+            <div class="side side--start">
+              @if (strip(); as cards) {
+                <ng-container *ngTemplateOutlet="queueTpl; context: { $implicit: cards }" />
+              } @else {
+                @if (layout() === 'quer') {
+                  <ng-container *ngTemplateOutlet="statusTpl" />
+                }
+                <ng-container *ngTemplateOutlet="clockTpl" />
+                @if (layout() === 'laptop' && choosing()) {
+                  <span class="side-note">Alle wählen gleichzeitig verdeckt.</span>
+                }
+              }
+            </div>
+            <ng-container *ngTemplateOutlet="handTpl" />
+            <div class="side side--end">
+              <ng-container *ngTemplateOutlet="layTpl" />
+            </div>
+          </div>
+        }
+      }
+    }
+  </section>
+}
+
+<p class="sr-only" aria-live="polite">{{ srStatus() }}</p>
+
+<ng-template #myPillTpl let-m>
+  <div
+    appNimm6Seat
+    role="group"
+    class="my-pill"
+    variant="pill"
+    [player]="m"
+    [score]="myScore()"
+    [hit]="myHit()"
+    [turn]="takeMine()"
+    [long]="!choosing()"
+  ></div>
+</ng-template>
+
+<ng-template #tabTpl let-m>
+  <div
+    appNimm6Seat
+    role="group"
+    class="tab"
+    variant="tab"
+    [player]="m"
+    [score]="myScore()"
+    [hit]="myHit()"
+    [turn]="takeMine()"
+  ></div>
+</ng-template>
+
+<!-- Mitspieler: Spalte (Handy, iPad hoch) bzw. Pille (quer, Laptop) -->
+<ng-template #seatTpl let-view>
+  <div
+    appNimm6Seat
+    role="group"
+    class="opp"
+    [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+    [player]="view.player"
+    [score]="view.score"
+    [status]="view.status"
+    [turn]="view.turn"
+    [hit]="view.hit"
+    [long]="layout() === 'laptop'"
+    [style.left.%]="layout() === 'phone' ? null : view.x"
+    [style.top.%]="layout() === 'phone' ? null : view.y"
+  ></div>
+</ng-template>
+
+<!-- Vier Reihen: links die Hornochsen der Reihe, dann bis zu 6 Plätze (6. rot gestrichelt).
+     Bei zu kleiner eigener Karte sind die Reihen Buttons. -->
+<ng-template #rowsTpl>
+  <div class="rows" role="group" aria-label="Reihen">
+    @for (row of rows(); track row.index) {
+      @if (takeMine()) {
+        <button
+          type="button"
+          class="row"
+          [attr.data-tone]="row.tone"
+          [attr.aria-label]="row.label"
+          [attr.aria-pressed]="takePick() === row.index"
+          [disabled]="busy()"
+          (click)="pickRow(row.index)"
+        >
+          <ng-container *ngTemplateOutlet="rowInnerTpl; context: { $implicit: row }" />
+        </button>
+      } @else {
+        <div class="row" role="img" [attr.data-tone]="row.tone" [attr.aria-label]="row.text">
+          <ng-container *ngTemplateOutlet="rowInnerTpl; context: { $implicit: row }" />
+        </div>
+      }
+    }
+  </div>
+</ng-template>
+
+<ng-template #rowInnerTpl let-row>
+  <span class="row-sum" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path [attr.d]="bull" /></svg>
+    {{ row.sum }}
+  </span>
+  @for (item of row.cards; track $index) {
+    <app-nimm6-card
+      class="row-card"
+      [class.new]="item.state === 'new'"
+      [class.gone]="item.state === 'gone'"
+      [card]="item.card"
+      aria-hidden="true"
+    />
+  }
+  @for (slot of row.slots; track $index) {
+    <span class="slot" [attr.data-kind]="slot.kind" aria-hidden="true">{{ slot.mark }}</span>
+  }
+</ng-template>
+
+<!-- Handy: aufgedeckte Karten mit Spieler, die gerade gelegte hebt sich -->
+<ng-template #stripTpl let-cards>
+  <div class="strip">
+    <div class="strip-head">
+      <span class="strip-title">
+        <span class="material-symbols-rounded fill" aria-hidden="true">visibility</span>
+        Aufgedeckt
+      </span>
+      <span class="strip-sub">kleinste Karte zuerst</span>
+    </div>
+    <ol class="strip-cards">
+      @for (item of cards; track item.card) {
+        <li [attr.data-state]="item.state" [class.own]="item.mine">
+          <app-nimm6-card [card]="item.card" />
+          <span class="strip-avatar" [style.background]="item.color" aria-hidden="true">{{
+            item.initial
+          }}</span>
+          <span class="strip-name">{{ item.name }}</span>
+        </li>
+      }
+    </ol>
+  </div>
+</ng-template>
+
+<!-- iPad, Laptop: Reihenfolge des Anlegens als Zahlen -->
+<ng-template #queueTpl let-cards>
+  <div class="queue">
+    <span class="queue-label">Legen der Reihe nach</span>
+    <ol class="queue-cards">
+      @for (item of cards; track item.card) {
+        <li
+          [attr.data-state]="item.state"
+          [class.own]="item.mine"
+          [attr.aria-label]="item.name + ': ' + item.card"
+        >
+          {{ item.card }}
+        </li>
+      }
+    </ol>
+  </div>
+</ng-template>
+
+<!-- Hinweis: wohin die gewählte Karte kommt, wer wartet, was gerade gelegt wird -->
+<ng-template #statusTpl>
+  @if (taken() && layout() === 'phone') {
+    <ng-container *ngTemplateOutlet="takenTpl" />
+  } @else if (status(); as s) {
+    <div class="status" [attr.data-tone]="s.tone">
+      <span class="material-symbols-rounded fill" aria-hidden="true">{{ s.icon }}</span>
+      <span>{{ s.text }}</span>
+    </div>
+  }
+</ng-template>
+
+<ng-template #clockTpl>
+  @if (choosing() || takeMine() || (g.phase === 'take' && !animating())) {
+    <div class="clock-row">
+      @if (clock(); as c) {
+        <span class="clock" [class.low]="(secondsLeft() ?? 99) <= 5">
+          <span class="material-symbols-rounded" aria-hidden="true">timer</span>
+          {{ c }}
+        </span>
+      }
+      @if (g.phase === 'choose') {
+        <span class="ready">{{ readyCount() }}/{{ active().length }} bereit</span>
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- Eigene Hand: aufsteigend, leicht überlappend; die gewählte hebt sich -->
+<ng-template #handTpl>
+  <div
+    class="hand"
+    role="group"
+    [class.dim]="!choosing()"
+    [class.waiting]="chosen() !== null"
+    [attr.aria-label]="'Deine Karten, ' + g.hand.length"
+  >
+    @for (item of hand(); track item.card) {
+      <button
+        type="button"
+        class="hand-card"
+        [class.on]="item.on"
+        [style.z-index]="item.z"
+        [attr.aria-label]="item.label"
+        [attr.aria-pressed]="item.on"
+        [disabled]="busy() || !choosing() || chosen() !== null"
+        (click)="tapCard(item.card)"
+      >
+        <app-nimm6-card [card]="item.card" />
+      </button>
+    }
+  </div>
+</ng-template>
+
+<ng-template #layTpl>
+  @if (choosing()) {
+    <button
+      type="button"
+      class="lay"
+      [disabled]="busy() || chosen() !== null || selected() === null"
+      (click)="lay()"
+    >
+      <span class="material-symbols-rounded" aria-hidden="true">{{
+        chosen() !== null ? 'hourglass_top' : 'check'
+      }}</span>
+      @if (chosen() !== null) {
+        Gelegt
+      } @else if (selected() !== null) {
+        Karte {{ selected() }} legen
+      } @else {
+        Karte wählen
+      }
+    </button>
+  }
+</ng-template>
+
+<!-- Zu klein: eigene Karte, gewählte Reihe mit Hornochsen, Bestätigen -->
+<ng-template #takeTpl>
+  @let s = takeSummary();
+  <div class="take">
+    <div class="take-head">
+      <app-nimm6-card class="take-card" [card]="takeCard()" />
+      <div class="take-text">
+        <span class="take-title">Deine {{ takeCard() }} passt nirgends</span>
+        <span class="take-sub"
+          >Sie ist kleiner als jedes Reihenende. Nimm eine Reihe – die {{ takeCard() }} beginnt sie
+          neu.</span
+        >
+        @if (layout() === 'quer' || layout() === 'laptop') {
+          <ng-container *ngTemplateOutlet="clockTpl" />
+        }
+      </div>
+    </div>
+    <div class="take-side">
+      <div class="take-summary" [class.cheap]="s.cheapest">
+        <span>Reihe {{ s.row }} · {{ s.count === 1 ? '1 Karte' : s.count + ' Karten' }}</span>
+        <span class="take-bulls">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="bull" /></svg>
+          +{{ s.bulls }}
+        </span>
+      </div>
+      <button type="button" class="lay" [disabled]="busy()" (click)="confirmTake()">
+        <span class="material-symbols-rounded" aria-hidden="true">move_down</span>
+        Reihe {{ s.row }} nehmen
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- 6. Karte bzw. zu klein: wer welche Reihe nimmt -->
+<ng-template #takenTpl>
+  @if (taken(); as k) {
+    <div class="taken" [class.six]="k.six">
+      <div class="taken-head">
+        <div class="taken-pile" aria-hidden="true">
+          @for (item of k.pile; track $index) {
+            <app-nimm6-card
+              [card]="item.card"
+              [style.left.px]="item.x"
+              [style.top.px]="item.y"
+              [style.rotate.deg]="item.deg"
+            />
+          }
+        </div>
+        <div class="taken-text">
+          <span class="taken-title">{{ k.title }}</span>
+          <span class="taken-who">{{ k.text }}</span>
+          <span class="taken-sub">{{ k.sub }}</span>
+        </div>
+      </div>
+      <div class="taken-foot">
+        <span class="taken-bulls">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="bull" /></svg>
+          +{{ k.bulls }} Hornochsen
+        </span>
+        <span class="taken-change">{{ k.change }}</span>
+      </div>
+    </div>
+  }
+</ng-template>
