@@ -95,6 +95,41 @@
       <p class="hint">Alle starten mit diesem Guthaben. Einsatz 10 bis 500 pro Hand.</p>
     </div>
   }
+  @case ('skyjo') {
+    <div class="field">
+      <span class="label" id="lobby-skyjo-end-label">Spielende bei</span>
+      <div class="segments" role="group" aria-labelledby="lobby-skyjo-end-label">
+        @for (option of skyjoEndOptions; track option) {
+          <button
+            type="button"
+            [attr.aria-pressed]="skyjo().endScore === option"
+            [disabled]="locked()"
+            (click)="selectSkyjoEnd(option)"
+          >
+            {{ option === 100 ? '100 Punkten' : option }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="lobby-skyjo-rules-label">Regeln</span>
+      <div class="group" role="group" aria-labelledby="lobby-skyjo-rules-label">
+        @for (rule of skyjoRules; track rule.key) {
+          <button
+            type="button"
+            role="switch"
+            class="switch-row"
+            [attr.aria-checked]="skyjo()[rule.key]"
+            [disabled]="locked()"
+            (click)="toggleSkyjoRule(rule.key)"
+          >
+            <span>{{ rule.label }}</span>
+            <span class="switch" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+    </div>
+  }
   @case ('skip-bo') {
     <div class="field">
       <label class="label" for="lobby-stock">Karten im Spielstapel</label>

@@ -4,12 +4,14 @@ import { FLIP7_DEFAULT_TARGET, FLIP7_RULES } from './flip7/flip7.model';
 import { SKIPBO_RULES } from './skipbo/skipbo.model';
 import { BLACKJACK_RULES, formatMoney, START_MONEY_DEFAULT } from './blackjack/blackjack.model';
 import { NIMM6_RULES } from './nimm6/nimm6.model';
+import { SKYJO_DEFAULT_SETTINGS, skyjoRules, SkyjoSettings } from './skyjo/skyjo.model';
 
 export type LobbyStatus = 'open' | 'started';
 
 // Rahmenbedingungen des Spiels (set_lobby_game). Flip 7: targetScore null = offen ohne
 // Punkteziel; Uno: die drei Hausregeln; Skip-Bo: stockSize 5–50, ohne = Standard;
-// Blackjack: startMoney 100–10.000, ohne = 1.000
+// Blackjack: startMoney 100–10.000, ohne = 1.000; Skyjo: endScore 50/100/150 und zwei
+// Regeln, ohne = 100 und beide an
 export interface LobbyGameSettings {
   targetScore?: number | null;
   stockSize?: number;
@@ -17,6 +19,9 @@ export interface LobbyGameSettings {
   stacking?: boolean;
   sevenZero?: boolean;
   drawUntilPlayable?: boolean;
+  endScore?: number;
+  clearColumns?: boolean;
+  doubleEnder?: boolean;
 }
 
 // Gleiche Grenze wie in der DB (_add_lobby_member); die Mindestzahl hängt vom Spiel ab
@@ -136,6 +141,17 @@ export const GAMES = [
     maxPlayers: LOBBY_MAX_MEMBERS,
     url: null,
   },
+  {
+    key: 'skyjo',
+    tile: 'var(--tile-teal)',
+    tagline: 'Raster aufdecken, wenig Punkte',
+    name: 'Skyjo',
+    icon: 'grid_view',
+    blurb: 'Karten aufdecken und tauschen – wer am wenigsten Punkte hat, gewinnt.',
+    minPlayers: 2,
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
+  },
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
@@ -186,6 +202,14 @@ export function settingsLabel(
     return settings?.stockSize ? `${settings.stockSize} Karten` : null;
   }
   if (gameKey === 'blackjack') return `${formatMoney(startMoneyOf(settings))} Startgeld`;
+  if (gameKey === 'skyjo') {
+    const skyjo = skyjoSettingsOf(settings);
+    const off = [
+      !skyjo.clearColumns && 'ohne Spalten',
+      !skyjo.doubleEnder && 'ohne Verdoppeln',
+    ].filter(Boolean);
+    return [`bis ${skyjo.endScore} Punkte`, ...off].join(', ');
+  }
   if (gameKey !== 'flip-7') return null;
 
   const target = settings?.targetScore;
@@ -212,6 +236,12 @@ export const flip7TargetOf = (settings: LobbyGameSettings | null | undefined): n
 export const startMoneyOf = (settings: LobbyGameSettings | null | undefined): number =>
   settings?.startMoney ?? START_MONEY_DEFAULT;
 
+export const skyjoSettingsOf = (settings: LobbyGameSettings | null | undefined): SkyjoSettings => ({
+  endScore: settings?.endScore ?? SKYJO_DEFAULT_SETTINGS.endScore,
+  clearColumns: settings?.clearColumns ?? SKYJO_DEFAULT_SETTINGS.clearColumns,
+  doubleEnder: settings?.doubleEnder ?? SKYJO_DEFAULT_SETTINGS.doubleEnder,
+});
+
 export const unoRulesOf = (settings: LobbyGameSettings | null | undefined): UnoSettings => ({
   stacking: settings?.stacking ?? UNO_DEFAULT_SETTINGS.stacking,
   sevenZero: settings?.sevenZero ?? UNO_DEFAULT_SETTINGS.sevenZero,
@@ -227,6 +257,7 @@ export function rulesOf(
   if (gameKey === 'skip-bo') return SKIPBO_RULES;
   if (gameKey === 'blackjack') return BLACKJACK_RULES;
   if (gameKey === 'nimm-6') return NIMM6_RULES;
+  if (gameKey === 'skyjo') return skyjoRules(skyjoSettingsOf(settings));
   if (gameKey !== 'uno') return [];
   const active = unoRulesOf(settings);
   return [...UNO_RULES, ...UNO_HOUSE_RULES.filter((rule) => active[rule.key]).map((r) => r.rule)];

@@ -25,6 +25,7 @@ const ROUNDED_SYMBOLS = [
   'favorite',
   'filter_3',
   'flag',
+  'flip',
   'front_hand',
   'group',
   'history',
