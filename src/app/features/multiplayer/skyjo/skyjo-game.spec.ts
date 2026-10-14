@@ -164,18 +164,18 @@ describe('SkyjoGameView', () => {
 
   it('swaps or throws away a card drawn from the pile', async () => {
     await render('guest', makeGame({ step: 'place', drawn: -2, drawn_from: 'pile' }));
-    expect(el().textContent).toContain('wirf die −2 ab');
+    expect(el().textContent).toContain('die Ablage, um die −2 abzuwerfen');
     cell(0).click();
     await vi.waitFor(() => expect(skyjo['swap']).toHaveBeenCalledWith(turn, 0));
     await settled();
-    button('Abwerfen')!.click();
+    labelled('−2 abwerfen')!.click();
     await vi.waitFor(() => expect(skyjo['discard']).toHaveBeenCalledWith(turn));
     fixture.destroy();
 
     // Von der Ablage muss getauscht werden
     await render('guest', makeGame({ step: 'place', drawn: 4, drawn_from: 'discard' }));
     expect(el().textContent).toContain('um sie gegen die 4 zu tauschen');
-    expect(button('Abwerfen')).toBeUndefined();
+    expect(el().querySelector('.pile-btn.throw')).toBeNull();
   });
 
   it('flips one hidden card after throwing away', async () => {

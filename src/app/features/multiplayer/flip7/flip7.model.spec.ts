@@ -218,14 +218,16 @@ describe('seatSpots', () => {
     );
   });
 
-  it('hangs each fan below the seat from iPad on, on the phone towards the centre', () => {
+  it('hangs each fan below the seat, on a crowded phone towards the centre', () => {
     const sides = (layout: 'phone' | 'quer' | 'laptop', count: number) =>
       seatSpots(layout, count).map((spot) => [+spot.dirX.toFixed(1), +spot.dirY.toFixed(1)]);
-    // Handy: beide Plätze oben, Fächer darunter, leicht zur Mitte
+    // Handy: Fächer mittig darunter; bei vielen Mitspielern zur Mitte versetzt
     expect(sides('phone', 2)).toEqual([
-      [0.4, 1],
-      [-0.4, 1],
+      [0, 1],
+      [0, 1],
     ]);
+    expect(sides('phone', 5).every(([x, y]) => x === 0 && y === 1)).toBe(true);
+    expect(sides('phone', 6)[0][0]).toBeGreaterThan(0);
     // iPad quer und Laptop: auch die seitlichen und unteren Plätze tragen den Fächer
     // darunter, nicht daneben
     const below = (count: number) => Array.from({ length: count }, () => [0, 1]);
