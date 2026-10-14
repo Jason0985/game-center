@@ -230,8 +230,15 @@
     0 0 0 4px var(--color-primary-light);
 }
 
+// Gezogene Stapelkarte: Ablage gestrichelt wie die leeren Plätze, antippen wirft sie ab
+.pile-btn.throw .discard {
+  outline: 2px dashed var(--color-primary-light);
+  outline-offset: 4px;
+}
+
 .pile-btn.active:hover .stack,
-.pile-btn.active:hover .discard {
+.pile-btn.active:hover .discard,
+.pile-btn.throw:hover .discard {
   transform: translateY(-2px);
 }
 

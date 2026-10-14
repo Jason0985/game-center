@@ -99,10 +99,16 @@
   gap: 10px;
 }
 
-// iPad quer: Schild/Modifikatoren und Zahlen mittig nebeneinander
+// iPad quer: Zahlen fest in der Mitte, Schild/Modifikatoren links daneben (wächst der
+// Punktechip oder kommt ein Modifikator dazu, rutschen die Zahlen so nicht mit)
 :host([data-layout='quer']) .sheet {
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   gap: 40px;
+}
+
+:host([data-layout='quer']) .sheet-col {
+  justify-self: end;
 }
 
 // Laptop: Karten bei ~73 % der Tischhöhe, Schild auf der Unterkante
@@ -291,15 +297,20 @@
   color: #0b2533;
 }
 
-// Am Zug: weißer Rand über die ganze Oberkante (wie .mine in table/_arc-table.scss)
-.sheet {
-  transition:
-    border-top-width 0s var(--turn-delay, 240ms),
-    border-top-color 0s var(--turn-delay, 240ms);
+// Am Zug: weißer Rand über die ganze Oberkante (wie .mine in table/_arc-table.scss), als
+// Ebene über dem dünnen Rand, damit der Inhalt beim Zugwechsel nicht springt
+.sheet::after {
+  position: absolute;
+  inset: -1px 0 0;
+  border-top: 2.5px solid transparent;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+  transition: border-top-color 0s var(--turn-delay, 240ms);
 }
 
-.sheet.is-turn {
-  border-top: 2.5px solid var(--table-turn);
+.sheet.is-turn::after {
+  border-top-color: var(--table-turn);
 }
 
 // Handy, iPad hoch: Name als Reiter oben links am Bedienfeld (wie Skip-Bo und Uno)

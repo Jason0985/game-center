@@ -60,7 +60,7 @@ interface Clearing {
 // Spieltisch: oben die Mitspieler mit ihren Rastern (Handy: in einer Zeile, sonst um die
 // Platte), in der Mitte Stapel, gezogene Karte und Ablage, unten das eigene Raster.
 // Wer dran ist, tippt Stapel bzw. Ablage, dann eine eigene Karte zum Tauschen – oder wirft
-// die Stapelkarte ab und deckt eine eigene auf. Karten fliegen dabei von Stapel zu Raster
+// die Stapelkarte per Antippen der Ablage ab und deckt eine eigene auf. Karten fliegen dabei von Stapel zu Raster
 // zu Ablage (aus last_events), drei gleiche in einer Spalte leuchten kurz und fliegen auf
 // die Ablage.
 @Component({
@@ -331,7 +331,7 @@ export class SkyjoBoard {
           icon: 'swap_horiz',
           text:
             game.drawn_from === 'pile'
-              ? `${tap} eine Karte zum Tauschen – oder wirf die ${drawn} ab.`
+              ? `${tap} eine Karte zum Tauschen – oder die Ablage, um die ${drawn} abzuwerfen.`
               : `${tap} eine Karte, um sie gegen die ${drawn} zu tauschen.`,
           tone: 'accent',
         };

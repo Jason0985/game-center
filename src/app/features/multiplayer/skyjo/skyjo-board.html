@@ -33,7 +33,6 @@
   <section
     class="mine"
     [class.is-turn]="myTurn() || revealing()"
-    [class.has-throw]="canThrow()"
     aria-label="Dein Platz"
   >
     @switch (layout()) {
@@ -41,18 +40,12 @@
         <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
         <ng-container *ngTemplateOutlet="hintTpl" />
         <ng-container *ngTemplateOutlet="gridTpl; context: { $implicit: m }" />
-        @if (canThrow()) {
-          <ng-container *ngTemplateOutlet="throwTpl" />
-        }
       }
       @case ('hoch') {
         <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
         <div class="mine-side">
           <ng-container *ngTemplateOutlet="hintTpl" />
           <ng-container *ngTemplateOutlet="scoresTpl" />
-          @if (canThrow()) {
-            <ng-container *ngTemplateOutlet="throwTpl" />
-          }
         </div>
         <ng-container *ngTemplateOutlet="gridTpl; context: { $implicit: m }" />
       }
@@ -60,9 +53,6 @@
         <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
         <div class="mine-side mine-side--info">
           <ng-container *ngTemplateOutlet="hintTpl" />
-          @if (canThrow()) {
-            <ng-container *ngTemplateOutlet="throwTpl" />
-          }
         </div>
         <ng-container *ngTemplateOutlet="gridTpl; context: { $implicit: m }" />
         <ng-container *ngTemplateOutlet="scoresTpl" />
@@ -72,9 +62,6 @@
              die Punkte -->
         <div class="mine-side">
           <ng-container *ngTemplateOutlet="hintTpl" />
-          @if (canThrow()) {
-            <ng-container *ngTemplateOutlet="throwTpl" />
-          }
         </div>
         <div class="own-plate" [class.is-turn]="myTurn() || revealing()">
           <span class="own-head">
@@ -124,7 +111,8 @@
   }
 </ng-template>
 
-<!-- Stapel, gezogene Karte, Ablage; am Zug leuchten Stapel und Ablage -->
+<!-- Stapel, gezogene Karte, Ablage; am Zug leuchten Stapel und Ablage, mit gezogener
+     Stapelkarte ist die Ablage gestrichelt: antippen wirft sie ab -->
 <ng-template #pilesTpl>
   <div class="piles">
     <button
@@ -160,13 +148,16 @@
       type="button"
       class="pile pile-btn"
       [class.active]="canTakeDiscard()"
-      [disabled]="!canTakeDiscard()"
+      [class.throw]="canThrow()"
+      [disabled]="!canTakeDiscard() && !canThrow()"
       [attr.aria-label]="
-        discardTop() === null
-          ? 'Ablage leer'
-          : 'Oberste Ablagekarte nehmen, ' + cardText(discardTop()!)
+        canThrow()
+          ? cardText(g.drawn!) + ' abwerfen und eine Karte aufdecken'
+          : discardTop() === null
+            ? 'Ablage leer'
+            : 'Oberste Ablagekarte nehmen, ' + cardText(discardTop()!)
       "
-      (click)="drawFrom('discard')"
+      (click)="canThrow() ? throwAway() : drawFrom('discard')"
     >
       <span class="discard">
         @if (discardTop() !== null) {
@@ -245,13 +236,6 @@
       </button>
     }
   </div>
-</ng-template>
-
-<ng-template #throwTpl>
-  <button type="button" class="throw" [disabled]="busy()" (click)="throwAway()">
-    <span class="material-symbols-rounded" aria-hidden="true">delete_sweep</span>
-    Abwerfen &amp; eine Karte aufdecken
-  </button>
 </ng-template>
 
 <!-- Punkte bisher (iPad, Laptop) -->

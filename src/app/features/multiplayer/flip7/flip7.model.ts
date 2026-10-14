@@ -433,7 +433,9 @@ export function seatSpots(
     const dx = (table.cx - x) / seatW;
     const dy = (table.cy - y) / seatH;
     const edge = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
-    const upright = layout !== 'phone';
+    // Handy: Fächer mittig unter dem Schild; ab 6 Mitspielern rücken die Plätze so eng,
+    // dass er zur Mitte ausweicht (sonst läge er auf dem Nachbarschild)
+    const upright = layout !== 'phone' || count <= 5;
     const dirX = upright ? 0 : dx / edge;
     const dirY = upright ? 1 : dy / edge;
     return {
