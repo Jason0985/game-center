@@ -10,7 +10,8 @@
     "deploy": "npm run build:pages && npx angular-cli-ghpages --dir=dist/frontend/browser",
     "postdeploy": "git push --follow-tags",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "ship": "bash scripts/ship.sh"
   },
   "private": true,
   "license": "MIT",
