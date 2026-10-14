@@ -52,6 +52,7 @@ describe('LobbyGameSheet', () => {
       expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('1–5 Spieler'),
       expect.stringContaining('2–8 Spieler'),
+      expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('richup.io'),
     ]);
     expect(games[1].getAttribute('aria-checked')).toBe('true');
@@ -127,5 +128,43 @@ describe('LobbyGameSheet', () => {
     switches[0].click();
     await fixture.whenStable();
     expect(setGame).toHaveBeenCalledWith('lobby-1', 'uno', { ...off, stacking: true });
+  });
+
+  it('saves the Skyjo end score and rules, starting from the defaults', async () => {
+    await render('skyjo', {});
+
+    const segments = buttons('.segments button');
+    expect(segments.map((button) => button.textContent?.trim())).toEqual([
+      '50',
+      '100 Punkten',
+      '150',
+    ]);
+    expect(segments[1].getAttribute('aria-pressed')).toBe('true');
+    segments[2].click();
+    await fixture.whenStable();
+    expect(setGame).toHaveBeenCalledWith('lobby-1', 'skyjo', {
+      endScore: 150,
+      clearColumns: true,
+      doubleEnder: true,
+    });
+
+    const switches = buttons('[role="switch"]');
+    expect(switches.map((button) => button.getAttribute('aria-checked'))).toEqual(['true', 'true']);
+    switches[1].click();
+    await fixture.whenStable();
+    expect(setGame).toHaveBeenLastCalledWith('lobby-1', 'skyjo', {
+      endScore: 150,
+      clearColumns: true,
+      doubleEnder: false,
+    });
+    expect(fixture.nativeElement.textContent).not.toContain('zählt doppelt');
+  });
+
+  it('switches to Skyjo with the default settings', async () => {
+    await render('nimm-6', {});
+
+    buttons('[role="radio"]')[5].click();
+    await fixture.whenStable();
+    expect(setGame).toHaveBeenCalledWith('lobby-1', 'skyjo', {});
   });
 });

@@ -1,0 +1,152 @@
+// Skyjo-Karte (Kartendesign): Maße wachsen mit --card-w; Farben setzt die Komponente je
+// Wert. Bis 30 px Breite nur die Zahl (ohne Ecken und Innenrahmen), das Logo der
+// Rückseite ab 45 px (Abfrage am eigenen Container).
+:host {
+  --card-w: 62px;
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-w);
+  height: calc(var(--card-w) * 1.42);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: calc(var(--card-w) * 0.13);
+  background: var(--face);
+  box-shadow: var(--table-card-shadow);
+  color: var(--ink);
+  container-type: inline-size;
+  user-select: none;
+}
+
+.inner {
+  position: absolute;
+  inset: calc(var(--card-w) * 0.07);
+  border: max(1px, calc(var(--card-w) * 0.02)) solid rgba(255, 255, 255, 0.5);
+  border-radius: calc(var(--card-w) * 0.08);
+}
+
+.diamond {
+  position: absolute;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: calc(var(--card-w) * 0.07);
+  background: rgba(255, 255, 255, 0.22);
+  transform: rotate(45deg);
+}
+
+.value {
+  position: relative;
+  font-size: calc(var(--card-w) * 0.48);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.corner {
+  position: absolute;
+  font-size: calc(var(--card-w) * 0.15);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.corner--start {
+  top: calc(var(--card-w) * 0.14);
+  left: calc(var(--card-w) * 0.15);
+}
+
+.corner--end {
+  right: calc(var(--card-w) * 0.15);
+  bottom: calc(var(--card-w) * 0.14);
+  transform: rotate(180deg);
+}
+
+@container (max-width: 30px) {
+  .corner,
+  .inner {
+    display: none;
+  }
+
+  .value {
+    font-size: calc(var(--card-w) * 0.62);
+  }
+}
+
+// Rückseite: App-Rahmen mit Streifen, Logo in den Kartenfarben
+:host(.back) {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--table-card-back);
+}
+
+.frame {
+  position: absolute;
+  inset: calc(var(--card-w) * 0.07);
+  border: max(1px, calc(var(--card-w) * 0.025)) solid var(--table-back-frame);
+  border-radius: calc(var(--card-w) * 0.08);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--table-back-frame) 10%, transparent) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+.logo {
+  position: relative;
+  display: flex;
+  font-size: calc(var(--card-w) * 0.2);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  transform: rotate(-12deg);
+}
+
+.logo span:nth-child(1) {
+  color: #4cc3ef;
+}
+
+.logo span:nth-child(2) {
+  color: #4fbf68;
+}
+
+.logo span:nth-child(3) {
+  color: #f5cf3a;
+}
+
+.logo span:nth-child(4) {
+  color: #ff6b78;
+}
+
+.logo span:nth-child(5) {
+  color: #b7a3ec;
+}
+
+@container (max-width: 44px) {
+  .logo {
+    display: none;
+  }
+}
+
+// Aufdecken: Rücken dreht sich weg, die Zahl kommt zurück
+:host(.turn-away) {
+  animation: sk-turn-away 180ms ease-in forwards;
+}
+
+:host(.turn-up) {
+  animation: sk-turn-up 180ms ease-out;
+}
+
+@keyframes sk-turn-away {
+  to {
+    transform: rotateY(90deg);
+  }
+}
+
+@keyframes sk-turn-up {
+  from {
+    transform: rotateY(90deg);
+  }
+}
