@@ -68,6 +68,7 @@ export function injectTableGame<
   const loading = signal(true);
   const busy = signal(false);
   let loadSequence = 0;
+  let appliedSequence = 0;
   let destroyed = false;
 
   // retry: ein kurzer Aussetzer beim Nachladen soll nicht gleich als Fehler auftauchen
@@ -78,7 +79,9 @@ export function injectTableGame<
     const sequence = ++loadSequence;
     const result = await service.load(lobbyId());
     loadedAt = Date.now();
-    if (sequence !== loadSequence || destroyed) return;
+    // Jedes Ergebnis zeigen, das neuer ist als das angezeigte; nur auf das allerneueste zu
+    // warten, ließe den Tisch bei vielen Zügen hintereinander stehen, bis Ruhe ist
+    if (sequence <= appliedSequence || destroyed) return;
 
     if (!result.ok && retry) {
       await new Promise((resolve) => setTimeout(resolve, LOAD_RETRY_MS));
@@ -86,6 +89,7 @@ export function injectTableGame<
       return;
     }
 
+    appliedSequence = sequence;
     loading.set(false);
     if (result.ok) {
       game.set(result.value);

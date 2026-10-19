@@ -2,9 +2,9 @@
   <div class="ui-page">
     <header class="ui-page-head">
       <p class="ui-page-kicker">
-        {{ greeting }}
+        {{ greeting }},
         @if (session.isLoggedIn() && session.displayName()) {
-          , {{ session.displayName() }}
+          {{ session.displayName() }}
         }
       </p>
       <h1 class="ui-large-title">Home</h1>

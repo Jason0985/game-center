@@ -23,7 +23,6 @@ import { BlackjackChips } from './blackjack-chips';
 import { BlackjackSeat } from './blackjack-seat';
 import { BjSheetRow, openTableSheet } from './blackjack-table-sheet';
 import {
-  BET_MAX,
   BET_MIN,
   BET_WINDOW_S,
   BjAction,
@@ -177,10 +176,8 @@ export class BlackjackBoard {
       : 0;
     return me.balance - pending;
   });
-  // Was noch gesetzt werden kann (Guthaben und Höchsteinsatz)
-  private readonly betRoom = computed(
-    () => Math.min(BET_MAX, this.me()?.balance ?? 0) - this.draft(),
-  );
+  // Was noch gesetzt werden kann
+  readonly betRoom = computed(() => (this.me()?.balance ?? 0) - this.draft());
 
   // Dealer: offene Karten, dahinter der Rücken; beim Setzen zwei leere Felder. Wer die
   // Runde nur zuschaut (ausgesetzt, pleite, gar nicht am Tisch), sieht den Dealer weiter
@@ -442,6 +439,10 @@ export class BlackjackBoard {
 
   clearDraft(): void {
     this.draft.set(0);
+  }
+
+  allIn(): void {
+    this.draft.set(this.me()?.balance ?? 0);
   }
 
   placeBet(): void {

@@ -17,7 +17,6 @@ import { flyFrom, reducedMotion } from '../table/table-motion';
 import {
   arcSpots,
   AVATAR_COLORS,
-  formatClock,
   injectTableLayout,
   seatsAfter,
   sizeClass,
@@ -80,8 +79,6 @@ export class SkyjoBoard {
   readonly game = input.required<SkGame>();
   readonly userId = input.required<string>();
   readonly busy = input(false);
-  // Restzeit für den Zug bzw. die zwei Karten zum Rundenstart; null = keine Uhr
-  readonly secondsLeft = input<number | null>(null);
 
   readonly flip = output<number>();
   readonly draw = output<SkSource>();
@@ -94,10 +91,6 @@ export class SkyjoBoard {
     return layout === 'phone' ? null : TABLES[layout];
   });
   readonly size = computed(() => sizeClass(this.game().seat_count));
-  readonly clock = computed(() => {
-    const left = this.secondsLeft();
-    return left === null ? null : formatClock(left);
-  });
   readonly formatPoints = formatPoints;
   readonly cardText = cardText;
 
