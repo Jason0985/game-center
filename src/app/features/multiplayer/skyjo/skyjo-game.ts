@@ -4,7 +4,6 @@ import {
   effect,
   inject,
   input,
-  linkedSignal,
   output,
   signal,
   untracked,
@@ -23,7 +22,7 @@ import {
   SKYJO_NEXT_ROUND_S,
   SKYJO_RESULTS_PAUSE_MS,
   SKYJO_ROUND_MIN_S,
-  SKYJO_TURN_S,
+  SKYJO_SKIP_AFTER_S,
   SkEvent,
   SkGame,
   SkSource,
@@ -34,9 +33,9 @@ type View = 'play' | 'round' | 'last' | 'final';
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und schaltet zwischen
 // Spieltisch, Rundenübersicht und Endstand um (endet das Spiel mit dem Rundenende, erst die
-// Übersicht der letzten Runde). Zwei Uhren laufen bei allen am Tisch: nach SKYJO_TURN_S
-// (plus Animation) deckt der Tisch für den Trödler auf, nach SKYJO_NEXT_ROUND_S geht es
-// weiter (die Datenbank prüft beides, doppelte Aufrufe tun nichts).
+// Übersicht der letzten Runde). Keine Zugzeit: jeder lässt sich so viel Zeit, wie er will;
+// nur der Host kann nach SKYJO_SKIP_AFTER_S überspringen. Die Rundenübersicht hat eine Uhr: nach SKYJO_NEXT_ROUND_S geht es weiter (die
+// Datenbank prüft das, doppelte Aufrufe tun nichts).
 @Component({
   selector: 'app-skyjo-game',
   imports: [GameStage, SkyjoBoard, SkyjoRound, SkyjoFinal],
@@ -61,8 +60,9 @@ export class SkyjoGameView {
     userId: this.userId,
     returned: this.returned,
     title: 'Skyjo',
-    skipAfterS: SKYJO_TURN_S,
-    skipMessage: 'Der Tisch deckt eine zufällige Karte auf.',
+    skipAfterS: SKYJO_SKIP_AFTER_S,
+    skipMessage:
+      'Der Tisch deckt eine zufällige Karte auf; eine gezogene Karte kommt auf die Ablage.',
     endMessage: () =>
       'Gewertet werden die abgeschlossenen Runden. Danach wird der Endstand angezeigt.',
   });
@@ -72,6 +72,15 @@ export class SkyjoGameView {
   readonly busy = this.table.busy;
   readonly playerCount = this.table.playerCount;
   readonly endGame = this.table.endGame;
+  readonly skip = this.table.skip;
+  readonly waitingClock = this.table.waitingClock;
+  // Zum Rundenstart fehlen evtl. mehrere, im Zug ist es der am Zug
+  readonly skipName = computed(() => {
+    const phase = this.game()?.phase;
+    if (!this.table.canSkip()) return null;
+    if (phase === 'turn') return this.table.activeName();
+    return phase === 'reveal' ? 'Fehlende' : null;
+  });
   readonly backToLobby = this.table.backToLobby;
   readonly rules = computed(() => {
     const game = this.game();
@@ -106,26 +115,6 @@ export class SkyjoGameView {
     return `Runde ${game.round_no} · bis ${game.end_score} Punkte`;
   });
 
-  // Zugzeit: Rundenstart bzw. Zug, plus die Zeit der letzten Animation (Spalte abräumen)
-  private readonly timedTurn = computed(() => {
-    const game = this.game();
-    return game?.status === 'playing' && (game.phase === 'reveal' || game.phase === 'turn')
-      ? game.waiting_since
-      : null;
-  });
-  private readonly turnBudget = linkedSignal({
-    source: this.timedTurn,
-    computation: () => {
-      const game = untracked(this.game);
-      const clear = game?.last_events.some((event) => event.t === 'clear');
-      return SKYJO_TURN_S + (clear ? Math.ceil(SKYJO_CLEAR_MS / 1000) : 0);
-    },
-  });
-  readonly secondsLeft = computed(() =>
-    this.timedTurn()
-      ? Math.max(0, Math.min(SKYJO_TURN_S, this.turnBudget() - this.table.waitingSeconds()))
-      : null,
-  );
   private readonly roundShown = computed(() =>
     this.view() === 'round' || this.view() === 'last'
       ? Math.floor((this.table.now() - this.viewSince()) / 1000)
@@ -176,16 +165,6 @@ export class SkyjoGameView {
       const clear = untracked(this.game)!.last_events.some((event) => event.t === 'clear');
       const timer = setTimeout(show, SKYJO_RESULTS_PAUSE_MS + (clear ? SKYJO_CLEAR_MS : 0));
       onCleanup(() => clearTimeout(timer));
-    });
-
-    // Einmal pro Zug: nach Ablauf deckt der Tisch für den, der fehlt, auf
-    let skipped: string | null = null;
-    effect(() => {
-      const turn = this.timedTurn();
-      if (!turn || skipped === turn || this.table.waitingSeconds() < this.turnBudget()) return;
-      skipped = turn;
-      const game = untracked(this.game)!;
-      void this.silent(() => this.skyjo.skip(game));
     });
 
     // Rundenübersicht: nach Ablauf nächste Runde bzw. (letzte Runde) zum Endstand

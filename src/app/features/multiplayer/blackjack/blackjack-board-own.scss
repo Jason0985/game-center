@@ -143,6 +143,11 @@
   font-weight: 600;
 }
 
+.draft-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .clear {
   display: inline-flex;
   align-items: center;

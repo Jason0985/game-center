@@ -93,7 +93,6 @@ export interface BjGame {
 }
 
 export const BET_MIN = 10;
-export const BET_MAX = 500;
 export const START_MONEY_OPTIONS = [500, 1000, 2500, 5000, 10000] as const;
 export const START_MONEY_DEFAULT = 1000;
 // Setzzeit ab dem ersten Einsatz, Zugzeit (nur mit Mitspielern); danach handelt der Tisch
@@ -115,7 +114,7 @@ export const BLACKJACK_RULES = [
   'Ass und Zehn als erste zwei Karten sind Blackjack und zahlen 3 zu 2 (abgerundet, 25 bringt 37).',
   'Der Dealer zieht bis 16 und steht auf allen 17. Unentschieden: Einsatz zurück.',
   'Verdoppeln: doppelter Einsatz, genau eine Karte. Teilen: zwei gleichwertige Karten werden zwei Hände (einmal pro Runde; geteilte Asse bekommen je nur eine Karte).',
-  'Einsatz 10 bis 500. Mit Mitspielern wird 20 s nach dem ersten Einsatz ausgeteilt; wer dann nicht gesetzt hat, setzt aus. Nach 30 s ohne Zug hält deine Hand.',
+  'Einsatz ab 10, All-in erlaubt. Mit Mitspielern wird 20 s nach dem ersten Einsatz ausgeteilt; wer dann nicht gesetzt hat, setzt aus. Nach 30 s ohne Zug hält deine Hand.',
   'Wer unter 10 hat, ist pleite. Kann niemand mehr setzen, endet das Spiel; sonst beendet es der Host. Es gewinnt, wer am meisten hat.',
 ];
 

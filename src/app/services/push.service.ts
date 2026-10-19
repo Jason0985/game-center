@@ -29,8 +29,13 @@ export type PushState = 'unsupported' | 'blocked' | 'off' | 'on';
 // Der Angular-Service-Worker zeigt sie an; gespeichert wird das Gerät in push_subscriptions.
 @Injectable({ providedIn: 'root' })
 export class PushService {
-  // Optional: ohne provideServiceWorker (Tests) gilt Push als nicht unterstützt
-  private readonly swPush = inject(SwPush, { optional: true });
+  // Optional: ohne provideServiceWorker (Tests) gilt Push als nicht unterstützt. Ohne
+  // PushManager (iPhone ohne Installation) nicht anfassen: SwPush ruft sonst ungeprüft
+  // registration.pushManager.getSubscription() auf und wirft
+  private readonly swPush =
+    typeof Notification !== 'undefined' && 'PushManager' in globalThis
+      ? inject(SwPush, { optional: true })
+      : null;
   private readonly session = inject(SessionService);
   private readonly appErrors = inject(AppErrorService);
   private readonly toasts = inject(ToastService);

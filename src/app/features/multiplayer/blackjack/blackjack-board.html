@@ -120,10 +120,21 @@
             <app-blackjack-chips class="bet-chips" [amount]="s.amount" />
           </div>
           @if (!s.placed) {
-            <button type="button" class="clear" [disabled]="!draft()" (click)="clearDraft()">
-              <span class="material-symbols-rounded" aria-hidden="true">undo</span>
-              {{ formatMoney(draft()) }} · Löschen
-            </button>
+            <div class="draft-actions">
+              <button type="button" class="clear" [disabled]="!draft()" (click)="clearDraft()">
+                <span class="material-symbols-rounded" aria-hidden="true">undo</span>
+                {{ formatMoney(draft()) }} · Löschen
+              </button>
+              <button
+                type="button"
+                class="clear"
+                [disabled]="busy() || settling() || betRoom() <= 0"
+                (click)="allIn()"
+              >
+                <span class="material-symbols-rounded" aria-hidden="true">all_inclusive</span>
+                All-in
+              </button>
+            </div>
           }
         </div>
       } @else {

@@ -109,8 +109,8 @@ export const SKYJO_HOUSE_RULES: readonly {
   { key: 'doubleEnder', label: 'Rundenbeender verdoppeln, wenn nicht Bester', short: 'Verdoppeln' },
 ];
 
-// Zeit für einen Zug bzw. die zwei Karten zum Rundenstart; danach handelt der Tisch
-export const SKYJO_TURN_S = 30;
+// Erst nach so langem Warten kann der Host überspringen (die Datenbank lässt 25 s zu)
+export const SKYJO_SKIP_AFTER_S = 30;
 // Nach dem letzten Zug der Runde (alles wird aufgedeckt) noch so lange den Tisch zeigen
 export const SKYJO_RESULTS_PAUSE_MS = 2500;
 // Rundenübersicht: so lange, dann startet die nächste Runde von selbst; der Knopf geht erst
@@ -132,7 +132,6 @@ export function skyjoRules(settings: SkyjoSettings): string[] {
       ? ['Wer die Runde beendet und nicht allein am wenigsten hat, zählt doppelt (nur bei Plus).']
       : []),
     `Wer zuerst ${settings.endScore} Punkte hat, beendet das Spiel. Am wenigsten gewinnt.`,
-    `Nach ${SKYJO_TURN_S} s ohne Zug deckt der Tisch eine zufällige Karte auf.`,
   ];
 }
 

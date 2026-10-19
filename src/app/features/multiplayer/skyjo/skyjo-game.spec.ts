@@ -95,6 +95,15 @@ describe('SkyjoGameView', () => {
   const cell = (n: number) =>
     el().querySelector<HTMLButtonElement>(`.my-grid [data-cell$=":${n}"]`)!;
   const turn = expect.objectContaining({ id: 'game-1', waiting_since: WAITING });
+  // Das ⋮-Menü liegt im Overlay außerhalb der Komponente
+  const openMenu = async (): Promise<HTMLElement[]> => {
+    button('more_vert')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return [...document.querySelectorAll<HTMLElement>('.mat-mdc-menu-item')];
+  };
+  const menuItem = (items: HTMLElement[], label: string) =>
+    items.find((item) => item.textContent?.includes(label));
   // Nach einem Zug, bis der Tisch wieder bedienbar ist
   const settled = async () => {
     await vi.waitFor(() => expect(component.busy()).toBe(false));
@@ -241,14 +250,37 @@ describe('SkyjoGameView', () => {
     expect(el().textContent).not.toContain('Spalte abgeräumt!');
   });
 
-  it('plays for the slow one once after the turn time', async () => {
+  it('never plays for a slow player, only the host can skip after a while', async () => {
     vi.useFakeTimers();
     await render('host', makeGame());
-    await vi.advanceTimersByTimeAsync(29_000);
+    let items = await openMenu();
+    expect(menuItem(items, 'überspringen')).toBeUndefined();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
     expect(skyjo['skip']).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(2_000);
-    expect(skyjo['skip']).toHaveBeenCalledTimes(1);
+    fixture.detectChanges();
+    items = await openMenu();
+    menuItem(items, 'Gast überspringen')!.click();
+    await vi.advanceTimersByTimeAsync(0);
     expect(skyjo['skip']).toHaveBeenCalledWith(turn);
+  });
+
+  // Viele Züge hintereinander: ein fertiger Stand wird gezeigt, auch wenn schon neu geladen wird
+  it('shows each newer state without waiting for the latest load', async () => {
+    await render('guest', makeGame());
+    const next = makeGame({ turn_seat: 0, waiting_since: '2026-10-14T12:00:05Z' });
+    let finish!: (value: unknown) => void;
+    skyjo['load']
+      .mockReturnValueOnce(new Promise((resolve) => (finish = resolve)))
+      .mockReturnValueOnce(new Promise(() => {}));
+    changed();
+    await vi.waitFor(() => expect(skyjo['load']).toHaveBeenCalledTimes(2));
+    changed();
+    await vi.waitFor(() => expect(skyjo['load']).toHaveBeenCalledTimes(3));
+    finish({ ok: true, value: next });
+    await vi.waitFor(() => expect(component.game()).toBe(next));
   });
 
   it('shows the round summary with the doubled ender, then starts the next round', async () => {

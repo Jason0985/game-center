@@ -253,29 +253,6 @@
   background: var(--color-primary-light);
 }
 
-.clock {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--table-chip-bg);
-  color: var(--table-chip-text);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
-.clock .material-symbols-rounded {
-  font-size: 15px;
-}
-
-.clock.low {
-  background: color-mix(in srgb, var(--table-danger) 22%, transparent);
-  color: var(--table-danger);
-}
-
 // Spalte abgeräumt: goldener Kasten mit den gesparten Punkten
 .cleared {
   display: flex;

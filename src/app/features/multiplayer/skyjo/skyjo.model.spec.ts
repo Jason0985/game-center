@@ -87,7 +87,7 @@ describe('skyjo model', () => {
     const none = skyjoRules({ endScore: 150, clearColumns: false, doubleEnder: false });
     expect(all.some((rule) => rule.includes('Spalte'))).toBe(true);
     expect(all.some((rule) => rule.includes('doppelt'))).toBe(true);
-    expect(all.at(-2)).toContain('50 Punkte');
+    expect(all.at(-1)).toContain('50 Punkte');
     expect(none.some((rule) => rule.includes('Spalte fliegen'))).toBe(false);
     expect(none.some((rule) => rule.includes('doppelt'))).toBe(false);
   });
