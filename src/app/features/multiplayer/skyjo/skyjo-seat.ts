@@ -49,7 +49,13 @@ export interface SkSeatTag {
     </span>
     <span class="grid" aria-hidden="true">
       @for (c of cells(); track c.cell) {
-        <span class="cell" [class.glow]="c.glow" [attr.data-cell]="p.seat + ':' + c.cell">
+        <span
+          class="cell"
+          [class.glow]="c.glow"
+          [class.mid]="c.cell >= 4 && c.cell < 8"
+          [style.--row]="(c.cell - (c.cell % 4)) / 4"
+          [attr.data-cell]="p.seat + ':' + c.cell"
+        >
           @if (c.gone) {
             <span class="slot"></span>
           } @else {

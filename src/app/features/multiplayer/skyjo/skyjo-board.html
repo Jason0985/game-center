@@ -30,11 +30,7 @@
 }
 
 @if (me(); as m) {
-  <section
-    class="mine"
-    [class.is-turn]="myTurn() || revealing()"
-    aria-label="Dein Platz"
-  >
+  <section class="mine" [class.is-turn]="myTurn() || revealing()" aria-label="Dein Platz">
     @switch (layout()) {
       @case ('phone') {
         <ng-container *ngTemplateOutlet="tabTpl; context: { $implicit: m }" />
@@ -185,7 +181,7 @@
 <!-- Hinweis: was zu tun ist; nach dem Abräumen der Kasten dazu -->
 <ng-template #hintTpl>
   @if (cleared(); as c) {
-    <div class="cleared" [class.mine]="c.mine">
+    <div class="cleared">
       <span class="material-symbols-rounded fill" aria-hidden="true">auto_awesome</span>
       <span class="cleared-text">
         <span class="cleared-title">{{ c.title }}</span>
@@ -218,6 +214,8 @@
         [class.pick]="c.pick"
         [class.dim]="c.dim"
         [class.glow]="c.glow"
+        [class.mid]="c.cell >= 4 && c.cell < 8"
+        [style.--row]="(c.cell - (c.cell % 4)) / 4"
         [attr.data-cell]="m.seat + ':' + c.cell"
         [attr.aria-label]="c.label"
         [disabled]="!c.pick || busy()"

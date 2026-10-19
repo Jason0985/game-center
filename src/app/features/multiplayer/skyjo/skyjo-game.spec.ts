@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { AppErrorService } from '../../../services/app-error.service';
 import { SkyjoGameView } from './skyjo-game';
 import { SkyjoService } from './skyjo.service';
-import { SkGame, SkPlayer } from './skyjo.model';
+import { SkGame, SkPlayer, SKYJO_CLEAR_MS } from './skyjo.model';
 
 const WAITING = '2026-10-14T12:00:00Z';
 const HIDDEN = Array(12).fill(null);
@@ -242,7 +242,9 @@ describe('SkyjoGameView', () => {
     const discard = () => el().querySelector('.discard app-skyjo-card')!.getAttribute('aria-label');
     expect(discard()).toBe('Karte 3');
 
-    await vi.advanceTimersByTimeAsync(1_500);
+    expect(el().querySelectorAll('.my-grid .cell.glow.mid').length).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(SKYJO_CLEAR_MS + 100);
     fixture.detectChanges();
     expect(el().querySelectorAll('.my-grid .cell.glow').length).toBe(0);
     expect(el().querySelectorAll('.my-grid .slot').length).toBe(3);

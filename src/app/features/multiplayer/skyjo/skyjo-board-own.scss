@@ -1,3 +1,5 @@
+@use 'skyjo-clear' as clear;
+
 // Eigener Bereich von SkyjoBoard (zweites Stylesheet): Bedienfeld mit Reiter
 // (table/_arc-table.scss), Hinweis, eigenes Raster, Punkte bisher; Laptop: eigenes
 // Schild auf der Kante der Platte, links Hinweis, rechts Punkte.
@@ -357,11 +359,7 @@
 
 // Gleich wird abgeräumt
 .cell.glow {
-  box-shadow:
-    0 0 0 2px var(--color-surface),
-    0 0 0 4px var(--table-gold),
-    0 0 22px color-mix(in srgb, var(--table-gold) 45%, transparent);
-  transform: translateY(-4px) rotate(-2deg);
+  @include clear.clear-cell(var(--cell-w), var(--cell-gap));
 }
 
 .slot {
@@ -372,7 +370,6 @@
   border: 1.5px dashed var(--table-slot-border);
   border-radius: calc(var(--cell-w) * 0.13);
 }
-
 
 // Punkte bisher
 .scores {
