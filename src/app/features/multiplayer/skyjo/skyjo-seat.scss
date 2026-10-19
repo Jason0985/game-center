@@ -1,3 +1,5 @@
+@use 'skyjo-clear' as clear;
+
 // Schild eines Mitspielers: Kopfzeile, Raster 4 × 3 aus Mini-Karten, optional ein Hinweis.
 // Der Tisch setzt --mini-w (Kartenbreite) und --mini-gap (geerbt, daher hier nur als
 // Rückfallwert), --avatar, --name-size, --plate-pad am Schild.
@@ -141,10 +143,7 @@
 
 // Gleich wird abgeräumt
 .cell.glow {
-  box-shadow:
-    0 0 0 1.5px var(--table-gold),
-    0 0 12px color-mix(in srgb, var(--table-gold) 50%, transparent);
-  transform: translateY(-2px);
+  @include clear.clear-cell(var(--mini-w, 18px), var(--mini-gap, 3px));
 }
 
 .tag {

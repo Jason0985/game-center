@@ -119,7 +119,7 @@ export const SKYJO_NEXT_ROUND_S = 12;
 export const SKYJO_ROUND_MIN_S = 3;
 // Animationen: Karte fliegt, Spalte leuchtet vor dem Abräumen
 export const SKYJO_FLY_MS = 450;
-export const SKYJO_CLEAR_MS = 1400;
+export const SKYJO_CLEAR_MS = 1700;
 
 export function skyjoRules(settings: SkyjoSettings): string[] {
   return [
