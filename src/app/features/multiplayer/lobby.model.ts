@@ -5,6 +5,7 @@ import { SKIPBO_RULES } from './skipbo/skipbo.model';
 import { BLACKJACK_RULES, formatMoney, START_MONEY_DEFAULT } from './blackjack/blackjack.model';
 import { NIMM6_RULES } from './nimm6/nimm6.model';
 import { SKYJO_DEFAULT_SETTINGS, skyjoRules, SkyjoSettings } from './skyjo/skyjo.model';
+import { KNIFFEL_RULES } from './kniffel/kniffel.model';
 
 export type LobbyStatus = 'open' | 'started';
 
@@ -152,6 +153,17 @@ export const GAMES = [
     maxPlayers: LOBBY_MAX_MEMBERS,
     url: null,
   },
+  {
+    key: 'kniffel',
+    tile: 'var(--tile-red)',
+    tagline: 'Würfeln, halten, eintragen',
+    name: 'Kniffel',
+    icon: 'table_chart',
+    blurb: 'Dreimal würfeln, Würfel halten und den Block füllen – die höchste Summe gewinnt.',
+    minPlayers: 2,
+    maxPlayers: LOBBY_MAX_MEMBERS,
+    url: null,
+  },
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
@@ -257,6 +269,7 @@ export function rulesOf(
   if (gameKey === 'skip-bo') return SKIPBO_RULES;
   if (gameKey === 'blackjack') return BLACKJACK_RULES;
   if (gameKey === 'nimm-6') return NIMM6_RULES;
+  if (gameKey === 'kniffel') return KNIFFEL_RULES;
   if (gameKey === 'skyjo') return skyjoRules(skyjoSettingsOf(settings));
   if (gameKey !== 'uno') return [];
   const active = unoRulesOf(settings);

@@ -37,6 +37,7 @@ import { UnoGameView } from '../uno/uno-game';
 import { BlackjackGameView } from '../blackjack/blackjack-game';
 import { Nimm6GameView } from '../nimm6/nimm6-game';
 import { SkyjoGameView } from '../skyjo/skyjo-game';
+import { KniffelGameView } from '../kniffel/kniffel-game';
 
 import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
 
@@ -53,6 +54,7 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
     BlackjackGameView,
     Nimm6GameView,
     SkyjoGameView,
+    KniffelGameView,
     InitialsPipe,
     AvatarColorPipe,
   ],
