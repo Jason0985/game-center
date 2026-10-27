@@ -1,11 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { ArrivalPlannerSettingsDialog } from './arrival-planner-settings-dialog';
+import { ArrivalPlannerTrain } from './arrival-planner-train';
 import { ArrivalPlannerSettings, DEFAULT_ARRIVAL_PLANNER_SETTINGS } from './arrival-planner.model';
+import { UserStateService } from '../../../services/user-state.service';
+
+export type ArrivalPlannerMode = 'car' | 'train';
 
 const SETTINGS_STORAGE_KEY = 'game-center-arrival-planner-settings';
 
@@ -18,12 +22,27 @@ function formatClock(minutes: number): string {
 
 @Component({
   selector: 'app-arrival-planner',
-  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatTooltipModule, RouterLink],
+  imports: [
+    ArrivalPlannerTrain,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   templateUrl: './arrival-planner.html',
   styleUrl: './arrival-planner.scss',
 })
 export class ArrivalPlanner {
   private readonly dialog = inject(MatDialog);
+  private readonly userState = inject(UserStateService);
+  readonly mode = signal<ArrivalPlannerMode>('car');
+  private readonly trainPlanner = viewChild(ArrivalPlannerTrain);
+  readonly settingsLabel = computed(() =>
+    this.mode() === 'car'
+      ? 'Fahr- und Vorbereitungszeiten einstellen'
+      : 'Vorbereitung, Fußweg und Puffer einstellen',
+  );
   readonly arrivalTime = signal('');
   readonly settings = signal(this.loadSettings());
   readonly plan = computed(() => {
@@ -51,11 +70,26 @@ export class ArrivalPlanner {
     };
   });
 
+  constructor() {
+    this.userState.connect(
+      'arrival-planner',
+      () => this.settings(),
+      (value) => {
+        const settings = parseSettings(value);
+        if (settings) this.storeSettings(settings);
+      },
+    );
+  }
+
   updateArrivalTime(event: Event): void {
     this.arrivalTime.set((event.target as HTMLInputElement).value);
   }
 
   openSettingsDialog(): void {
+    if (this.mode() === 'train') {
+      this.trainPlanner()?.openSettingsDialog();
+      return;
+    }
     this.dialog
       .open(ArrivalPlannerSettingsDialog, {
         width: 'min(92vw, 480px)',
@@ -64,28 +98,34 @@ export class ArrivalPlanner {
       .afterClosed()
       .subscribe((settings: ArrivalPlannerSettings | undefined) => {
         if (settings) {
-          this.settings.set(settings);
-          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+          this.storeSettings(settings);
+          this.userState.save('arrival-planner', settings);
         }
       });
+  }
+
+  private storeSettings(settings: ArrivalPlannerSettings): void {
+    this.settings.set(settings);
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {}
   }
 
   private loadSettings(): ArrivalPlannerSettings {
     try {
       const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (!storedSettings) {
-        return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
-      }
-
-      const parsed = JSON.parse(storedSettings) as Partial<ArrivalPlannerSettings>;
-      const values = [parsed.travelMinutes, parsed.trafficBufferMinutes, parsed.preparationMinutes];
-      if (values.every((value) => Number.isInteger(value) && value! >= 0 && value! <= 300)) {
-        return parsed as ArrivalPlannerSettings;
-      }
-    } catch {
-      return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
-    }
+      const parsed = storedSettings ? parseSettings(JSON.parse(storedSettings)) : null;
+      if (parsed) return parsed;
+    } catch {}
 
     return { ...DEFAULT_ARRIVAL_PLANNER_SETTINGS };
   }
+}
+
+function parseSettings(value: unknown): ArrivalPlannerSettings | null {
+  const parsed = value as Partial<ArrivalPlannerSettings> | null;
+  const values = [parsed?.travelMinutes, parsed?.trafficBufferMinutes, parsed?.preparationMinutes];
+  return values.every((v) => Number.isInteger(v) && v! >= 0 && v! <= 300)
+    ? (parsed as ArrivalPlannerSettings)
+    : null;
 }

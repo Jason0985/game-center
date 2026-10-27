@@ -1,0 +1,329 @@
+@use '../table/table-base';
+@use '../table/arc-table';
+
+// Skyjo-Tisch nach den Artboards Handy (390, ohne Platte), iPad hoch (820), iPad quer
+// (1180) und Laptop (1440). Platte aus table/_arc-table.scss mit eigenen Maßen, die
+// Mitspieler-Schilder sitzen in Prozent darauf, Stapel und Ablage in der Mitte. Eigener
+// Bereich, Raster und Punkte: skyjo-board-own.scss.
+:host {
+  min-width: 0;
+  --pile-w: 66px;
+  --pile-h: calc(var(--pile-w) * 1.42);
+  --pile-label: 12px;
+  --mini-w: 18px;
+  --mini-gap: 3px;
+}
+
+:host([data-size='s']) {
+  --mini-w: 13px;
+  --mini-gap: 2px;
+}
+
+:host([data-layout='hoch']) {
+  // Das obere Schild sitzt auf der Kante der Platte und braucht Platz darüber
+  --area-top: 40px;
+  --below: 400px;
+  --table-w: 788;
+  --table-h: 716;
+  --mark-size: 200px;
+  --mark-y: 72%;
+  --pile-w: 84px;
+  --pile-label: 13px;
+  --mini-w: 28px;
+  --mini-gap: 4px;
+}
+
+:host([data-layout='quer']) {
+  --area-top: 80px;
+  --below: 340px;
+  --table-w: 1140;
+  --table-h: 440;
+  --mark-size: 200px;
+  --mark-y: 52%;
+  --pile-w: 72px;
+  --pile-label: 13px;
+  --mini-w: 28px;
+  --mini-gap: 4px;
+}
+
+:host([data-layout='laptop']) {
+  --area-top: 90px;
+  --below: 230px;
+  --table-w: 1240;
+  --table-h: 500;
+  --mark-y: 46%;
+  --pile-w: 90px;
+  --pile-label: 13px;
+  --mini-w: 32px;
+  --mini-gap: 4px;
+}
+
+:host([data-layout='hoch'][data-size='s']),
+:host([data-layout='quer'][data-size='s']) {
+  --mini-w: 20px;
+  --mini-gap: 3px;
+}
+
+:host([data-layout='laptop'][data-size='s']) {
+  --mini-w: 24px;
+  --mini-gap: 3px;
+}
+
+// Kleine Handys: Stapel und Mitspieler-Raster kleiner, damit das eigene Raster Platz hat
+@media (max-height: 740px) {
+  :host([data-layout='phone']) {
+    --pile-w: 50px;
+    --mini-w: 14px;
+    --mini-gap: 2px;
+  }
+
+  .phone {
+    gap: 8px;
+    padding-top: 8px;
+  }
+}
+
+// Handy: keine Platte, alles untereinander (scrollt, wenn der Bildschirm zu kurz ist)
+:host([data-layout='phone']) {
+  display: flex;
+  flex-direction: column;
+}
+
+.phone {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 12px 12px 4px;
+  overflow-y: auto;
+}
+
+.opps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+:host([data-size='s']) .opps {
+  justify-content: center;
+  gap: 6px;
+}
+
+// Ab 5 Spielern: kompakte Schilder in einer Zeile (ab 5 Mitspielern zum Wischen), Stapel
+// kleiner, damit Stapel und eigenes Raster auf den Bildschirm passen
+:host([data-layout='phone'][data-size='s']) {
+  --pile-w: 54px;
+}
+
+:host([data-layout='phone'][data-size='s']) .opps {
+  flex-wrap: nowrap;
+  justify-content: safe center;
+  margin: 0 -12px;
+  padding: 0 12px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+:host([data-layout='phone'][data-size='s']) .opp {
+  flex: 0 0 96px;
+  scroll-snap-align: start;
+  --avatar: 20px;
+  --name-size: 12px;
+  --sum-size: 11px;
+  --plate-pad: 6px 4px;
+  --plate-radius: 14px;
+}
+
+// Mitspieler auf der Platte
+:host(:not([data-layout='phone'])) .opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+}
+
+:host([data-layout='hoch']) .opp,
+:host([data-layout='quer']) .opp,
+:host([data-layout='laptop']) .opp {
+  --avatar: 30px;
+  --name-size: 15px;
+  --sum-size: 14px;
+  --plate-pad: 10px 10px 12px;
+  --plate-radius: 18px;
+}
+
+:host([data-size='s']:not([data-layout='phone'])) .opp {
+  --avatar: 24px;
+  --name-size: 13px;
+  --sum-size: 12px;
+  --plate-pad: 8px;
+}
+
+// Stapel in der Mitte der Platte
+.center {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  transform: translateX(-50%);
+}
+
+:host([data-layout='quer']) .center {
+  top: 34%;
+}
+
+:host([data-layout='laptop']) .center {
+  top: 28%;
+}
+
+.piles {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 22px;
+}
+
+:host(:not([data-layout='phone'])) .piles {
+  gap: 30px;
+}
+
+.pile-btn {
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pile-btn:disabled {
+  cursor: default;
+}
+
+.stack app-skyjo-card,
+.discard app-skyjo-card,
+.drawn-card {
+  --card-w: var(--pile-w);
+}
+
+.discard,
+.drawn-slot {
+  position: relative;
+  display: block;
+  width: var(--pile-w);
+  height: var(--pile-h);
+  border-radius: calc(var(--pile-w) * 0.13);
+}
+
+// Am Zug: Stapel und Ablage mit rosa Ring
+.pile-btn.active .stack,
+.pile-btn.active .discard {
+  border-radius: calc(var(--pile-w) * 0.14);
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--color-primary-light);
+}
+
+// Gezogene Stapelkarte: Ablage gestrichelt wie die leeren Plätze, antippen wirft sie ab
+.pile-btn.throw .discard {
+  outline: 2px dashed var(--color-primary-light);
+  outline-offset: 4px;
+}
+
+.pile-btn.active:hover .stack,
+.pile-btn.active:hover .discard,
+.pile-btn.throw:hover .discard {
+  transform: translateY(-2px);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: calc(var(--pile-w) * 0.13);
+  color: color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.empty .material-symbols-rounded {
+  font-size: calc(var(--pile-w) * 0.3);
+}
+
+// Gezogene Karte: hebt sich mit Ring
+.drawn-card {
+  box-shadow:
+    0 0 0 3px var(--color-primary-light),
+    0 10px 18px rgba(0, 0, 0, 0.5);
+  transform: translateY(-8px);
+}
+
+.drawn .pile-label {
+  color: var(--color-primary-light);
+  font-weight: 700;
+}
+
+.drawn:not(.has-card) .pile-label {
+  color: var(--color-text-subtle);
+}
+
+// Letzte Runde: Banner über dem Tisch bzw. den Stapeln
+.last-round {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-warning-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-warning);
+}
+
+.last-round .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.last-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.last-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.last-sub {
+  color: color-mix(in srgb, var(--color-warning) 55%, var(--color-text));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:host(:not([data-layout='phone'])) .last-round {
+  max-width: 420px;
+}
+
+// Handy: eine Zeile weniger, damit Stapel und Raster Platz haben
+:host([data-layout='phone']) .last-round {
+  padding: 7px 10px;
+}
+
+:host([data-layout='phone']) .last-text {
+  display: block;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+:host([data-layout='phone']) .last-title {
+  margin-right: 4px;
+  font-size: 13px;
+}

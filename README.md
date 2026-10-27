@@ -26,7 +26,7 @@ npm run deploy
 ```
 
 Der Produktionsbuild wird unter `dist/frontend` erzeugt. `npm run deploy` baut
-die App mit dem GitHub-Pages-Unterpfad `/game-center-beta/` und veröffentlicht
+die App mit dem GitHub-Pages-Unterpfad `/game-center/` und veröffentlicht
 `dist/frontend/browser` auf dem Branch `gh-pages`.
 
 In GitHub unter **Settings > Pages** auswählen:
@@ -35,8 +35,7 @@ In GitHub unter **Settings > Pages** auswählen:
 - **Branch:** `gh-pages`
 - **Folder:** `/ (root)`
 
-Bei einem anderen Repository-Namen müssen `base-href` und `deploy-url` im Script
-`build:pages` angepasst werden.
+Der Produktionsbuild verwendet den Live-Unterpfad `/game-center/`.
 
 ## Aktueller Funktionsumfang
 
@@ -65,19 +64,14 @@ Geräten synchronisiert. Beim Löschen der Browserdaten können sie verloren geh
 
 ## Supabase-Datenbank
 
-Die versionierten Migrationen liegen in `supabase/migrations/`:
+Die Datenbank steckt in `supabase/migrations/20260918220000_core_schema.sql`. Die Datei
+baut alles auf einem leeren Supabase-Projekt auf: Profile, Rollen, Freunde, Mitteilungen,
+Lobbys mit Gästen, Flip 7, Skip-Bo, Uno, Statistik, Push-Nachrichten, Fehler-Überwachung
+und Namensfilter. Sie lässt sich gefahrlos erneut ausführen.
 
-- `20260918220000_core_schema.sql`: komplettes Grundschema (Profile,
-  Ranking-Spiele, Freundschaften, Benachrichtigungen, F1-Strategie,
-  Multiplayer-Lobbys, RLS und Rechte) für ein leeres Supabase-Projekt
-- `20260929130000_beta_schema_sync.sql` (nur Beta): bringt die bestehende
-  Beta-Datenbank mit dem alten Schema auf den Stand des neuen Grundschemas;
-  auf einer neuen Datenbank ohne Wirkung
-- `20260929140000_notifications_and_roles.sql` bis
-  `20260929170000_friendship_removal.sql`: Rollen, Freundschafts- und
-  Systembenachrichtigungen, Lesestatus und Entfernen von Freunden
-
-Alle Dateien sind wiederholbar und werden in Reihenfolge ausgeführt.
+Neue Änderungen kommen als kleine Datei `<JJJJMMTTHHMMSS>_<was>.sql` daneben und werden
+nach dem Core-Schema ausgeführt. Für Push zusätzlich die Vault-Secrets `project_url` und
+`push_webhook_secret` anlegen (siehe Abschnitt Push im Schema).
 
 Die Migrationen wurden als Grundlage für ein getrenntes Staging- und
 Produktionsprojekt erstellt. Für Live sollte Entwicklung nicht dauerhaft gegen
@@ -97,3 +91,17 @@ dieselbe Datenbank wie die produktive Seite testen.
 Die GitHub-Pages-URL ist kein Zugriffsschutz. Alles, was im Browser ausgeführt
 wird, kann von Benutzern eingesehen werden. RLS und Authentifizierung müssen
 deshalb im Backend durchgesetzt werden.
+
+## Rechtliches
+
+- Vor dem Veröffentlichen die Platzhalter in
+  `src/app/features/legal/legal-info.ts` ausfüllen (Impressum und Datenschutz).
+- Die Icon-Schriften liegen in `public/fonts`, damit keine Verbindung zu Google
+  entsteht. Ein neues Symbol für die Spieltische in
+  `scripts/update-icon-fonts.mjs` ergänzen und `node scripts/update-icon-fonts.mjs`
+  ausführen.
+
+## Lizenz
+
+MIT, siehe [LICENSE](LICENSE). Fahrplandaten: [Transitous](https://transitous.org/sources/),
+Ortsdaten © [OpenStreetMap-Mitwirkende](https://www.openstreetmap.org/copyright) (ODbL).

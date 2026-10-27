@@ -1,0 +1,115 @@
+:host {
+  display: block;
+}
+
+.final {
+  width: min(100%, 640px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 20px 18px;
+}
+
+.banner {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.banner mat-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--color-warning);
+  font-size: 44px;
+}
+
+.kicker {
+  margin: 4px 0 0;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.winner {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.ranking {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.ranking li.top .rank {
+  color: var(--color-warning);
+}
+
+.ranking li.mine {
+  color: var(--color-primary-light);
+}
+
+.ranking li.gone {
+  opacity: 0.55;
+}
+
+.rank {
+  font-weight: 800;
+  text-align: center;
+}
+
+.name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.name strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.total {
+  font-size: 18px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.hint {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}

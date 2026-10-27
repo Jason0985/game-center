@@ -1,0 +1,47 @@
+// Gemeinsames Layout der Rechtstexte (Impressum, Datenschutz, Nutzungsbedingungen, Lizenzen)
+
+.legal-text {
+  padding: 4px 16px 16px;
+  line-height: 1.55;
+}
+
+.legal-text h2 {
+  margin: 18px 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.legal-text h3 {
+  margin: 14px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.legal-text p,
+.legal-text li {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.legal-text ul {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.legal-text a {
+  color: var(--color-primary-light);
+}
+
+.legal-text address {
+  margin-bottom: 8px;
+  color: var(--color-text);
+  font-style: normal;
+}
+
+.legal-updated {
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  text-align: center;
+}

@@ -1,0 +1,537 @@
+// Warteraum vor dem Spiel; der Spieltisch selbst hat eigene Styles
+.lobby-block {
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+}
+
+.lobby-head {
+  gap: 6px;
+}
+
+.lobby-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.lobby-head-row .ui-back-link {
+  margin: 0 0 0 -8px;
+}
+
+// Schließen/Verlassen klein oben rechts statt als großer Knopf unten
+.lobby-leave {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-danger-light);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lobby-leave mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.lobby-leave:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lobby-title {
+  font-size: 30px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.lobby-back-link {
+  margin-top: 6px;
+}
+
+.lobby-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 20px;
+}
+
+.lobby-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Einzelne Karten des Hosts: Code und Spiel
+.lobby-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 10px 10px 10px 16px;
+  border: 0;
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.lobby-card,
+a.lobby-card {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+button.lobby-card:hover:not(:disabled),
+a.lobby-card:hover {
+  background: color-mix(in srgb, var(--color-surface) 92%, #fff);
+}
+
+button.lobby-card:disabled {
+  cursor: default;
+}
+
+.lobby-leave:focus-visible,
+.lobby-card:focus-visible,
+.lobby-invite:focus-visible,
+.lobby-ready:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.lobby-code-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.lobby-code-label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lobby-code {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.14em;
+}
+
+.lobby-invite {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-medium);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lobby-invite:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.lobby-invite:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lobby-invite mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.lobby-game-row {
+  min-height: 64px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.lobby-game-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--tile, var(--tile-gray));
+  color: #fff;
+}
+
+.lobby-game-tile mat-icon {
+  width: 23px;
+  height: 23px;
+  font-size: 23px;
+}
+
+.lobby-game-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lobby-game-sub {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-game-tune {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-fill);
+}
+
+.lobby-game-tune mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.lobby-external {
+  min-height: 52px;
+  color: var(--color-primary-light);
+  font-size: 15px;
+}
+
+.lobby-external mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+// Gäste: Einstellungen des Spiels als Chips
+.lobby-settings {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 12px;
+  padding-bottom: 14px;
+}
+
+.lobby-settings-label {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lobby-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lobby-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lobby-chip mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+// Spieler
+.lobby-members-title {
+  margin-right: 16px;
+}
+
+.lobby-ready-count {
+  color: var(--color-success-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.lobby-member-list {
+  --ui-row-inset: 68px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lobby-member {
+  min-height: 60px;
+  padding-right: 6px;
+}
+
+.lobby-avatar {
+  position: relative;
+  flex: none;
+}
+
+.lobby-avatar .ui-avatar-initials {
+  width: 40px;
+  height: 40px;
+  transition: opacity var(--transition-fast);
+}
+
+.lobby-avatar--waiting .ui-avatar-initials {
+  opacity: 0.55;
+}
+
+// Gefüllter grüner Haken mit Rand in Kartenfarbe
+.lobby-ready-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-success-light);
+  color: var(--color-background);
+}
+
+.lobby-ready-badge mat-icon {
+  width: 13px;
+  height: 13px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lobby-member-you {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.lobby-member-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-host {
+  color: var(--color-primary-light);
+  font-weight: 600;
+}
+
+// Siege an diesem Abend; die meisten (auch geteilt) in Gold
+.lobby-wins {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  min-width: 44px;
+  box-sizing: border-box;
+  justify-content: center;
+  padding: 4px 9px 4px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// Ohne Menü-Knopf (Nicht-Hosts) bündig mit dem Rand
+.lobby-wins:last-child {
+  margin-right: 8px;
+}
+
+.lobby-wins mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+.lobby-wins--none {
+  color: var(--color-text-subtle);
+}
+
+.lobby-wins--leader {
+  background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+  color: var(--color-warning);
+}
+
+.lobby-member-menu {
+  flex: none;
+  width: 44px;
+  margin-left: -6px;
+}
+
+// Steckt in einem eigenen li, darum die Haarlinie hier statt über .ui-group
+.lobby-free::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--ui-row-inset);
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+.lobby-free {
+  min-height: 60px;
+  color: var(--color-primary-light);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.lobby-free:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lobby-free-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin: 0 1px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 50%;
+  color: var(--color-text-subtle);
+}
+
+.lobby-free-icon mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+// Dock über die volle Breite, klebt über der Tab-Leiste (~61px hoch). Unten reicht es durch den
+// Seiten-Abstand (36px) und den Tab-Leisten-Platz von main, damit es auch am Ende bündig aufsitzt.
+.lobby-dock {
+  position: sticky;
+  bottom: calc(61px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  align-self: stretch;
+  margin: 24px calc(-1 * var(--page-padding-mobile)) calc(25px - var(--bottom-nav-space));
+  border-top: 0.5px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-background) 94%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.lobby-dock-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, var(--content-width));
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 12px var(--page-padding-mobile);
+}
+
+.lobby-status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.lobby-buttons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 10px;
+}
+
+.lobby-ready {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.lobby-ready mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.lobby-ready:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lobby-ready--on {
+  background: color-mix(in srgb, var(--color-success-light) 16%, transparent);
+  color: var(--color-success-light);
+}
+
+// Gast: ein großer Knopf; noch nicht bereit = Akzent, bereit = grün und kleiner beschriftet
+.lobby-ready--guest {
+  min-height: 54px;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-size: 17px;
+}
+
+.lobby-ready--guest mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.lobby-ready--guest.lobby-ready--on {
+  background: color-mix(in srgb, var(--color-success-light) 16%, transparent);
+  color: var(--color-success-light);
+  font-size: 15px;
+}
+
+.lobby-start {
+  min-height: 52px;
+  padding: 0 12px;
+  border-radius: var(--radius-large);
+  white-space: nowrap;
+}

@@ -22,6 +22,34 @@ describe('Collection', () => {
     expect(component).toBeTruthy();
   });
 
+  it('lists every multiplayer game, collapsed at first; Monopoly links out', () => {
+    const multiplayer = component.groups().find((group) => group.title === 'Multiplayer')!;
+    expect(multiplayer.open).toBe(false);
+    expect(multiplayer.items.map((item) => item.title)).toEqual([
+      'Flip 7',
+      'Skip-Bo',
+      'Uno',
+      'Blackjack',
+      'Nimm 6',
+      'Skyjo',
+      'Kniffel',
+      'Monopoly',
+    ]);
+    expect(multiplayer.items[0].path).toBe('/multiplayer');
+    expect(multiplayer.items[7].href).toBe('https://richup.io');
+    expect(
+      component
+        .groups()
+        .filter((group) => group.title !== 'Multiplayer')
+        .every((g) => g.open),
+    ).toBe(true);
+
+    component.searchTerm.set('uno');
+    expect(component.groups().map((group) => [group.title, group.open])).toEqual([
+      ['Multiplayer', true],
+    ]);
+  });
+
   it('includes a link to Ranking', () => {
     expect(component.items[0]).toMatchObject({
       title: 'Ranking',

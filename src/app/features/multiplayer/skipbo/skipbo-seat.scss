@@ -1,0 +1,155 @@
+@use '../table/seat-base';
+
+// Skip-Bo-Teil des Namensschilds (Grundlage in table/_seat-base.scss): kein Ring, Stapel-
+// Chip, Auslage. Der Tisch setzt die Variablen je Layout und Spielerzahl
+// (skipbo-board-places.scss); Standard ist das Handy-Schild.
+
+// Mitspieler: Auslage direkt unter dem Schild (Mitte zur Tischmitte)
+.spread {
+  position: absolute;
+  top: calc(100% + var(--spread-gap, 4px));
+  left: 50%;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spread-col-gap, 5px);
+  transform: translateX(-50%);
+}
+
+.spread-stock {
+  position: relative;
+  flex: none;
+  width: calc(var(--top-w) + 3px);
+  height: calc(var(--top-h) + 3px);
+}
+
+.spread-stock > * {
+  --card-w: var(--top-w);
+  --card-h: var(--top-h);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.spread-stock .spread-back {
+  top: 3px;
+  left: 3px;
+}
+
+.slot {
+  width: var(--top-w);
+  height: var(--top-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: max(3px, calc(var(--top-w) * 0.145));
+  background: var(--table-slot-bg);
+}
+
+.spread-discards {
+  // Zahl im Streifen, oberste Ablagekarte wie die Streifen
+  --fan-font: calc(var(--strip) - 3px);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--discard-gap, 3px);
+}
+
+// Stapel-Chip und Handanzahl
+.stats {
+  display: flex;
+  align-items: center;
+  gap: var(--stats-gap, 5px);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--chip-pad, 1px 5px);
+  border-radius: 999px;
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
+  font-size: var(--chip-size, 10px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: var(--chip-lh, 15px);
+}
+
+.chip .material-symbols-rounded {
+  font-size: calc(var(--chip-size, 10px) + 1px);
+}
+
+// Sanduhr-Pille liegt über der Auslage
+.waiting {
+  z-index: 1;
+}
+
+:host(.is-winner) .chip {
+  background: rgba(245, 200, 75, 0.18);
+  color: var(--table-gold);
+}
+
+// Handy-Liste: eine Zeile je Mitspieler, Auslage rechts daneben; am Zug ein weißer
+// Strich links statt Leuchtrand
+:host([data-variant='line']) {
+  --ring: 30px;
+  --avatar: 26px;
+  --name-size: 13px;
+  --chip-size: 11px;
+  --chip-lh: 16px;
+  --chip-pad: 1px 6px;
+  --stats-gap: 6px;
+  --top-w: 30px;
+  --top-h: 42px;
+  --fan-w: 30px;
+  --fan-h: 42px;
+  --strip: 5px;
+  --discard-gap: 5px;
+  flex-direction: row;
+  gap: 10px;
+  width: auto;
+  padding: 6px 10px 6px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+:host([data-variant='line']) .info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+:host([data-variant='line']) .spread {
+  position: static;
+  flex: none;
+  align-items: flex-end;
+  gap: 10px;
+  transform: none;
+}
+
+:host([data-variant='line']) .spread-discards {
+  align-items: flex-end;
+  padding-left: 10px;
+  border-left: 1px solid var(--color-border);
+}
+
+:host([data-variant='line']) .waiting,
+:host([data-variant='line']) .badge-win {
+  position: static;
+  transform: none;
+}
+
+:host([data-variant='line'].is-turn) {
+  border: 0;
+  background: color-mix(in srgb, var(--table-turn) 4%, transparent);
+  box-shadow: inset 3px 0 0 var(--table-turn);
+}
+
+:host([data-variant='line'].is-winner) {
+  border: 0;
+  box-shadow: inset 3px 0 0 var(--table-gold);
+}

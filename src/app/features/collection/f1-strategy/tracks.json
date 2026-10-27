@@ -23,7 +23,7 @@
       "race_recharge": 6,
       "notes": "lico hell",
       "creation_date": "2026-06-24",
-      "good_quali_time": null
+      "good_quali_time": "1:15,9"
     },
     {
       "id": "china",
@@ -46,7 +46,7 @@
       "race_recharge": null,
       "notes": "save all ERS for the back straight",
       "creation_date": "Theory",
-      "good_quali_time": null
+      "good_quali_time": "1:30,2"
     },
     {
       "id": "japan",
@@ -69,7 +69,7 @@
       "race_recharge": null,
       "notes": "SM is not worth in leagues. Lico hell",
       "creation_date": "2026-06-26",
-      "good_quali_time": null
+      "good_quali_time": "1:27,9"
     },
     {
       "id": "bahrain",
@@ -92,7 +92,7 @@
       "race_recharge": 7.4,
       "notes": "Satan's home track",
       "creation_date": "2026-08-01",
-      "good_quali_time": null
+      "good_quali_time": "1:26,8 bis 1:27,1"
     },
     {
       "id": "saudi-arabia",
@@ -115,7 +115,7 @@
       "race_recharge": null,
       "notes": "see Silverstone description",
       "creation_date": "2026-07-13",
-      "good_quali_time": null
+      "good_quali_time": "1:27,7 - 1:28,0"
     },
     {
       "id": "miami",
@@ -138,7 +138,7 @@
       "race_recharge": null,
       "notes": "horrendous Q track, AI are terrible",
       "creation_date": "2026-07-27",
-      "good_quali_time": null
+      "good_quali_time": "1:25,7"
     },
     {
       "id": "canada",
@@ -161,7 +161,7 @@
       "race_recharge": null,
       "notes": "Bugged tire allocation",
       "creation_date": "2026-07-05",
-      "good_quali_time": null
+      "good_quali_time": "1:08,2"
     },
     {
       "id": "monaco",
@@ -184,7 +184,7 @@
       "race_recharge": null,
       "notes": "Pit as early as possible or when damage",
       "creation_date": "Theory",
-      "good_quali_time": null
+      "good_quali_time": "1:09,260"
     },
     {
       "id": "spain",
@@ -207,7 +207,7 @@
       "race_recharge": 7,
       "notes": "MASSIVE management on lefts",
       "creation_date": "2026-06-27",
-      "good_quali_time": null
+      "good_quali_time": "1:12,2 - 1:12,5"
     },
     {
       "id": "austria",
@@ -230,7 +230,7 @@
       "race_recharge": null,
       "notes": "moderately easy onestop",
       "creation_date": "2026-06-25",
-      "good_quali_time": null
+      "good_quali_time": "1:03,1 - 1:03,7"
     },
     {
       "id": "great-britain",
@@ -253,7 +253,7 @@
       "race_recharge": null,
       "notes": "lico hell. 50% throttle second half of any straight",
       "creation_date": "2026-06-29",
-      "good_quali_time": null
+      "good_quali_time": "1:26,5"
     },
     {
       "id": "belgium",
@@ -276,7 +276,7 @@
       "race_recharge": 7.6,
       "notes": "lico disaster. See Silverstone",
       "creation_date": "2026-06-23",
-      "good_quali_time": null
+      "good_quali_time": "1:43,282"
     },
     {
       "id": "hungary",
@@ -299,7 +299,7 @@
       "race_recharge": null,
       "notes": "2stop recommended if youre in a slow train",
       "creation_date": "2026-07-27",
-      "good_quali_time": null
+      "good_quali_time": "1:14,889"
     },
     {
       "id": "netherlands",
@@ -322,7 +322,7 @@
       "race_recharge": null,
       "notes": "one stop isnt worth",
       "creation_date": "2026-07-11",
-      "good_quali_time": null
+      "good_quali_time": "1:08,791"
     },
     {
       "id": "italy",
@@ -345,7 +345,7 @@
       "race_recharge": 6,
       "notes": "disaster for battery. Actual yo-yo racing at its worst",
       "creation_date": "2026-09-02",
-      "good_quali_time": null
+      "good_quali_time": "1:18,380"
     },
     {
       "id": "madrid",
@@ -368,7 +368,7 @@
       "race_recharge": 7.4,
       "notes": "kerb cut hell",
       "creation_date": "2026-08-08",
-      "good_quali_time": null
+      "good_quali_time": "1:28,242"
     },
     {
       "id": "azerbaijan",
@@ -391,7 +391,7 @@
       "race_recharge": null,
       "notes": "save all ERS for straight",
       "creation_date": "2026-08-12",
-      "good_quali_time": null
+      "good_quali_time": "1:37,1 - 1:37,5"
     },
     {
       "id": "singapore",
@@ -414,7 +414,7 @@
       "race_recharge": null,
       "notes": "overheating is possible. No lico at all",
       "creation_date": "2026-07-04",
-      "good_quali_time": null
+      "good_quali_time": "1:27,556"
     },
     {
       "id": "united-states",
@@ -437,7 +437,7 @@
       "race_recharge": null,
       "notes": "HM > MH. Be careful with traction zones",
       "creation_date": "2026-06-28",
-      "good_quali_time": null
+      "good_quali_time": "1:30,7"
     },
     {
       "id": "mexico",
@@ -460,7 +460,7 @@
       "race_recharge": null,
       "notes": "Hell on Earth",
       "creation_date": "2026-08-17",
-      "good_quali_time": null
+      "good_quali_time": "1:13,997"
     },
     {
       "id": "sao-paulo",
@@ -483,7 +483,7 @@
       "race_recharge": null,
       "notes": "good track for battery, almost goat tier",
       "creation_date": "2026-07-11",
-      "good_quali_time": null
+      "good_quali_time": "1:07,447"
     },
     {
       "id": "las-vegas",
@@ -506,7 +506,7 @@
       "race_recharge": null,
       "notes": "lico hell",
       "creation_date": "2026-07-26",
-      "good_quali_time": null
+      "good_quali_time": "1:30,882"
     },
     {
       "id": "qatar",
@@ -529,7 +529,7 @@
       "race_recharge": null,
       "notes": "softs are viable here",
       "creation_date": "2026-07-09",
-      "good_quali_time": null
+      "good_quali_time": "1:21,6 - 1:22,0"
     },
     {
       "id": "abu-dhabi",
@@ -552,7 +552,7 @@
       "race_recharge": 7,
       "notes": "save for straights",
       "creation_date": "2026-08-23",
-      "good_quali_time": null
+      "good_quali_time": "1:21,802"
     },
     {
       "id": "emilia-romagna",
@@ -575,7 +575,7 @@
       "race_recharge": null,
       "notes": "enough underfuel to supply a small nation",
       "creation_date": "2026-07-02",
-      "good_quali_time": null
+      "good_quali_time": "1:13,395"
     }
   ],
   "tire_temperatures": [

@@ -1,0 +1,99 @@
+@use '../table/seat-base';
+
+// Uno-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Kartenanzahl mit
+// kleinen Rücken, Rückenfächer unter dem Schild, „UNO!“, Aussetzen-Token, Zieh-Chip.
+// Der Tisch setzt die Variablen je Layout und Spielerzahl (uno-board-places.scss).
+.hand {
+  gap: 4px;
+  color: var(--color-text);
+  font-size: var(--hand-size, 10px);
+  font-weight: 800;
+}
+
+.backs span {
+  border-color: var(--table-back-frame);
+}
+
+// Rückenfächer: je Karte ein Rücken, Mitte zur Tischmitte
+.fan {
+  position: absolute;
+  top: calc(100% + var(--fan-gap, 6px));
+  left: 50%;
+  display: flex;
+  align-items: flex-start;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.fan-back {
+  position: relative;
+  flex: none;
+  width: var(--fan-w, 13px);
+  height: var(--fan-h, 19px);
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  background: var(--table-card-back);
+  box-shadow: var(--table-card-shadow);
+  transform-origin: 50% 100%;
+}
+
+.fan-back::after {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--table-back-frame);
+  border-radius: 2px;
+  content: '';
+}
+
+.fan-back + .fan-back {
+  margin-left: calc(var(--fan-w, 13px) * -0.57);
+}
+
+// Setzt aus: Token oben links am Avatar
+.token--skip {
+  top: calc(var(--token) * -0.2);
+  left: calc(var(--token) * -0.2);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.badge-uno {
+  box-shadow: 0 0 14px rgba(245, 200, 75, 0.18);
+}
+
+// Muss ziehen: roter Chip unter dem Schild
+.pending {
+  position: absolute;
+  bottom: var(--label-bottom, -19px);
+  left: 50%;
+  z-index: 1;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: #d1373b;
+  color: #ffffff;
+  font-size: calc(var(--label-size, 10px) + 3px);
+  font-weight: 900;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.waiting {
+  z-index: 1;
+}
+
+// 7 tauscht: Schild als Ziel-Button
+:host(button) {
+  cursor: pointer;
+  border: 2px dashed var(--table-target);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--table-target) 18%, transparent);
+}
+
+:host(button:focus-visible) {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+:host(button:disabled) {
+  cursor: default;
+}

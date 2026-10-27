@@ -9,7 +9,7 @@
       [value]="search()"
       (input)="onSearch($event)"
       aria-label="Benutzer nach Benutzernamen suchen"
-      autofocus
+      cdkFocusInitial
     />
   </label>
 
@@ -28,12 +28,12 @@
             <span>&#64;{{ result.username }}</span>
           </div>
           <button
-            mat-icon-button
+            class="ui-icon-button ui-stretch"
             type="button"
             [disabled]="stateOf(result.id) !== 'none'"
             [attr.aria-label]="tooltipOf(result.id)"
             [matTooltip]="tooltipOf(result.id)"
-            (click)="add(result.id)"
+            (click)="add(result)"
           >
             <mat-icon aria-hidden="true">
               @switch (stateOf(result.id)) {

@@ -1,0 +1,160 @@
+// Mitspieler-Plätze: Schild und Auslage (Aufbau in skipbo-seat.scss). Drittes Stylesheet
+// von SkipboBoard (Budget pro Datei). Größe l: ≤ 3 Spieler, m: 4, s: 5–6.
+.opp {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  // Handy (Spalte), Größe l
+  --w: 84px;
+  --ring: 42px;
+  --avatar: 36px;
+  --name-size: 12px;
+  --top-w: 25px;
+  --top-h: 35px;
+  --fan-w: 19px;
+  --fan-h: 28px;
+  --strip: 3px;
+}
+
+:host([data-size='m']) .opp,
+:host([data-size='s']) .opp {
+  --ring: 38px;
+  --avatar: 34px;
+  --name-size: 11px;
+}
+
+:host([data-size='m']) .opp {
+  --top-w: 23px;
+  --top-h: 32px;
+  --fan-w: 18px;
+  --fan-h: 25px;
+}
+
+:host([data-size='s']) .opp {
+  --top-w: 18px;
+  --top-h: 25px;
+  --fan-w: 14px;
+  --fan-h: 20px;
+}
+
+// Ab iPad: Auslage gefächert (4 Karten + „+N“)
+:host(:not([data-layout='phone'])) .opp {
+  --name-size: 13px;
+  --label-size: 12px;
+  --label-bottom: -23px;
+  --badge-size: 12px;
+  --badge-top: -16px;
+  --spread-gap: 6px;
+  --spread-col-gap: 8px;
+  --discard-gap: 5px;
+  --chip-size: 12px;
+  --chip-lh: 18px;
+  --chip-pad: 1px 6px;
+  --back-w: 10px;
+  --back-h: 14px;
+  --back-ml: -6px;
+  --hand-size: 11px;
+  --stats-gap: 8px;
+  --top-w: 41px;
+  --top-h: 58px;
+  --fan-w: 35px;
+  --fan-h: 49px;
+  --strip: 18px;
+}
+
+:host(:not([data-layout='phone'])[data-size='m']) .opp {
+  --top-w: 37px;
+  --top-h: 53px;
+  --fan-w: 32px;
+  --fan-h: 45px;
+  --strip: 17px;
+}
+
+:host(:not([data-layout='phone'])[data-size='s']) .opp {
+  --top-w: 34px;
+  --top-h: 48px;
+  --fan-w: 29px;
+  --fan-h: 41px;
+  --strip: 15px;
+}
+
+:host([data-layout='hoch']) .opp {
+  --w: 132px;
+  --pad: 8px 4px;
+  --radius: 16px;
+  --gap: 4px;
+  --ring: 55px;
+  --avatar: 49px;
+}
+
+:host([data-layout='hoch']:not([data-size='l'])) .opp {
+  --w: 120px;
+  --ring: 50px;
+  --avatar: 44px;
+}
+
+:host([data-layout='quer']) .opp {
+  --w: 193px;
+  --gap: 7px;
+  --ring: 44px;
+  --avatar: 38px;
+  --info-gap: 3px;
+  --label-size: 11px;
+  --label-bottom: -21px;
+  --badge-size: 11px;
+  --badge-top: -15px;
+  --chip-size: 11px;
+  --chip-lh: 17px;
+  --back-w: 9px;
+  --back-h: 13px;
+  --back-ml: -5px;
+  --hand-size: 10px;
+  --stats-gap: 5px;
+}
+
+:host([data-layout='quer']:not([data-size='l'])) .opp {
+  --w: 184px;
+  --ring: 42px;
+  --avatar: 36px;
+}
+
+:host([data-layout='laptop']) .opp {
+  --w: 224px;
+  --gap: 8px;
+  --ring: 53px;
+  --avatar: 47px;
+  --name-size: 14px;
+  --info-gap: 4px;
+  --top-w: 48px;
+  --top-h: 67px;
+  --fan-w: 43px;
+  --fan-h: 60px;
+  --strip: 21px;
+}
+
+:host([data-layout='laptop']:not([data-size='l'])) .opp {
+  --w: 214px;
+  --ring: 50px;
+  --avatar: 44px;
+}
+
+:host([data-layout='laptop'][data-size='m']) .opp {
+  --top-w: 44px;
+  --top-h: 62px;
+  --fan-w: 40px;
+  --fan-h: 55px;
+  --strip: 19px;
+}
+
+:host([data-layout='laptop'][data-size='s']) .opp {
+  --top-w: 40px;
+  --top-h: 56px;
+  --fan-w: 36px;
+  --fan-h: 50px;
+  --strip: 17px;
+}
+
+// Sanduhr-Pille unter dem Schild: Auslage rückt etwas tiefer
+:host([data-layout='laptop']) .opp.has-waiting {
+  --spread-gap: 16px;
+}

@@ -1,0 +1,45 @@
+<app-game-stage
+  gameTitle="Blackjack"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="showFinal()"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [skipName]="skipName()"
+  [waitingClock]="waitingClock()"
+  [finished]="game()?.status === 'finished'"
+  endHint="Zum Endstand"
+  [rules]="rules"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
+  (skip)="skip(game()!)"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+  (history)="openHistory()"
+>
+  @if (game(); as g) {
+    @if (showFinal()) {
+      <app-blackjack-final
+        [game]="g"
+        [userId]="userId()"
+        [isHost]="isHost()"
+        [busy]="busy()"
+        (backToLobby)="backToLobby()"
+      />
+    } @else {
+      <!-- Derselbe Tisch bleibt nach dem letzten Zug kurz stehen, damit er noch animiert -->
+      <app-blackjack-board
+        [game]="g"
+        [userId]="userId()"
+        [busy]="busy() || g.status !== 'playing'"
+        [betSecondsLeft]="betSecondsLeft()"
+        [turnSecondsLeft]="turnSecondsLeft()"
+        (bet)="bet(g, $event)"
+        (play)="play(g, $event)"
+      />
+    }
+  }
+</app-game-stage>

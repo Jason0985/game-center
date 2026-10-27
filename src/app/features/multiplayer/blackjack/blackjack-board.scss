@@ -1,0 +1,411 @@
+@use '../table/table-base';
+@use '../table/arc-table';
+@use 'blackjack-tones';
+
+// Blackjack-Tisch (Platte in table/_arc-table.scss): Dealer oben, Schuh mit Regeln bzw.
+// Setz-Ring in der Mitte, Ergebnis-Banner. Alles sitzt in Prozent der Platte (Design-Pixel
+// / Plattengröße), Karten und Schrift behalten ihre Design-Pixel. Weitere Teile:
+// blackjack-board-own.scss (eigene Hand, Bedienfeld), blackjack-board-places.scss (Mitspieler).
+:host {
+  // Lange Hinweise dürfen das Bedienfeld nicht verbreitern (sonst scrollt die Seite seitlich)
+  grid-template-columns: minmax(0, 1fr);
+  // Handy allein (Main.dc, Platte 378 × 590)
+  --dealer-top: 5.4%;
+  --dealer-w: 64px;
+  --dealer-h: 90px;
+  --middle-top: 34.9%;
+  --banner-top: 35.9%;
+  --own-top: 52.2%;
+  --pile-w: 46px;
+  --pile-h: 66px;
+  --pile-label: 12px;
+  --rules-size: 12px;
+}
+
+// Handy mit Mitspielern: Mitte frei, kleiner Schuh oben rechts neben dem Dealer
+:host([data-layout='phone']:not([data-solo])),
+:host([data-layout='hoch']:not([data-solo])) {
+  --dealer-top: 2.7%;
+  --dealer-w: 52px;
+  --dealer-h: 74px;
+  --banner-top: 25.4%;
+  --own-top: 50%;
+  --pile-w: 30px;
+  --pile-h: 42px;
+  --pile-label: 11px;
+}
+
+:host([data-layout='hoch']) {
+  --dealer-w: 80px;
+  --dealer-h: 112px;
+  --pile-w: 60px;
+  --pile-h: 86px;
+  --pile-label: 13px;
+  --rules-size: 14px;
+}
+
+:host([data-layout='hoch']:not([data-solo])) {
+  --dealer-w: 64px;
+  --dealer-h: 90px;
+  --pile-w: 44px;
+  --pile-h: 62px;
+}
+
+// Laptop.dc (Platte 1220 × 720); quer gleich aufgeteilt, Karten etwas kleiner
+:host([data-layout='laptop']) {
+  --dealer-top: 4.4%;
+  --dealer-w: 80px;
+  --dealer-h: 112px;
+  --middle-top: 31%;
+  --banner-top: 32%;
+  --own-top: 64%;
+  --pile-w: 60px;
+  --pile-h: 86px;
+  --pile-label: 13px;
+  --rules-size: 13px;
+}
+
+:host([data-layout='quer']) {
+  --dealer-top: 3%;
+  --dealer-w: 64px;
+  --dealer-h: 90px;
+  --middle-top: 33%;
+  --banner-top: 33%;
+  --own-top: 61%;
+  --pile-w: 46px;
+  --pile-h: 66px;
+  --pile-label: 12px;
+}
+
+.cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Dealer: Schild mit Wert, darunter die Karten
+.dealer {
+  position: absolute;
+  top: var(--dealer-top);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: var(--table-seat-shadow);
+  white-space: nowrap;
+}
+
+.plate-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--tile-gray);
+  color: #ffffff;
+}
+
+.plate-avatar span {
+  font-size: 17px;
+}
+
+.plate-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 11px;
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pill[data-tone='value'] {
+  background: var(--color-surface-raised);
+}
+
+.dealer-cards {
+  height: var(--dealer-h);
+}
+
+.dealer-cards app-blackjack-card {
+  --card-w: var(--dealer-w);
+  --card-h: var(--dealer-h);
+  // Für das Aufdecken (rotateY)
+  backface-visibility: hidden;
+}
+
+.dealer-cards app-blackjack-card + app-blackjack-card {
+  margin-left: calc(var(--dealer-w) * -0.44);
+}
+
+// Ab 4 Karten enger, damit der Schuh daneben frei bleibt
+.dealer-cards:has(app-blackjack-card:nth-child(4)) app-blackjack-card + app-blackjack-card {
+  margin-left: calc(var(--dealer-w) * -0.6);
+}
+
+// Beim Setzen: zwei leere Felder statt der Karten
+.slot {
+  width: var(--dealer-w);
+  height: var(--dealer-h);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: calc(var(--dealer-w) * 0.125);
+  background: var(--table-slot-bg);
+}
+
+.slot + .slot {
+  margin-left: 8px;
+}
+
+// Mitte: Schuh und Regeln bzw. Setz-Ring nebeneinander
+.middle {
+  position: absolute;
+  top: var(--middle-top);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.shoe-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--rules-size);
+  font-weight: 500;
+}
+
+.rules strong {
+  color: var(--color-text);
+  font-size: calc(var(--rules-size) + 1px);
+  font-weight: 700;
+}
+
+// Handy mit Mitspielern: Mitte löst sich auf, Schuh rechts neben den Dealer, ohne Regeln
+:host([data-layout='phone']:not([data-solo])) .middle,
+:host([data-layout='hoch']:not([data-solo])) .middle {
+  display: contents;
+}
+
+:host([data-layout='phone']:not([data-solo])) .shoe-box,
+:host([data-layout='hoch']:not([data-solo])) .shoe-box {
+  position: absolute;
+  top: 9%;
+  left: 74%;
+  z-index: 2;
+  gap: 3px;
+  transform: translateX(-50%);
+}
+
+:host([data-layout='phone']:not([data-solo])) .pile-unit,
+:host([data-layout='hoch']:not([data-solo])) .pile-unit,
+:host([data-layout='phone']:not([data-solo])) .rules,
+:host([data-layout='hoch']:not([data-solo])) .rules,
+:host([data-layout='phone']) .ring-more,
+:host([data-layout='hoch']) .ring-more {
+  display: none;
+}
+
+// Setz-Ring: Restzeit bis zum Austeilen, wer schon gesetzt hat
+.ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ring-dial {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-track,
+.ring-bar {
+  fill: none;
+  stroke-width: 5;
+}
+
+.ring-track {
+  stroke: var(--table-rim);
+}
+
+.ring-bar {
+  stroke: var(--table-target);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.ring-clock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.ring-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ring-text strong {
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+// Handy mit Mitspielern: Ring (48) mittig, Text darunter
+:host([data-layout='phone']) .ring,
+:host([data-layout='hoch']) .ring {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  z-index: 2;
+  flex-direction: column;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+:host([data-layout='phone']) .ring-dial {
+  width: 48px;
+  height: 48px;
+}
+
+:host([data-layout='phone']) .ring-clock {
+  font-size: 14px;
+}
+
+:host([data-layout='phone']) .ring-text,
+:host([data-layout='hoch']) .ring-text {
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+}
+
+:host([data-layout='phone']) .ring-text strong {
+  font-size: 13px;
+}
+
+// Allein: das Ergebnis liegt über den Regeln
+.middle--result .rules {
+  visibility: hidden;
+}
+
+// Ergebnis der letzten Runde (Zustaende.dc), skaliert herein
+.banner {
+  position: absolute;
+  top: var(--banner-top);
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 210px;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+  animation: banner-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
+.banner-title {
+  width: max-content;
+  color: var(--tone-fg);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.banner-title[data-tone='muted'] {
+  color: var(--color-text);
+}
+
+.banner-sub {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner {
+    animation: none;
+  }
+
+  .ring-bar {
+    transition: none;
+  }
+}
+
+// Beim Austeilen: Werte erst, wenn die Karten liegen
+:host(.dealing) .pill,
+:host(.dealing) .stake {
+  visibility: hidden;
+}
+
+// Fliegende Chips liegen über allem
+.chip-flight {
+  position: fixed;
+  z-index: 20;
+}

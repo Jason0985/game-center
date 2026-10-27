@@ -1,0 +1,76 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/profile">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Profil
+      </a>
+      <h1 class="ui-large-title">Lizenzen &amp; Quellen</h1>
+    </header>
+
+    <div class="ui-group legal-text">
+      <h2>Game Center</h2>
+      <p>
+        Der Quellcode dieser App ist Open Source und steht unter der MIT-Lizenz:
+        <a [href]="info.repositoryUrl" target="_blank" rel="noopener">{{ info.repositoryUrl }}</a>
+      </p>
+
+      <h2>Fahrplandaten</h2>
+      <p>
+        Zugverbindungen im Ankunftsplaner stammen von
+        <a href="https://transitous.org/" target="_blank" rel="noopener">Transitous</a>, einem
+        gemeinschaftlich betriebenen Fahrplandienst für freie Software. Die verwendeten Datenquellen
+        und ihre Lizenzen findest du unter
+        <a href="https://transitous.org/sources/" target="_blank" rel="noopener"
+          >transitous.org/sources</a
+        >.
+      </p>
+
+      <h2>Karten- und Ortsdaten</h2>
+      <p>
+        Adress- und Ortssuche sowie Fußwege basieren auf Daten von
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener"
+          >© OpenStreetMap-Mitwirkende</a
+        >. Die Daten stehen unter der
+        <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener"
+          >Open Database License (ODbL)</a
+        >.
+      </p>
+
+      <h2>Verwendete Software</h2>
+      <ul>
+        <li>
+          <a href="https://angular.dev/" target="_blank" rel="noopener">Angular</a> und
+          <a href="https://material.angular.dev/" target="_blank" rel="noopener">Angular Material</a
+          >: MIT-Lizenz
+        </li>
+        <li>
+          <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener"
+            >supabase-js</a
+          >: MIT-Lizenz
+        </li>
+        <li>
+          <a href="https://fonts.google.com/icons" target="_blank" rel="noopener"
+            >Material Icons und Material Symbols</a
+          >
+          (Google): Apache License 2.0
+        </li>
+        <li>
+          <a href="https://rxjs.dev/" target="_blank" rel="noopener">RxJS</a>: Apache License 2.0
+        </li>
+      </ul>
+      <p>
+        Die vollständige Liste aller Abhängigkeiten steht in der
+        <a [href]="info.repositoryUrl + '/blob/main/package.json'" target="_blank" rel="noopener"
+          >package.json</a
+        >
+        des Projekts.
+      </p>
+
+      <h2>Marken</h2>
+      <p>
+        Namen von Spielen und Marken gehören ihren jeweiligen Inhabern. Game Center steht in keiner
+        Verbindung zu ihnen.
+      </p>
+    </div>
+  </div>
+</div>
