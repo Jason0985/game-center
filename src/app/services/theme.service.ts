@@ -15,6 +15,7 @@ export const THEME_OPTIONS: readonly ThemeOption[] = [
 ];
 
 const STORAGE_KEY = 'game-center-theme';
+const CHRISTMAS_KEY = 'game-center-christmas';
 
 // Farbe der Browser-/Statusleiste passend zu --color-background des Schemas
 const THEME_COLORS: Record<'light' | 'dark', string> = {
@@ -30,6 +31,8 @@ function isTheme(value: unknown): value is Theme {
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   readonly theme = signal<Theme>(this.readStored());
+  /** Weihnachtsdeko (Lichterkette, Schnee) über dem Farbschema, vorerst nur für Admins. */
+  readonly christmas = signal(this.readChristmas());
 
   private readonly prefersLight =
     typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: light)') : null;
@@ -52,6 +55,23 @@ export class ThemeService {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {
       // Speicher nicht verfügbar (z. B. privater Modus): Schema gilt nur für diese Sitzung
+    }
+  }
+
+  setChristmas(on: boolean): void {
+    this.christmas.set(on);
+    try {
+      localStorage.setItem(CHRISTMAS_KEY, on ? '1' : '0');
+    } catch {
+      // Speicher nicht verfügbar: Deko gilt nur für diese Sitzung
+    }
+  }
+
+  private readChristmas(): boolean {
+    try {
+      return localStorage.getItem(CHRISTMAS_KEY) === '1';
+    } catch {
+      return false;
     }
   }
 
