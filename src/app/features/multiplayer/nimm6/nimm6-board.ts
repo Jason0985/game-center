@@ -18,7 +18,6 @@ import { flyFrom, injectFlights, reducedMotion } from '../table/table-motion';
 import {
   ARC_TABLES,
   AVATAR_COLORS,
-  formatClock,
   injectTableLayout,
   seatsAfter,
   seatSpots,
@@ -39,7 +38,6 @@ import {
   N6Step,
   PILE_AT_MS,
   PILE_FLY_MS,
-  placementOf,
   replaySteps,
   REVEAL_MS,
   rowBulls,
@@ -60,10 +58,11 @@ interface RowCard {
 // Haufen fliegt zum Spieler (pile), Hornochsen zählen dazu (count)
 type TakePhase = 'fly' | 'gather' | 'pile' | 'count';
 
-// Platz rechts der Karten: leer, Ziel der gewählten Karte (ghost), 6. Platz
+// Platz rechts der Karten: leer oder 6. Platz. Wohin die gewählte Karte kommt, zeigt der
+// Tisch nicht – das sieht jeder selbst.
 interface RowSlot {
   mark: string;
-  kind: 'empty' | 'six' | 'ghost' | 'ghost-six';
+  kind: 'empty' | 'six';
 }
 
 // Wo die Reihen auf der Platte liegen (Oberkante, Prozent der Höhe)
@@ -93,8 +92,6 @@ export class Nimm6Board {
   readonly game = input.required<N6Game>();
   readonly userId = input.required<string>();
   readonly busy = input(false);
-  // Restzeit fürs Wählen bzw. die Reihenwahl; null = keine Uhr
-  readonly secondsLeft = input<number | null>(null);
 
   readonly choose = output<number>();
   readonly takeRow = output<number>();
@@ -108,10 +105,6 @@ export class Nimm6Board {
   });
   readonly live = signal(false);
   readonly bull = BULL_PATH;
-  readonly clock = computed(() => {
-    const left = this.secondsLeft();
-    return left === null ? null : formatClock(left);
-  });
 
   readonly me = computed(
     () => this.game().players.find((player) => player.user_id === this.userId()) ?? null,
@@ -267,13 +260,6 @@ export class Nimm6Board {
     computation: () => null,
   });
   readonly picked = computed(() => this.chosen() ?? this.selected());
-  // Wohin die angetippte Karte käme (Hinweis und Geisterplatz in der Reihe)
-  readonly target = computed(() => {
-    const card = this.picked();
-    if (card === null || !this.choosing()) return null;
-    const placement = placementOf(this.game().card_rows, card);
-    return { card, ...placement };
-  });
   readonly readyCount = computed(() => this.active().filter((p) => p.ready).length);
 
   readonly hand = computed(() => {
@@ -329,7 +315,6 @@ export class Nimm6Board {
 
   readonly rows = computed(() => {
     const shown = this.shownRows();
-    const target = this.target();
     const step = this.step();
     const takeMine = this.takeMine();
     const takePick = this.takePick();
@@ -338,17 +323,11 @@ export class Nimm6Board {
       const sum = cards.filter((c) => c.state !== 'new').reduce((s, c) => s + bullsOf(c.card), 0);
       const slots: RowSlot[] = [];
       for (let k = cards.length; k < 6; k++) {
-        const ghost = target !== null && target.row === i && k === cards.length;
-        slots.push({
-          kind: ghost ? (k === 5 ? 'ghost-six' : 'ghost') : k === 5 ? 'six' : 'empty',
-          mark: ghost ? String(target.card) : k === 5 ? '6' : '',
-        });
+        slots.push({ kind: k === 5 ? 'six' : 'empty', mark: k === 5 ? '6' : '' });
       }
-      let tone: 'target' | 'sixth' | 'take' | 'pick' | 'hot' | null = null;
+      let tone: 'target' | 'take' | 'pick' | 'hot' | null = null;
       if (step && step.row === i) tone = step.kind === 'place' ? 'target' : 'hot';
       else if (takeMine) tone = takePick === i ? 'pick' : 'take';
-      else if (target?.row === null) tone = 'take';
-      else if (target?.row === i) tone = target.sixth ? 'sixth' : 'target';
       return {
         index: i,
         cards,
@@ -451,31 +430,16 @@ export class Nimm6Board {
           tone: 'muted',
         };
       }
-      const target = this.target();
-      if (!target)
+      const picked = this.selected();
+      if (picked === null)
         return {
           icon: 'style',
           text: 'Wähle eine Karte – alle legen gleichzeitig verdeckt',
           tone: 'muted',
         };
-      if (target.row === null) {
-        return {
-          icon: 'warning',
-          text: `${target.card} ist kleiner als jede Reihe – du nimmst danach eine Reihe deiner Wahl`,
-          tone: 'warn',
-        };
-      }
-      if (target.sixth) {
-        const bulls = rowBulls(game.card_rows[target.row]);
-        return {
-          icon: 'error',
-          text: `${target.card} wäre die 6. Karte in Reihe ${target.row + 1} – du nimmst ${bullsLabel(bulls)}`,
-          tone: 'danger',
-        };
-      }
       return {
-        icon: 'south',
-        text: `${target.card} kommt an Reihe ${target.row + 1} (nach ${target.after})`,
+        icon: 'touch_app',
+        text: `${picked} gewählt – wohin sie kommt, siehst du selbst`,
         tone: 'muted',
       };
     },

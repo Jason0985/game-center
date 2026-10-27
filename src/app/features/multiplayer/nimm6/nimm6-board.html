@@ -301,12 +301,6 @@
 <ng-template #clockTpl>
   @if (choosing() || takeMine() || (g.phase === 'take' && !animating())) {
     <div class="clock-row">
-      @if (clock(); as c) {
-        <span class="clock" [class.low]="(secondsLeft() ?? 99) <= 5">
-          <span class="material-symbols-rounded" aria-hidden="true">timer</span>
-          {{ c }}
-        </span>
-      }
       @if (g.phase === 'choose') {
         <span class="ready">{{ readyCount() }}/{{ active().length }} bereit</span>
       }

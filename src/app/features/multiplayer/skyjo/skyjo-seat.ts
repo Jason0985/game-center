@@ -18,8 +18,8 @@ export interface SkSeatTag {
   tone: 'gold' | 'done' | 'muted';
 }
 
-// Schild eines Mitspielers (Artboards „Am Zug“, iPad, Laptop): Avatar, Name, Summe der
-// offenen Karten (beim Rundenstart stattdessen ✓ bzw. „…“), darunter das Raster 3 × 4 in
+// Schild eines Mitspielers (Artboards „Am Zug“, iPad, Laptop): Avatar, Name (beim Rundenstart
+// dahinter ✓ bzw. „…“; keine Summe der offenen Karten, die rechnet jeder selbst), darunter das Raster 3 × 4 in
 // Mini-Karten. Am Zug weißer Rand, Rundenbeender gold. Größen kommen vom Tisch (--mini-w …).
 @Component({
   selector: '[appSkyjoSeat]',
@@ -43,8 +43,6 @@ export interface SkSeatTag {
             s === 'ready' ? 'check' : 'more_horiz'
           }}</span>
         </span>
-      } @else {
-        <span class="sum">{{ sum() }}</span>
       }
     </span>
     <span class="grid" aria-hidden="true">
@@ -80,8 +78,6 @@ export interface SkSeatTag {
 export class SkyjoSeat {
   readonly player = input.required<SkPlayer>();
   readonly cells = input.required<SkCellView[]>();
-  // Summe der offenen Karten
-  readonly sum = input.required<number>();
   // Rundenstart: ready = hat 2 aufgedeckt, waiting = deckt noch auf; sonst null
   readonly status = input<'ready' | 'waiting' | null>(null);
   readonly turn = input(false);
@@ -95,7 +91,7 @@ export class SkyjoSeat {
     const open = this.cells().filter((c) => !c.gone && c.card !== null);
     return [
       player.name,
-      `${open.length} von 12 offen, Summe ${this.sum()}`,
+      `${open.length} von 12 offen`,
       open.length ? `offen: ${open.map((c) => c.card).join(', ')}` : null,
       this.status() === 'ready' && 'hat aufgedeckt',
       this.status() === 'waiting' && 'deckt noch auf',
