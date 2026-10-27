@@ -19,8 +19,8 @@ const CHRISTMAS_KEY = 'game-center-christmas';
 
 // Farbe der Browser-/Statusleiste passend zu --color-background des Schemas
 const THEME_COLORS: Record<'light' | 'dark', string> = {
-  dark: '#1c1c1e',
-  light: '#f2f2f7',
+  dark: '#111528',
+  light: '#f2f2f8',
 };
 
 function isTheme(value: unknown): value is Theme {
