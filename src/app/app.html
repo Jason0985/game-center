@@ -1,4 +1,7 @@
 <div class="app-shell">
+  @if (christmas()) {
+    <app-christmas-backdrop />
+  }
   <header class="top-bar">
     <a class="top-bar-title" routerLink="/" aria-label="Game Center, zur Startseite">
       <img src="icons/app-icon.svg" alt="" aria-hidden="true" />
@@ -29,6 +32,9 @@
       </a>
     </div>
   </header>
+  @if (christmas()) {
+    <app-christmas-lights />
+  }
 
   <app-toast-host />
 
@@ -54,6 +60,9 @@
   </main>
 
   <nav class="bottom-nav" aria-label="Hauptnavigation">
+    @if (christmas()) {
+      <app-christmas-snowbank />
+    }
     <a
       class="bottom-nav-link"
       routerLink="/"

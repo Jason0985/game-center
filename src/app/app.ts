@@ -12,10 +12,24 @@ import { SessionService } from './services/session.service';
 import { PushService } from './services/push.service';
 import { PwaService } from './services/pwa.service';
 import { FeedbackService } from './services/feedback.service';
+import {
+  ChristmasBackdrop,
+  ChristmasLights,
+  ChristmasSnowbank,
+} from './ui/christmas/christmas-decor';
 
 @Component({
   selector: 'app-root',
-  imports: [MatIconModule, RouterLink, RouterLinkActive, RouterOutlet, ToastHost],
+  imports: [
+    MatIconModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    ToastHost,
+    ChristmasBackdrop,
+    ChristmasLights,
+    ChristmasSnowbank,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -23,6 +37,7 @@ export class App {
   readonly notifications = inject(NotificationsService);
   readonly session = inject(SessionService);
   readonly pwa = inject(PwaService);
+  private readonly themes = inject(ThemeService);
   private readonly router = inject(Router);
 
   private readonly url = toSignal(
@@ -36,12 +51,13 @@ export class App {
   /** Das Zahnrad für die Einstellungen erscheint nur auf der Profilseite. */
   readonly onProfile = computed(() => this.url().split(/[?#]/)[0] === '/profile');
 
+  /** Weihnachtsdeko vorerst nur für Admins, die sie in den Einstellungen eingeschaltet haben. */
+  readonly christmas = computed(() => this.session.isAdmin() && this.themes.christmas());
+
   constructor() {
     // Pop-ups für Benachrichtigungen und Fehler app-weit aktivieren
     inject(NotificationPopupsService);
     inject(AppErrorService);
-    // Gespeichertes Farbschema anwenden
-    inject(ThemeService);
     // Gerät für Push-Nachrichten dem angemeldeten Konto zuordnen
     inject(PushService);
     // Töne fürs Spiel mit dem ersten Tippen freischalten (Safari)
