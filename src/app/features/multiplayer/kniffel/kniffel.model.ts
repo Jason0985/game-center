@@ -1,6 +1,5 @@
 // Kniffel: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261022120000_kniffel.sql); hier wird nur gespiegelt, was der Block
-// als Vorschau zeigt.
+// (supabase/migrations/20261022120000_kniffel.sql); points spiegelt die Wertung (Tests).
 
 export interface KnPlayer {
   user_id: string;
@@ -59,7 +58,8 @@ export const LOWER = [6, 7, 8, 9, 10, 11, 12];
 export const KNIFFEL_RULES = [
   'Jeder hat eine Spalte auf dem Block mit 13 Feldern. Wer alle gefüllt hat, ist fertig; die höchste Summe gewinnt.',
   'Wer dran ist, würfelt bis zu dreimal. Würfel antippen hält sie fest, sie bleiben beim nächsten Wurf liegen.',
-  'Danach trägst du den Wurf in ein freies Feld ein (antippen, nochmal antippen). Passt nichts, streichst du ein Feld mit 0.',
+  'Danach trägst du den Wurf in ein freies Feld ein (antippen, nochmal antippen). Passt nichts, streichst du ein Feld mit 0. Wie viele Punkte das bringt, rechnest du selbst.',
+  'Die Summen bleiben bis zum Schluss verdeckt – am Ende wird für alle zusammengezählt.',
   'Einser bis Sechser: nur die Augen dieser Zahl zählen. Ab 63 Punkten oben gibt es 35 Bonus.',
   'Dreierpasch: drei gleiche Würfel – zählt alle Augen. Viererpasch: vier gleiche – zählt alle Augen.',
   'Full House: drei gleiche und zwei gleiche (z. B. 3-3-3-5-5) – 25 Punkte.',
@@ -105,7 +105,9 @@ export const filledCount = (scores: readonly (number | null)[]): number =>
   scores.filter((score) => score !== null).length;
 
 // Höchste Summe zuerst (gleich viel: gleicher Platz); Verlassene ans Ende ohne Platz
-export function rankPlayers(players: readonly KnPlayer[]): { player: KnPlayer; rank: number | null }[] {
+export function rankPlayers(
+  players: readonly KnPlayer[],
+): { player: KnPlayer; rank: number | null }[] {
   const active = players.filter((player) => player.state !== 'left');
   const sorted = [...active].sort((a, b) => b.total - a.total || a.seat - b.seat);
   return [
@@ -113,6 +115,8 @@ export function rankPlayers(players: readonly KnPlayer[]): { player: KnPlayer; r
       player,
       rank: sorted.findIndex((other) => other.total === player.total) + 1,
     })),
-    ...players.filter((player) => player.state === 'left').map((player) => ({ player, rank: null })),
+    ...players
+      .filter((player) => player.state === 'left')
+      .map((player) => ({ player, rank: null })),
   ];
 }

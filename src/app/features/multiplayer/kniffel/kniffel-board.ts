@@ -23,7 +23,6 @@ import {
   KNIFFEL_ROLLS,
   KnGame,
   LOWER,
-  points,
   rankPlayers,
   UPPER,
   upperSum,
@@ -60,9 +59,20 @@ const centerOf = (rect: DOMRect): Point => ({
 const shift = (from: Point, to: Point, dy = 0) => `${to.x - from.x}px ${to.y - from.y + dy}px`;
 const randomFace = () => 1 + Math.floor(Math.random() * 6);
 
+// Abrechnung am Ende (ms): erst kurz den letzten Eintrag sehen, dann zählen die Summen oben
+// hoch, der Bonus kommt dazu und zuletzt laufen die Gesamtsummen aller gleichzeitig hoch –
+// wer am meisten hat, zählt am längsten
+type Reveal = 'hidden' | 'upper' | 'bonus' | 'total' | 'done';
+const REVEAL_START_MS = 1200;
+const UPPER_COUNT_MS = 1400;
+const BONUS_MS = 1100;
+const TOTAL_COUNT_MS = 3600;
+
 // Spielansicht: oben der Kniffelblock (eine Spalte je Spieler), unten die fünf Würfel mit
 // Würfeln/Eintragen. Neue Würfe (roll_seq) sehen alle gleich: Würfel fliegen in den Becher,
 // er wird geschüttelt und auf den Block geworfen, dann rutschen sie zurück in die Reihe.
+// Ohne Rechenhilfe: der Block zeigt nur, welche Felder noch frei sind, nicht was der Wurf
+// brächte; die Summen bleiben bis zum Spielende verdeckt und werden dann nachgezählt.
 @Component({
   selector: 'app-kniffel-board',
   templateUrl: './kniffel-board.html',
@@ -142,11 +152,26 @@ export class KniffelBoard {
     () => this.myTurn() && this.game().rolls > 0 && this.rollsLeft() > 0 && !this.rolling(),
   );
 
+  // Abrechnung am Ende: welcher Schritt läuft und wie weit (ms seit Beginn des Schritts)
+  readonly reveal = signal<Reveal>('hidden');
+  private readonly revealAt = signal(0);
+  private readonly elapsed = signal(0);
+  readonly revealed = computed(() => this.reveal() === 'done');
+
   readonly columns = computed(() => {
     const game = this.game();
     const dice = this.settled();
+    const reveal = this.reveal();
+    const ms = this.elapsed();
+    // Alle zählen gleich schnell; der höchste Wert braucht die ganze Dauer
+    const upperMax = Math.max(1, ...game.players.map((p) => upperSum(p.scores)));
+    const totalMax = Math.max(1, ...game.players.map((p) => p.total));
+    const count = (value: number, max: number, duration: number) =>
+      Math.min(value, Math.floor((max * Math.min(ms, duration)) / duration));
     return game.players.map((player) => {
       const turn = !this.finished() && player.seat === game.turn_seat;
+      const upper = upperSum(player.scores);
+      const total = player.total;
       return {
         player,
         turn,
@@ -154,14 +179,30 @@ export class KniffelBoard {
         initial: player.name.trim().charAt(0).toUpperCase() || '?',
         color: AVATAR_COLORS[player.seat % AVATAR_COLORS.length],
         sums: {
-          upper: upperSum(player.scores),
-          bonus: bonusOf(player.scores) || '',
-          total: player.total,
+          upper:
+            reveal === 'hidden'
+              ? ''
+              : reveal === 'upper'
+                ? count(upper, upperMax, UPPER_COUNT_MS)
+                : upper,
+          bonus: reveal === 'hidden' || reveal === 'upper' ? '' : bonusOf(player.scores) || '–',
+          total:
+            reveal === 'done'
+              ? total
+              : reveal === 'total'
+                ? count(total, totalMax, TOTAL_COUNT_MS)
+                : '',
         },
-        // Was der liegende Wurf in den freien Feldern bringen würde
-        preview:
+        // Läuft die Summe gerade noch hoch?
+        counting: {
+          upper: reveal === 'upper' && count(upper, upperMax, UPPER_COUNT_MS) < upper,
+          bonus: false,
+          total: reveal === 'total' && count(total, totalMax, TOTAL_COUNT_MS) < total,
+        },
+        // Freie Felder, in die der liegende Wurf eingetragen werden kann (ohne Punkte)
+        open:
           turn && game.rolls > 0 && dice.length === 5
-            ? player.scores.map((score, i) => (score === null ? points(dice, i) : null))
+            ? player.scores.map((score) => score === null)
             : null,
       };
     });
@@ -169,6 +210,7 @@ export class KniffelBoard {
 
   readonly hint = computed(() => {
     const game = this.game();
+    if (this.finished()) return 'Abrechnung läuft …';
     if (!this.myTurn()) return `${this.activeName()} ist dran`;
     if (this.rolling()) return 'Die Würfel rollen …';
     if (game.rolls === 0) return 'Du bist dran – würfeln!';
@@ -179,13 +221,11 @@ export class KniffelBoard {
   readonly selectedLabel = computed(() => {
     const category = this.selected();
     if (category === null) return null;
-    const value = points(this.settled(), category);
-    const name = CATEGORIES[category].name;
-    return value ? `${name} eintragen · ${value}` : `${name} streichen`;
+    return `${CATEGORIES[category].name} eintragen`;
   });
 
   readonly winners = computed(() =>
-    this.finished() ? rankPlayers(this.game().players).filter((row) => row.rank === 1) : [],
+    this.revealed() ? rankPlayers(this.game().players).filter((row) => row.rank === 1) : [],
   );
   readonly winnerText = computed(() => {
     const names = this.winners().map((row) =>
@@ -201,6 +241,8 @@ export class KniffelBoard {
 
   private run = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
+  private revealTimers: ReturnType<typeof setTimeout>[] = [];
+  private frame = 0;
 
   constructor() {
     let seq: number | null = null;
@@ -235,7 +277,60 @@ export class KniffelBoard {
       });
     });
 
-    inject(DestroyRef).onDestroy(() => this.stop());
+    // Spielende: beim Laden eines beendeten Spiels gleich alles zeigen, live die Abrechnung
+    let wasFinished: boolean | null = null;
+    effect(() => {
+      const finished = this.finished();
+      const before = wasFinished;
+      wasFinished = finished;
+      untracked(() => {
+        if (!finished) this.setReveal('hidden');
+        else if (before === false && !reducedMotion()) this.playReveal();
+        else this.setReveal('done');
+      });
+    });
+
+    inject(DestroyRef).onDestroy(() => {
+      this.stop();
+      this.stopReveal();
+    });
+  }
+
+  private setReveal(step: Reveal): void {
+    this.stopReveal();
+    this.reveal.set(step);
+  }
+
+  private stopReveal(): void {
+    this.revealTimers.forEach(clearTimeout);
+    this.revealTimers = [];
+    cancelAnimationFrame(this.frame);
+  }
+
+  // Zeitleiste der Abrechnung; der Sekundenzeiger fürs Hochzählen läuft per Frame
+  private playReveal(): void {
+    this.setReveal('hidden');
+    const step = (at: number, next: Reveal) =>
+      this.revealTimers.push(
+        setTimeout(() => {
+          this.reveal.set(next);
+          this.revealAt.set(performance.now());
+          this.elapsed.set(0);
+        }, at),
+      );
+    let t = REVEAL_START_MS;
+    step(t, 'upper');
+    t += UPPER_COUNT_MS + 300;
+    step(t, 'bonus');
+    t += BONUS_MS;
+    step(t, 'total');
+    t += TOTAL_COUNT_MS + 400;
+    step(t, 'done');
+    const tick = () => {
+      this.elapsed.set(performance.now() - this.revealAt());
+      if (this.reveal() !== 'done') this.frame = requestAnimationFrame(tick);
+    };
+    this.frame = requestAnimationFrame(tick);
   }
 
   toggle(i: number): void {

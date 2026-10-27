@@ -72,7 +72,8 @@ export interface N6Game {
 }
 
 export const NIMM6_HAND = 10;
-// Zeit zum Wählen bzw. für die Reihenwahl; danach handelt der Tisch
+// Keine Zugzeit; erst nach so langer Wartezeit kann der Host überspringen (der Tisch legt
+// dann eine zufällige Karte bzw. nimmt die billigste Reihe)
 export const NIMM6_TURN_S = 30;
 // Nach dem letzten Anlegen der Runde noch so lange den Tisch zeigen
 export const NIMM6_RESULTS_PAUSE_MS = 2000;
@@ -89,7 +90,7 @@ export const NIMM6_RULES = [
   'Wäre sie dort die 6. Karte, nimmst du die 5 Karten der Reihe als Hornochsen; deine Karte beginnt die Reihe neu.',
   'Ist deine Karte kleiner als jedes Reihenende, wählst du eine Reihe, nimmst sie und beginnst sie mit deiner Karte neu.',
   'Nach 10 Karten endet die Runde. Hat dann jemand 66 Hornochsen oder mehr, endet das Spiel – es gewinnt, wer die wenigsten hat.',
-  'Nach 30 s ohne Wahl legt der Tisch für dich eine zufällige Karte bzw. nimmt die billigste Reihe.',
+  'Es gibt keine Zugzeit. Wartet der Tisch lange auf dich, kann der Host dich überspringen: Dann wird eine zufällige Karte gelegt bzw. die billigste Reihe genommen.',
 ];
 
 // Hornochse (Kopf mit Hörnern), viewBox 0 0 24 24

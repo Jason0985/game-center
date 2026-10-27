@@ -31,10 +31,10 @@ import {
 } from './nimm6.model';
 
 // Lädt das Spiel einer gestarteten Lobby, hält es per Realtime aktuell und schaltet zwischen
-// Spieltisch, Rundenübersicht und Endstand um. Zwei Uhren laufen bei allen am Tisch: nach
-// NIMM6_TURN_S (plus der Zeit fürs Nachspielen) legt der Tisch für Trödler, nach
-// NIMM6_NEXT_ROUND_S startet die nächste Runde (die Datenbank prüft beides, doppelte Aufrufe
-// tun nichts).
+// Spieltisch, Rundenübersicht und Endstand um. Keine Zugzeit: jeder lässt sich so viel Zeit,
+// wie er will; nur der Host kann nach NIMM6_TURN_S (plus der Zeit fürs Nachspielen)
+// überspringen. Nach NIMM6_NEXT_ROUND_S startet die nächste Runde (die Datenbank prüft beides,
+// doppelte Aufrufe tun nichts).
 @Component({
   selector: 'app-nimm6-game',
   imports: [GameStage, Nimm6Board, Nimm6Round, Nimm6Final],
@@ -69,6 +69,8 @@ export class Nimm6GameView {
   readonly busy = this.table.busy;
   readonly playerCount = this.table.playerCount;
   readonly endGame = this.table.endGame;
+  readonly skip = this.table.skip;
+  readonly waitingClock = this.table.waitingClock;
   readonly backToLobby = this.table.backToLobby;
   readonly rules = { title: 'Nimm 6 – Regeln', rules: NIMM6_RULES };
 
@@ -91,14 +93,15 @@ export class Nimm6GameView {
     return `Runde ${game.round_no} · Zug ${game.turn_no} von ${NIMM6_HAND}`;
   });
 
-  // Zugzeit: wählen bzw. Reihe nehmen, plus die Zeit fürs Nachspielen des Anlegens
+  // Wartezeit bis zum Überspringen: wählen bzw. Reihe nehmen, plus die Zeit fürs Nachspielen
+  // des Anlegens (so prüft es auch die Datenbank)
   private readonly timedTurn = computed(() => {
     const game = this.game();
     return game?.status === 'playing' && (game.phase === 'choose' || game.phase === 'take')
       ? game.waiting_since
       : null;
   });
-  // Pro Zug fest: wählt später jemand, ändern sich die last_events, die Uhr aber nicht
+  // Pro Zug fest: wählt später jemand, ändern sich die last_events, die Wartezeit aber nicht
   private readonly turnBudget = linkedSignal({
     source: this.timedTurn,
     computation: () => {
@@ -106,11 +109,14 @@ export class Nimm6GameView {
       return NIMM6_TURN_S + (game ? Math.ceil(replayMs(game) / 1000) : 0);
     },
   });
-  readonly secondsLeft = computed(() =>
-    this.timedTurn()
-      ? Math.max(0, Math.min(NIMM6_TURN_S, this.turnBudget() - this.table.waitingSeconds()))
-      : null,
-  );
+  // Host-Menü: Fehlende beim Wählen bzw. wer die Reihe nehmen muss
+  readonly skipName = computed(() => {
+    const game = this.game();
+    if (!game || !this.isHost() || !this.timedTurn()) return null;
+    if (this.table.waitingSeconds() < this.turnBudget()) return null;
+    if (game.phase === 'choose') return 'Fehlende';
+    return game.players.find((player) => player.seat === game.take_seat)?.name ?? null;
+  });
   private readonly roundShown = computed(() =>
     this.view() === 'round' ? Math.floor((this.table.now() - this.viewSince()) / 1000) : null,
   );
@@ -155,16 +161,6 @@ export class Nimm6GameView {
       const delay = replayMs(untracked(this.game)!) + NIMM6_RESULTS_PAUSE_MS;
       const timer = setTimeout(show, delay);
       onCleanup(() => clearTimeout(timer));
-    });
-
-    // Einmal pro Zug: nach Ablauf legt der Tisch für die, die noch fehlen
-    let skipped: string | null = null;
-    effect(() => {
-      const turn = this.timedTurn();
-      if (!turn || skipped === turn || this.table.waitingSeconds() < this.turnBudget()) return;
-      skipped = turn;
-      const game = untracked(this.game)!;
-      void this.silent(() => this.nimm6.skip(game));
     });
 
     // Rundenübersicht: nach Ablauf startet die nächste Runde

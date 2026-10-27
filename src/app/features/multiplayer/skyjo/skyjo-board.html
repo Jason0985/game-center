@@ -85,7 +85,6 @@
     class="opp"
     [player]="view.player"
     [cells]="view.cells"
-    [sum]="view.sum"
     [status]="view.status"
     [turn]="view.turn"
     [tag]="view.tag"
@@ -246,7 +245,7 @@
             <span class="score-bar" aria-hidden="true"
               ><span class="score-fill" [style.width.%]="s.bar"></span
             ></span>
-          } @else if (layout() === 'quer') {
+          } @else if (layout() === 'quer' && s.open !== null) {
             <span class="score-open">{{ s.open }} offen</span>
           }
           <span class="score-total">{{ s.total }}</span>
