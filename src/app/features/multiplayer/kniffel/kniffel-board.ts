@@ -75,8 +75,9 @@ const TOTAL_COUNT_MS = 3600;
 // Spielansicht: oben der Kniffelblock (eine Spalte je Spieler), unten die fünf Würfel mit
 // Würfeln/Eintragen. Neue Würfe (roll_seq) sehen alle gleich: Würfel fliegen in den Becher,
 // er wird geschüttelt und auf den Block geworfen, dann rutschen sie zurück in die Reihe.
-// Der Block zeigt in den freien Feldern, was der liegende Wurf brächte, und die laufenden
-// Summen; Streichen (0 Punkte) muss man bestätigen. Am Spielende wird für alle nachgezählt.
+// Der Block zeigt in den freien Feldern, was der liegende Wurf brächte; Streichen (0 Punkte)
+// muss man bestätigen. Die Summen bleiben bis zum Spielende verdeckt und werden dann
+// für alle nachgezählt.
 @Component({
   selector: 'app-kniffel-board',
   templateUrl: './kniffel-board.html',
@@ -174,10 +175,8 @@ export class KniffelBoard {
     const totalMax = Math.max(1, ...game.players.map((p) => p.total));
     const count = (value: number, max: number, duration: number) =>
       Math.min(value, Math.floor((max * Math.min(ms, duration)) / duration));
-    // Während des Spiels stehen die Summen offen da; die Abrechnung zählt erst am Ende
-    const live = !this.finished();
     return game.players.map((player) => {
-      const turn = live && player.seat === game.turn_seat;
+      const turn = !this.finished() && player.seat === game.turn_seat;
       const upper = upperSum(player.scores);
       const total = player.total;
       return {
@@ -186,23 +185,21 @@ export class KniffelBoard {
         mine: player.seat === this.mySeat(),
         initial: player.name.trim().charAt(0).toUpperCase() || '?',
         color: AVATAR_COLORS[player.seat % AVATAR_COLORS.length],
-        sums: live
-          ? { upper, bonus: bonusOf(player.scores) || '', total }
-          : {
-              upper:
-                reveal === 'hidden'
-                  ? ''
-                  : reveal === 'upper'
-                    ? count(upper, upperMax, UPPER_COUNT_MS)
-                    : upper,
-              bonus: reveal === 'hidden' || reveal === 'upper' ? '' : bonusOf(player.scores) || '–',
-              total:
-                reveal === 'done'
-                  ? total
-                  : reveal === 'total'
-                    ? count(total, totalMax, TOTAL_COUNT_MS)
-                    : '',
-            },
+        sums: {
+          upper:
+            reveal === 'hidden'
+              ? ''
+              : reveal === 'upper'
+                ? count(upper, upperMax, UPPER_COUNT_MS)
+                : upper,
+          bonus: reveal === 'hidden' || reveal === 'upper' ? '' : bonusOf(player.scores) || '–',
+          total:
+            reveal === 'done'
+              ? total
+              : reveal === 'total'
+                ? count(total, totalMax, TOTAL_COUNT_MS)
+                : '',
+        },
         // Läuft die Summe gerade noch hoch?
         counting: {
           upper: reveal === 'upper' && count(upper, upperMax, UPPER_COUNT_MS) < upper,

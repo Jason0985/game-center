@@ -48,15 +48,15 @@ describe('KniffelBoard', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('shows the points of the roll in the free fields and the running sums', async () => {
+  it('shows the points of the roll in the free fields but hides the sums', async () => {
     await render(makeGame());
     const picks = [...el().querySelectorAll<HTMLButtonElement>('button.pick')];
     expect(picks.length).toBe(12);
     // 3-3-3-5-5: Full House 25, Dreierpasch 19
     expect(picks[7].textContent!.trim()).toBe('25');
     expect(picks[5].textContent!.trim()).toBe('19');
-    expect(sums(0)).toEqual(['3', '4']);
-    expect(sums(2)).toEqual(['3', '4']);
+    expect(sums(0)).toEqual(['', '']);
+    expect(sums(2)).toEqual(['', '']);
 
     picks[7].click();
     fixture.detectChanges();
