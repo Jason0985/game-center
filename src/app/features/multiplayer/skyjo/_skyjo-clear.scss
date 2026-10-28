@@ -1,0 +1,164 @@
+// Spalte abräumen (eigenes Raster und Mitspieler): die drei Karten leuchten nacheinander auf,
+// schieben sich auf die mittlere zusammen und zerplatzen in goldene Funken. Die Zelle braucht
+// --row (0–2); $w/$gap sind Kartenbreite und Rasterabstand. Dauer = SKYJO_CLEAR_MS.
+$clear-ms: 1700ms;
+
+@mixin clear-cell($w, $gap) {
+  // Weg bis zur mittleren Karte (oben nach unten, unten nach oben)
+  --to: calc((1 - var(--row, 1)) * (#{$w} * 1.42 + #{$gap}));
+  position: relative;
+  z-index: calc(3 - var(--row, 1) * var(--row, 1) + 2 * var(--row, 1) - 1);
+  border-radius: calc(#{$w} * 0.15);
+  animation:
+    sk-clear-move $clear-ms cubic-bezier(0.5, 0, 0.3, 1) both,
+    sk-clear-wiggle 380ms ease-out calc(var(--row, 1) * 110ms) both,
+    sk-clear-glow $clear-ms ease-out calc(var(--row, 1) * 110ms) both;
+
+  // Die Karte verpufft; Funken und Welle hängen an der Zelle und bleiben sichtbar
+  > app-skyjo-card {
+    animation: sk-clear-burst $clear-ms ease-in both;
+  }
+
+  // Nur die mittlere Karte: Schockwelle und Funken, wenn die drei aufeinandertreffen
+  &.mid::before,
+  &.mid::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  &.mid::before {
+    inset: -2px;
+    border: 3px solid var(--table-gold);
+    border-radius: inherit;
+    opacity: 0;
+    animation: sk-clear-ring $clear-ms ease-out both;
+  }
+
+  &.mid::after {
+    top: 50%;
+    left: 50%;
+    width: calc(#{$w} * 0.12);
+    height: calc(#{$w} * 0.12);
+    margin: calc(#{$w} * -0.06);
+    border-radius: 50%;
+    background: #fff6d6;
+    box-shadow:
+      0 calc(#{$w} * -1.1) 0 1px var(--table-gold),
+      calc(#{$w} * 0.8) calc(#{$w} * -0.8) 0 0 #fff6d6,
+      calc(#{$w} * 1.1) 0 0 1px var(--table-gold),
+      calc(#{$w} * 0.8) calc(#{$w} * 0.8) 0 0 #fff6d6,
+      0 calc(#{$w} * 1.1) 0 1px var(--table-gold),
+      calc(#{$w} * -0.8) calc(#{$w} * 0.8) 0 0 #fff6d6,
+      calc(#{$w} * -1.1) 0 0 1px var(--table-gold),
+      calc(#{$w} * -0.8) calc(#{$w} * -0.8) 0 0 #fff6d6,
+      calc(#{$w} * 0.45) calc(#{$w} * -1.25) 0 0 var(--table-gold),
+      calc(#{$w} * -0.45) calc(#{$w} * 1.25) 0 0 var(--table-gold),
+      calc(#{$w} * 1.25) calc(#{$w} * 0.45) 0 0 var(--table-gold),
+      calc(#{$w} * -1.25) calc(#{$w} * -0.45) 0 0 var(--table-gold);
+    opacity: 0;
+    animation: sk-clear-sparks $clear-ms ease-out both;
+  }
+}
+
+// Kurz anheben, warten, dann zur Mitte schieben (zusammen ab 45 %, aufeinander bei 72 %)
+@keyframes sk-clear-move {
+  0% {
+    translate: 0 0;
+  }
+  20%,
+  45% {
+    translate: 0 -8%;
+  }
+  72%,
+  100% {
+    translate: 0 var(--to);
+  }
+}
+
+@keyframes sk-clear-wiggle {
+  0% {
+    rotate: 0deg;
+  }
+  35% {
+    rotate: -7deg;
+  }
+  70% {
+    rotate: 4deg;
+  }
+  100% {
+    rotate: -1.5deg;
+  }
+}
+
+@keyframes sk-clear-glow {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  12%,
+  70% {
+    box-shadow:
+      0 0 0 2px var(--table-gold),
+      0 0 22px 2px color-mix(in srgb, var(--table-gold) 60%, transparent);
+  }
+  78% {
+    box-shadow:
+      0 0 0 3px #fff6d6,
+      0 0 36px 8px color-mix(in srgb, var(--table-gold) 80%, transparent);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 transparent,
+      0 0 48px 14px transparent;
+  }
+}
+
+// Beim Aufprall hell aufblitzen, aufblähen und verpuffen
+@keyframes sk-clear-burst {
+  0%,
+  70% {
+    scale: 1;
+    opacity: 1;
+    filter: brightness(1);
+  }
+  78% {
+    scale: 1.18;
+    opacity: 1;
+    filter: brightness(1.9) saturate(1.4);
+  }
+  100% {
+    scale: 0.2;
+    opacity: 0;
+    filter: brightness(2.4);
+  }
+}
+
+@keyframes sk-clear-ring {
+  0%,
+  72% {
+    opacity: 0;
+    scale: 0.8;
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 2.4;
+  }
+}
+
+@keyframes sk-clear-sparks {
+  0%,
+  72% {
+    opacity: 0;
+    scale: 0.1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.5;
+  }
+}

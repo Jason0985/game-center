@@ -1,0 +1,175 @@
+@use 'skyjo-clear' as clear;
+
+// Schild eines Mitspielers: Kopfzeile, Raster 4 × 3 aus Mini-Karten, optional ein Hinweis.
+// Der Tisch setzt --mini-w (Kartenbreite) und --mini-gap (geerbt, daher hier nur als
+// Rückfallwert), --avatar, --name-size, --plate-pad am Schild.
+:host {
+  --avatar: 24px;
+  --name-size: 13px;
+  --sum-size: 12px;
+  --plate-pad: 8px 6px;
+  --plate-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--plate-pad);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--plate-radius);
+  background: var(--color-surface);
+  box-shadow: var(--table-seat-shadow);
+  color: var(--color-text);
+  transition:
+    border-color 200ms,
+    box-shadow 200ms;
+}
+
+// Am Zug: weißer Rand
+:host(.is-turn) {
+  border: 2px solid var(--table-turn);
+}
+
+// Hat als Erster alles aufgedeckt (letzte Runde)
+:host(.is-ender) {
+  border: 1.5px solid var(--color-warning);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-warning) 18%, transparent),
+    var(--table-seat-shadow);
+}
+
+:host([data-state='left']) {
+  opacity: 0.5;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
+
+.avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar);
+  height: var(--avatar);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: calc(var(--avatar) * 0.5);
+  font-weight: 700;
+}
+
+.avatar--left {
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+}
+
+.avatar--left .material-symbols-rounded {
+  font-size: calc(var(--avatar) * 0.6);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--name-size);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Abwesend-Hinweis hinter dem Namen
+.gone-text {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--sum-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-segment-active);
+  color: #ffffff;
+}
+
+.status.on {
+  background: var(--color-success-light);
+}
+
+.status .material-symbols-rounded {
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, var(--mini-w, 18px));
+  gap: var(--mini-gap, 3px);
+}
+
+.cell {
+  display: block;
+  border-radius: calc(var(--mini-w, 18px) * 0.15);
+  transition:
+    transform 200ms,
+    box-shadow 200ms;
+}
+
+.mini {
+  --card-w: var(--mini-w, 18px);
+}
+
+.slot {
+  display: block;
+  width: var(--mini-w, 18px);
+  height: calc(var(--mini-w, 18px) * 1.42);
+  box-sizing: border-box;
+  border: 1px dashed var(--table-slot-border);
+  border-radius: calc(var(--mini-w, 18px) * 0.15);
+}
+
+// Gleich wird abgeräumt
+.cell.glow {
+  @include clear.clear-cell(var(--mini-w, 18px), var(--mini-gap, 3px));
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tag[data-tone='gold'] {
+  color: var(--color-warning);
+}
+
+.tag[data-tone='done'] {
+  color: var(--color-success-light);
+}
+
+.tag[data-tone='muted'] {
+  color: var(--color-text-subtle);
+}
+
+.material-symbols-rounded.fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  .cell {
+    transition: none;
+  }
+}

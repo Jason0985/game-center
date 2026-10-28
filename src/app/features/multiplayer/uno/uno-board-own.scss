@@ -1,0 +1,215 @@
+// Eigene Hand und Uno-Knopf. Zweites Stylesheet von UnoBoard (Budget pro Datei).
+// Handy/iPad: Bedienfeld mit Reiter (table/_arc-table.scss), Uno-Knopf rechts darüber;
+// Laptop: Hand auf dem Tisch, Knopf rechts daneben, Namensschild darunter.
+// --hand-w/-h/-max setzt UnoBoard aus HAND_SPEC.
+:host {
+  --uno: 54px;
+  --uno-font: 14px;
+}
+
+:host([data-layout='hoch']) {
+  --uno: 68px;
+  --uno-font: 18px;
+}
+
+:host([data-layout='quer']) {
+  --uno: 64px;
+  --uno-font: 17px;
+}
+
+:host([data-layout='laptop']) {
+  --uno: 76px;
+  --uno-font: 20px;
+}
+
+.mine {
+  margin-top: -14px;
+  padding: 0 12px;
+}
+
+:host([data-layout='hoch']) .mine,
+:host([data-layout='quer']) .mine {
+  padding: 0 24px;
+}
+
+.own-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 130px;
+}
+
+:host(:not([data-layout='phone'])) .own-row {
+  justify-content: center;
+}
+
+:host([data-layout='hoch']) .own-row {
+  min-height: 178px;
+}
+
+:host([data-layout='quer']) .own-row {
+  min-height: 140px;
+}
+
+// Laptop: auf dem Tisch, Namensschild mittig auf der Unterkante
+:host([data-layout='laptop']) .own-row {
+  position: absolute;
+  top: 88%;
+  left: 50%;
+  z-index: 4;
+  min-height: 0;
+  transform: translate(-50%, -50%);
+}
+
+.own-pill {
+  position: absolute;
+  top: calc(100% + 62px);
+  left: 50%;
+  z-index: 6;
+  --ring: 44px;
+  --avatar: 38px;
+  --avatar-font: 17px;
+  --name-size: 16px;
+  --you-size: 13px;
+  transform: translate(-50%, -50%);
+}
+
+// Hand: Bogen mit Überlappung; bei vielen Karten seitlich wischen
+.hand-wrap {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hand-scroll {
+  max-width: var(--hand-max);
+  padding-bottom: 20px;
+}
+
+.hand-scroll.scrolls {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.hand {
+  display: flex;
+  align-items: flex-end;
+  width: max-content;
+  padding: 14px 8px 0;
+}
+
+.hand-card {
+  position: relative;
+  display: flex;
+  flex: none;
+  width: var(--hand-w);
+  height: var(--hand-h);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform-origin: 50% 100%;
+  transition: transform 120ms ease-out;
+}
+
+.hand-card + .hand-card {
+  margin-left: calc(var(--overlap) * -1);
+}
+
+.hand-card:disabled {
+  cursor: default;
+}
+
+.hand-card app-uno-card {
+  --card-w: var(--hand-w);
+  --card-h: var(--hand-h);
+}
+
+// Am Zug: was nicht passt, ist abgedunkelt
+.hand-card.dim app-uno-card {
+  opacity: 0.5;
+}
+
+// Farbwahl/7-Tausch offen: angetippte Karte im Zielring
+.hand-card.picked app-uno-card {
+  box-shadow:
+    0 0 0 3px var(--table-target),
+    0 12px 22px rgba(200, 56, 109, 0.45);
+}
+
+.more {
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  box-shadow: var(--table-seat-shadow);
+  color: var(--color-text);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+// Uno-Knopf: gold und rund, blass und gesperrt, bis Rufen sinnvoll ist
+.uno {
+  position: absolute;
+  top: -38px;
+  right: 14px;
+  z-index: 3;
+  width: var(--uno);
+  height: var(--uno);
+  padding: 0;
+  border: 3px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--table-gold);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  color: #2a1d00;
+  font: 900 var(--uno-font) var(--font-sans);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.uno:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.uno.lit {
+  box-shadow:
+    0 0 0 5px rgba(245, 200, 75, 0.18),
+    0 0 26px var(--table-gold),
+    0 6px 16px rgba(0, 0, 0, 0.35);
+  animation: uno-pulse 600ms ease-out;
+}
+
+@keyframes uno-pulse {
+  40% {
+    scale: 1.12;
+  }
+}
+
+:host([data-layout='hoch']) .uno {
+  top: -40px;
+  right: 28px;
+}
+
+:host([data-layout='quer']) .uno {
+  top: -34px;
+  right: 28px;
+}
+
+:host([data-layout='laptop']) .uno {
+  top: 50%;
+  right: auto;
+  left: calc(100% + 24px);
+  transform: translateY(-50%);
+}

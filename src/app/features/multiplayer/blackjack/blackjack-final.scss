@@ -1,0 +1,40 @@
+@use '../table/final-base';
+@use 'blackjack-tones';
+
+// Blackjack-Spalten der Rangliste: Guthaben und Änderung seit dem Start
+.money {
+  margin: 0;
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sub[data-tone],
+.delta {
+  color: var(--tone-fg);
+  font-weight: 700;
+}
+
+.sub[data-tone='muted'],
+.delta[data-tone='muted'] {
+  color: var(--color-text-muted);
+}
+
+.money-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.balance {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.delta {
+  font-size: 12px;
+}

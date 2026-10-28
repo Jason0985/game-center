@@ -1,0 +1,143 @@
+<div class="ui-page-root">
+  <div class="ui-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Sammlung
+      </a>
+      <h1 class="ui-large-title">Tischtennis</h1>
+      <p class="ui-page-lead">Best of {{ match().bestOf }} · Seite antippen für einen Punkt</p>
+    </header>
+
+    @if (state().winner !== null) {
+      @let winner = state().winner!;
+      <section class="ui-group tt-winner" aria-live="polite">
+        <mat-icon aria-hidden="true">emoji_events</mat-icon>
+        <h2>{{ match().names[winner] }} gewinnt</h2>
+        <p class="tt-winner-score">
+          {{ state().setsWon[winner] }}:{{ state().setsWon[1 - winner] }} Sätze
+        </p>
+        <p class="tt-winner-sets">
+          @for (set of state().sets; track $index; let last = $last) {
+            {{ set[0] }}:{{ set[1] }}{{ last ? '' : ' · ' }}
+          }
+        </p>
+        <button type="button" class="ui-btn" (click)="rematch()">
+          <mat-icon aria-hidden="true">replay</mat-icon>Revanche
+        </button>
+      </section>
+    }
+
+    <div class="tt-board">
+      @for (side of sides(); track side) {
+        <button
+          type="button"
+          class="tt-side"
+          [class.tt-side--b]="side === 1"
+          [class.tt-side--won]="state().winner === side"
+          [disabled]="state().winner !== null"
+          [attr.aria-label]="
+            'Punkt für ' + match().names[side] + ', steht ' + state().current[side]
+          "
+          (click)="point(side)"
+        >
+          <span class="tt-name">{{ match().names[side] }}</span>
+          <span class="tt-score">{{ state().current[side] }}</span>
+          <span class="tt-sets" aria-hidden="true">
+            @for (pip of pips(); track $index) {
+              <span class="tt-pip" [class.tt-pip--won]="$index < state().setsWon[side]"></span>
+            }
+          </span>
+          <span
+            class="tt-serve"
+            [class.tt-serve--on]="state().server === side && state().winner === null"
+          >
+            <span class="tt-ball" aria-hidden="true"></span>Aufschlag
+          </span>
+        </button>
+      }
+    </div>
+
+    @if (state().sets.length) {
+      <p class="tt-history">
+        <span>Sätze</span>
+        @for (set of state().sets; track $index) {
+          <span class="tt-chip">{{ set[0] }}:{{ set[1] }}</span>
+        }
+      </p>
+    }
+
+    <div class="tt-actions">
+      <button
+        type="button"
+        class="ui-btn ui-btn--secondary"
+        [disabled]="!started()"
+        (click)="undo()"
+      >
+        <mat-icon aria-hidden="true">undo</mat-icon>Zurück
+      </button>
+      <button type="button" class="ui-btn ui-btn--secondary" (click)="swapped.set(!swapped())">
+        <mat-icon aria-hidden="true">swap_horiz</mat-icon>Seiten
+      </button>
+      <button
+        type="button"
+        class="ui-btn ui-btn--secondary"
+        [disabled]="!started()"
+        (click)="rematch()"
+      >
+        <mat-icon aria-hidden="true">restart_alt</mat-icon>Neu
+      </button>
+    </div>
+
+    <section class="ui-section" aria-labelledby="tt-settings-title">
+      <h2 id="tt-settings-title" class="ui-section-title">Match</h2>
+      <div class="ui-group">
+        @for (side of [0, 1]; track side) {
+          <label class="ui-row tt-field">
+            <span class="ui-row-title">Spieler {{ side + 1 }}</span>
+            <input
+              type="text"
+              maxlength="24"
+              autocomplete="off"
+              [value]="match().names[side]"
+              (change)="rename($any(side), $any($event.target).value)"
+            />
+          </label>
+        }
+        <div class="ui-row tt-field">
+          <span class="ui-row-title" id="tt-best-of">Sätze</span>
+          <div class="ui-segmented" role="group" aria-labelledby="tt-best-of">
+            @for (option of bestOfOptions; track option) {
+              <button
+                type="button"
+                [attr.aria-pressed]="match().bestOf === option"
+                [disabled]="started()"
+                (click)="setBestOf(option)"
+              >
+                Bo{{ option }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="ui-row tt-field">
+          <span class="ui-row-title" id="tt-first-serve">Erster Aufschlag</span>
+          <div class="ui-segmented" role="group" aria-labelledby="tt-first-serve">
+            @for (side of [0, 1]; track side) {
+              <button
+                type="button"
+                [attr.aria-pressed]="match().firstServer === side"
+                [disabled]="started()"
+                (click)="setFirstServer($any(side))"
+              >
+                {{ match().names[side] }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+      <p class="ui-section-footer">
+        Satz bis 11, mit 2 Punkten Vorsprung. Aufschlag wechselt alle 2 Punkte, ab 10:10 nach jedem
+        Punkt.
+      </p>
+    </section>
+  </div>
+</div>

@@ -1,9 +1,31 @@
-import { ErrorHandler, Injectable, Injector, inject } from '@angular/core';
+import { ErrorHandler, Injectable, Injector, inject, isDevMode } from '@angular/core';
+import { version } from '../../../package.json';
+import { supabase } from '../supabase.client';
 import { NotificationsService } from './notifications.service';
 import { describeSupabaseError } from './supabase-errors';
 import { ToastService } from './toast.service';
 
 const DEFAULT_TITLE = 'Das hat nicht geklappt';
+
+// ponytail: pro Seitenaufruf jeder Fehler nur einmal, reicht gegen Schleifen
+const storedErrors = new Set<string>();
+
+// Für die Fehler-Überwachung der Admins (client_errors); schlägt das fehl, bleibt es bei der
+// Konsole. Nur im Live-Build, nicht lokal.
+export function logClientError(message: string, stack: string | null = null): void {
+  if (isDevMode() || storedErrors.has(message)) return;
+  storedErrors.add(message);
+  supabase
+    .from('client_errors')
+    .insert({
+      message: message.slice(0, 1000),
+      stack: stack?.slice(0, 8000) ?? null,
+      url: location.href.slice(0, 500),
+      user_agent: navigator.userAgent.slice(0, 500),
+      app_version: version,
+    })
+    .then(({ error }) => error && console.error('Fehler nicht gespeichert.', error));
+}
 const DUPLICATE_WINDOW_MS = 5000;
 
 export interface ReportOptions {
@@ -45,6 +67,7 @@ export class AppErrorHandler implements ErrorHandler {
 
   handleError(error: unknown): void {
     console.error(error);
+    this.store(error);
 
     // Außerhalb der laufenden Change Detection melden
     setTimeout(() => {
@@ -56,6 +79,15 @@ export class AppErrorHandler implements ErrorHandler {
         console.error('Fehler konnte nicht gemeldet werden.', reportError);
       }
     });
+  }
+
+  private store(error: unknown): void {
+    const cause = (error as { rejection?: unknown })?.rejection ?? error;
+    const message =
+      cause instanceof Error
+        ? `${cause.name}: ${cause.message}`
+        : String((cause as { message?: unknown })?.message ?? cause);
+    logClientError(message, cause instanceof Error ? (cause.stack ?? null) : null);
   }
 
   private describe(error: unknown): string {

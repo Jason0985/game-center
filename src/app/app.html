@@ -1,15 +1,24 @@
 <div class="app-shell">
-  <header class="top-bar">
-    <span class="top-bar-title">
-      <img src="game-center-logo.png" alt="" aria-hidden="true" />
-      Game Center Beta
-    </span>
+  @if (christmas()) {
+    <app-christmas-backdrop />
+  }
+  <header class="top-bar" [class.top-bar--scrolled]="scrolled()">
+    <a class="top-bar-title" routerLink="/" aria-label="Game Center Beta, zur Startseite">
+      <img src="icons/app-icon.svg" alt="" aria-hidden="true" />
+      Game Center <span class="top-bar-beta">Beta</span>
+    </a>
 
     <div class="header-actions">
-      <button
-        mat-icon-button
-        class="header-icon-button notification-button"
+      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen -->
+      @if (onProfile()) {
+        <a class="header-icon-button" routerLink="/settings" aria-label="Einstellungen">
+          <mat-icon aria-hidden="true">settings</mat-icon>
+        </a>
+      }
+      <a
+        class="header-icon-button"
         routerLink="/notifications"
+        routerLinkActive="header-icon-button--active"
         [attr.aria-label]="
           notifications.unreadCount()
             ? 'Benachrichtigungen, ' + notifications.unreadCount() + ' neu'
@@ -20,40 +29,59 @@
         @if (notifications.unreadCount(); as count) {
           <span class="notification-badge" aria-hidden="true">{{ count > 9 ? '9+' : count }}</span>
         }
-      </button>
-      <button
-        mat-icon-button
-        class="header-icon-button"
-        routerLink="/settings"
-        aria-label="Einstellungen"
-      >
-        <mat-icon aria-hidden="true">settings</mat-icon>
-      </button>
+      </a>
     </div>
   </header>
+  @if (christmas()) {
+    <app-christmas-lights />
+  }
 
   <app-toast-host />
+
+  @if (pwa.updateReady()) {
+    <div class="app-banner" role="status">
+      <mat-icon aria-hidden="true">system_update</mat-icon>
+      <span class="app-banner-text">Neue Version verfügbar</span>
+      <button type="button" class="app-banner-action" (click)="pwa.reload()">Neu laden</button>
+    </div>
+  }
+  @if (!pwa.online()) {
+    <div class="app-banner app-banner--offline" role="status">
+      <mat-icon aria-hidden="true">cloud_off</mat-icon>
+      <span class="app-banner-text">
+        Du bist offline. Lobbys, Freunde und Statistik brauchen Internet – Paddle Tabelle und
+        Ankunftsplaner (Auto) gehen weiter.
+      </span>
+    </div>
+  }
 
   <main>
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="bottom-nav" aria-label="Hauptnavigation">
+  <nav class="bottom-nav" aria-label="Hauptnavigation" [style.--tab]="tabIndex()">
+    <span class="bottom-nav-pill" aria-hidden="true"></span>
+    @if (christmas()) {
+      <app-christmas-snowbank />
+    }
     <a
       class="bottom-nav-link"
       routerLink="/"
+      [class.active]="tabIndex() === 0"
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
-      aria-label="Home"
+      ariaCurrentWhenActive="page"
     >
       <mat-icon aria-hidden="true">home</mat-icon>
       <span>Home</span>
     </a>
+    <!-- Für alle: Ohne Konto tritt man dort als Gast mit dem Lobby-Code bei -->
     <a
       class="bottom-nav-link"
       routerLink="/multiplayer"
+      [class.active]="tabIndex() === 1"
       routerLinkActive="active"
-      aria-label="Multiplayer"
+      ariaCurrentWhenActive="page"
     >
       <mat-icon aria-hidden="true">groups</mat-icon>
       <span>Multiplayer</span>
@@ -61,13 +89,20 @@
     <a
       class="bottom-nav-link"
       routerLink="/collection"
+      [class.active]="tabIndex() === 2"
       routerLinkActive="active"
-      aria-label="Sammlung"
+      ariaCurrentWhenActive="page"
     >
       <mat-icon aria-hidden="true">apps</mat-icon>
       <span>Sammlung</span>
     </a>
-    <a class="bottom-nav-link" routerLink="/profile" routerLinkActive="active" aria-label="Profil">
+    <a
+      class="bottom-nav-link"
+      routerLink="/profile"
+      [class.active]="tabIndex() === 3"
+      routerLinkActive="active"
+      ariaCurrentWhenActive="page"
+    >
       <mat-icon aria-hidden="true">person</mat-icon>
       <span>Profil</span>
     </a>

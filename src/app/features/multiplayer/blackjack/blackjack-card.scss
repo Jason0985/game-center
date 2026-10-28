@@ -1,0 +1,92 @@
+@use '../table/card-base';
+
+// Blackjack-Flächen (Karten.dc), in allen Themes gleich; Maße wachsen mit --card-w
+// (Karte 64 × 90: Radius 8, Index 16 mit Farbe 11, Mitte 28, Bildbuchstabe 24)
+:host {
+  --face: #f6f4ef;
+  --ink: #1a1c22;
+  display: block;
+  border-color: rgba(0, 0, 0, 0.18);
+  border-radius: calc(var(--card-w) * 0.125);
+  letter-spacing: -0.04em;
+}
+
+:host([data-red]) {
+  --ink: #c8202b;
+}
+
+svg {
+  display: block;
+  fill: currentColor;
+}
+
+.ix {
+  position: absolute;
+  top: calc(var(--card-w) * 0.075);
+  left: calc(var(--card-w) * 0.075);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--card-w) * 0.03);
+  font-size: calc(var(--card-w) * 0.25);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ix svg {
+  width: calc(var(--card-w) * 0.17);
+  height: calc(var(--card-w) * 0.17);
+}
+
+.ix--end {
+  top: auto;
+  right: calc(var(--card-w) * 0.075);
+  bottom: calc(var(--card-w) * 0.075);
+  left: auto;
+  transform: rotate(180deg);
+}
+
+.ctr {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctr svg {
+  width: calc(var(--card-w) * 0.44);
+  height: calc(var(--card-w) * 0.44);
+}
+
+// Bilder: gerahmter Buchstabe
+.fl {
+  padding: calc(var(--card-w) * 0.08) calc(var(--card-w) * 0.11);
+  border: 1.5px solid currentColor;
+  border-radius: calc(var(--card-w) * 0.08);
+  font-size: calc(var(--card-w) * 0.375);
+  font-weight: 900;
+  line-height: 1;
+}
+
+// Mitspieler am Handy: nur Rang und Farbe, mittig
+:host([data-size='mini']) {
+  border-radius: 3px;
+}
+
+:host([data-size='mini']) .ix {
+  inset: 0;
+  justify-content: center;
+  gap: 1px;
+  font-size: calc(var(--card-w) * 0.5);
+}
+
+:host([data-size='mini']) .ix svg {
+  width: calc(var(--card-w) * 0.38);
+  height: calc(var(--card-w) * 0.38);
+}
+
+:host([data-size='mini']) .ctr,
+:host([data-size='mini']) .ix--end {
+  display: none;
+}

@@ -10,88 +10,122 @@ main {
   min-height: 0;
   width: 100%;
   box-sizing: border-box;
-  padding-top: 4px;
-  padding-bottom: var(--bottom-nav-space);
+  padding-bottom: calc(var(--bottom-nav-space) + env(safe-area-inset-bottom, 0px));
 }
 
+// Einheitlicher Kopf auf allen Seiten: Logo mit Namen links, Aktionen rechts. Klebt oben
+// und wird beim Scrollen zu Glas (scrolled), damit Inhalt weich darunter verschwindet.
 .top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 52px;
+  min-height: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px));
   box-sizing: border-box;
-  padding: 8px 12px 8px 16px;
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding: env(safe-area-inset-top, 0px) 8px 0 16px;
+  border-bottom: 0.5px solid transparent;
+  transition:
+    background-color 300ms var(--ease-ios),
+    border-color 300ms var(--ease-ios),
+    backdrop-filter 300ms var(--ease-ios);
+  view-transition-name: top-bar;
+}
+
+.top-bar--scrolled {
+  border-bottom-color: var(--color-border);
+  background-color: var(--color-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .top-bar-title {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   color: var(--color-text);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-rounded);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.top-bar-beta {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .top-bar-title img {
   display: block;
   width: 30px;
   height: 30px;
-  padding: 4px;
-  box-sizing: border-box;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-small);
-  background: var(--color-surface);
-  object-fit: contain;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.top-bar-title:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
 }
 
+.header-actions {
+  gap: 8px;
+}
+
+// Runde Glas-Knöpfe im Kopf (44 px Tippfläche, 40 px sichtbar)
 .header-icon-button {
   position: relative;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-small);
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--color-text-muted);
-  appearance: none;
-  -webkit-appearance: none;
+  width: 40px;
+  height: 40px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--color-fill);
+  box-shadow: 0 0.5px 0 var(--color-glass-edge) inset;
+  color: var(--color-text);
+  text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.notification-button::before,
-.notification-button::after {
-  display: none;
+    scale 340ms var(--ease-spring);
 }
 
 .header-icon-button mat-icon {
-  width: 21px;
-  height: 21px;
-  font-size: 21px;
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
 }
 
 .header-icon-button:hover {
-  background: var(--color-white-06) !important;
-  color: var(--color-text);
+  background: var(--color-white-12);
 }
 
 .header-icon-button:active {
-  background: var(--color-white-08) !important;
+  scale: 0.88;
+  transition-duration: 90ms;
+}
+
+.header-icon-button--active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
 }
 
 .header-icon-button:focus {
@@ -100,19 +134,20 @@ main {
 
 .header-icon-button:focus-visible {
   outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .notification-badge {
   position: absolute;
-  top: 3px;
-  right: 2px;
+  top: -2px;
+  right: -2px;
   display: grid;
   place-items: center;
-  min-width: 16px;
-  height: 16px;
+  min-width: 17px;
+  height: 17px;
   box-sizing: border-box;
   padding: 0 4px;
+  border: 2px solid var(--color-background);
   border-radius: var(--radius-pill);
   background: var(--color-notification);
   color: var(--color-white);
@@ -122,101 +157,150 @@ main {
   pointer-events: none;
 }
 
+// Schwebende Tab-Leiste aus Glas (Liquid-Glass-Vorbild). Die Pille hinter dem aktiven Tab
+// gleitet mit einer Feder an ihren Platz (--tab: Index des aktiven Tabs, -1 = keiner).
 .bottom-nav {
   position: fixed;
-  left: 50%;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
   z-index: 10;
   display: flex;
-  width: min(calc(100% - 32px), 400px);
-  box-sizing: border-box;
-  transform: translateX(-50%);
-  padding: 5px 4px;
-  overflow: hidden;
-  isolation: isolate;
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
-  background-color: var(--color-navigation-surface);
-  box-shadow: var(--shadow-navigation);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  justify-content: center;
+  width: auto;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-glass);
+  box-shadow:
+    var(--shadow-navigation),
+    0 0 0 0.5px var(--color-glass-edge) inset;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  view-transition-name: tab-bar;
 }
 
-.bottom-nav::before {
+.bottom-nav-pill {
   position: absolute;
-  top: 5px;
-  bottom: 5px;
-  left: 4px;
-  z-index: 0;
-  width: calc((100% - 8px) / 4);
-  border-radius: 13px;
-  background: var(--color-navigation-highlight);
-  content: '';
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 4);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.08) inset;
+  opacity: 1;
+  transform: translateX(calc(var(--tab, 0) * 100%));
+  transition:
+    transform 560ms var(--ease-spring),
+    opacity 240ms var(--ease-ios);
   pointer-events: none;
-  transition: transform var(--transition-normal);
 }
 
-// Seiten ohne eigenen Navigationspunkt (z. B. Ranking): keine Markierung
-.bottom-nav:not(:has(.bottom-nav-link.active))::before {
+.bottom-nav[style*='--tab: -1'] .bottom-nav-pill {
   opacity: 0;
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(1).active)::before {
-  transform: translateX(0);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(2).active)::before {
-  transform: translateX(100%);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(3).active)::before {
-  transform: translateX(200%);
-}
-
-.bottom-nav:has(.bottom-nav-link:nth-child(4).active)::before {
-  transform: translateX(300%);
 }
 
 .bottom-nav-link {
   position: relative;
-  z-index: 1;
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-height: 46px;
-  border-radius: 13px;
-  color: var(--color-neutral-muted);
+  gap: 1px;
+  min-height: 52px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition:
+    color 260ms var(--ease-ios),
+    scale 340ms var(--ease-spring);
 }
 
 .bottom-nav-link mat-icon {
-  width: 22px;
-  height: 22px;
-  font-size: 22px;
+  width: 25px;
+  height: 25px;
+  font-size: 25px;
+  transition: translate 420ms var(--ease-spring);
 }
 
 .bottom-nav-link:hover {
-  color: var(--color-text-muted);
-}
-
-.bottom-nav-link.active {
   color: var(--color-text);
 }
 
-.bottom-nav-link.active mat-icon {
+.bottom-nav-link.active {
   color: var(--color-primary-light);
 }
 
-.bottom-nav-link:active {
-  transform: scale(0.96);
+// Aktiver Tab: Symbol hüpft kurz nach oben
+.bottom-nav-link.active mat-icon {
+  animation: tab-hop 520ms var(--ease-spring);
 }
 
-.bottom-nav-link:focus {
-  outline: none;
+@keyframes tab-hop {
+  40% {
+    translate: 0 -3px;
+  }
+}
+
+.bottom-nav-link:active {
+  scale: 0.9;
+  transition-duration: 90ms;
+}
+
+// Hinweise unter dem Kopf: neue Version, offline (PwaService)
+.app-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100% - 32px, var(--content-width));
+  box-sizing: border-box;
+  margin: 4px auto 8px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.app-banner > mat-icon {
+  flex: none;
+  color: var(--color-primary-light);
+}
+
+.app-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-banner-action {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-banner-action:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.app-banner--offline {
+  background: var(--color-surface-raised);
+}
+
+.app-banner--offline > mat-icon {
+  color: var(--color-warning);
 }

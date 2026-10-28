@@ -46,4 +46,16 @@ describe('ArrivalPlanner', () => {
     expect(component.plan()?.departure).toEqual({ time: '23:40', dayOffset: -1 });
     expect(component.plan()?.arrivalWithoutBuffer).toEqual({ time: '00:10', dayOffset: 0 });
   });
+
+  it('switches between car and train view', async () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('app-arrival-planner-train')).toBeNull();
+    expect(element.querySelector('#arrival-time')).not.toBeNull();
+
+    component.mode.set('train');
+    await fixture.whenStable();
+
+    expect(element.querySelector('app-arrival-planner-train')).not.toBeNull();
+    expect(element.querySelector('#arrival-time')).toBeNull();
+  });
 });

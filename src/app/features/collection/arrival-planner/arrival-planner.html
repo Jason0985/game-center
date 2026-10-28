@@ -6,8 +6,8 @@
     <button
       class="settings-button"
       type="button"
-      aria-label="Fahr- und Vorbereitungszeiten einstellen"
-      matTooltip="Fahr- und Vorbereitungszeiten einstellen"
+      [attr.aria-label]="settingsLabel()"
+      [matTooltip]="settingsLabel()"
       (click)="openSettingsDialog()"
     >
       <mat-icon aria-hidden="true">tune</mat-icon>
@@ -20,77 +20,92 @@
   </header>
 
   <main class="planner-content">
-    <section class="arrival-entry ui-surface" aria-labelledby="arrival-label">
-      <div class="arrival-entry-copy">
-        <mat-icon aria-hidden="true">event_available</mat-icon>
-        <div>
-          <label id="arrival-label" for="arrival-time">Ich muss da sein um</label>
-          <p>Trag deine gewünschte Ankunftszeit ein.</p>
-        </div>
-      </div>
-      <input
-        id="arrival-time"
-        class="arrival-time-input"
-        type="time"
-        [value]="arrivalTime()"
-        (input)="updateArrivalTime($event)"
-        aria-label="Gewünschte Ankunftszeit"
-      />
-    </section>
-
-    <div class="planner-toolbar">
-      <p>Dein Zeitplan</p>
+    <div class="ui-segmented mode-switch" role="group" aria-label="Verkehrsmittel wählen">
+      <button type="button" [attr.aria-pressed]="mode() === 'car'" (click)="mode.set('car')">
+        <mat-icon aria-hidden="true">directions_car</mat-icon>
+        Auto
+      </button>
+      <button type="button" [attr.aria-pressed]="mode() === 'train'" (click)="mode.set('train')">
+        <mat-icon aria-hidden="true">train</mat-icon>
+        Zug
+      </button>
     </div>
 
-    @if (plan(); as times) {
-      <section class="plan-list ui-surface" aria-label="Berechneter Zeitplan">
-        <article class="plan-row plan-row-primary">
-          <div class="plan-icon"><mat-icon aria-hidden="true">alarm</mat-icon></div>
-          <div class="plan-copy">
-            <h2>Wecker stellen</h2>
-            <p>Damit du rechtzeitig fertig wirst</p>
-          </div>
-          <div class="plan-time">
-            <strong>{{ times.alarm.time }}</strong>
-            @if (times.alarm.dayOffset < 0) {
-              <span>Vortag</span>
-            }
-          </div>
-        </article>
-
-        <article class="plan-row">
-          <div class="plan-icon"><mat-icon aria-hidden="true">directions_car</mat-icon></div>
-          <div class="plan-copy">
-            <h2>Losfahren</h2>
-            <p>Mit eingeplantem Verkehrspuffer</p>
-          </div>
-          <div class="plan-time">
-            <strong>{{ times.departure.time }}</strong>
-            @if (times.departure.dayOffset < 0) {
-              <span>Vortag</span>
-            }
-          </div>
-        </article>
-
-        <article class="plan-row">
-          <div class="plan-icon"><mat-icon aria-hidden="true">location_on</mat-icon></div>
-          <div class="plan-copy">
-            <h2>Ankunft ohne Puffer</h2>
-            <p>Bei normaler Fahrzeit</p>
-          </div>
-          <div class="plan-time">
-            <strong>{{ times.arrivalWithoutBuffer.time }}</strong>
-            @if (times.arrivalWithoutBuffer.dayOffset < 0) {
-              <span>Vortag</span>
-            }
-          </div>
-        </article>
-      </section>
+    @if (mode() === 'train') {
+      <app-arrival-planner-train />
     } @else {
-      <div class="planner-empty ui-surface">
-        <mat-icon aria-hidden="true">schedule</mat-icon>
-        <p>Wähle oben eine Ankunftszeit, um deinen Zeitplan zu sehen.</p>
+      <section class="arrival-entry ui-surface" aria-labelledby="arrival-label">
+        <div class="arrival-entry-copy">
+          <mat-icon aria-hidden="true">event_available</mat-icon>
+          <div>
+            <label id="arrival-label" for="arrival-time">Ich muss da sein um</label>
+            <p>Trag deine gewünschte Ankunftszeit ein.</p>
+          </div>
+        </div>
+        <input
+          id="arrival-time"
+          class="arrival-time-input"
+          type="time"
+          [value]="arrivalTime()"
+          (input)="updateArrivalTime($event)"
+          aria-label="Gewünschte Ankunftszeit"
+        />
+      </section>
+
+      <div class="planner-toolbar">
+        <p>Dein Zeitplan</p>
       </div>
+
+      @if (plan(); as times) {
+        <section class="plan-list ui-surface" aria-label="Berechneter Zeitplan">
+          <article class="plan-row plan-row-primary">
+            <div class="plan-icon"><mat-icon aria-hidden="true">alarm</mat-icon></div>
+            <div class="plan-copy">
+              <h2>Wecker stellen</h2>
+              <p>Damit du rechtzeitig fertig wirst</p>
+            </div>
+            <div class="plan-time">
+              <strong>{{ times.alarm.time }}</strong>
+              @if (times.alarm.dayOffset < 0) {
+                <span>Vortag</span>
+              }
+            </div>
+          </article>
+
+          <article class="plan-row">
+            <div class="plan-icon"><mat-icon aria-hidden="true">directions_car</mat-icon></div>
+            <div class="plan-copy">
+              <h2>Losfahren</h2>
+              <p>Mit eingeplantem Verkehrspuffer</p>
+            </div>
+            <div class="plan-time">
+              <strong>{{ times.departure.time }}</strong>
+              @if (times.departure.dayOffset < 0) {
+                <span>Vortag</span>
+              }
+            </div>
+          </article>
+
+          <article class="plan-row">
+            <div class="plan-icon"><mat-icon aria-hidden="true">location_on</mat-icon></div>
+            <div class="plan-copy">
+              <h2>Ankunft ohne Puffer</h2>
+              <p>Bei normaler Fahrzeit</p>
+            </div>
+            <div class="plan-time">
+              <strong>{{ times.arrivalWithoutBuffer.time }}</strong>
+              @if (times.arrivalWithoutBuffer.dayOffset < 0) {
+                <span>Vortag</span>
+              }
+            </div>
+          </article>
+        </section>
+      } @else {
+        <div class="planner-empty ui-surface">
+          <mat-icon aria-hidden="true">schedule</mat-icon>
+          <p>Wähle oben eine Ankunftszeit, um deinen Zeitplan zu sehen.</p>
+        </div>
+      }
     }
   </main>
 </div>

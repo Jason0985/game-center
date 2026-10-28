@@ -1,0 +1,279 @@
+@use '../table/seat-base';
+
+// Flip-7-Teil des Namensschilds (Grundlage in table/_seat-base.scss): Zustände, Fortschritt,
+// Aktions-Tokens, Rundenchip. Der Tisch setzt die Variablen je Layout und Spielerzahl.
+:host {
+  // Ohne Fortschrittsring füllt der Avatar den Platz (Tokens sitzen an seinen Ecken)
+  --avatar-k: 0.9;
+  --freeze: #7dd3fc;
+  --flip3: #ff9150;
+  --sc: #c8386d;
+}
+
+:host([data-variant='mine']) {
+  --plate: var(--color-surface-raised);
+  flex-direction: row;
+  gap: 10px;
+  width: auto;
+  padding: 5px 14px 5px 5px;
+  border-radius: 999px;
+  text-align: left;
+}
+
+// Zustände (Am Zug: weißer Rand aus table/_seat-base.scss wie bei Skip-Bo und Uno)
+// Gesichert: dezent ausgegraut (samt Kartenfächer), das Schloss zeigt den Grund
+:host([data-state='stayed']:not(.is-own)) {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+:host([data-state='busted']:not(.is-own)) {
+  opacity: 0.9;
+}
+
+:host([data-state='frozen']) {
+  border: 1.5px solid var(--freeze);
+  background: linear-gradient(rgba(125, 211, 252, 0.13), rgba(125, 211, 252, 0.13)), var(--plate);
+}
+
+:host([data-state='flip7']) {
+  border: 1.5px solid var(--table-gold);
+  box-shadow:
+    0 0 0 3px rgba(245, 200, 75, 0.18),
+    0 0 28px rgba(245, 200, 75, 0.18);
+}
+
+// Nach .is-turn, damit ein ausgeschiedener Platz am Zug gestrichelt bleibt
+:host([data-state='left']) {
+  border: 1.5px dashed var(--color-border-subtle);
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.8;
+}
+
+// Zielwahl: der ganze Platz ist Button, gestrichelt in der Kartenfarbe
+:host([data-choice]) {
+  --choice: var(--freeze);
+}
+
+:host([data-choice]:not(.is-own)) {
+  border: 2px dashed var(--choice);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--choice) 18%, transparent);
+  cursor: pointer;
+  opacity: 1;
+}
+
+:host([data-choice='FLIP3']) {
+  --choice: var(--flip3);
+}
+
+:host([data-choice='FLIP3']:not(.is-own)) {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--choice) 20%, transparent);
+}
+
+:host([data-choice='SC']) {
+  --choice: var(--sc);
+}
+
+:host(.is-own[data-choice]) {
+  cursor: pointer;
+}
+
+:host(.is-dimmed) {
+  opacity: 0.38;
+}
+
+:host(:focus-visible) {
+  outline: 3px solid #f27ba5;
+  outline-offset: 3px;
+}
+
+:host(button:disabled) {
+  cursor: default;
+}
+
+// Rausgeflogen: Avatar grau; Flip 7: Goldrand um den Avatar
+:host([data-state='busted']) .avatar {
+  background: var(--f7-bust-bg) !important;
+}
+
+:host([data-state='flip7']) .avatar {
+  box-shadow: 0 0 0 2px var(--table-gold);
+}
+
+// Fortschritt zu Flip 7 (--dot setzt der Tisch je Layout)
+.dots {
+  display: flex;
+  gap: 2px;
+}
+
+.dots span {
+  width: var(--dot, 4px);
+  height: var(--dot, 4px);
+  box-sizing: border-box;
+  border: 1px solid var(--table-slot-border);
+  border-radius: 50%;
+}
+
+.dots span.on {
+  border: 0;
+  background: var(--f7-ring-on);
+}
+
+:host([data-state='flip7']) .dots span.on {
+  background: var(--table-gold);
+}
+
+.token--start {
+  top: calc(var(--token) * -0.2);
+  left: calc(var(--token) * -0.2);
+}
+
+.token--freeze {
+  background: var(--freeze);
+  color: #0b2533;
+}
+
+.token--freeze span {
+  font-size: calc(var(--token) * 0.62);
+}
+
+.token--flip3 {
+  background: var(--flip3);
+  color: #2a1204;
+  font-size: calc(var(--token) * 0.61);
+  font-weight: 900;
+}
+
+.token--stay {
+  right: calc(var(--token) * -0.2);
+  bottom: calc(var(--token) * -0.2);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+}
+
+:host([data-variant='mine']) .info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--info-gap, 3px);
+  min-width: 0;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: var(--stats-gap, 4px);
+}
+
+.total,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--stat-size, 10px);
+  font-variant-numeric: tabular-nums;
+}
+
+.total {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.total span,
+.chip span.material-symbols-rounded {
+  font-size: calc(var(--stat-size, 10px) + 1px);
+}
+
+.star {
+  color: var(--table-gold);
+}
+
+.chip {
+  padding: var(--chip-pad, 1px 5px);
+  border-radius: 999px;
+  background: var(--table-chip-bg);
+  color: var(--table-chip-text);
+  font-weight: 700;
+  line-height: var(--chip-lh, 15px);
+}
+
+:host([data-state='stayed']) .chip {
+  border: 1px solid var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+:host([data-state='frozen']) .chip {
+  background: rgba(125, 211, 252, 0.13);
+  color: var(--freeze);
+}
+
+:host([data-state='busted']) .chip {
+  background: var(--f7-chip-bust-bg);
+  color: var(--f7-chip-bust-text);
+}
+
+:host([data-state='flip7']) .chip {
+  background: rgba(245, 200, 75, 0.18);
+  color: var(--table-gold);
+}
+
+// Rundenpunkte zählen beim Ziehen hoch (--n ist als <integer> registriert, styles.scss)
+.count {
+  transition: --n 320ms ease-out;
+  counter-reset: n var(--n);
+}
+
+.count::after {
+  content: counter(n);
+}
+
+.count--plus::after {
+  content: '+' counter(n);
+}
+
+// Chips am Rand des Schilds
+.badge-flip7,
+.bonus,
+.choice-label {
+  position: absolute;
+  left: 50%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.badge-flip7 {
+  top: var(--badge-top, -13px);
+  background: var(--table-gold);
+  color: #2a1d00;
+  font-size: var(--badge-size, 10px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.bonus {
+  bottom: var(--label-bottom, -19px);
+  background: var(--table-gold);
+  color: #2a1d00;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.choice-label {
+  bottom: var(--label-bottom, -19px);
+  background: var(--choice);
+  color: #0f1115;
+  font-size: var(--label-size, 10px);
+  font-weight: 700;
+}
+
+.me-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--choice);
+  color: #0f1115;
+  font-size: 11px;
+  font-weight: 700;
+}

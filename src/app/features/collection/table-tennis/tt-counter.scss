@@ -1,0 +1,219 @@
+// Zwei große Spielerflächen nebeneinander, darunter Steuerung und Einstellungen
+.tt-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tt-side {
+  --side: var(--tile-pink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 280px;
+  padding: 18px 10px 14px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--side) 22%, var(--color-surface));
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--transition-fast),
+    transform 80ms ease;
+}
+
+.tt-side--b {
+  --side: var(--tile-blue);
+}
+
+.tt-side:active:not(:disabled) {
+  background: color-mix(in srgb, var(--side) 36%, var(--color-surface));
+  transform: scale(0.98);
+}
+
+.tt-side:disabled {
+  cursor: default;
+}
+
+.tt-side:disabled:not(.tt-side--won) {
+  opacity: 0.55;
+}
+
+.tt-side:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.tt-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-score {
+  font-size: 96px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.tt-sets {
+  display: flex;
+  gap: 6px;
+}
+
+.tt-pip {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.tt-pip--won {
+  border-color: var(--color-warning);
+  background: var(--color-warning);
+}
+
+.tt-serve {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  visibility: hidden;
+}
+
+.tt-serve--on {
+  visibility: visible;
+}
+
+.tt-ball {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #fff 18%, transparent);
+}
+
+.tt-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 4px 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tt-chip {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.tt-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tt-actions .ui-btn {
+  gap: 6px;
+  padding: 0 8px;
+  font-size: 15px;
+}
+
+.tt-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 16px 16px;
+  background: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  text-align: center;
+}
+
+.tt-winner > mat-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--color-warning);
+  font-size: 36px;
+}
+
+.tt-winner h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.tt-winner p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.tt-winner .tt-winner-score {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.tt-winner .ui-btn {
+  margin-top: 12px;
+}
+
+// Einstellungen: Beschriftung links, Eingabe rechts
+.tt-field {
+  justify-content: space-between;
+}
+
+.tt-field .ui-row-title {
+  flex: none;
+}
+
+.tt-field input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  text-align: right;
+}
+
+.tt-field input:focus {
+  outline: 2px solid var(--color-primary-light);
+}
+
+.tt-field .ui-segmented {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.tt-field .ui-segmented button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-field .ui-segmented button:disabled {
+  cursor: default;
+}

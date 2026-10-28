@@ -1,21 +1,166 @@
 {
   "name": "Game Center Beta",
-  "short_name": "Game Center",
-  "theme_color": "#0f1115",
-  "background_color": "#0f1115",
+  "short_name": "GC Beta",
+  "description": "Spieleabende mit Freunden: Uno, Skip-Bo und Flip 7 online spielen, Ranglisten führen und praktische Werkzeuge wie Ankunftsplaner und F1-Strategie.",
+  "lang": "de",
+  "categories": ["games", "entertainment"],
+  "theme_color": "#111528",
+  "background_color": "#111528",
   "display": "standalone",
   "id": "/game-center-beta/",
   "scope": "/game-center-beta/",
   "start_url": "/game-center-beta/",
   "apple-mobile-web-app-capable": "yes",
-  "apple-mobile-web-app-title": "Game Center",
+  "apple-mobile-web-app-title": "GC Beta",
   "apple-mobile-web-app-status-bar-style": "default",
+  "shortcuts": [
+    {
+      "name": "Neue Lobby",
+      "short_name": "Neue Lobby",
+      "description": "Lobby eröffnen und Freunde einladen",
+      "url": "/game-center-beta/multiplayer?neu=1",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Neues Ranking",
+      "short_name": "Ranking",
+      "description": "Spieler hinzufügen und Punkte zählen",
+      "url": "/game-center-beta/ranking",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Paddle Tabelle",
+      "short_name": "Paddle",
+      "description": "Paddle-Schulden eintragen",
+      "url": "/game-center-beta/collection/paddle-table",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ankunftsplaner",
+      "short_name": "Wecker",
+      "description": "Weckzeit für deine Ankunft berechnen",
+      "url": "/game-center-beta/collection/arrival-planner",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Statistik",
+      "short_name": "Statistik",
+      "description": "Siege, Serien und letzte Spiele",
+      "url": "/game-center-beta/profile/stats",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
   "icons": [
     {
-      "src": "game-center-logo-beta.png",
-      "sizes": "1254x1254",
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/phone-home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Startseite mit Schnellstart und Statistik"
+    },
+    {
+      "src": "screenshots/phone-multiplayer.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Online spielen: mit Lobby-Code beitreten"
+    },
+    {
+      "src": "screenshots/phone-collection.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sammlung mit Spielen und Werkzeugen"
+    },
+    {
+      "src": "screenshots/phone-arrival.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ankunftsplaner: wann klingelt der Wecker?"
+    },
+    {
+      "src": "screenshots/phone-f1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "F1-Strategie mit Boxenstopp-Plan"
+    },
+    {
+      "src": "screenshots/wide-home.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Startseite am Laptop"
+    },
+    {
+      "src": "screenshots/wide-collection.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sammlung am Laptop"
     }
   ]
 }

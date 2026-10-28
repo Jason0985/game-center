@@ -3,7 +3,7 @@
 <form mat-dialog-content class="dialog-form" (submit)="$event.preventDefault(); add()">
   <mat-form-field appearance="outline">
     <mat-label>Name</mat-label>
-    <input matInput [(ngModel)]="name" name="playerName" autocomplete="off" autofocus />
+    <input matInput [(ngModel)]="name" name="playerName" autocomplete="off" cdkFocusInitial />
   </mat-form-field>
 </form>
 

@@ -1,0 +1,491 @@
+@use 'skyjo-clear' as clear;
+
+// Eigener Bereich von SkyjoBoard (zweites Stylesheet): Bedienfeld mit Reiter
+// (table/_arc-table.scss), Hinweis, eigenes Raster, Punkte bisher; Laptop: eigenes
+// Schild auf der Kante der Platte, links Hinweis, rechts Punkte.
+:host {
+  --cell-w: 62px;
+  --cell-gap: 8px;
+}
+
+:host([data-layout='hoch']) {
+  --cell-w: 74px;
+}
+
+:host([data-layout='quer']) {
+  --cell-w: 46px;
+  --cell-gap: 6px;
+}
+
+:host([data-layout='laptop']) {
+  --cell-w: 54px;
+  --cell-gap: 6px;
+}
+
+.mine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  // Die schwebende App-Navigation liegt auf der Fläche
+  padding-bottom: calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+}
+
+.mine > * {
+  position: relative;
+  z-index: 2;
+}
+
+.mine > .tab {
+  position: absolute;
+}
+
+:host([data-layout='phone']) .mine {
+  flex: 1 1 0;
+  min-height: 0;
+  margin-top: 40px;
+  padding-top: 16px;
+  // Das Raster nimmt, was unter Mitspielern und Stapeln übrig bleibt
+  container-type: size;
+}
+
+@media (max-height: 740px) {
+  :host([data-layout='phone']) .mine {
+    margin-top: 36px;
+    padding-top: 10px;
+  }
+
+  :host([data-layout='phone']) .hint {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+// Handy: Raster passt in die Inhaltsfläche des eigenen Bereichs (cqw/cqh ohne Innenabstand),
+// abzüglich Hinweis und Abständen
+:host([data-layout='phone']) .my-grid {
+  --cell-w: clamp(32px, min(calc((100cqw - 24px) / 4), calc((100cqh - 80px) / 4.26)), 62px);
+}
+
+:host([data-layout='hoch']) .mine {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+:host([data-layout='quer']) .mine {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 28px;
+  padding-top: 16px;
+}
+
+:host([data-layout='laptop']) .mine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 32px;
+  // Das eigene Schild sitzt auf der Unterkante der Platte
+  margin: -96px 0 0;
+  padding: 0 48px 28px;
+}
+
+:host([data-layout='laptop']) .mine::before {
+  content: none;
+}
+
+.mine-side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+:host([data-layout='quer']) .mine-side--info {
+  flex: none;
+  width: 340px;
+}
+
+:host([data-layout='laptop']) .mine-side {
+  max-width: 420px;
+}
+
+// Reiter: Avatar, Du, Summe
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--tab-h, 40px);
+  box-sizing: border-box;
+  padding: var(--tab-pad, 4px 14px 0 5px);
+  border: 1px solid var(--color-border-subtle);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--color-surface);
+}
+
+.tab.is-turn {
+  border: 2.5px solid var(--table-turn);
+  border-bottom: 0;
+}
+
+.own-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar, 26px);
+  height: var(--avatar, 26px);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: calc(var(--avatar, 26px) * 0.48);
+  font-weight: 700;
+}
+
+.own-name {
+  font-size: var(--name-size, 13px);
+  font-weight: 700;
+}
+
+.own-sum {
+  color: var(--color-text-muted);
+  font-size: var(--name-size, 13px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+// Laptop: eigenes Schild
+.own-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  padding: 10px 14px 14px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 20px;
+  background: var(--color-surface-raised);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --avatar: 30px;
+  --name-size: 15px;
+}
+
+.own-plate.is-turn {
+  border: 2.5px solid var(--table-turn);
+}
+
+.own-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.own-head .own-name {
+  flex: 1;
+}
+
+.own-head .own-sum {
+  font-weight: 800;
+}
+
+// Hinweis in der Farbe der Lage
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.hint .material-symbols-rounded {
+  flex: none;
+  font-size: 18px;
+}
+
+.hint-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.hint[data-tone='accent'] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
+}
+
+.hint[data-tone='warn'] {
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-warning);
+}
+
+:host(:not([data-layout='phone'])) .hint {
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+:host(:not([data-layout='phone'])) .hint .material-symbols-rounded {
+  font-size: 22px;
+}
+
+.dots {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+}
+
+.dot {
+  width: 22px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
+}
+
+.dot.on {
+  background: var(--color-primary-light);
+}
+
+// Spalte abgeräumt: goldener Kasten mit den gesparten Punkten
+.cleared {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--table-gold) 14%, transparent);
+  color: var(--table-gold);
+  animation: sk-pop 300ms ease-out;
+}
+
+.cleared .material-symbols-rounded {
+  flex: none;
+  font-size: 22px;
+}
+
+.cleared-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cleared-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cleared-sub {
+  color: color-mix(in srgb, var(--table-gold) 55%, var(--color-text));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cleared-points {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--table-gold);
+  color: #2a1d00;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+:host([data-layout='quer']) .cleared {
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1.5px solid color-mix(in srgb, var(--table-gold) 50%, transparent);
+  border-radius: 18px;
+}
+
+@keyframes sk-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+// Eigenes Raster
+.my-grid {
+  display: grid;
+  grid-template-columns: repeat(4, var(--cell-w));
+  gap: var(--cell-gap);
+}
+
+.cell {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--cell-w) * 0.15);
+  background: transparent;
+  cursor: default;
+  transition:
+    transform 140ms ease,
+    box-shadow 160ms,
+    opacity 160ms;
+}
+
+.cell app-skyjo-card {
+  --card-w: var(--cell-w);
+}
+
+.cell.pick {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-primary-light);
+  cursor: pointer;
+}
+
+.cell.pick:hover {
+  transform: translateY(-3px);
+}
+
+.cell.dim {
+  opacity: 0.55;
+}
+
+// Gleich wird abgeräumt
+.cell.glow {
+  @include clear.clear-cell(var(--cell-w), var(--cell-gap));
+}
+
+.slot {
+  display: block;
+  width: var(--cell-w);
+  height: calc(var(--cell-w) * 1.42);
+  box-sizing: border-box;
+  border: 1.5px dashed var(--table-slot-border);
+  border-radius: calc(var(--cell-w) * 0.13);
+}
+
+// Punkte bisher
+.scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:host([data-layout='quer']) .scores {
+  flex: 1;
+}
+
+:host([data-layout='laptop']) .scores {
+  justify-self: end;
+  width: 100%;
+  max-width: 380px;
+  padding: 16px 18px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 18px;
+  background: var(--color-surface);
+}
+
+.score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// Ab 5 Spielern zweispaltig (iPad), sonst würde die Liste das Raster verdrängen
+:host([data-size='s']:not([data-layout='laptop'])) .score-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.scores-title {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.score-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host([data-layout='laptop']) .score-name {
+  flex: none;
+  width: 64px;
+}
+
+.score-bar {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.score-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--color-primary-light);
+}
+
+.score-open {
+  color: var(--color-text-subtle);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.score-total {
+  min-width: 30px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .cleared {
+    transition: none;
+    animation: none;
+  }
+}

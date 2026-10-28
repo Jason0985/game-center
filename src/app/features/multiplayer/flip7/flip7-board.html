@@ -1,0 +1,349 @@
+@let g = game();
+@let t = table();
+@let c = pointerCenter();
+<div
+  class="table-area"
+  appTableTop
+  mark="7"
+  [w]="t.w"
+  [h]="t.h"
+  [center]="c"
+  [target]="pointerTarget()"
+>
+  <div class="center">
+    <div class="piles">
+      <div class="pile">
+        <button
+          type="button"
+          class="draw"
+          [class.glow]="myTurn()"
+          [attr.aria-label]="'Karte ziehen, ' + g.draw_count + ' im Stapel'"
+          [disabled]="busy() || !myTurn()"
+          (click)="tapPile()"
+        >
+          <span class="stack" #stack>
+            <app-flip7-card class="back back--3" [card]="null" />
+            <app-flip7-card class="back back--2" [card]="null" />
+            <app-flip7-card class="back back--1" [card]="null" />
+          </span>
+        </button>
+        <span class="pile-label">{{ g.draw_count }} Karten</span>
+      </div>
+      @if (layout() === 'quer' || layout() === 'laptop') {
+        <div class="pile">
+          <div class="discard">
+            @if (discard().below; as below) {
+              <app-flip7-card class="discard-below" [card]="below" />
+            }
+            @if (discard().top; as top) {
+              <app-flip7-card class="discard-top" [card]="top" />
+            } @else {
+              <span class="discard-empty" aria-hidden="true"></span>
+            }
+          </div>
+          <span class="pile-label pile-label--plain">Ablage</span>
+        </div>
+      }
+    </div>
+    <!-- Unter dem Stapel: „Sichern“ am eigenen Zug, bei der Zielwahl der Hinweis an
+         derselben Stelle (der Button hält den Platz, damit der Stapel nicht springt) -->
+    <div class="center-foot">
+      <button
+        type="button"
+        class="stay"
+        [class.off]="!canStay()"
+        [disabled]="busy() || !canStay()"
+        (click)="stay.emit()"
+      >
+        <span class="material-symbols-rounded fill" aria-hidden="true">lock</span>
+        Sichern
+      </button>
+      @if (chooser(); as c) {
+        <div class="choose" [class.held]="picking()" [attr.data-card]="c.card" aria-hidden="true">
+          <span class="choose-title">{{ c.title }}</span>
+          <span class="choose-sub">{{ c.sub }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  @for (view of seats(); track view.player.seat) {
+    @if (view.choice) {
+      <button
+        type="button"
+        appFlip7Seat
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [turn]="view.turn"
+        [flip3Left]="view.flip3Left"
+        [choice]="view.choice"
+        [style.left]="view.left"
+        [style.top.%]="view.y"
+        [disabled]="busy()"
+        (click)="pick(view.player.seat)"
+      >
+        <ng-container *ngTemplateOutlet="fanTpl; context: { $implicit: view }" />
+      </button>
+    } @else {
+      <div
+        appFlip7Seat
+        role="group"
+        class="opp"
+        [variant]="layout() === 'phone' || layout() === 'hoch' ? 'column' : 'row'"
+        [player]="view.player"
+        [turn]="view.turn"
+        [flip3Left]="view.flip3Left"
+        [dimmed]="view.dimmed"
+        [waiting]="view.waiting"
+        [celebrate]="view.celebrate"
+        [bonus]="view.bonus"
+        [style.left]="view.left"
+        [style.top.%]="view.y"
+      >
+        <ng-container *ngTemplateOutlet="fanTpl; context: { $implicit: view }" />
+      </div>
+    }
+  }
+
+  @for (flight of flights(); track flight.id) {
+    @if (flight.card === 'SAVE') {
+      <div
+        class="flight sc-save"
+        aria-hidden="true"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="saveSc($event, flight)"
+      >
+        <app-flip7-card class="save-dup" [card]="flight.dup!" variant="flat" />
+        <span class="save-sc">
+          <app-flip7-card class="save-half save-half--start" card="SC" variant="flat" />
+          <app-flip7-card class="save-half save-half--end" card="SC" variant="flat" />
+        </span>
+      </div>
+    } @else if (flight.pick || flight.card === 'SC') {
+      <div
+        class="flight sc-reveal"
+        aria-hidden="true"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="reveal($event, flight)"
+      >
+        <app-flip7-card [card]="flight.card" variant="flat" />
+        <span class="sc-tag" [attr.data-card]="flight.card">
+          <span class="material-symbols-rounded fill">{{ actionIcons[flight.card].icon }}</span>
+          {{ actionNames[flight.card] }}
+        </span>
+      </div>
+    } @else {
+      <app-flip7-card
+        class="flight"
+        [card]="flight.card"
+        [style.left.%]="(c.x / t.w) * 100"
+        [style.top.%]="(c.y / t.h) * 100"
+        (animate.enter)="flyAction($event, flight)"
+      />
+    }
+  }
+
+  <!-- Laptop: eigener Platz liegt auf dem Tisch -->
+  @if (layout() === 'laptop' && mine(); as m) {
+    <div class="laptop-cards">
+      <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+      <div class="laptop-mods">
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
+      <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
+    </div>
+    <div class="laptop-seat">
+      <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+    </div>
+  }
+</div>
+
+@if (layout() !== 'laptop' && mine(); as m) {
+  <section class="sheet" [class.is-turn]="m.player.seat === activeSeat()" aria-label="Dein Platz">
+    @if (layout() === 'quer') {
+      <div class="sheet-col">
+        <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m }" />
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
+      <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+    } @else {
+      <!-- Handy, iPad hoch: Name als Reiter am Feld, darunter Zahlen, Punkte und Modifikatoren -->
+      <ng-container *ngTemplateOutlet="seatTpl; context: { $implicit: m, variant: 'tab' }" />
+      <div class="sheet-row sheet-row--center">
+        <ng-container *ngTemplateOutlet="slotsTpl; context: { $implicit: m }" />
+      </div>
+      <div class="sheet-row sheet-row--between">
+        <div class="points">
+          <span class="points-item">
+            <span class="points-label">Gesamt</span>
+            <span class="points-value">
+              <span class="material-symbols-rounded fill star" aria-hidden="true">star</span>
+              {{ m.player.total_score }}
+            </span>
+          </span>
+          <span class="points-item">
+            <span class="points-label">Diese Runde</span>
+            <span
+              class="points-value points-value--round"
+              [class.bust]="m.player.state === 'busted'"
+            >
+              @if (m.locked) {
+                <span class="material-symbols-rounded fill" aria-hidden="true">lock</span>
+              }
+              {{ m.roundText }}
+            </span>
+          </span>
+        </div>
+        <ng-container *ngTemplateOutlet="modsTpl; context: { $implicit: m }" />
+      </div>
+    }
+    <ng-container *ngTemplateOutlet="iceTpl; context: { $implicit: m }" />
+  </section>
+}
+
+<p class="sr-only" aria-live="polite">{{ srStatus() }}</p>
+
+<!-- Eingefroren bzw. gesichert: Frost oder Grau legt sich über das Bedienfeld (Statuszeile sagt es Screenreadern) -->
+<ng-template #iceTpl let-m>
+  @if (m.player.state === 'frozen') {
+    <div class="ice" aria-hidden="true">
+      <span class="ice-text">
+        <span class="material-symbols-rounded fill">ac_unit</span>
+        Du wurdest eingefroren
+      </span>
+      <span class="ice-sub">{{ m.points }} Punkte gesichert</span>
+    </div>
+  } @else if (m.player.state === 'stayed') {
+    <div class="ice ice--locked" aria-hidden="true">
+      <span class="ice-text">
+        <span class="material-symbols-rounded fill">lock</span>
+        Punkte gesichert
+      </span>
+      <span class="ice-sub">{{ m.points }} Punkte</span>
+    </div>
+  }
+</ng-template>
+
+<ng-template #slotsTpl let-m>
+  <div class="slots" role="group" [attr.aria-label]="'Deine Zahlen, ' + m.slots.length + ' von 7'">
+    @for (slot of m.slots; track slot.key) {
+      <div class="slot">
+        <app-flip7-card
+          [card]="slot.card"
+          [highlight]="m.player.state === 'busted' ? 'bust' : null"
+          [style.rotate.deg]="slot.tilt"
+          (animate.enter)="fly($event, 'me:' + slot.key)"
+        />
+        @if (slot.dup; as dup) {
+          <app-flip7-card
+            class="dup"
+            [card]="dup.card"
+            highlight="dup"
+            (animate.enter)="fly($event, 'me:' + dup.key)"
+          />
+        }
+      </div>
+    }
+    @for (empty of m.empty; track $index) {
+      <span class="slot slot--empty" aria-hidden="true"></span>
+    }
+  </div>
+</ng-template>
+
+<!-- Modifikatoren (und Zweites Leben) nur als Karten, darüber der Schriftzug mit Linie -->
+<ng-template #modsTpl let-m>
+  <div class="mods" role="group" [attr.aria-label]="m.modLabel">
+    <span class="mod-head" aria-hidden="true">Modifikatoren</span>
+    <div class="mod-cards">
+      @for (mod of m.mods; track mod.key) {
+        <app-flip7-card
+          [class.mod-sc]="mod.card === 'SC'"
+          [class.sc-hidden]="mod.card === 'SC' && scFlying(m.player.seat)"
+          [card]="mod.card"
+          [variant]="mod.card === 'SC' ? 'flat' : 'row'"
+          [style.rotate.deg]="mod.tilt"
+          (animate.enter)="fly($event, 'me:' + mod.key)"
+        />
+      } @empty {
+        <span class="slot slot--empty slot--mod" aria-hidden="true"></span>
+      }
+    </div>
+  </div>
+</ng-template>
+
+<!-- Eigener Platz: Pille (mine) bzw. Reiter am Bedienfeld (tab) -->
+<ng-template #seatTpl let-m let-variant="variant">
+  @if (m.choice) {
+    <button
+      type="button"
+      appFlip7Seat
+      [variant]="variant ?? 'mine'"
+      [class.my-seat]="!variant"
+      [class.my-tab]="variant === 'tab'"
+      [player]="m.player"
+      [turn]="m.player.seat === activeSeat()"
+      [flip3Left]="m.flip3Left"
+      [choice]="m.choice"
+      [disabled]="busy()"
+      (click)="pick(m.player.seat)"
+    ></button>
+  } @else {
+    <div
+      appFlip7Seat
+      [variant]="variant ?? 'mine'"
+      [class.my-seat]="!variant"
+      [class.my-tab]="variant === 'tab'"
+      [player]="m.player"
+      [turn]="m.player.seat === activeSeat()"
+      [flip3Left]="m.flip3Left"
+      [celebrate]="m.celebrate"
+      [bonus]="m.bonus"
+    ></div>
+  }
+</ng-template>
+
+<!-- Kartenfächer eines Mitspielers: hängt an der Seite seines Schilds, die zur Tischmitte
+     zeigt (Richtung aus seatSpots) -->
+<ng-template #fanTpl let-view>
+  @if (view.player.state !== 'left') {
+    <div
+      class="fan"
+      [class.fan--below]="view.spot.dirY === 1"
+      [style.--dir-x]="view.spot.dirX"
+      [style.--dir-y]="view.spot.dirY"
+    >
+      @if (view.fan.length || view.sc) {
+        <div class="fan-cards">
+          @for (item of view.fan; track item.key) {
+            <app-flip7-card
+              [card]="item.card"
+              [highlight]="item.highlight"
+              [style.transform]="item.transform"
+              (animate.enter)="fly($event, view.player.seat + ':' + item.key)"
+            />
+          }
+          <!-- Zweites Leben als rote Karte hinter den Zahlen -->
+          @if (view.sc) {
+            <app-flip7-card
+              class="fan-sc"
+              [class.sc-hidden]="scFlying(view.player.seat)"
+              card="SC"
+              variant="flat"
+            />
+          }
+          @if (view.player.state === 'frozen') {
+            <span class="veil" aria-hidden="true"></span>
+          }
+        </div>
+      }
+      @if (view.mods) {
+        <span class="mod-chip" role="img" [attr.aria-label]="'Modifikatoren ' + view.mods">{{
+          view.mods
+        }}</span>
+      }
+    </div>
+  }
+</ng-template>

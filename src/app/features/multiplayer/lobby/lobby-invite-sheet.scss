@@ -1,0 +1,252 @@
+// Fast ganz ausgeklappt; nur die Freundesliste scrollt
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 88dvh;
+  box-sizing: border-box;
+  padding: 8px 16px 0;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+}
+
+.sheet-head .ui-icon-button {
+  margin-right: -10px;
+}
+
+.actions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 10px;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: var(--radius-large);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action:active {
+  background: var(--color-segment-active);
+}
+
+.action:focus-visible,
+.invite:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.action-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--tile);
+  color: #fff;
+}
+
+.action-icon mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.friends {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.friends-title {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 4px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.friends-count {
+  font-weight: 500;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+  color: var(--color-text-subtle);
+}
+
+.search mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.search input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.friends-list {
+  flex: 1;
+  min-height: 0;
+  margin-right: -10px;
+  padding: 0 10px calc(34px + env(safe-area-inset-bottom, 0px)) 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-large);
+  background: var(--color-surface-raised);
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 12px 8px 14px;
+  box-sizing: border-box;
+}
+
+// Haarlinie eingerückt bis zum Namen
+.row + .row::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 64px;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+.row .ui-avatar-initials {
+  width: 38px;
+  height: 38px;
+}
+
+.row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-name,
+.row-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.row-sub {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.invite {
+  flex: none;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.invite:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.row-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.row-state--invited {
+  color: var(--color-success-light);
+}
+
+.row-state mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.message {
+  margin: 24px 0 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+.error {
+  margin: 12px 4px 0;
+  color: var(--color-danger-light);
+  font-size: 13px;
+}

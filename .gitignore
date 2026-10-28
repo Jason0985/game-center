@@ -1,5 +1,5 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
+//test
 # Compiled output
 /dist
 /tmp
@@ -58,7 +58,11 @@ Thumbs.db
 .supabase/
 supabase/.temp/
 supabase/.branches/
-supabase/db-example/
+/supabase/db-example/
+
+#functions
+/functions/race-result-ocr/
+/supabase/functions/race-result-ocr/index.ts
 
 # Build and test artifacts
 /dist/
@@ -76,3 +80,10 @@ pnpm-debug.log*
 .environment
 
 .db-example
+
+# Claude Code + graphify (lokal)
+/.claude/*
+# Design-Skills fürs Beta-Design (Frontend, Apple HIG) gehören ins Repo
+!/.claude/skills/
+/.graphify/cache/
+/.graphify

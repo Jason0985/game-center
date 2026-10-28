@@ -1,0 +1,75 @@
+@let g = game();
+<section class="summary ui-surface ui-pop-in" aria-labelledby="flip7-summary-title">
+  <p class="kicker">
+    {{ g.target_score ? 'Ziel ' + g.target_score + ' Punkte' : 'Offenes Spiel' }}
+  </p>
+  <h2 id="flip7-summary-title">Runde {{ g.round_no }} beendet</h2>
+
+  @if (flip7Player(); as winner) {
+    <p class="highlight">
+      <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+      Flip 7! {{ winner.name }} bekommt +{{ bonus }}
+    </p>
+  }
+
+  <ol class="ranking">
+    @for (row of ranking(); track row.player.user_id) {
+      <li [class.mine]="row.player.user_id === userId()" [class.gone]="row.rank === null">
+        <span class="rank">{{ row.rank ?? '–' }}</span>
+        <span class="name">
+          <strong>{{ row.player.name }}</strong>
+          @if (row.player.user_id === userId()) {
+            <span class="you">(du)</span>
+          }
+          @if (row.player.state !== 'active') {
+            <span class="badge" [attr.data-state]="row.player.state">
+              {{ stateLabels[row.player.state] }}
+            </span>
+          }
+        </span>
+        <span class="round" aria-label="Punkte dieser Runde"
+          >+{{ row.player.round_score ?? 0 }}</span
+        >
+        <strong class="total" aria-label="Gesamtpunkte">{{ row.player.total_score }}</strong>
+        @if (g.target_score) {
+          <span class="bar" aria-hidden="true">
+            <span [style.width.%]="progress(row.player.total_score)"></span>
+          </span>
+        }
+      </li>
+    }
+  </ol>
+
+  <!-- Kein aria-live: der Countdown würde sonst jede Sekunde vorgelesen -->
+  <p class="countdown">
+    {{ secondsLeft() > 0 ? 'Nächste Runde in ' + secondsLeft() + ' s' : 'Nächste Runde startet …' }}
+  </p>
+
+  <!-- Nach dem Countdown dürfen alle weiterschalten, falls der automatische Start hängt -->
+  @if (isHost() || secondsLeft() === 0) {
+    <div class="actions">
+      @if (isHost() && !g.target_score) {
+        <button
+          mat-stroked-button
+          type="button"
+          class="ui-button"
+          [disabled]="busy()"
+          (click)="endGame.emit()"
+        >
+          Spiel beenden
+        </button>
+      }
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="ui-button"
+        [disabled]="busy()"
+        (click)="next.emit()"
+      >
+        <mat-icon aria-hidden="true">skip_next</mat-icon>
+        Jetzt weiter
+      </button>
+    </div>
+  }
+</section>

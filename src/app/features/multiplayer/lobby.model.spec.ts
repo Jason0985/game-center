@@ -1,0 +1,96 @@
+import { canStartLobby, eveningWinners, gameLabel, LobbyMember, startBlocker } from './lobby.model';
+
+function members(total: number, ready: number): LobbyMember[] {
+  return Array.from({ length: total }, (_, index) => ({
+    user_id: `user-${index}`,
+    ready: index < ready,
+    joined_at: '2026-09-30T12:00:00Z',
+    name: `User ${index}`,
+    profile: null,
+  }));
+}
+
+describe('lobby start rule', () => {
+  it('needs every member to be ready', () => {
+    expect(canStartLobby(members(2, 2))).toBe(true);
+    expect(canStartLobby(members(4, 4))).toBe(true);
+    expect(canStartLobby(members(2, 1))).toBe(false);
+    expect(canStartLobby(members(4, 3))).toBe(false);
+  });
+
+  it('leaves the player count to the game (startBlocker)', () => {
+    expect(canStartLobby(members(1, 1))).toBe(true);
+    expect(canStartLobby(members(1, 0))).toBe(false);
+    expect(canStartLobby([])).toBe(false);
+  });
+});
+
+describe('gameLabel', () => {
+  it('names the game and its target score', () => {
+    expect(gameLabel('flip-7', { targetScore: 200 })).toBe('Flip 7 · bis 200 Punkte');
+    expect(gameLabel('flip-7', { targetScore: null })).toBe('Flip 7 · Offen');
+  });
+
+  it('names games without settings plainly', () => {
+    expect(gameLabel('skip-bo', {})).toBe('Skip-Bo');
+    expect(gameLabel('skip-bo', { stockSize: 15 })).toBe('Skip-Bo · 15 Karten');
+  });
+
+  it('lists the active Uno house rules', () => {
+    const off = { stacking: false, sevenZero: false, drawUntilPlayable: false };
+    expect(gameLabel('uno', off)).toBe('Uno');
+    expect(gameLabel('uno', { ...off, sevenZero: true })).toBe('Uno · 7-0');
+    expect(gameLabel('uno', { ...off, stacking: true, sevenZero: true })).toBe(
+      'Uno · Stapeln, 7-0',
+    );
+  });
+
+  it('names the Blackjack start money', () => {
+    expect(gameLabel('blackjack', {})).toBe('Blackjack · 1.000 Startgeld');
+    expect(gameLabel('blackjack', { startMoney: 5000 })).toBe('Blackjack · 5.000 Startgeld');
+  });
+
+  it('handles lobbies without a game', () => {
+    expect(gameLabel(null, null)).toBe('Noch kein Spiel gewählt');
+    expect(gameLabel('unknown', { targetScore: 200 })).toBe('Noch kein Spiel gewählt');
+  });
+});
+
+describe('startBlocker', () => {
+  it('lets Flip 7 start', () => {
+    expect(startBlocker('flip-7', 8)).toBeNull();
+  });
+
+  it('needs a known game', () => {
+    expect(startBlocker(null, 2)).toBe('Der Host muss noch ein Spiel auswählen.');
+    expect(startBlocker('unknown', 2)).toBe('Der Host muss noch ein Spiel auswählen.');
+  });
+
+  it('lets Skip-Bo start with up to 6 players', () => {
+    expect(startBlocker('skip-bo', 6)).toBeNull();
+    expect(startBlocker('skip-bo', 7)).toBe('Skip-Bo geht mit höchstens 6 Spielern.');
+  });
+
+  it('lets Uno start with the full lobby', () => {
+    expect(startBlocker('uno', 8)).toBeNull();
+  });
+
+  it('needs 2 players except for Blackjack, which allows 1 to 5', () => {
+    expect(startBlocker('flip-7', 1)).toBe('Flip 7 braucht mindestens 2 Spieler.');
+    expect(startBlocker('blackjack', 1)).toBeNull();
+    expect(startBlocker('blackjack', 5)).toBeNull();
+    expect(startBlocker('blackjack', 6)).toBe('Blackjack geht mit höchstens 5 Spielern.');
+  });
+
+  it('never starts Monopoly here (played on richup.io)', () => {
+    expect(startBlocker('monopoly', 2)).toBe('Monopoly spielt ihr direkt über den Link oben.');
+  });
+});
+
+describe('eveningWinners', () => {
+  it('picks the members with the most wins, ties included', () => {
+    const lobby = { members: members(3, 0), wins: { 'user-0': 2, 'user-2': 2, gone: 5 } };
+    expect(eveningWinners(lobby)).toEqual({ names: ['User 0', 'User 2'], wins: 2 });
+    expect(eveningWinners({ members: members(2, 0), wins: {} })).toBeNull();
+  });
+});

@@ -1,0 +1,59 @@
+<app-game-stage
+  gameTitle="Skyjo"
+  [subtitle]="subtitle()"
+  [players]="game() ? playerCount() : null"
+  [loading]="loading()"
+  [hasGame]="!!game()"
+  [scroll]="view() !== 'play'"
+  [isHost]="isHost()"
+  [busy]="busy()"
+  [skipName]="skipName()"
+  [waitingClock]="waitingClock()"
+  [finished]="game()?.status === 'finished'"
+  endHint="Zum Endstand"
+  [rules]="rules()"
+  [lastEvent]="lastEvent()"
+  [historyNew]="historyNew()"
+  (skip)="skip(game()!)"
+  (endGame)="endGame(game()!)"
+  (leave)="leave.emit($event)"
+  (backToLobby)="backToLobby()"
+  (history)="openHistory()"
+>
+  @if (game(); as g) {
+    @switch (view()) {
+      @case ('final') {
+        <app-skyjo-final
+          [game]="g"
+          [userId]="userId()"
+          [isHost]="isHost()"
+          [busy]="busy()"
+          (backToLobby)="backToLobby()"
+        />
+      }
+      @case ('play') {
+        <!-- Derselbe Tisch bleibt nach dem letzten Zug stehen, bis alles aufgedeckt zu sehen war -->
+        <app-skyjo-board
+          [game]="g"
+          [userId]="userId()"
+          [busy]="busy() || g.status !== 'playing'"
+          (flip)="flip(g, $event)"
+          (draw)="draw(g, $event)"
+          (swap)="swap(g, $event)"
+          (discardDrawn)="discard(g)"
+        />
+      }
+      @default {
+        <app-skyjo-round
+          [game]="g"
+          [userId]="userId()"
+          [busy]="busy()"
+          [secondsLeft]="roundSecondsLeft()"
+          [locked]="roundLocked()"
+          [last]="view() === 'last'"
+          (next)="next(g)"
+        />
+      }
+    }
+  }
+</app-game-stage>
