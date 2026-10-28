@@ -170,17 +170,14 @@ thead th.win {
   color: var(--ink-soft);
 }
 
-// Freies Feld eines Mitspielers, der gerade gewürfelt hat (ohne Punkte)
-.free {
-  display: block;
-  width: 60%;
-  height: 4px;
-  margin: 0 auto;
-  border-radius: 2px;
-  background: var(--line);
+// Vorschau, was der Wurf im freien Feld brächte
+.ghost {
+  color: var(--ink-soft);
+  font-style: italic;
+  opacity: 0.8;
 }
 
-// Freies Feld zum Eintragen: nur markiert, die Punkte rechnet man selbst
+// Freies Feld zum Eintragen mit den Punkten, die der Wurf brächte
 .pick {
   display: grid;
   place-items: center;
@@ -203,8 +200,8 @@ thead th.win {
   transform: scale(0.94);
 }
 
-.pick .material-symbols-rounded {
-  font-size: 18px;
+.nil {
+  opacity: 0.55;
 }
 
 .pick.selected {

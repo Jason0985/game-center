@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Subject } from 'rxjs';
 import { KniffelBoard } from './kniffel-board';
 import { KnGame, KnPlayer } from './kniffel.model';
 
@@ -46,21 +48,64 @@ describe('KniffelBoard', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('marks free fields without the points and hides the sums while playing', async () => {
+  it('shows the points of the roll in the free fields and the running sums', async () => {
     await render(makeGame());
     const picks = [...el().querySelectorAll<HTMLButtonElement>('button.pick')];
     expect(picks.length).toBe(12);
-    expect(picks.every((pick) => pick.textContent!.trim() === '')).toBe(true);
-    // Full House wäre 25 – steht nirgends
-    const cells = [...el().querySelectorAll('tbody td')].map((td) => td.textContent!.trim());
-    expect(cells.filter(Boolean)).toEqual(['3', '4']);
-    expect(sums(0)).toEqual(['', '']);
-    expect(sums(2)).toEqual(['', '']);
+    // 3-3-3-5-5: Full House 25, Dreierpasch 19
+    expect(picks[7].textContent!.trim()).toBe('25');
+    expect(picks[5].textContent!.trim()).toBe('19');
+    expect(sums(0)).toEqual(['3', '4']);
+    expect(sums(2)).toEqual(['3', '4']);
 
     picks[7].click();
     fixture.detectChanges();
-    expect(el().querySelector('.enter')!.textContent).toContain('Full House eintragen');
-    expect(el().querySelector('.enter')!.textContent).not.toContain('25');
+    expect(el().querySelector('.enter')!.textContent).toContain('Full House eintragen · 25');
+  });
+
+  it('enters a scoring field on the second tap without asking', async () => {
+    await render(makeGame());
+    const emitted: number[] = [];
+    fixture.componentInstance.score.subscribe((category) => emitted.push(category));
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+    const picks = () => [...el().querySelectorAll<HTMLButtonElement>('button.pick')];
+    picks()[7].click();
+    fixture.detectChanges();
+    picks()[7].click();
+    await fixture.whenStable();
+    expect(open).not.toHaveBeenCalled();
+    expect(emitted).toEqual([8]);
+  });
+
+  it('asks before crossing out a field with 0', async () => {
+    await render(makeGame());
+    const emitted: number[] = [];
+    fixture.componentInstance.score.subscribe((category) => emitted.push(category));
+    const answer = new Subject<boolean>();
+    const open = vi
+      .spyOn(TestBed.inject(MatDialog), 'open')
+      .mockReturnValue({ afterClosed: () => answer } as unknown as MatDialogRef<unknown, boolean>);
+    // Kniffel (Feld 11) bringt mit 3-3-3-5-5 nichts
+    const kniffel = () => el().querySelectorAll<HTMLButtonElement>('button.pick')[10];
+    expect(kniffel().textContent!.trim()).toBe('0');
+    kniffel().click();
+    fixture.detectChanges();
+    expect(el().querySelector('.enter')!.textContent).toContain('Kniffel streichen');
+    (el().querySelector('.enter') as HTMLButtonElement).click();
+    expect(open).toHaveBeenCalledTimes(1);
+
+    answer.next(false);
+    answer.complete();
+    await fixture.whenStable();
+    expect(emitted).toEqual([]);
+
+    const yes = new Subject<boolean>();
+    open.mockReturnValue({ afterClosed: () => yes } as unknown as MatDialogRef<unknown, boolean>);
+    (el().querySelector('.enter') as HTMLButtonElement).click();
+    yes.next(true);
+    yes.complete();
+    await fixture.whenStable();
+    expect(emitted).toEqual([11]);
   });
 
   it('counts the sums up for everyone once the game ends live', async () => {

@@ -28,7 +28,7 @@
               </th>
               @for (col of columns(); track col.player.user_id) {
                 @let value = col.player.scores[r];
-                @let open = col.open?.[r] ?? false;
+                @let preview = col.preview?.[r] ?? null;
                 <td
                   [class.turn]="col.turn"
                   [class.fresh]="fresh() === col.player.seat + ':' + r"
@@ -36,21 +36,23 @@
                 >
                   @if (value !== null) {
                     {{ value || '–' }}
-                  } @else if (open && col.mine) {
+                  } @else if (preview !== null && col.mine) {
                     <button
                       type="button"
                       class="pick"
                       [class.selected]="selected() === r"
+                      [class.nil]="!preview"
                       [disabled]="!canPick()"
-                      [attr.aria-label]="categories[r].name + ' eintragen'"
+                      [attr.aria-label]="
+                        categories[r].name +
+                        (preview ? ' eintragen: ' + preview + ' Punkte' : ' streichen')
+                      "
                       (click)="pick(r)"
                     >
-                      @if (selected() === r) {
-                        <span class="material-symbols-rounded" aria-hidden="true">check</span>
-                      }
+                      {{ preview }}
                     </button>
-                  } @else if (open) {
-                    <span class="free" aria-hidden="true"></span>
+                  } @else if (preview !== null) {
+                    <span class="ghost" [class.nil]="!preview">{{ preview }}</span>
                   }
                 </td>
               }

@@ -41,7 +41,12 @@ describe('kniffel model', () => {
   });
 
   it('ranks the highest total first and players who left last', () => {
-    const ranked = rankPlayers([player(0, 120), player(1, 200), player(2, 120), player(3, 300, 'left')]);
+    const ranked = rankPlayers([
+      player(0, 120),
+      player(1, 200),
+      player(2, 120),
+      player(3, 300, 'left'),
+    ]);
     expect(ranked.map((row) => [row.player.seat, row.rank])).toEqual([
       [1, 1],
       [0, 2],
