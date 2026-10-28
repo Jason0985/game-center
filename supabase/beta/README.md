@@ -1,30 +1,30 @@
-# Beta-Datenbank synchronisieren
+# Beta-Datenbank neu aufbauen
 
-Die Beta läuft gegen ein eigenes Supabase-Projekt. Ihr Stand war Ende September
-(`history/`), die App braucht aber das Schema aus `supabase/migrations`.
+Die Beta läuft gegen ein eigenes Supabase-Projekt. Ihr alter Stand von Ende September
+liegt in `history/`. Das komplette aktuelle Schema steht in einer einzigen Datei:
+`supabase/migrations/20261028120000_core_schema.sql` (alle Migrationen bis 2026-10-22
+zusammengefasst, Inhalt unverändert).
 
-## Einmalig auf den aktuellen Stand bringen
+## So geht's (SQL Editor im Supabase-Dashboard des **Beta**-Projekts)
 
-1. Supabase-Dashboard des **Beta**-Projekts öffnen → SQL Editor.
-2. Den kompletten Inhalt von `beta_full_sync.sql` einfügen und ausführen.
-3. Für Push-Nachrichten die zwei Vault-Secrets anlegen (stehen im Abschnitt Push von
-   `beta_full_sync.sql`, gleiche Befehle wie in `20260918220000_core_schema.sql`).
+1. `supabase/beta/reset_public.sql` komplett einfügen und ausführen.
+   Leert das Schema public (alle Tabellen mit Daten, Funktionen, Trigger), alle Cron-Jobs
+   und die Migrations-Historie der Supabase-CLI. Konten (auth.users) bleiben.
+2. `supabase/migrations/20261028120000_core_schema.sql` komplett einfügen und ausführen.
+   Legt alles neu an; bestehende Konten bekommen automatisch wieder ein Profil.
+3. Dich wieder zum Admin machen (E-Mail anpassen):
 
-Das Skript läuft in einer Transaktion. Schlägt etwas fehl, bleibt die Datenbank wie sie war.
+   ```sql
+   update public.profiles set roles = '{admin}'
+   where id = (select id from auth.users where email = 'deine@mail.de');
+   ```
 
-**Was erhalten bleibt:** Konten (auth.users), Profile mit Benutzername, Anzeigename und
-Rollen (alte Rolle `admin` → `roles = {admin}`), Freundschaften.
+4. Für Push-Nachrichten die zwei Vault-Secrets anlegen (Befehle im Abschnitt Push des
+   Core-Schemas).
 
-**Was verloren geht:** alles andere in `public` – Lobbys, Spielstände, Rankings,
-Benachrichtigungen, F1-Overrides und von Hand im Dashboard angelegte Tabellen – sowie alle
-Cron-Jobs (die neuen werden wieder eingeplant).
+Mit der Supabase-CLI geht Schritt 2 auch per `supabase db push` – nach Schritt 1 ist die
+Historie leer, die CLI führt das neue Core-Schema dann aus.
 
-## Nach neuen Migrationen
-
-```bash
-supabase/beta/build-sync.sh
-```
-
-baut `beta_full_sync.sql` aus `parts/` und `supabase/migrations` neu. Das Skript lässt
-sich auf einer schon synchronisierten Beta-DB erneut ausführen (Profile, Rollen und
-Freundschaften bleiben, der Rest wird neu aufgebaut).
+**Was verloren geht:** alle Daten in public – Profile (werden mit dem Namen aus der
+Registrierung neu angelegt), Rollen, Freundschaften, Lobbys, Spielstände, Rankings,
+Benachrichtigungen.

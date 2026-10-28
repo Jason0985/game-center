@@ -1,34 +1,26 @@
--- ===========================================================================
--- Beta-Sync, Teil 1: sichern und abräumen
--- ===========================================================================
--- Profile (mit Rollen) und Freundschaften kommen in eine temporäre Sicherung; danach
--- wird alles entfernt, was die App im Schema public angelegt hat (Tabellen, Funktionen
--- samt ihrer Trigger auf auth.users, Views, eigene Typen) sowie alle Cron-Jobs.
--- Konten (auth.users) bleiben unangetastet. Objekte von Erweiterungen bleiben stehen.
--- Läuft auch auf einer schon synchronisierten Datenbank (z. B. nach neuen Migrationen).
+-- Beta-Datenbank leeren, damit supabase/migrations/20261028120000_core_schema.sql sie
+-- komplett neu aufbauen kann. NUR im Beta-Projekt ausführen!
+--
+-- Löscht alles, was die App im Schema public angelegt hat (Tabellen mit allen Daten,
+-- Views, Funktionen samt ihrer Trigger auf auth.users, eigene Typen), alle Cron-Jobs und
+-- die Migrations-Historie der Supabase-CLI. Konten (auth.users) bleiben; ihre Profile legt
+-- das Core-Schema danach neu an. Objekte von Erweiterungen bleiben stehen.
 
-create temp table beta_keep_profiles on commit drop as
-  select p.id, p.username, p.display_name, p.created_at,
-         -- Neues Schema: roles (Text-Array); alter Beta-Stand: role = 'admin' | 'user'
-         case when to_jsonb(p) ? 'roles'
-                then array(select jsonb_array_elements_text(to_jsonb(p) -> 'roles'))
-              when to_jsonb(p) ->> 'role' = 'admin' then array['admin']
-              else '{}'::text[] end as roles
-  from public.profiles p;
-
-create temp table beta_keep_friendships on commit drop as
-  select id, requester_id, addressee_id, status, created_at, updated_at
-  from public.friendships;
+begin;
 
 do $$
 declare
   obj record;
 begin
-  -- Cron-Jobs (das neue Schema plant seine eigenen wieder ein)
   if to_regnamespace('cron') is not null then
     for obj in select jobid from cron.job loop
       perform cron.unschedule(obj.jobid);
     end loop;
+  end if;
+
+  -- Sonst hält die CLI das alte Core-Schema für schon ausgeführt und überspringt es
+  if to_regclass('supabase_migrations.schema_migrations') is not null then
+    delete from supabase_migrations.schema_migrations;
   end if;
 
   for obj in
@@ -51,7 +43,7 @@ begin
     execute format('drop table if exists %s cascade', obj.name);
   end loop;
 
-  -- Funktionen; cascade nimmt die Trigger mit, auch die auf auth.users
+  -- cascade nimmt die Trigger mit, auch die auf auth.users
   for obj in
     select p.oid::regprocedure as name
     from pg_proc p
@@ -71,4 +63,18 @@ begin
   loop
     execute format('drop type if exists %s cascade', obj.name);
   end loop;
+
+  -- Prüfen, dass wirklich nichts übrig ist (sonst überspringt "create table if not exists"
+  -- alte Tabellen und später fehlen Spalten wie profiles.roles)
+  if exists (
+    select 1
+    from pg_class c
+    where c.relnamespace = 'public'::regnamespace
+      and c.relkind in ('r', 'p', 'v', 'm')
+      and not exists (select 1 from pg_depend d where d.objid = c.oid and d.deptype = 'e')
+  ) then
+    raise exception 'public ist noch nicht leer';
+  end if;
 end $$;
+
+commit;
