@@ -15,14 +15,16 @@
 
 .edge--frost {
   box-shadow:
-    inset 0 0 0 1px rgba(170, 200, 230, 0.6),
-    inset 0 0 18px 3px rgba(150, 190, 230, 0.32);
+    inset 0 0 0 1px rgba(170, 200, 230, 0.55),
+    inset 0 0 20px 3px rgba(150, 190, 230, 0.28);
 }
 
+// Angesengte Ränder wie bei altem Pergament, ganz außen glimmt es noch
 .edge--glow {
   box-shadow:
-    inset 0 0 0 1px rgba(255, 122, 24, 0.45),
-    inset 0 0 22px 2px rgba(255, 122, 24, 0.22);
+    inset 0 0 0 1px rgba(70, 30, 5, 0.55),
+    inset 0 0 3px 1px rgba(255, 122, 24, 0.45),
+    inset 0 0 26px 5px rgba(100, 45, 8, 0.38);
 }
 
 // Schneekappe: Haufen auf der Oberkante, vorne hängen kleine Zapfen über

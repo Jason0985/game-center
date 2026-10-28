@@ -67,6 +67,13 @@ export class ThemeService {
       const theme = this.theme();
       this.apply(theme === 'system' ? (this.systemLight() ? 'light' : 'dark') : theme);
     });
+
+    // Saisonale Tischfarben hängen an <html data-decor> (styles/_decor.scss)
+    effect(() => {
+      const decor = this.decor();
+      if (decor === 'none') document.documentElement.removeAttribute('data-decor');
+      else document.documentElement.setAttribute('data-decor', decor);
+    });
   }
 
   setTheme(theme: Theme): void {

@@ -1,0 +1,40 @@
+// Saisonale Tische: überschreibt die Tisch-Tokens, sobald <html data-decor="…"> gesetzt ist
+// (ThemeService). Filz, Holzrand und Intarsie; Muster, Schnee und Nebel legt app-table-decor
+// darüber. Im hellen Schema bleibt der Holzrand, nur der Filz wird heller, damit Beschriftungen
+// auf dem Tisch lesbar bleiben.
+
+// Weihnachten: Tannenfilz, Kirschholz, Goldintarsie
+html[data-decor='christmas'] {
+  --table-center: #1f523c;
+  --table-edge: #0b281c;
+  --table-rim: #5b2419;
+  --table-rim-line: rgba(222, 172, 84, 0.7);
+  --decor-pattern: rgba(255, 246, 225, 0.055);
+  --decor-light: rgba(255, 222, 160, 0.13);
+}
+
+html[data-decor='christmas'][data-theme='light'] {
+  --table-center: #d9eadf;
+  --table-edge: #b7d3c1;
+  --table-rim: #7a3324;
+  --decor-pattern: rgba(20, 70, 45, 0.08);
+  --decor-light: rgba(255, 236, 190, 0.35);
+}
+
+// Halloween: Auberginenfilz, verkohltes Holz, Glut-Intarsie
+html[data-decor='halloween'] {
+  --table-center: #3c1a4a;
+  --table-edge: #14081d;
+  --table-rim: #24150f;
+  --table-rim-line: rgba(255, 122, 26, 0.75);
+  --decor-fog: rgba(205, 185, 235, 0.1);
+  --decor-candle: rgba(255, 148, 56, 0.2);
+}
+
+html[data-decor='halloween'][data-theme='light'] {
+  --table-center: #ebdff0;
+  --table-edge: #ccb5d9;
+  --table-rim: #3a2418;
+  --decor-fog: rgba(255, 255, 255, 0.45);
+  --decor-candle: rgba(255, 148, 56, 0.22);
+}

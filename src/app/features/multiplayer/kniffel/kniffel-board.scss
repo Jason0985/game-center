@@ -13,6 +13,35 @@
   min-height: 0;
 }
 
+// Saisonaler Block (html[data-decor], ThemeService): Weihnachten rote Tinte und ein
+// Zuckerstangen-Streifen unter dem Kopf, Halloween altes Pergament mit oranger Tinte
+:host-context(html[data-decor='christmas']) {
+  --accent: #b51f2e;
+  --turn: rgba(181, 31, 46, 0.09);
+}
+
+:host-context(html[data-decor='christmas']) thead th {
+  background: repeating-linear-gradient(-45deg, #c62433 0 5px, #fffdf6 5px 10px) left bottom / 100%
+    4px no-repeat;
+}
+
+:host-context(html[data-decor='halloween']) {
+  --paper: #f3e4c2;
+  --paper-sum: #e6d0a3;
+  --ink: #2b1a0d;
+  --ink-soft: #7b6146;
+  --line: rgba(95, 55, 15, 0.24);
+  --accent: #c2500c;
+  --turn: rgba(194, 80, 12, 0.11);
+}
+
+:host-context(html[data-decor='halloween']) .sheet {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(140, 80, 25, 0.09), transparent 28%),
+    radial-gradient(circle at 84% 64%, rgba(140, 80, 25, 0.08), transparent 32%),
+    radial-gradient(circle at 40% 92%, rgba(140, 80, 25, 0.06), transparent 26%), var(--paper);
+}
+
 .board {
   position: relative;
   display: grid;

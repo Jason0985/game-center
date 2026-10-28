@@ -1,5 +1,5 @@
 :host {
-  --snow-w: calc(var(--rim, 8px) + 6px);
+  --rim-w: var(--rim, 10px);
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -11,14 +11,25 @@
   display: none;
 }
 
-// Ring entlang des Rands: Maske lässt nur den Bereich zwischen Rand und Innenkante stehen,
-// so folgt der Schnee jeder Tischform (Bogen, Oval, Rechteck)
-.frost,
-.glow {
+:host(.table-decor--flat) {
+  --rim-w: 0px;
+}
+
+// Filzfläche innerhalb des Rands; Muster und Licht werden hier beschnitten
+.felt {
+  position: absolute;
+  inset: var(--rim-w);
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+// Ring entlang des Rands: Maske lässt nur den Bereich zwischen Außen- und Innenkante stehen,
+// so folgt er jeder Tischform (Bogen, Oval)
+@mixin ring($width) {
   position: absolute;
   inset: 0;
   box-sizing: border-box;
-  padding: var(--snow-w);
+  padding: $width;
   border-radius: inherit;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -29,91 +40,255 @@
     linear-gradient(#000 0 0);
 }
 
-// Weihnachten: lockerer, körniger Schnee auf dem Rand – oben liegt mehr als unten
-.frost {
-  padding: var(--rim, 8px);
-  background:
-    radial-gradient(circle at 30% 40%, #fff 0 1.3px, transparent 1.9px) 0 0 / 11px 9px,
-    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.95) 0 2px, transparent 2.6px) 4px 3px /
-      19px 15px,
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.85) 0 2.8px, transparent 3.4px) 9px
-      6px / 37px 29px,
-    linear-gradient(rgba(244, 248, 252, 0.42), rgba(244, 248, 252, 0.1) 75%);
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.45));
-}
+// ---------------------------------------------------------------- Weihnachten
 
-// Hauch von Schnee, der vom Rand ein Stück auf den Filz weht
-.flurry {
+// Fair-Isle-Muster wie auf einem Weihnachtspulli: Schneeflocke, Rauten, Punkte
+.knit {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 calc(var(--snow-w) * 1.6) rgba(255, 255, 255, 0.12);
+  background: var(--decor-pattern);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%23000' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cpath d='M24 15V33M16.2 19.5L31.8 28.5M16.2 28.5L31.8 19.5M21.5 16.5L24 19L26.5 16.5M21.5 31.5L24 29L26.5 31.5M17 22.6L19.6 21.5L18.7 18.9M31 25.4L28.4 26.5L29.3 29.1M17 25.4L19.6 26.5L18.7 29.1M31 22.6L28.4 21.5L29.3 18.9'/%3E%3C/g%3E%3Cpath d='M-3 24L0 21L3 24L0 27ZM45 24L48 21L51 24L48 27ZM21 0L24-3L27 0L24 3ZM21 48L24 45L27 48L24 51Z'/%3E%3Ccircle cx='0' cy='0' r='1.6'/%3E%3Ccircle cx='48' cy='0' r='1.6'/%3E%3Ccircle cx='0' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3C/svg%3E")
+    center / 48px 48px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%23000' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cpath d='M24 15V33M16.2 19.5L31.8 28.5M16.2 28.5L31.8 19.5M21.5 16.5L24 19L26.5 16.5M21.5 31.5L24 29L26.5 31.5M17 22.6L19.6 21.5L18.7 18.9M31 25.4L28.4 26.5L29.3 29.1M17 25.4L19.6 26.5L18.7 29.1M31 22.6L28.4 21.5L29.3 18.9'/%3E%3C/g%3E%3Cpath d='M-3 24L0 21L3 24L0 27ZM45 24L48 21L51 24L48 27ZM21 0L24-3L27 0L24 3ZM21 48L24 45L27 48L24 51Z'/%3E%3Ccircle cx='0' cy='0' r='1.6'/%3E%3Ccircle cx='48' cy='0' r='1.6'/%3E%3Ccircle cx='0' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3C/svg%3E")
+    center / 48px 48px;
 }
 
-// Halloween: Rand glimmt orange, nach innen lila
-.glow {
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 160, 60, 0.55) 0 1.4px, transparent 2px) 0 0 / 13px
-      11px,
-    linear-gradient(160deg, rgba(255, 122, 24, 0.6), rgba(140, 70, 220, 0.5));
-  opacity: 0.85;
-  animation: table-glow 4s ease-in-out infinite alternate;
-}
-
-:host(.table-decor--halloween)::after {
-  content: '';
+// Maschenbild: feine V-Reihen über die ganze Fläche
+.stitch {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 calc(var(--snow-w) * 2) rgba(255, 122, 24, 0.18);
+  background: var(--decor-pattern);
+  opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M1 2L4 6L7 2' stroke='%23000' stroke-width='1.1' fill='none'/%3E%3C/svg%3E")
+    0 0 / 8px 8px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M1 2L4 6L7 2' stroke='%23000' stroke-width='1.1' fill='none'/%3E%3C/svg%3E")
+    0 0 / 8px 8px;
 }
 
-@keyframes table-glow {
-  to {
-    opacity: 0.55;
+// Warmes Lampenlicht von oben, zur Kante hin dunkler
+.lamp {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 30%, var(--decor-light), transparent 70%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.28));
+}
+
+// Holzrand: Grundton aus --table-rim, Jahresringe als Bögen, oben Licht, unten Schatten
+.wood {
+  @include ring(var(--rim-w));
+  background:
+    repeating-radial-gradient(
+      ellipse 140% 120% at 50% 115%,
+      rgba(0, 0, 0, 0.16) 0 1px,
+      transparent 1px 5px,
+      rgba(255, 255, 255, 0.04) 5px 6px,
+      transparent 6px 9px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--table-rim), #fff 16%),
+      var(--table-rim) 40%,
+      color-mix(in srgb, var(--table-rim), #000 35%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.wood--charred {
+  background:
+    repeating-radial-gradient(
+      ellipse 140% 120% at 50% 115%,
+      rgba(0, 0, 0, 0.35) 0 1px,
+      transparent 1px 4px,
+      rgba(255, 110, 30, 0.05) 4px 5px,
+      transparent 5px 8px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--table-rim), #fff 10%),
+      var(--table-rim) 45%,
+      color-mix(in srgb, var(--table-rim), #000 45%)
+    );
+}
+
+// Intarsie an der Innenkante des Rands
+.inlay {
+  position: absolute;
+  inset: calc(var(--rim-w) - 3px);
+  border: 1.5px solid var(--table-rim-line);
+  border-radius: inherit;
+}
+
+.inlay--ember {
+  box-shadow:
+    0 0 6px 1px var(--table-rim-line),
+    inset 0 0 8px rgba(255, 122, 26, 0.35);
+}
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+// Schneewehe: oben dick, an den Seiten ausdünnend; die Turbulenz am Elternelement macht die
+// Kanten unregelmäßig, erst danach kommt der Schatten
+.drift {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+}
+
+.drift-snow {
+  @include ring(calc(var(--rim-w) + 7px));
+  background: linear-gradient(180deg, #ffffff, #f1f6fb 35%, #d8e5f1);
+  -webkit-mask:
+    linear-gradient(#000 0 22%, transparent 52%),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: source-in, xor;
+  mask:
+    linear-gradient(#000 0 22%, transparent 52%) intersect,
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+// Glitzern auf der Wehe: vier Zacken, die nacheinander kurz aufleuchten
+.glint {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: glint 6s ease-in-out infinite;
+}
+
+.glint--1 {
+  top: calc(var(--rim-w) * 0.2);
+  left: 41%;
+}
+
+.glint--2 {
+  top: calc(var(--rim-w) * 0.35);
+  left: 57%;
+  animation-delay: 2s;
+}
+
+.glint--3 {
+  top: calc(var(--rim-w) * 0.1);
+  left: 49%;
+  animation-delay: 4s;
+}
+
+@keyframes glint {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
   }
 }
 
-// Spinnennetze in den oberen Ecken
-.web {
+// ---------------------------------------------------------------- Halloween
+
+// Zwei Nebelbänke ziehen gegeneinander langsam über den Filz
+.fog {
   position: absolute;
-  top: 2%;
-  width: clamp(48px, 16%, 110px);
-  aspect-ratio: 1;
-  opacity: 0.35;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23e8e6f0' stroke-width='1.4'%3E%3Cpath d='M0 0 L120 30 M0 0 L95 75 M0 0 L60 110 M0 0 L20 120'/%3E%3Cpath d='M30 7.5 Q26 20 24 24 Q18 34 15 50 Q10 54 5 30 Q20 22 30 7.5Z'/%3E%3Cpath d='M60 15 Q52 40 48 48 Q38 66 30 100 Q20 94 10 60 Q35 40 60 15Z'/%3E%3Cpath d='M90 22.5 Q78 58 71 71 Q57 95 45 118 Q30 112 15 90 Q52 60 90 22.5Z'/%3E%3C/svg%3E")
-    no-repeat left top / contain;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 18% 16% at 12% 62%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 22% 13% at 34% 38%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 16% 18% at 58% 70%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 24% 14% at 82% 45%, var(--decor-fog), transparent 70%);
+  animation: fog 80s linear infinite alternate;
 }
 
-.web--left {
-  left: 6%;
+.fog--near {
+  top: 12%;
+  opacity: 0.8;
+  transform: scaleY(-1);
+  animation-duration: 110s;
+  animation-direction: alternate-reverse;
 }
 
-.web--right {
-  right: 6%;
-  transform: scaleX(-1);
+@keyframes fog {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: -50% 0;
+  }
+}
+
+// Kerzenlicht aus den unteren Ecken, flackert unregelmäßig
+.candle {
+  position: absolute;
+  inset: 0;
+  animation: flicker 3.4s ease-in-out infinite;
+}
+
+.candle--left {
+  background: radial-gradient(circle at 4% 100%, var(--decor-candle), transparent 48%);
+}
+
+.candle--right {
+  background: radial-gradient(circle at 96% 100%, var(--decor-candle), transparent 48%);
+  animation-duration: 4.1s;
+  animation-delay: -1.7s;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  18% {
+    opacity: 0.78;
+  }
+  31% {
+    opacity: 0.95;
+  }
+  47% {
+    opacity: 0.7;
+  }
+  63% {
+    opacity: 1;
+  }
+  81% {
+    opacity: 0.84;
+  }
 }
 
 // Kleine Spinne am Faden, die langsam auf und ab baumelt
 .spider {
   position: absolute;
   top: 0;
-  left: 72%;
+  left: 76%;
   width: 14px;
-  height: 46px;
+  height: 52px;
   transform-origin: 50% 0;
-  animation: table-spider 5s ease-in-out infinite;
+  animation: spider 6s ease-in-out infinite;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg stroke='%23140d1c' stroke-width='1.2' fill='none'%3E%3Cpath d='M4 6 L0 3 M4 8 L0 8 M4 9 L1 12 M10 6 L14 3 M10 8 L14 8 M10 9 L13 12'/%3E%3C/g%3E%3Cellipse cx='7' cy='8' rx='3.4' ry='4' fill='%23140d1c'/%3E%3Ccircle cx='5.8' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3Ccircle cx='8.2' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg stroke='%23120a18' stroke-width='1.2' fill='none'%3E%3Cpath d='M4 6L0 3M4 8L0 8M4 9L1 12M10 6L14 3M10 8L14 8M10 9L13 12'/%3E%3C/g%3E%3Cellipse cx='7' cy='8' rx='3.4' ry='4' fill='%23120a18'/%3E%3Ccircle cx='5.8' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3Ccircle cx='8.2' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3C/svg%3E")
       no-repeat center bottom / 14px 14px,
-    linear-gradient(rgba(230, 230, 240, 0.6), rgba(230, 230, 240, 0.6)) no-repeat center top / 1px
-      34px;
+    linear-gradient(rgba(225, 220, 235, 0.55), rgba(225, 220, 235, 0.55)) no-repeat center top / 1px
+      40px;
 }
 
-@keyframes table-spider {
+@keyframes spider {
   0%,
   100% {
-    transform: translateY(-10px) rotate(-3deg);
+    transform: translateY(-12px) rotate(-3deg);
   }
   50% {
     transform: translateY(6px) rotate(3deg);
@@ -121,7 +296,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glow,
+  .glint,
+  .fog,
+  .candle,
   .spider {
     animation: none;
   }
