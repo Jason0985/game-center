@@ -1,9 +1,10 @@
-// Eigene Bühne über der App-Topbar; die schwebende Bottom-Nav (z 10), Toasts und
-// Dialoge liegen darüber. Am Laptop verdeckt der Tisch auch die Nav (wie im Design).
+// Eigene Bühne über der App-Topbar (z 8), sonst liegt deren Glocke auf dem Spielmenü;
+// die schwebende Bottom-Nav (z 10), Toasts und Dialoge liegen darüber. Am Laptop
+// verdeckt der Tisch auch die Nav (wie im Design).
 .stage {
   position: fixed;
   inset: 0;
-  z-index: 5;
+  z-index: 9;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   background: var(--color-background);
