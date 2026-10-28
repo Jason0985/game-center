@@ -1,6 +1,6 @@
 // Kniffel: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20260918220000_core_schema.sql); points spiegelt die Wertung für die
-// Vorschau im Block.
+// (supabase/migrations/20260918220000_core_schema.sql); points und pointsFor spiegeln die
+// Wertung für die Vorschau im Block.
 
 export interface KnPlayer {
   user_id: string;
@@ -67,6 +67,7 @@ export const KNIFFEL_RULES = [
   'Kleine Straße: vier aufeinanderfolgende Zahlen (1-2-3-4, 2-3-4-5 oder 3-4-5-6) – 30 Punkte.',
   'Große Straße: fünf aufeinanderfolgende Zahlen (1-2-3-4-5 oder 2-3-4-5-6) – 40 Punkte.',
   'Kniffel: fünf gleiche Würfel – 50 Punkte. Chance: beliebiger Wurf – zählt alle Augen.',
+  'Joker: Ist dein Kniffel-Feld schon belegt und du würfelst noch einen Kniffel, darfst du ihn als Full House (25), kleine Straße (30) oder große Straße (40) eintragen.',
 ];
 
 // Punkte von fünf Würfeln im Feld category; gespiegelt aus _kniffel_points
@@ -94,6 +95,25 @@ export function points(dice: readonly number[], category: number): number {
     default:
       return (category + 1) * counts[category];
   }
+}
+
+// Joker: ist das Kniffel-Feld schon belegt, zählt ein weiterer Kniffel als Full House,
+// kleine oder große Straße mit voller Punktzahl; gespiegelt aus _kniffel_score
+const JOKER: Record<number, number> = { 8: 25, 9: 30, 10: 40 };
+
+export const isJoker = (
+  dice: readonly number[],
+  category: number,
+  scores: readonly (number | null)[],
+): boolean => category in JOKER && points(dice, 11) === 50 && scores[11] !== null;
+
+// Punkte für category mit Blick auf den eigenen Block (Joker), sonst wie points
+export function pointsFor(
+  dice: readonly number[],
+  category: number,
+  scores: readonly (number | null)[],
+): number {
+  return isJoker(dice, category, scores) ? JOKER[category] : points(dice, category);
 }
 
 export const upperSum = (scores: readonly (number | null)[]): number =>
