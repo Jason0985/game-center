@@ -2,7 +2,7 @@
   @if (christmas()) {
     <app-christmas-backdrop />
   }
-  <header class="top-bar">
+  <header class="top-bar" [class.top-bar--scrolled]="scrolled()">
     <a class="top-bar-title" routerLink="/" aria-label="Game Center, zur Startseite">
       <img src="icons/app-icon.svg" alt="" aria-hidden="true" />
       Game Center
@@ -59,13 +59,15 @@
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="bottom-nav" aria-label="Hauptnavigation">
+  <nav class="bottom-nav" aria-label="Hauptnavigation" [style.--tab]="tabIndex()">
+    <span class="bottom-nav-pill" aria-hidden="true"></span>
     @if (christmas()) {
       <app-christmas-snowbank />
     }
     <a
       class="bottom-nav-link"
       routerLink="/"
+      [class.active]="tabIndex() === 0"
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       ariaCurrentWhenActive="page"
@@ -77,6 +79,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/multiplayer"
+      [class.active]="tabIndex() === 1"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
@@ -86,6 +89,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/collection"
+      [class.active]="tabIndex() === 2"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
@@ -95,6 +99,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/profile"
+      [class.active]="tabIndex() === 3"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >

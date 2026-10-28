@@ -77,7 +77,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+.environment
+
+.db-example
+
 # Claude Code + graphify (lokal)
-/.claude/
+/.claude/*
+# Design-Skills fürs Beta-Design (Frontend, Apple HIG) gehören ins Repo
+!/.claude/skills/
 /.graphify/cache/
 /.graphify

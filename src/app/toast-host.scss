@@ -1,6 +1,6 @@
 .toast-stack {
   position: fixed;
-  top: 52px;
+  top: calc(8px + env(safe-area-inset-top, 0px));
   left: 50%;
   z-index: 1100; // über Dialogen (cdk-overlay 1000): Rückmeldungen aus Dialogen bleiben sichtbar
   display: flex;
@@ -15,12 +15,15 @@
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
-  border-radius: var(--radius-medium);
-  background-color: color-mix(in srgb, var(--tone) 14%, var(--color-neutral-raised));
-  box-shadow: var(--shadow-surface);
+  border: 0.5px solid color-mix(in srgb, var(--tone) 35%, var(--color-glass-edge));
+  border-radius: 22px;
+  // Glas wie die Dynamic-Island-Hinweise: fällt von oben herein und federt aus
+  background-color: color-mix(in srgb, var(--tone) 12%, var(--color-glass));
+  box-shadow: var(--shadow-navigation);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   pointer-events: auto;
-  animation: toast-in 220ms ease-out;
+  animation: toast-in 560ms var(--ease-spring);
 }
 
 .toast-body {
@@ -51,7 +54,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-small);
+  border-radius: 50%;
   background: var(--tone-soft);
   color: var(--tone);
 }
@@ -116,7 +119,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-24px) scale(0.92);
   }
 }
 

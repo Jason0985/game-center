@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { filter, map } from 'rxjs';
@@ -12,6 +12,7 @@ import { SessionService } from './services/session.service';
 import { PushService } from './services/push.service';
 import { PwaService } from './services/pwa.service';
 import { FeedbackService } from './services/feedback.service';
+import { tabOf } from './nav-tabs';
 import {
   ChristmasBackdrop,
   ChristmasLights,
@@ -51,6 +52,12 @@ export class App {
   /** Das Zahnrad für die Einstellungen erscheint nur auf der Profilseite. */
   readonly onProfile = computed(() => this.url().split(/[?#]/)[0] === '/profile');
 
+  /** Aktiver Tab für die gleitende Pille (Unterseiten zählen zu ihrem Tab); -1 = keiner. */
+  readonly tabIndex = computed(() => tabOf(this.url()));
+
+  /** Kopf wird zu Glas, sobald der Inhalt darunter scrollt. */
+  readonly scrolled = signal(false);
+
   /** Weihnachtsdeko vorerst nur für Admins, die sie in den Einstellungen eingeschaltet haben. */
   readonly christmas = computed(() => this.session.isAdmin() && this.themes.christmas());
 
@@ -62,5 +69,9 @@ export class App {
     inject(PushService);
     // Töne fürs Spiel mit dem ersten Tippen freischalten (Safari)
     inject(FeedbackService);
+
+    const onScroll = () => this.scrolled.set(window.scrollY > 4);
+    addEventListener('scroll', onScroll, { passive: true });
+    inject(DestroyRef).onDestroy(() => removeEventListener('scroll', onScroll));
   }
 }

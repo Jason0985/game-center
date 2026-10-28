@@ -212,9 +212,9 @@
   width: min(400px, 100%);
   margin-top: 12px;
   padding: 0 22px;
-  border: 1px solid var(--color-danger-45) !important;
-  border-radius: 10px;
-  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill);
+  background: var(--color-danger-12) !important;
   color: var(--color-danger-light) !important;
 }
 
