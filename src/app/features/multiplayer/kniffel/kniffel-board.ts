@@ -63,14 +63,27 @@ const centerOf = (rect: DOMRect): Point => ({
 const shift = (from: Point, to: Point, dy = 0) => `${to.x - from.x}px ${to.y - from.y + dy}px`;
 const randomFace = () => 1 + Math.floor(Math.random() * 6);
 
-// Abrechnung am Ende (ms): erst kurz den letzten Eintrag sehen, dann zählen die Summen oben
-// hoch, der Bonus kommt dazu und zuletzt laufen die Gesamtsummen aller gleichzeitig hoch –
-// wer am meisten hat, zählt am längsten
-type Reveal = 'hidden' | 'upper' | 'bonus' | 'total' | 'done';
-const REVEAL_START_MS = 1200;
-const UPPER_COUNT_MS = 1400;
-const BONUS_MS = 1100;
-const TOTAL_COUNT_MS = 3600;
+// Abrechnung am Ende, für alle gleichzeitig und Zeile für Zeile: erst kurz den letzten
+// Eintrag sehen, dann wandert jedes Feld oben in die Summe oben, der Bonus springt dazu,
+// Summe oben und Bonus gehen ins Gesamt und danach kommt Feld für Feld der untere Teil dazu.
+// Jeder Schritt zählt seine Punkte langsam hoch (COUNT_MS) und bleibt dann kurz stehen.
+type TallyStep = { kind: 'row'; row: number } | { kind: 'bonus' } | { kind: 'carry' };
+const TALLY: TallyStep[] = [
+  ...UPPER.map((row) => ({ kind: 'row' as const, row })),
+  { kind: 'bonus' },
+  { kind: 'carry' },
+  ...LOWER.map((row) => ({ kind: 'row' as const, row })),
+];
+const TALLY_START_MS = 1500;
+const ROW_MS = 1300;
+const BONUS_MS = 1600;
+const CARRY_MS = 1800;
+const COUNT_MS = 750;
+const TALLY_END_MS = 900;
+const stepMs = (step: TallyStep) =>
+  step.kind === 'row' ? ROW_MS : step.kind === 'bonus' ? BONUS_MS : CARRY_MS;
+// Sanft hochzählen: schnell los, langsam ankommen
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
 // Spielansicht: oben der Kniffelblock (eine Spalte je Spieler), unten die fünf Würfel mit
 // Würfeln/Eintragen. Neue Würfe (roll_seq) sehen alle gleich: Würfel fliegen in den Becher,
@@ -159,26 +172,56 @@ export class KniffelBoard {
     () => this.myTurn() && this.game().rolls > 0 && this.rollsLeft() > 0 && !this.rolling(),
   );
 
-  // Abrechnung am Ende: welcher Schritt läuft und wie weit (ms seit Beginn des Schritts)
-  readonly reveal = signal<Reveal>('hidden');
-  private readonly revealAt = signal(0);
+  // Abrechnung am Ende: Index in TALLY (-1 noch verdeckt, TALLY.length fertig) und wie weit
+  // der Schritt ist (ms seit seinem Beginn)
+  readonly tally = signal(-1);
+  private readonly tallyAt = signal(0);
   private readonly elapsed = signal(0);
-  readonly revealed = computed(() => this.reveal() === 'done');
+  readonly revealed = computed(() => this.tally() >= TALLY.length);
+  readonly tallyStep = computed<TallyStep | null>(() => TALLY[this.tally()] ?? null);
+  // Zeile, deren Punkte gerade dazugezählt werden
+  readonly addingRow = computed(() => {
+    const step = this.tallyStep();
+    return step?.kind === 'row' ? step.row : null;
+  });
+  readonly tallyText = computed(() => {
+    const step = this.tallyStep();
+    if (!step) return 'Abrechnung – gleich wird zusammengezählt …';
+    if (step.kind === 'bonus') return `Bonus: ab ${KNIFFEL_BONUS_AT} oben gibt es ${KNIFFEL_BONUS}`;
+    if (step.kind === 'carry') return 'Summe oben und Bonus ins Gesamt';
+    return `${CATEGORIES[step.row].name} kommt dazu`;
+  });
 
   readonly columns = computed(() => {
     const game = this.game();
     const dice = this.settled();
-    const reveal = this.reveal();
-    const ms = this.elapsed();
-    // Alle zählen gleich schnell; der höchste Wert braucht die ganze Dauer
-    const upperMax = Math.max(1, ...game.players.map((p) => upperSum(p.scores)));
-    const totalMax = Math.max(1, ...game.players.map((p) => p.total));
-    const count = (value: number, max: number, duration: number) =>
-      Math.min(value, Math.floor((max * Math.min(ms, duration)) / duration));
+    const index = this.tally();
+    const step = TALLY[index];
+    const progress = easeOut(Math.min(1, this.elapsed() / COUNT_MS));
+    const upperEnd = UPPER.length;
+    const carryAt = upperEnd + 1;
     return game.players.map((player) => {
       const turn = !this.finished() && player.seat === game.turn_seat;
+      const score = (row: number) => player.scores[row] ?? 0;
+      // Summe der Felder aus den Schritten vor index, dazu der laufende Schritt anteilig
+      const doneRows = (rows: readonly number[]) =>
+        TALLY.slice(0, index).reduce(
+          (sum, s) => (s.kind === 'row' && rows.includes(s.row) ? sum + score(s.row) : sum),
+          0,
+        );
+      const current = step?.kind === 'row' ? Math.round(score(step.row) * progress) : 0;
       const upper = upperSum(player.scores);
-      const total = player.total;
+      const bonus = bonusOf(player.scores);
+      const upperShown = index < 0 ? '' : index < upperEnd ? doneRows(UPPER) + current : upper;
+      const totalShown =
+        index < carryAt
+          ? ''
+          : index >= TALLY.length
+            ? player.total
+            : index === carryAt
+              ? Math.round((upper + bonus) * progress)
+              : upper + bonus + doneRows(LOWER) + current;
+      const rising = progress < 1 && (step?.kind === 'row' ? score(step.row) > 0 : true);
       return {
         player,
         turn,
@@ -186,25 +229,15 @@ export class KniffelBoard {
         initial: player.name.trim().charAt(0).toUpperCase() || '?',
         color: AVATAR_COLORS[player.seat % AVATAR_COLORS.length],
         sums: {
-          upper:
-            reveal === 'hidden'
-              ? ''
-              : reveal === 'upper'
-                ? count(upper, upperMax, UPPER_COUNT_MS)
-                : upper,
-          bonus: reveal === 'hidden' || reveal === 'upper' ? '' : bonusOf(player.scores) || '–',
-          total:
-            reveal === 'done'
-              ? total
-              : reveal === 'total'
-                ? count(total, totalMax, TOTAL_COUNT_MS)
-                : '',
+          upper: upperShown,
+          bonus: index < upperEnd ? '' : bonus || '–',
+          total: totalShown,
         },
         // Läuft die Summe gerade noch hoch?
         counting: {
-          upper: reveal === 'upper' && count(upper, upperMax, UPPER_COUNT_MS) < upper,
+          upper: index < upperEnd && step?.kind === 'row' && rising,
           bonus: false,
-          total: reveal === 'total' && count(total, totalMax, TOTAL_COUNT_MS) < total,
+          total: index >= carryAt && index < TALLY.length && rising,
         },
         // Was der liegende Wurf in den freien Feldern bringen würde
         preview:
@@ -250,7 +283,7 @@ export class KniffelBoard {
 
   private run = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
-  private revealTimers: ReturnType<typeof setTimeout>[] = [];
+  private tallyTimers: ReturnType<typeof setTimeout>[] = [];
   private frame = 0;
 
   constructor() {
@@ -293,51 +326,60 @@ export class KniffelBoard {
       const before = wasFinished;
       wasFinished = finished;
       untracked(() => {
-        if (!finished) this.setReveal('hidden');
-        else if (before === false && !reducedMotion()) this.playReveal();
-        else this.setReveal('done');
+        if (!finished) this.setTally(-1);
+        else if (before === false && !reducedMotion()) this.playTally();
+        else this.setTally(TALLY.length);
       });
+    });
+
+    // Die Zeile, die gerade dazukommt, auf kleinen Bildschirmen ins Bild holen
+    effect(() => {
+      const row = this.addingRow();
+      if (row === null) return;
+      untracked(() =>
+        this.sheet()
+          ?.nativeElement.querySelector(`[data-row="${row}"]`)
+          ?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }),
+      );
     });
 
     inject(DestroyRef).onDestroy(() => {
       this.stop();
-      this.stopReveal();
+      this.stopTally();
     });
   }
 
-  private setReveal(step: Reveal): void {
-    this.stopReveal();
-    this.reveal.set(step);
+  private setTally(index: number): void {
+    this.stopTally();
+    this.tally.set(index);
   }
 
-  private stopReveal(): void {
-    this.revealTimers.forEach(clearTimeout);
-    this.revealTimers = [];
+  private stopTally(): void {
+    this.tallyTimers.forEach(clearTimeout);
+    this.tallyTimers = [];
     cancelAnimationFrame(this.frame);
   }
 
-  // Zeitleiste der Abrechnung; der Sekundenzeiger fürs Hochzählen läuft per Frame
-  private playReveal(): void {
-    this.setReveal('hidden');
-    const step = (at: number, next: Reveal) =>
-      this.revealTimers.push(
+  // Zeitleiste der Abrechnung; das Hochzählen innerhalb eines Schritts läuft per Frame
+  private playTally(): void {
+    this.setTally(-1);
+    const at = (ms: number, index: number) =>
+      this.tallyTimers.push(
         setTimeout(() => {
-          this.reveal.set(next);
-          this.revealAt.set(performance.now());
+          this.tally.set(index);
+          this.tallyAt.set(performance.now());
           this.elapsed.set(0);
-        }, at),
+        }, ms),
       );
-    let t = REVEAL_START_MS;
-    step(t, 'upper');
-    t += UPPER_COUNT_MS + 300;
-    step(t, 'bonus');
-    t += BONUS_MS;
-    step(t, 'total');
-    t += TOTAL_COUNT_MS + 400;
-    step(t, 'done');
+    let t = TALLY_START_MS;
+    TALLY.forEach((step, index) => {
+      at(t, index);
+      t += stepMs(step);
+    });
+    at(t + TALLY_END_MS, TALLY.length);
     const tick = () => {
-      this.elapsed.set(performance.now() - this.revealAt());
-      if (this.reveal() !== 'done') this.frame = requestAnimationFrame(tick);
+      this.elapsed.set(performance.now() - this.tallyAt());
+      if (!this.revealed()) this.frame = requestAnimationFrame(tick);
     };
     this.frame = requestAnimationFrame(tick);
   }

@@ -22,7 +22,11 @@
       <tbody>
         @for (r of rows; track r) {
           @if (typeof r === 'number') {
-            <tr [class.first-lower]="r === lower[0]">
+            <tr
+              [class.first-lower]="r === lower[0]"
+              [class.adding]="addingRow() === r"
+              [attr.data-row]="r"
+            >
               <th scope="row">
                 {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
               </th>
@@ -36,6 +40,9 @@
                 >
                   @if (value !== null) {
                     {{ value || '–' }}
+                    @if (addingRow() === r && value) {
+                      <span class="plus" aria-hidden="true">+{{ value }}</span>
+                    }
                   } @else if (preview !== null && col.mine) {
                     <button
                       type="button"
@@ -66,7 +73,8 @@
                 <td
                   [class.turn]="col.turn"
                   [class.counting]="col.counting[r]"
-                  [class.pop]="r === 'bonus' && col.sums.bonus !== '' && reveal() === 'bonus'"
+                  [class.pop]="r === 'bonus' && tallyStep()?.kind === 'bonus'"
+                  [class.carry]="r === 'total' && tallyStep()?.kind === 'carry'"
                   [class.champion]="
                     r === 'total' && revealed() && col.player.total === winners()[0]?.player?.total
                   "
@@ -105,7 +113,7 @@
     } @else if (finished()) {
       <div class="tally" role="status">
         <span class="material-symbols-rounded" aria-hidden="true">calculate</span>
-        Abrechnung – die Punkte werden zusammengezählt …
+        {{ tallyText() }}
       </div>
     } @else {
       <div class="dice" role="group" aria-label="Würfel">

@@ -120,9 +120,24 @@ describe('KniffelBoard', () => {
     expect(sums(2)).toEqual(['', '']);
     expect(el().querySelector('.final')).toBeNull();
 
-    await vi.advanceTimersByTimeAsync(10_000);
+    // Zeile für Zeile: nach den Einsern stehen oben erst deren Punkte
+    await vi.advanceTimersByTimeAsync(1500 + 1000);
     fixture.detectChanges();
+    expect(sums(0)).toEqual(['10', '5']);
+    expect(el().querySelector('tr.adding th')!.textContent).toContain('Einser');
+    expect(el().querySelector('.tally')!.textContent).toContain('Einser kommt dazu');
+    expect(sums(2)).toEqual(['', '']);
+
+    // Die Abrechnung lässt sich Zeit: nach 10 s ist sie noch nicht durch
+    await vi.advanceTimersByTimeAsync(7500);
+    fixture.detectChanges();
+    expect(el().querySelector('.final')).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    fixture.detectChanges();
+    expect(sums(0)).toEqual(['60', '30']);
     expect(sums(2)).toEqual(['165', '70']);
+    expect(el().querySelector('tr.adding')).toBeNull();
     expect(el().querySelector('.final')!.textContent).toContain('Du gewinnst!');
   });
 
