@@ -57,7 +57,7 @@ export class ChristmasBackdrop {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @for (bulb of bulbs; track $index) {
-      <span class="xmas-bulb"></span>
+      <span class="bulb"></span>
     }
   `,
   styleUrl: './christmas-decor.scss',

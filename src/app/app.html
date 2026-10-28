@@ -1,6 +1,8 @@
 <div class="app-shell">
-  @if (christmas()) {
+  @if (decor() === 'christmas') {
     <app-christmas-backdrop />
+  } @else if (decor() === 'halloween') {
+    <app-halloween-backdrop />
   }
   <header class="top-bar" [class.top-bar--scrolled]="scrolled()">
     <a class="top-bar-title" routerLink="/" aria-label="Game Center, zur Startseite">
@@ -32,8 +34,10 @@
       </a>
     </div>
   </header>
-  @if (christmas()) {
+  @if (decor() === 'christmas') {
     <app-christmas-lights />
+  } @else if (decor() === 'halloween') {
+    <app-halloween-lights />
   }
 
   <app-toast-host />
@@ -61,8 +65,10 @@
 
   <nav class="bottom-nav" aria-label="Hauptnavigation" [style.--tab]="tabIndex()">
     <span class="bottom-nav-pill" aria-hidden="true"></span>
-    @if (christmas()) {
+    @if (decor() === 'christmas') {
       <app-christmas-snowbank />
+    } @else if (decor() === 'halloween') {
+      <app-halloween-pumpkins [spots]="navPumpkins" />
     }
     <a
       class="bottom-nav-link"

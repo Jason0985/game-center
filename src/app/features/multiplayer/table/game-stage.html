@@ -1,9 +1,11 @@
-<div class="stage" [class.xmas]="christmas()">
-  @if (christmas()) {
+<div class="stage" [class.decor]="decor() !== 'none'">
+  @if (decor() === 'christmas') {
     <app-christmas-backdrop />
+  } @else if (decor() === 'halloween') {
+    <app-halloween-backdrop />
   }
   <header class="head">
-    @if (christmas()) {
+    @if (decor() === 'christmas') {
       <app-christmas-snowbank />
     }
     <a class="icon-button" routerLink="/multiplayer" aria-label="Zurück">
@@ -53,8 +55,14 @@
       <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
     </button>
   </header>
-  @if (christmas()) {
+  @if (decor() === 'christmas') {
     <app-christmas-lights />
+  } @else if (decor() === 'halloween') {
+    <div class="hw-row">
+      <app-halloween-lights />
+      <!-- Kürbisse stehen auf dem Spieltisch unter der Lichterkette -->
+      <app-halloween-pumpkins class="hw-row-pumpkins" [spots]="pumpkins" />
+    </div>
   }
 
   <mat-menu #menu="matMenu" class="game-menu" xPosition="before">

@@ -12,13 +12,13 @@
   font-family: var(--font-sans);
 }
 
-// Weihnachten: eigene Zeile für die Lichterkette unter dem Kopf, damit sie nichts verdeckt
-.stage.xmas {
+// Deko: eigene Zeile für die Lichterkette unter dem Kopf, damit sie nichts verdeckt
+.stage.decor {
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 // Der Kopf ist eigener Stapel: der Schnee liegt auf seiner Unterkante, hinter den Knöpfen
-.stage.xmas .head {
+.stage.decor .head {
   position: relative;
   isolation: isolate;
 }
@@ -29,6 +29,19 @@
   z-index: -1;
   height: 12px;
   margin-bottom: 0;
+}
+
+// Halloween: Kürbisse stehen unten auf der Lichterketten-Zeile, also auf dem Tisch
+.hw-row {
+  position: relative;
+  z-index: 2;
+  // Die Lichterkette ist breiter als der Bildschirm; sonst wächst die Spalte mit
+  min-width: 0;
+}
+
+.hw-row > .hw-row-pumpkins {
+  top: 100%;
+  bottom: auto;
 }
 
 .head {

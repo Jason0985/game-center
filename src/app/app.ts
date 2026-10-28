@@ -18,6 +18,11 @@ import {
   ChristmasLights,
   ChristmasSnowbank,
 } from './ui/christmas/christmas-decor';
+import {
+  HalloweenBackdrop,
+  HalloweenLights,
+  HalloweenPumpkins,
+} from './ui/halloween/halloween-decor';
 
 @Component({
   selector: 'app-root',
@@ -30,6 +35,9 @@ import {
     ChristmasBackdrop,
     ChristmasLights,
     ChristmasSnowbank,
+    HalloweenBackdrop,
+    HalloweenLights,
+    HalloweenPumpkins,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -59,7 +67,9 @@ export class App {
   readonly scrolled = signal(false);
 
   /** Weihnachtsdeko vorerst nur für Admins, die sie in den Einstellungen eingeschaltet haben. */
-  readonly christmas = computed(() => this.session.isAdmin() && this.themes.christmas());
+  // Saisonale Deko aus den Einstellungen; Kürbisse stehen auf der Tab-Leiste
+  readonly decor = this.themes.decor;
+  readonly navPumpkins = [{ left: '7%' }, { left: '52%', small: true }, { right: '6%' }];
 
   constructor() {
     // Pop-ups für Benachrichtigungen und Fehler app-weit aktivieren
