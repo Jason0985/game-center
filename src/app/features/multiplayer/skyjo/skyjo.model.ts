@@ -1,5 +1,5 @@
 // Skyjo: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261014200000_skyjo.sql); hier wird nur gespiegelt, was für
+// (supabase/migrations/20260918220000_core_schema.sql); hier wird nur gespiegelt, was für
 // Anzeige, Hinweise und Animationen nötig ist.
 
 export type SkPhase = 'reveal' | 'turn' | 'round_over';

@@ -1,5 +1,5 @@
 // Blackjack: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261010150000_blackjack.sql); hier wird nur gespiegelt, was für
+// (supabase/migrations/20260918220000_core_schema.sql); hier wird nur gespiegelt, was für
 // Anzeige und Knöpfe nötig ist.
 
 import { TableLayout } from '../table/table.model';

@@ -1,5 +1,5 @@
 // Kniffel: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261022120000_kniffel.sql); points spiegelt die Wertung (Tests).
+// (supabase/migrations/20260918220000_core_schema.sql); points spiegelt die Wertung (Tests).
 
 export interface KnPlayer {
   user_id: string;
