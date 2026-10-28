@@ -1,5 +1,5 @@
 // Nimm 6: Anzeige-Logik. Die Spielregeln selbst laufen nur in der Datenbank
-// (supabase/migrations/20261014120000_nimm6.sql); hier wird nur gespiegelt, was für
+// (supabase/migrations/20260918220000_core_schema.sql); hier wird nur gespiegelt, was für
 // Anzeige, Hinweise und die Animation des Anlegens nötig ist.
 
 export type N6Phase = 'choose' | 'take' | 'round_over';
@@ -182,8 +182,7 @@ export function replaySteps(game: Pick<N6Game, 'card_rows' | 'last_events'>): {
 }
 
 // Animation des Anlegens. Dieselben Dauern rechnet die Datenbank in _nimm6_replay_ms
-// (supabase/migrations/20261014180000_nimm6_fairness.sql) auf die Zugzeit drauf – beide
-// Stellen zusammen ändern.
+// (Core-Schema) auf die Zugzeit drauf – beide Stellen zusammen ändern.
 // Aufdecken: die verdeckten Karten an den Plätzen drehen sich um (FLIP_MS je Hälfte), dann
 // kurz lesen
 export const REVEAL_MS = 1800;
