@@ -12,6 +12,25 @@
   font-family: var(--font-sans);
 }
 
+// Weihnachten: eigene Zeile für die Lichterkette unter dem Kopf, damit sie nichts verdeckt
+.stage.xmas {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+// Der Kopf ist eigener Stapel: der Schnee liegt auf seiner Unterkante, hinter den Knöpfen
+.stage.xmas .head {
+  position: relative;
+  isolation: isolate;
+}
+
+.head > .xmas-snowbank {
+  top: auto;
+  bottom: 0;
+  z-index: -1;
+  height: 12px;
+  margin-bottom: 0;
+}
+
 .head {
   display: flex;
   align-items: center;

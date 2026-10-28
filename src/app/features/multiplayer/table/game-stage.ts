@@ -1,22 +1,43 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
+import { SessionService } from '../../../services/session.service';
+import { ThemeService } from '../../../services/theme.service';
+import {
+  ChristmasBackdrop,
+  ChristmasLights,
+  ChristmasSnowbank,
+} from '../../../ui/christmas/christmas-decor';
 import { HistoryRow } from './history-sheet';
 import { RulesDialog, RulesDialogData } from './rules-dialog';
 
 // Bühne eines laufenden Spiels über der App: Kopf mit ⋮-Menü (Host-Aktionen, Verlassen,
-// Regeln) und Inhaltsbereich. Das Spiel liefert nur Zustand und reagiert auf die Ausgaben.
+// Regeln) und Inhaltsbereich. Mit Weihnachtsdeko liegt Schnee auf dem Kopf, darunter hängt
+// die Lichterkette und hinter dem Tisch fallen leise Flocken – wie in der übrigen App. Das Spiel liefert nur Zustand und reagiert auf die Ausgaben.
 @Component({
   selector: 'app-game-stage',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    RouterLink,
+    ChristmasBackdrop,
+    ChristmasLights,
+    ChristmasSnowbank,
+  ],
   templateUrl: './game-stage.html',
   styleUrl: './game-stage.scss',
 })
 export class GameStage {
   private readonly dialog = inject(MatDialog);
+  private readonly session = inject(SessionService);
+  private readonly themes = inject(ThemeService);
+
+  // Gleiche Bedingung wie in der App-Schale (Admin-Schalter in den Einstellungen)
+  readonly christmas = computed(() => this.session.isAdmin() && this.themes.christmas());
 
   readonly gameTitle = input.required<string>();
   readonly subtitle = input<string | null>(null);

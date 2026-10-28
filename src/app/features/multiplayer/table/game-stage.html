@@ -1,5 +1,11 @@
-<div class="stage">
+<div class="stage" [class.xmas]="christmas()">
+  @if (christmas()) {
+    <app-christmas-backdrop />
+  }
   <header class="head">
+    @if (christmas()) {
+      <app-christmas-snowbank />
+    }
     <a class="icon-button" routerLink="/multiplayer" aria-label="Zurück">
       <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
     </a>
@@ -15,9 +21,12 @@
     </div>
     @if (lastEvent(); as event) {
       <span class="event">
-        <span class="material-symbols-rounded fill" aria-hidden="true" [style.color]="event.color">{{
-          event.icon
-        }}</span>
+        <span
+          class="material-symbols-rounded fill"
+          aria-hidden="true"
+          [style.color]="event.color"
+          >{{ event.icon }}</span
+        >
         <span class="event-text">{{ event.text }}</span>
       </span>
     }
@@ -44,6 +53,9 @@
       <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
     </button>
   </header>
+  @if (christmas()) {
+    <app-christmas-lights />
+  }
 
   <mat-menu #menu="matMenu" class="game-menu" xPosition="before">
     @if (isHost()) {

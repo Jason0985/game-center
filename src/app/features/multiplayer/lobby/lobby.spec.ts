@@ -116,7 +116,7 @@ describe('Lobby', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap: convertToParamMap({ lobbyId: 'lobby-1' }) } },
         },
-        { provide: SessionService, useValue: { authUser: user } },
+        { provide: SessionService, useValue: { authUser: user, isAdmin: () => false } },
         { provide: MultiplayerLobbyService, useValue: lobbyService },
         { provide: Flip7Service, useValue: flip7 },
         { provide: SkipboService, useValue: skipbo },
