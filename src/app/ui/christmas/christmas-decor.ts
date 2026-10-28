@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 // Feste Pseudozufallswerte, damit die Flocken bei jedem Laden gleich verteilt sind
 function seeded(index: number, salt: number): number {
@@ -68,12 +68,25 @@ export class ChristmasLights {
   readonly bulbs = Array.from({ length: 64 });
 }
 
-/** Schneehaufen auf der Oberkante der Tab-Leiste. */
+/**
+ * Schneehaufen auf einer Oberkante. flat: gerade Kante (Spiel-Kopf); pill: die runde
+ * Tab-Leiste – der Schnee folgt der Rundung und wird zu den Enden hin dünner.
+ */
 @Component({
   selector: 'app-christmas-snowbank',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: '',
+  template: `
+    @if (shape() === 'pill') {
+      <span class="xmas-cap"></span>
+      <span class="xmas-heaps"></span>
+    }
+  `,
   styleUrl: './christmas-decor.scss',
-  host: { class: 'xmas-snowbank', 'aria-hidden': 'true' },
+  host: {
+    'aria-hidden': 'true',
+    '[class]': "'xmas-snowbank xmas-snowbank--' + shape()",
+  },
 })
-export class ChristmasSnowbank {}
+export class ChristmasSnowbank {
+  readonly shape = input<'flat' | 'pill'>('flat');
+}

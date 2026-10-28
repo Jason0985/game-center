@@ -107,6 +107,40 @@
   --xmas-snow-shadow: rgba(60, 90, 130, 0.3);
 }
 
+// Runde Tab-Leiste: deckt die Leiste ab und folgt ihrer Rundung. Die Kappe ist ein oberer
+// Rand ohne Seitenränder – an den runden Enden läuft sie so von selbst spitz aus. Die Haufen
+// liegen nur auf dem geraden Stück, wo Schnee auch liegen bleibt.
+:host(.xmas-snowbank--pill) {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  margin: 0;
+  border-radius: inherit;
+  background: none;
+}
+
+.xmas-cap {
+  position: absolute;
+  inset: -2px 0 auto;
+  height: 70%;
+  box-sizing: border-box;
+  border-top: 5px solid #f4f8fc;
+  border-radius: inherit;
+}
+
+.xmas-heaps {
+  position: absolute;
+  right: 26px;
+  bottom: calc(100% - 4px);
+  left: 26px;
+  height: 14px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='14' viewBox='0 0 120 14'%3E%3Cpath d='M0 14 L0 10 Q10 4 22 8 Q34 1 48 7 Q60 3 70 8 Q84 0 100 7 Q110 5 120 10 L120 14 Z' fill='%23f4f8fc'/%3E%3C/svg%3E")
+    repeat-x left bottom / 120px 14px;
+  // Zu den Enden hin flacher, damit die Haufen weich in die Kappe übergehen
+  -webkit-mask: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .xmas-flake,
   .xmas-shooting-star {

@@ -17,7 +17,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
 import { AVATAR_COLORS } from '../table/table.model';
+import { ThemeService } from '../../../services/theme.service';
 import { TableDecor } from '../table/table-decor';
+import { KniffelDecor } from './kniffel-decor';
 import { reducedMotion } from '../table/table-motion';
 import {
   bonusOf,
@@ -94,7 +96,7 @@ const easeOut = (t: number) => 1 - (1 - t) ** 3;
 // für alle nachgezählt.
 @Component({
   selector: 'app-kniffel-board',
-  imports: [TableDecor],
+  imports: [TableDecor, KniffelDecor],
   templateUrl: './kniffel-board.html',
   styleUrl: './kniffel-board.scss',
 })
@@ -110,6 +112,8 @@ export class KniffelBoard {
   readonly backToLobby = output<void>();
 
   private readonly dialog = inject(MatDialog);
+  // Saisonale Deko: oben braucht der Block Platz für Schneekappe bzw. Kürbisse
+  readonly decor = inject(ThemeService).decor;
 
   readonly categories = CATEGORIES;
   readonly lower = LOWER;

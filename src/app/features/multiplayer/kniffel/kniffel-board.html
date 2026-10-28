@@ -1,93 +1,98 @@
 <div class="board">
   <app-table-decor />
-  <div class="sheet-wrap" #sheet>
-    <table class="sheet" [style.--cols]="columns().length">
-      <thead>
-        <tr>
-          <th class="logo" scope="col">Kniffel</th>
-          @for (col of columns(); track col.player.user_id) {
-            <th
-              scope="col"
-              [class.turn]="col.turn"
-              [class.left]="col.player.state === 'left'"
-              [class.win]="revealed() && col.player.total === winners()[0]?.player?.total"
-            >
-              <span class="avatar" [style.background]="col.color" aria-hidden="true">{{
-                col.initial
-              }}</span>
-              <span class="who">{{ col.mine ? 'Du' : col.player.name }}</span>
-            </th>
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of rows; track r) {
-          @if (typeof r === 'number') {
-            <tr
-              [class.first-lower]="r === lower[0]"
-              [class.adding]="addingRow() === r"
-              [attr.data-row]="r"
-            >
-              <th scope="row">
-                {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
+  <div class="sheet-wrap" #sheet [attr.data-decor]="decor()">
+    <div class="sheet-frame">
+      <app-kniffel-decor />
+      <table class="sheet" [style.--cols]="columns().length">
+        <thead>
+          <tr>
+            <th class="logo" scope="col">Kniffel</th>
+            @for (col of columns(); track col.player.user_id) {
+              <th
+                scope="col"
+                [class.turn]="col.turn"
+                [class.left]="col.player.state === 'left'"
+                [class.win]="revealed() && col.player.total === winners()[0]?.player?.total"
+              >
+                <span class="avatar" [style.background]="col.color" aria-hidden="true">{{
+                  col.initial
+                }}</span>
+                <span class="who">{{ col.mine ? 'Du' : col.player.name }}</span>
               </th>
-              @for (col of columns(); track col.player.user_id) {
-                @let value = col.player.scores[r];
-                @let preview = col.preview?.[r] ?? null;
-                <td
-                  [class.turn]="col.turn"
-                  [class.fresh]="fresh() === col.player.seat + ':' + r"
-                  [class.zero]="value === 0"
-                >
-                  @if (value !== null) {
-                    {{ value || '–' }}
-                    @if (addingRow() === r && value) {
-                      <span class="plus" aria-hidden="true">+{{ value }}</span>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows; track r) {
+            @if (typeof r === 'number') {
+              <tr
+                [class.first-lower]="r === lower[0]"
+                [class.adding]="addingRow() === r"
+                [attr.data-row]="r"
+              >
+                <th scope="row">
+                  {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
+                </th>
+                @for (col of columns(); track col.player.user_id) {
+                  @let value = col.player.scores[r];
+                  @let preview = col.preview?.[r] ?? null;
+                  <td
+                    [class.turn]="col.turn"
+                    [class.fresh]="fresh() === col.player.seat + ':' + r"
+                    [class.zero]="value === 0"
+                  >
+                    @if (value !== null) {
+                      {{ value || '–' }}
+                      @if (addingRow() === r && value) {
+                        <span class="plus" aria-hidden="true">+{{ value }}</span>
+                      }
+                    } @else if (preview !== null && col.mine) {
+                      <button
+                        type="button"
+                        class="pick"
+                        [class.selected]="selected() === r"
+                        [class.nil]="!preview"
+                        [disabled]="!canPick()"
+                        [attr.aria-label]="
+                          categories[r].name +
+                          (preview ? ' eintragen: ' + preview + ' Punkte' : ' streichen')
+                        "
+                        (click)="pick(r)"
+                      >
+                        {{ preview }}
+                      </button>
+                    } @else if (preview !== null) {
+                      <span class="ghost" [class.nil]="!preview">{{ preview }}</span>
                     }
-                  } @else if (preview !== null && col.mine) {
-                    <button
-                      type="button"
-                      class="pick"
-                      [class.selected]="selected() === r"
-                      [class.nil]="!preview"
-                      [disabled]="!canPick()"
-                      [attr.aria-label]="
-                        categories[r].name +
-                        (preview ? ' eintragen: ' + preview + ' Punkte' : ' streichen')
-                      "
-                      (click)="pick(r)"
-                    >
-                      {{ preview }}
-                    </button>
-                  } @else if (preview !== null) {
-                    <span class="ghost" [class.nil]="!preview">{{ preview }}</span>
-                  }
-                </td>
-              }
-            </tr>
-          } @else {
-            <tr class="sum" [class.total]="r === 'total'">
-              <th scope="row">
-                {{ sumRows[r].name }} <span class="hint">{{ sumRows[r].hint }}</span>
-              </th>
-              @for (col of columns(); track col.player.user_id) {
-                <td
-                  [class.turn]="col.turn"
-                  [class.counting]="col.counting[r]"
-                  [class.pop]="r === 'bonus' && tallyStep()?.kind === 'bonus'"
-                  [class.carry]="r === 'total' && tallyStep()?.kind === 'carry'"
-                  [class.champion]="
-                    r === 'total' && revealed() && col.player.total === winners()[0]?.player?.total
-                  "
-                >
-                  {{ col.sums[r] }}
-                </td>
-              }
-            </tr>
+                  </td>
+                }
+              </tr>
+            } @else {
+              <tr class="sum" [class.total]="r === 'total'">
+                <th scope="row">
+                  {{ sumRows[r].name }} <span class="hint">{{ sumRows[r].hint }}</span>
+                </th>
+                @for (col of columns(); track col.player.user_id) {
+                  <td
+                    [class.turn]="col.turn"
+                    [class.counting]="col.counting[r]"
+                    [class.pop]="r === 'bonus' && tallyStep()?.kind === 'bonus'"
+                    [class.carry]="r === 'total' && tallyStep()?.kind === 'carry'"
+                    [class.champion]="
+                      r === 'total' &&
+                      revealed() &&
+                      col.player.total === winners()[0]?.player?.total
+                    "
+                  >
+                    {{ col.sums[r] }}
+                  </td>
+                }
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="tray">

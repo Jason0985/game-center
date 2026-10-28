@@ -32,10 +32,24 @@
   padding: 12px 10px 14px;
 }
 
-.sheet {
-  width: 100%;
+// Rahmen um den Block, an dem die Deko hängt
+.sheet-frame {
+  position: relative;
   max-width: 620px;
   margin: 0 auto;
+  border-radius: 10px;
+}
+
+.sheet-wrap[data-decor='christmas'] {
+  padding-top: 18px;
+}
+
+.sheet-wrap[data-decor='halloween'] {
+  padding-top: 34px;
+}
+
+.sheet {
+  width: 100%;
   border-collapse: collapse;
   border-radius: 10px;
   background: var(--paper);
