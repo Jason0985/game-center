@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
 import { AVATAR_COLORS } from '../table/table.model';
+import { TableDecor } from '../table/table-decor';
 import { reducedMotion } from '../table/table-motion';
 import {
   bonusOf,
@@ -93,6 +94,7 @@ const easeOut = (t: number) => 1 - (1 - t) ** 3;
 // für alle nachgezählt.
 @Component({
   selector: 'app-kniffel-board',
+  imports: [TableDecor],
   templateUrl: './kniffel-board.html',
   styleUrl: './kniffel-board.scss',
 })

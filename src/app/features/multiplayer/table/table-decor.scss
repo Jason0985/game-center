@@ -1,0 +1,128 @@
+:host {
+  --snow-w: calc(var(--rim, 8px) + 6px);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+:host(.table-decor--none) {
+  display: none;
+}
+
+// Ring entlang des Rands: Maske lässt nur den Bereich zwischen Rand und Innenkante stehen,
+// so folgt der Schnee jeder Tischform (Bogen, Oval, Rechteck)
+.frost,
+.glow {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  padding: var(--snow-w);
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+// Weihnachten: lockerer, körniger Schnee auf dem Rand – oben liegt mehr als unten
+.frost {
+  padding: var(--rim, 8px);
+  background:
+    radial-gradient(circle at 30% 40%, #fff 0 1.3px, transparent 1.9px) 0 0 / 11px 9px,
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.95) 0 2px, transparent 2.6px) 4px 3px /
+      19px 15px,
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.85) 0 2.8px, transparent 3.4px) 9px
+      6px / 37px 29px,
+    linear-gradient(rgba(244, 248, 252, 0.42), rgba(244, 248, 252, 0.1) 75%);
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.45));
+}
+
+// Hauch von Schnee, der vom Rand ein Stück auf den Filz weht
+.flurry {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 calc(var(--snow-w) * 1.6) rgba(255, 255, 255, 0.12);
+}
+
+// Halloween: Rand glimmt orange, nach innen lila
+.glow {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 160, 60, 0.55) 0 1.4px, transparent 2px) 0 0 / 13px
+      11px,
+    linear-gradient(160deg, rgba(255, 122, 24, 0.6), rgba(140, 70, 220, 0.5));
+  opacity: 0.85;
+  animation: table-glow 4s ease-in-out infinite alternate;
+}
+
+:host(.table-decor--halloween)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 calc(var(--snow-w) * 2) rgba(255, 122, 24, 0.18);
+}
+
+@keyframes table-glow {
+  to {
+    opacity: 0.55;
+  }
+}
+
+// Spinnennetze in den oberen Ecken
+.web {
+  position: absolute;
+  top: 2%;
+  width: clamp(48px, 16%, 110px);
+  aspect-ratio: 1;
+  opacity: 0.35;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23e8e6f0' stroke-width='1.4'%3E%3Cpath d='M0 0 L120 30 M0 0 L95 75 M0 0 L60 110 M0 0 L20 120'/%3E%3Cpath d='M30 7.5 Q26 20 24 24 Q18 34 15 50 Q10 54 5 30 Q20 22 30 7.5Z'/%3E%3Cpath d='M60 15 Q52 40 48 48 Q38 66 30 100 Q20 94 10 60 Q35 40 60 15Z'/%3E%3Cpath d='M90 22.5 Q78 58 71 71 Q57 95 45 118 Q30 112 15 90 Q52 60 90 22.5Z'/%3E%3C/svg%3E")
+    no-repeat left top / contain;
+}
+
+.web--left {
+  left: 6%;
+}
+
+.web--right {
+  right: 6%;
+  transform: scaleX(-1);
+}
+
+// Kleine Spinne am Faden, die langsam auf und ab baumelt
+.spider {
+  position: absolute;
+  top: 0;
+  left: 72%;
+  width: 14px;
+  height: 46px;
+  transform-origin: 50% 0;
+  animation: table-spider 5s ease-in-out infinite;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg stroke='%23140d1c' stroke-width='1.2' fill='none'%3E%3Cpath d='M4 6 L0 3 M4 8 L0 8 M4 9 L1 12 M10 6 L14 3 M10 8 L14 8 M10 9 L13 12'/%3E%3C/g%3E%3Cellipse cx='7' cy='8' rx='3.4' ry='4' fill='%23140d1c'/%3E%3Ccircle cx='5.8' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3Ccircle cx='8.2' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3C/svg%3E")
+      no-repeat center bottom / 14px 14px,
+    linear-gradient(rgba(230, 230, 240, 0.6), rgba(230, 230, 240, 0.6)) no-repeat center top / 1px
+      34px;
+}
+
+@keyframes table-spider {
+  0%,
+  100% {
+    transform: translateY(-10px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(6px) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .spider {
+    animation: none;
+  }
+}

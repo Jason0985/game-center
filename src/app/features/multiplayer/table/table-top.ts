@@ -1,13 +1,16 @@
 import { Component, computed, input, linkedSignal } from '@angular/core';
+import { TableDecor } from './table-decor';
 
-// Tischplatte mit Wasserzeichen und Zug-Zeiger; Host ist der Tischbereich (div.table-area).
+// Tischplatte mit Wasserzeichen, saisonaler Deko und Zug-Zeiger; Host ist der Tischbereich (div.table-area).
 // Maße kommen vom Spiel (CSS-Variablen am Spiel-Host), der Inhalt wird hineinprojiziert.
 @Component({
   selector: '[appTableTop]',
+  imports: [TableDecor],
   template: `
     @let c = center();
     <div class="table" [style.aspect-ratio]="w() + ' / ' + h()">
       <span class="watermark" aria-hidden="true">{{ mark() }}</span>
+      <app-table-decor />
 
       <svg
         class="pointer"

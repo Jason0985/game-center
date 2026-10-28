@@ -24,6 +24,9 @@
 }
 
 .sheet-wrap {
+  // Über der Tisch-Deko (Schnee bzw. Spinnennetze am Rand)
+  position: relative;
+  z-index: 1;
   min-height: 0;
   overflow: auto;
   padding: 12px 10px 14px;
