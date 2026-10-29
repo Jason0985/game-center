@@ -9,13 +9,11 @@ import {
   signal,
   untracked,
   viewChild,
-  ViewContainerRef,
 } from '@angular/core';
-import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatIconModule } from '@angular/material/icon';
 import { gameOf } from '../lobby.model';
+import { censor } from './chat-filter';
 import { LobbyChatStore } from './lobby-chat.store';
-import { LobbySuggestSheet } from './lobby-suggest-sheet';
 
 // Nachrichten derselben Person rücken zusammen, solange keine 5 Minuten dazwischen liegen
 const GROUP_GAP_MS = 5 * 60_000;
@@ -34,8 +32,6 @@ const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '
 })
 export class LobbyChat {
   readonly store = inject(LobbyChatStore);
-  private readonly bottomSheet = inject(MatBottomSheet);
-  private readonly viewContainer = inject(ViewContainerRef);
 
   readonly variant = input<'inline' | 'sheet'>('inline');
   // Spiel, das gerade gewählt ist (Vorschlag dafür zeigt „Gewählt“)
@@ -62,6 +58,8 @@ export class LobbyChat {
         message,
         mine: message.user_id === me,
         name: this.store.nameOf(message.user_id),
+        // Auch beim Anzeigen filtern, falls etwas am Filter vorbei gespeichert wurde
+        body: censor(message.body),
         first: !close(previous, message),
         last: !close(message, next),
         time: timeFormat.format(new Date(message.created_at)),
@@ -97,13 +95,6 @@ export class LobbyChat {
   }
 
   openSuggestions(): void {
-    this.bottomSheet.open(LobbySuggestSheet, {
-      viewContainerRef: this.viewContainer,
-      data: { currentGame: this.currentGame() },
-      panelClass: 'app-sheet-panel',
-      backdropClass: 'app-sheet-backdrop',
-      ariaLabel: 'Spiel vorschlagen',
-      autoFocus: 'dialog',
-    });
+    this.store.suggest();
   }
 }

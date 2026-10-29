@@ -1,6 +1,7 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { AppErrorService } from '../../../services/app-error.service';
 import { LobbyMessage } from '../lobby.model';
+import { censor } from './chat-filter';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 
 const SEEN_KEY = 'game-center-chat-seen:';
@@ -23,6 +24,9 @@ export class LobbyChatStore {
   // Host in der Warte-Lobby: Vorschläge lassen sich übernehmen
   readonly canAdopt = signal(false);
   adopt: (gameKey: string) => void = () => undefined;
+  // Spieler in der Warte-Lobby: Spieleliste zum Vorschlagen öffnen (die Lobby kehrt danach in
+  // den Chat zurück)
+  suggest: () => void = () => undefined;
 
   // Zuletzt gesehene Nachricht (je Lobby gemerkt), daraus die Zahl am Chat-Knopf
   private readonly seenId = signal(0);
@@ -61,10 +65,10 @@ export class LobbyChatStore {
     this.loaded.set(true);
   }
 
-  // true = gesendet
+  // true = gesendet; Schimpfwörter gehen schon verschleiert raus
   async send(body: string, gameKey: string | null = null): Promise<boolean> {
     const lobbyId = this.lobbyId();
-    const text = body.trim();
+    const text = censor(body.trim());
     if (!lobbyId || !text || this.sending()) return false;
     this.sending.set(true);
     const result = await this.lobbyService.sendMessage(lobbyId, text, gameKey);

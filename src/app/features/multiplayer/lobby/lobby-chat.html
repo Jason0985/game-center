@@ -43,7 +43,7 @@
           }
         </div>
       } @else {
-        <p class="bubble">{{ row.message.body }}</p>
+        <p class="bubble">{{ row.body }}</p>
       }
       @if (row.last) {
         <time class="time" [attr.datetime]="row.message.created_at">{{ row.time }}</time>

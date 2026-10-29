@@ -152,12 +152,6 @@
       <p class="status" [class.mine]="myTurn()" aria-live="polite">{{ hint() }}</p>
 
       <div class="actions">
-        @if (selectedLabel(); as label) {
-          <button type="button" class="enter" [disabled]="!canPick()" (click)="enter()">
-            <span class="material-symbols-rounded" aria-hidden="true">check</span>
-            <span class="label">{{ label }}</span>
-          </button>
-        }
         <button type="button" class="primary" [disabled]="!canRoll()" (click)="doRoll()">
           <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
           Würfeln

@@ -222,6 +222,7 @@ export class Lobby {
       });
     });
     this.chat.adopt = (gameKey) => void this.adoptGame(gameKey);
+    this.chat.suggest = () => this.openSuggestions(true);
 
     // Chat-Knopf im App-Kopf nur in der Warte-Lobby; im Spiel hat der Spielkopf seinen eigenen
     effect(() => {
@@ -250,7 +251,7 @@ export class Lobby {
   openChat(): void {
     this.bottomSheet.open<LobbyChatSheet, LobbyChatSheetData>(LobbyChatSheet, {
       viewContainerRef: this.viewContainer,
-      data: { currentGame: this.lobby()?.game_key ?? null },
+      data: { currentGame: this.lobby()?.game_key ?? null, canSuggest: !this.isHost() },
       panelClass: 'app-sheet-panel',
       backdropClass: 'app-sheet-backdrop',
       ariaLabel: 'Lobby-Chat',
@@ -258,8 +259,9 @@ export class Lobby {
     });
   }
 
-  openSuggestions(): void {
-    this.bottomSheet.open<LobbySuggestSheet, LobbySuggestSheetData>(LobbySuggestSheet, {
+  // Aus dem Chat heraus: Es ist immer nur ein Sheet offen, danach geht es zurück in den Chat
+  openSuggestions(fromChat = false): void {
+    const ref = this.bottomSheet.open<LobbySuggestSheet, LobbySuggestSheetData>(LobbySuggestSheet, {
       viewContainerRef: this.viewContainer,
       data: { currentGame: this.lobby()?.game_key ?? null },
       panelClass: 'app-sheet-panel',
@@ -267,6 +269,11 @@ export class Lobby {
       ariaLabel: 'Spiel vorschlagen',
       autoFocus: 'dialog',
     });
+    if (fromChat) {
+      ref.afterDismissed().subscribe(() => {
+        if (!this.started()) this.openChat();
+      });
+    }
   }
 
   async toggleReady(): Promise<void> {

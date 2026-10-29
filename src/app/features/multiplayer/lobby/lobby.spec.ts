@@ -3,7 +3,7 @@ import { ComponentRef, signal, ViewContainerRef } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
@@ -19,6 +19,7 @@ import { LobbyGameSheet } from './lobby-game-sheet';
 import { LobbyInviteSheet } from './lobby-invite-sheet';
 import { LobbyChat } from './lobby-chat';
 import { LobbyChatSheet } from './lobby-chat-sheet';
+import { LobbySuggestSheet } from './lobby-suggest-sheet';
 
 function member(userId: string, ready = false): LobbyMember {
   return {
@@ -85,11 +86,11 @@ describe('Lobby', () => {
   const text = (): string => fixture.nativeElement.textContent;
 
   // Chat so, wie ihn das Sheet aus dem App-Kopf zeigt: mit dem Chat-Stand der Lobby
-  async function openChat(): Promise<ComponentRef<LobbyChat>> {
+  async function openChat(canSuggest = false): Promise<ComponentRef<LobbyChat>> {
     const injector = fixture.debugElement.injector;
     const chat = injector.get(ViewContainerRef).createComponent(LobbyChat, { injector });
     chat.setInput('currentGame', component.lobby()?.game_key ?? null);
-    chat.setInput('canSuggest', false);
+    chat.setInput('canSuggest', canSuggest);
     fixture.detectChanges();
     await fixture.whenStable();
     return chat;
@@ -356,11 +357,24 @@ describe('Lobby', () => {
     headerChat.chat()!.open();
     expect(bottomSheet.open).toHaveBeenCalledWith(
       LobbyChatSheet,
-      expect.objectContaining({ data: { currentGame: 'flip-7' } }),
+      expect.objectContaining({ data: { currentGame: 'flip-7', canSuggest: true } }),
     );
 
     fixture.destroy();
     expect(headerChat.chat()).toBeNull();
+  });
+
+  it('lets players suggest a game from the chat and returns to the chat afterwards', async () => {
+    await render('guest');
+    await fixture.whenStable();
+    const dismissed = new Subject<void>();
+    bottomSheet.open.mockReturnValue({ afterDismissed: () => dismissed });
+    const chat = (await openChat(true)).location.nativeElement as HTMLElement;
+
+    (chat.querySelector('.composer-suggest') as HTMLButtonElement).click();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(LobbySuggestSheet, expect.anything());
+    dismissed.next();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(LobbyChatSheet, expect.anything());
   });
 
   it('shows the lobby chat with names, own messages on the right and sends', async () => {
@@ -389,12 +403,12 @@ describe('Lobby', () => {
     expect(TestBed.inject(HeaderChatService).chat()!.unread()).toBe(0);
 
     const input = chat.querySelector('.composer-input') as HTMLInputElement;
-    input.value = 'Los gehts';
+    input.value = 'Los gehts, Scheiße';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     (chat.querySelector('.composer-send') as HTMLButtonElement).click();
     await fixture.whenStable();
-    expect(lobbyService.sendMessage).toHaveBeenCalledWith('lobby-1', 'Los gehts', null);
+    expect(lobbyService.sendMessage).toHaveBeenCalledWith('lobby-1', 'Los gehts, *******', null);
   });
 
   it('lets guests browse the games and the host adopt a suggestion', async () => {
@@ -410,7 +424,9 @@ describe('Lobby', () => {
     await render('guest');
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(text()).toContain('Alle Spiele ansehen');
+    const suggest = fixture.nativeElement.querySelector('.lobby-game-row .lobby-suggest');
+    suggest.click();
+    expect(bottomSheet.open).toHaveBeenCalledWith(LobbySuggestSheet, expect.anything());
     let chat = (await openChat()).location.nativeElement as HTMLElement;
     expect(chat.querySelector('.suggestion-adopt')).toBeNull();
     fixture.destroy();
@@ -418,7 +434,7 @@ describe('Lobby', () => {
     await render('host');
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(text()).not.toContain('Alle Spiele ansehen');
+    expect(fixture.nativeElement.querySelector('.lobby-suggest')).toBeNull();
     chat = (await openChat()).location.nativeElement as HTMLElement;
     (chat.querySelector('.suggestion-adopt') as HTMLButtonElement).click();
     await fixture.whenStable();

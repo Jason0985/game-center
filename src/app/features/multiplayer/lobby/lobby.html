@@ -160,6 +160,15 @@
                     }}
                   </span>
                 </span>
+                <!-- Direkt am Spiel, damit Mitspieler das Vorschlagen sehen -->
+                <button
+                  type="button"
+                  class="lobby-invite lobby-suggest"
+                  aria-label="Spiel vorschlagen"
+                  (click)="openSuggestions()"
+                >
+                  <mat-icon aria-hidden="true">lightbulb</mat-icon>Vorschlagen
+                </button>
               </div>
               @if (gameSettings(); as gameSetting) {
                 <div class="ui-row lobby-settings">
@@ -185,13 +194,6 @@
                   <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
                 </button>
               }
-              <button type="button" class="ui-row" (click)="openSuggestions()">
-                <span class="ui-row-text">
-                  <span class="ui-row-title">Alle Spiele ansehen</span>
-                  <span class="ui-row-sub">Regeln lesen und ein Spiel vorschlagen</span>
-                </span>
-                <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
-              </button>
             </div>
           </section>
         }

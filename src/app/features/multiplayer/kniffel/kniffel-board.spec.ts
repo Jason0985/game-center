@@ -57,23 +57,37 @@ describe('KniffelBoard', () => {
     expect(picks[5].textContent!.trim()).toBe('19');
     expect(sums(0)).toEqual(['', '']);
     expect(sums(2)).toEqual(['', '']);
-
-    picks[7].click();
-    fixture.detectChanges();
-    expect(el().querySelector('.enter')!.textContent).toContain('Full House eintragen · 25');
   });
 
-  it('enters a scoring field on the second tap without asking', async () => {
+  it('enters a field only after confirming it in a dialog', async () => {
     await render(makeGame());
     const emitted: number[] = [];
     fixture.componentInstance.score.subscribe((category) => emitted.push(category));
-    const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+    const answer = new Subject<boolean>();
+    const open = vi
+      .spyOn(TestBed.inject(MatDialog), 'open')
+      .mockReturnValue({ afterClosed: () => answer } as unknown as MatDialogRef<unknown, boolean>);
     const picks = () => [...el().querySelectorAll<HTMLButtonElement>('button.pick')];
     picks()[7].click();
     fixture.detectChanges();
-    picks()[7].click();
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Full House eintragen?',
+          confirmLabel: 'Eintragen',
+        }),
+      }),
+    );
+    expect(picks()[7].classList).toContain('selected');
+    // Solange der Dialog offen ist, öffnet ein weiteres Antippen keinen zweiten
+    picks()[5].click();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(emitted).toEqual([]);
+
+    answer.next(true);
+    answer.complete();
     await fixture.whenStable();
-    expect(open).not.toHaveBeenCalled();
     expect(emitted).toEqual([8]);
   });
 
@@ -89,10 +103,12 @@ describe('KniffelBoard', () => {
     const kniffel = () => el().querySelectorAll<HTMLButtonElement>('button.pick')[10];
     expect(kniffel().textContent!.trim()).toBe('0');
     kniffel().click();
-    fixture.detectChanges();
-    expect(el().querySelector('.enter')!.textContent).toContain('Kniffel streichen');
-    (el().querySelector('.enter') as HTMLButtonElement).click();
-    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'Kniffel streichen?', confirmLabel: 'Streichen' }),
+      }),
+    );
 
     answer.next(false);
     answer.complete();
@@ -101,7 +117,7 @@ describe('KniffelBoard', () => {
 
     const yes = new Subject<boolean>();
     open.mockReturnValue({ afterClosed: () => yes } as unknown as MatDialogRef<unknown, boolean>);
-    (el().querySelector('.enter') as HTMLButtonElement).click();
+    kniffel().click();
     yes.next(true);
     yes.complete();
     await fixture.whenStable();
