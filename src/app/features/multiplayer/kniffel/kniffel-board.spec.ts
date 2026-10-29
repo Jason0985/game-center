@@ -108,6 +108,19 @@ describe('KniffelBoard', () => {
     expect(emitted).toEqual([11]);
   });
 
+  it('shows the joker points for a second Kniffel', async () => {
+    const scores = [3, ...FREE.slice(1)].map((v, i) => (i === 11 ? 50 : v));
+    await render(
+      makeGame({
+        dice: [4, 4, 4, 4, 4],
+        players: [player(0, scores, 53), player(1, [null, 4, ...FREE.slice(2)], 4)],
+      }),
+    );
+    // Freie Felder: 1–10 und 12 (Kniffel ist belegt)
+    const picks = [...el().querySelectorAll<HTMLButtonElement>('button.pick')];
+    expect(picks.slice(7, 10).map((pick) => pick.textContent!.trim())).toEqual(['25', '30', '40']);
+  });
+
   it('counts the sums up for everyone once the game ends live', async () => {
     vi.useFakeTimers();
     await render(makeGame());
