@@ -24,7 +24,7 @@ const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '
 
 // Lobby-Chat wie ein Gruppen-Chat: eigene Nachrichten rechts, die der anderen links mit Namen
 // über der ersten Blase einer Folge. Spielvorschläge erscheinen als Karte, die der Host in der
-// Warte-Lobby übernehmen kann. inline: in der Warte-Lobby; sheet: im Spiel als Bottom-Sheet.
+// Warte-Lobby übernehmen kann. Steckt im Chat-Sheet (Warte-Lobby: App-Kopf, Spiel: Spielkopf).
 @Component({
   selector: 'app-lobby-chat',
   imports: [MatIconModule],

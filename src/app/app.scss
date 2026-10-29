@@ -97,6 +97,13 @@ main {
     scale 340ms var(--ease-spring);
 }
 
+button.header-icon-button {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
 .header-icon-button mat-icon {
   width: 22px;
   height: 22px;

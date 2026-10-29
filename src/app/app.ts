@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { filter, map } from 'rxjs';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NotificationsService } from './services/notifications.service';
+import { HeaderChatService } from './services/header-chat.service';
 import { NotificationPopupsService } from './services/notification-popups.service';
 import { AppErrorService } from './services/app-error.service';
 import { ToastHost } from './toast-host';
@@ -44,6 +45,7 @@ import {
 })
 export class App {
   readonly notifications = inject(NotificationsService);
+  readonly headerChat = inject(HeaderChatService);
   readonly session = inject(SessionService);
   readonly pwa = inject(PwaService);
   private readonly themes = inject(ThemeService);

@@ -16,6 +16,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from '../../../services/session.service';
+import { HeaderChatService } from '../../../services/header-chat.service';
 import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
@@ -40,7 +41,7 @@ import { UNO_HOUSE_RULES } from '../uno/uno.model';
 import { RulesDialog, RulesDialogData } from '../table/rules-dialog';
 import { LobbyInviteSheet, LobbyInviteSheetData } from './lobby-invite-sheet';
 import { LobbyGameSheet, LobbyGameSheetData } from './lobby-game-sheet';
-import { LobbyChat } from './lobby-chat';
+import { LobbyChatSheet, LobbyChatSheetData } from './lobby-chat-sheet';
 import { LobbyChatStore } from './lobby-chat.store';
 import { GameReactions } from '../table/game-reactions';
 import { LobbySuggestSheet, LobbySuggestSheetData } from './lobby-suggest-sheet';
@@ -70,7 +71,6 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
     KniffelGameView,
     InitialsPipe,
     AvatarColorPipe,
-    LobbyChat,
   ],
   // Chat gilt für Warte-Lobby und Spieltisch (Chat-Sheet im Spiel), Reaktionen fürs Spiel
   providers: [LobbyChatStore, GameReactions],
@@ -88,6 +88,7 @@ export class Lobby {
   private readonly session = inject(SessionService);
   private readonly viewContainer = inject(ViewContainerRef);
   readonly chat = inject(LobbyChatStore);
+  private readonly headerChat = inject(HeaderChatService);
   private readonly reactions = inject(GameReactions);
 
   readonly lobbyId = this.route.snapshot.paramMap.get('lobbyId') ?? '';
@@ -222,6 +223,17 @@ export class Lobby {
     });
     this.chat.adopt = (gameKey) => void this.adoptGame(gameKey);
 
+    // Chat-Knopf im App-Kopf nur in der Warte-Lobby; im Spiel hat der Spielkopf seinen eigenen
+    effect(() => {
+      const waiting = !!this.lobby() && !this.started();
+      untracked(() =>
+        this.headerChat.chat.set(
+          waiting ? { unread: this.chat.unread, open: () => this.openChat() } : null,
+        ),
+      );
+    });
+    inject(DestroyRef).onDestroy(() => this.headerChat.chat.set(null));
+
     inject(DestroyRef).onDestroy(() => (this.leaving = true));
   }
 
@@ -233,6 +245,17 @@ export class Lobby {
     if (await this.run(() => this.lobbyService.setGame(this.lobbyId, gameKey, settings))) {
       this.toastService.success('Spiel übernommen', `Ihr spielt jetzt ${game.name}.`);
     }
+  }
+
+  openChat(): void {
+    this.bottomSheet.open<LobbyChatSheet, LobbyChatSheetData>(LobbyChatSheet, {
+      viewContainerRef: this.viewContainer,
+      data: { currentGame: this.lobby()?.game_key ?? null },
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Lobby-Chat',
+      autoFocus: 'dialog',
+    });
   }
 
   openSuggestions(): void {
