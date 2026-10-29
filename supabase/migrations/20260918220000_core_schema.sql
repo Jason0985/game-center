@@ -8842,6 +8842,28 @@ as $$
   from s;
 $$;
 
+-- Punkte für p_category mit Blick auf den Block p_scores. Joker: ist das Kniffel-Feld schon
+-- belegt (mit 50 oder gestrichen) und fällt noch ein Kniffel, zählt er als Full House (25),
+-- kleine (30) oder große Straße (40). Sonst wie _kniffel_points; gespiegelt in kniffel.model.ts
+create or replace function public._kniffel_score(
+  p_dice smallint[],
+  p_category integer,
+  p_scores smallint[]
+)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select case
+    when p_category in (8, 9, 10)
+         and public._kniffel_points(p_dice, 11) = 50
+         and p_scores[12] is not null
+      then (array[25, 30, 40])[p_category - 7]
+    else public._kniffel_points(p_dice, p_category)
+  end;
+$$;
+
 -- Summe eines Blocks mit Bonus (35, wenn oben mindestens 63)
 create or replace function public._kniffel_total(p_scores smallint[])
 returns integer
@@ -8867,7 +8889,7 @@ as $$
   from generate_series(1, 5) as i;
 $$;
 
--- Wurf p_category für p_seat eintragen (Punkte aus den aktuellen Würfeln)
+-- Wurf p_category für p_seat eintragen (Punkte aus den aktuellen Würfeln, mit Joker)
 create or replace function public._kniffel_enter(p_game_id uuid, p_seat smallint, p_category integer)
 returns void
 language plpgsql
@@ -8878,7 +8900,7 @@ declare
 begin
   select dice into v_dice from public.kniffel_games where id = p_game_id;
   update public.kniffel_players
-  set scores[p_category + 1] = public._kniffel_points(v_dice, p_category)
+  set scores[p_category + 1] = public._kniffel_score(v_dice, p_category, scores)
   where game_id = p_game_id and seat = p_seat;
   update public.kniffel_players set total = public._kniffel_total(scores)
   where game_id = p_game_id and seat = p_seat;
@@ -9082,6 +9104,8 @@ $$;
 
 revoke execute on function public._kniffel_points(smallint[], integer) from public, anon, authenticated;
 
+revoke execute on function public._kniffel_score(smallint[], integer, smallint[]) from public, anon, authenticated;
+
 revoke execute on function public._kniffel_total(smallint[]) from public, anon, authenticated;
 
 revoke execute on function public._kniffel_throw(smallint[], boolean[]) from public, anon, authenticated;
@@ -9206,7 +9230,7 @@ end;
 $$;
 
 -- Host überspringt nach 30 s Wartezeit (25 s lassen Luft): noch nicht gewürfelt, würfelt
--- der Tisch einmal; eingetragen wird ins freie Feld mit den meisten Punkten.
+-- der Tisch einmal; eingetragen wird ins freie Feld mit den meisten Punkten (mit Joker).
 create or replace function public.kniffel_skip(p_game_id uuid, p_waiting_since timestamptz)
 returns void
 language plpgsql
@@ -9243,7 +9267,7 @@ begin
   select c into v_category
   from public.kniffel_players p, generate_series(0, 12) as c
   where p.game_id = p_game_id and p.seat = game.turn_seat and p.scores[c + 1] is null
-  order by public._kniffel_points(v_dice, c) desc, c
+  order by public._kniffel_score(v_dice, c, p.scores) desc, c
   limit 1;
 
   if v_category is not null then

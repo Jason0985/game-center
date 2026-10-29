@@ -1,7 +1,8 @@
--- Kniffel: Joker-Regel. Ist das Kniffel-Feld schon belegt (mit 50 oder gestrichen) und
--- fällt noch ein Kniffel, darf er als Full House (25), kleine Straße (30) oder große
--- Straße (40) mit voller Punktzahl eingetragen werden. Sonst zählt er wie jeder Wurf.
--- Gespiegelt in kniffel.model.ts (score). Lässt sich gefahrlos erneut ausführen.
+-- Kniffel: Joker-Regel für eine bestehende Datenbank. Ist das Kniffel-Feld schon belegt (mit 50
+-- oder gestrichen) und fällt noch ein Kniffel, darf er als Full House (25), kleine Straße (30)
+-- oder große Straße (40) mit voller Punktzahl eingetragen werden. Steht inzwischen auch im
+-- Core-Schema; diese Datei bringt eine schon aufgesetzte Datenbank auf denselben Stand.
+-- Gespiegelt in kniffel.model.ts (pointsFor). Lässt sich gefahrlos erneut ausführen.
 
 -- Punkte für p_category mit Blick auf den Block p_scores (Joker), sonst wie _kniffel_points
 create or replace function public._kniffel_score(
