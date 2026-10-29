@@ -297,7 +297,8 @@ tr.adding td {
 .plus {
   position: absolute;
   top: 50%;
-  left: 50%;
+  // Rechts neben der Zahl, damit sie lesbar bleibt
+  left: calc(50% + 12px);
   z-index: 1;
   padding: 1px 6px;
   border-radius: 999px;
@@ -314,19 +315,19 @@ tr.adding td {
 @keyframes plus {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6);
+    transform: translate(0, -50%) scale(0.6);
   }
   20% {
     opacity: 1;
-    transform: translate(-50%, -110%) scale(1.1);
+    transform: translate(0, -60%) scale(1.1);
   }
   60% {
     opacity: 1;
-    transform: translate(-50%, -120%) scale(1);
+    transform: translate(0, -65%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, 60%) scale(0.7);
+    transform: translate(0, 120%) scale(0.7);
   }
 }
 
