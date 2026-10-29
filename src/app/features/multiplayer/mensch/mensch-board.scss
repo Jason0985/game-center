@@ -13,6 +13,7 @@
 }
 
 .board {
+  position: relative;
   display: grid;
   grid-template:
     'seats' auto
@@ -26,6 +27,8 @@
 
 .arena {
   grid-area: arena;
+  // Über der Tisch-Deko
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 0;
@@ -279,6 +282,7 @@
 
 .seats {
   grid-area: seats;
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;

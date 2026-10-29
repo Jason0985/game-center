@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame } from '../table/table-game';
+import { ABORT_MESSAGE, injectTableGame } from '../table/table-game';
 import { MenschBoard } from './mensch-board';
 import { MenschService } from './mensch.service';
 import { inGoal, MENSCH_RULES, MENSCH_SKIP_AFTER_S, MeGame } from './mensch.model';
@@ -22,7 +22,8 @@ import { inGoal, MENSCH_RULES, MENSCH_SKIP_AFTER_S, MeGame } from './mensch.mode
       [skipName]="table.canSkip() ? table.activeName() : null"
       [waitingClock]="table.waitingClock()"
       [finished]="game()?.status === 'finished'"
-      endHint="Zum Endstand"
+      endLabel="Spiel abbrechen"
+      endHint="Zählt nicht · zurück in die Lobby"
       [rules]="rules"
       (skip)="table.skip(game()!)"
       (endGame)="table.endGame(game()!)"
@@ -64,7 +65,8 @@ export class MenschGameView {
     title: 'Mensch ärgere dich nicht',
     skipAfterS: MENSCH_SKIP_AFTER_S,
     skipMessage: 'Der Tisch würfelt und zieht für den Spieler, bis der Nächste dran ist.',
-    endMessage: () => 'Gewertet wird nach Figuren im Ziel und wie weit die anderen gekommen sind.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;

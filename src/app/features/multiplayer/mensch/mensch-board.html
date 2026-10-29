@@ -1,4 +1,5 @@
 <div class="board">
+  <app-table-decor [rim]="false" />
   <div class="arena">
     <div class="plate" [style.--cells]="size">
       <svg class="path" [attr.viewBox]="'0 0 ' + size + ' ' + size" aria-hidden="true">
@@ -83,6 +84,7 @@
         [class.left]="seat.player.state === 'left'"
         [class.winner]="seat.winner"
         [style.--c]="colors[seat.player.color].piece"
+        [attr.data-player]="seat.player.user_id"
       >
         <span class="chip" aria-hidden="true"></span>
         <span class="who">{{ seat.mine ? 'Du' : seat.player.name }}</span>

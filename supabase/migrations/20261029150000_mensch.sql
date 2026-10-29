@@ -11,7 +11,8 @@
 --
 -- Wie Kniffel: alle Züge über die security-definer-Funktionen unten, Clients lesen Spiel und
 -- Spieler; jede öffentliche Funktion erhöht game_ticks genau einmal am Ende. Gewürfelt wird
--- nur hier (random()), geheim ist nichts.
+-- nur hier (random()), geheim ist nichts. Bricht der Host ab, zählt das Spiel nicht (wie in
+-- 20261029120000_lobby_chat_spielabbruch.sql).
 --
 -- Figuren zählen ab dem eigenen Startfeld: -1 = im Haus, 0–39 = Laufbahn (0 = Startfeld),
 -- 40–43 = Ziel. Brettfeld einer Figur auf der Laufbahn: (color * 10 + Schritt) % 40.
@@ -114,6 +115,14 @@ alter table public.game_results
   add constraint game_results_game_key_check
     check (game_key in ('flip-7', 'skip-bo', 'uno', 'blackjack', 'nimm-6', 'skyjo', 'kniffel',
                         'mensch'));
+
+-- Auch als Spielvorschlag im Lobby-Chat
+alter table public.lobby_messages
+  drop constraint if exists lobby_messages_game_key_check,
+  add constraint lobby_messages_game_key_check
+    check (game_key is null
+           or game_key in ('flip-7', 'skip-bo', 'monopoly', 'uno', 'blackjack', 'nimm-6', 'skyjo',
+                           'kniffel', 'mensch'));
 
 -- ===========================================================================
 -- Mensch: engine (intern, nicht über /rest/v1/rpc aufrufbar)
@@ -578,7 +587,7 @@ begin
 end;
 $$;
 
--- Host beendet das Spiel; gewertet wird der Stand bis dahin.
+-- Abbruch ohne Wertung, danach zurück in die Warte-Lobby (wie kniffel_end_game)
 create or replace function public.mensch_end_game(p_game_id uuid)
 returns void
 language plpgsql
@@ -590,17 +599,21 @@ begin
   game := public._mensch_lock(p_game_id);
 
   if not public._mensch_is_host(p_game_id) then
-    raise exception 'Nur der Host kann das Spiel beenden.';
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
   end if;
 
   if game.status <> 'playing' then
-    raise exception 'Das Spiel ist bereits beendet.';
+    raise exception 'Das Spiel ist bereits vorbei.';
   end if;
+
+  -- Abbruch: der Ergebnis-Trigger wertet das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
 
   update public.mensch_games
   set status = 'finished', turn_seat = null, phase = 'roll', tries = 0, waiting_since = null
   where id = p_game_id;
   perform public._game_tick(game.lobby_id);
+  perform public.mensch_return_to_lobby(game.lobby_id);
 end;
 $$;
 
@@ -674,7 +687,7 @@ grant execute on function public.mensch_return_to_lobby(uuid) to authenticated;
 -- ===========================================================================
 
 -- Ein Ergebnis je Spieler: Rang nach Figuren im Ziel, dann wie weit die Figuren gekommen
--- sind; score = Figuren im Ziel. Am Ende allein zählt nichts. Ein Fehler hier darf den Zug
+-- sind; score = Figuren im Ziel. Am Ende allein (alle anderen sind gegangen) zählt nichts. Ein Fehler hier darf den Zug
 -- nie abbrechen.
 create or replace function public._mensch_record_result()
 returns trigger
@@ -717,7 +730,8 @@ $$;
 drop trigger if exists mensch_games_record_result on public.mensch_games;
 create trigger mensch_games_record_result
 after update of status on public.mensch_games
-for each row when (new.status = 'finished' and old.status <> 'finished')
+for each row when (new.status = 'finished' and old.status <> 'finished'
+                   and current_setting('game.aborted', true) is distinct from 'on')
 execute function public._mensch_record_result();
 
 revoke execute on function public._mensch_record_result() from public, anon, authenticated;
@@ -726,7 +740,7 @@ revoke execute on function public._mensch_record_result() from public, anon, aut
 -- Lobby: Mensch ärgere dich nicht wählen und starten
 -- ===========================================================================
 
--- Wie in 20261022120000_kniffel.sql, plus Mensch (ohne Einstellungen, nur {}).
+-- Wie im Core-Schema, plus Mensch (ohne Einstellungen, nur {}).
 -- Rechte bleiben bei create or replace.
 create or replace function public.set_lobby_game(p_lobby_id uuid, p_game_key text, p_settings jsonb)
 returns void
@@ -844,7 +858,7 @@ begin
 end;
 $$;
 
--- Wie in 20261022120000_kniffel.sql, plus Mensch (2–4 Spieler).
+-- Wie im Core-Schema, plus Mensch (2–4 Spieler).
 create or replace function public.start_lobby(p_lobby_id uuid)
 returns void
 language plpgsql

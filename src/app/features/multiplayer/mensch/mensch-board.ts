@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FeedbackService } from '../../../services/feedback.service';
+import { TableDecor } from '../table/table-decor';
 import { reducedMotion } from '../table/table-motion';
 import {
   BOARD_SIZE,
@@ -57,6 +58,7 @@ type Field = {
 // gezogene Figuren hüpfen Feld für Feld, geschlagene fliegen zurück ins Haus.
 @Component({
   selector: 'app-mensch-board',
+  imports: [TableDecor],
   templateUrl: './mensch-board.html',
   styleUrl: './mensch-board.scss',
 })
