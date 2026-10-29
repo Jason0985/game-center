@@ -37,6 +37,8 @@ const ANYWHERE = [
   'nigger',
   'nigga',
   'faggot',
+  'Hurensohn',
+  'hurensohn',
 ];
 
 // Zahlen und Zeichen statt Buchstaben (f4ck, $hit, 5cheiße) zählen mit

@@ -810,6 +810,12 @@ button.mat-mdc-button-base:not(.mat-mdc-fab):not(.mat-mdc-mini-fab):not(.mat-mdc
   --mat-bottom-sheet-container-background-color: var(--color-surface);
   // Material rundet nur ab Tablet-Breite (-medium/-large), am Handy sonst eckig
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  // Feste Breite statt nach Inhalt (sonst springt sie z. B. beim Aufklappen der Kurzregeln);
+  // am Handy volle Breite
+  width: min(100vw, 560px);
+  min-width: 0;
+  max-width: 100vw;
+  box-sizing: border-box;
   max-height: none;
   padding: 0;
   box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.4);
