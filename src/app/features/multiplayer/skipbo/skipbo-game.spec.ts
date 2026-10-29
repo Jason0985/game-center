@@ -282,7 +282,7 @@ describe('SkipboGameView', () => {
     vi.useFakeTimers();
     await render('host', makeGame({ turn_seat: 1 }));
     let items = await openMenu();
-    expect(menuItem(items, 'Spiel beenden')).toBeDefined();
+    expect(menuItem(items, 'Spiel abbrechen')).toBeDefined();
     expect(menuItem(items, 'überspringen')).toBeUndefined();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
@@ -296,7 +296,7 @@ describe('SkipboGameView', () => {
     expect(skipbo['skip']).toHaveBeenCalledWith(turn);
 
     items = await openMenu();
-    menuItem(items, 'Spiel beenden')!.click();
+    menuItem(items, 'Spiel abbrechen')!.click();
     await vi.advanceTimersByTimeAsync(0);
     expect(skipbo['endGame']).toHaveBeenCalledWith('game-1');
     fixture.destroy();
@@ -306,7 +306,7 @@ describe('SkipboGameView', () => {
     const leave = vi.fn();
     component.leave.subscribe(leave);
     items = await openMenu();
-    expect(menuItem(items, 'Spiel beenden')).toBeUndefined();
+    expect(menuItem(items, 'Spiel abbrechen')).toBeUndefined();
     menuItem(items, 'Spiel verlassen')!.click();
     expect(leave).toHaveBeenCalledWith(false);
   });

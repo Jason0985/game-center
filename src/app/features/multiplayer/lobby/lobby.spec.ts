@@ -62,6 +62,9 @@ describe('Lobby', () => {
     leave: ReturnType<typeof vi.fn>;
     start: ReturnType<typeof vi.fn>;
     setGame: ReturnType<typeof vi.fn>;
+    loadMessages: ReturnType<typeof vi.fn>;
+    sendMessage: ReturnType<typeof vi.fn>;
+    subscribeToMessages: ReturnType<typeof vi.fn>;
   };
   let flip7: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
   let skipbo: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
@@ -94,6 +97,12 @@ describe('Lobby', () => {
       leave: vi.fn().mockResolvedValue({ ok: true }),
       start: vi.fn().mockResolvedValue({ ok: true }),
       setGame: vi.fn().mockResolvedValue({ ok: true }),
+      loadMessages: vi.fn().mockResolvedValue([]),
+      sendMessage: vi.fn().mockResolvedValue({ ok: true }),
+      subscribeToMessages: vi.fn((_id: string, onChange: () => void) => {
+        onChange();
+        return () => {};
+      }),
     };
     flip7 = {
       load: vi.fn().mockResolvedValue({ ok: true, value: null }),
@@ -318,6 +327,66 @@ describe('Lobby', () => {
     await render('guest');
     expect(fixture.nativeElement.querySelector('.lobby-game')).toBeNull();
     expect(text()).not.toContain('Freie Plätze');
+  });
+
+  it('shows the lobby chat with names, own messages on the right and sends', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      {
+        id: 1,
+        user_id: 'host',
+        body: 'Wer fängt an?',
+        game_key: null,
+        created_at: '2026-10-29T18:00:00Z',
+      },
+      { id: 2, user_id: 'guest', body: 'Ich!', game_key: null, created_at: '2026-10-29T18:00:30Z' },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const messages = [
+      ...fixture.nativeElement.querySelectorAll('app-lobby-chat .msg'),
+    ] as HTMLElement[];
+    expect(messages.map((m) => m.querySelector('.bubble')!.textContent!.trim())).toEqual([
+      'Wer fängt an?',
+      'Ich!',
+    ]);
+    expect(messages[0].querySelector('.name')!.textContent).toContain('host');
+    expect(messages[1].classList).toContain('msg--mine');
+
+    const input = fixture.nativeElement.querySelector('.composer-input') as HTMLInputElement;
+    input.value = 'Los gehts';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.composer-send') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lobbyService.sendMessage).toHaveBeenCalledWith('lobby-1', 'Los gehts', null);
+  });
+
+  it('lets guests browse the games and the host adopt a suggestion', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      {
+        id: 3,
+        user_id: 'guest',
+        body: 'Lust auf Kniffel?',
+        game_key: 'kniffel',
+        created_at: '2026-10-29T18:01:00Z',
+      },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text()).toContain('Alle Spiele ansehen');
+    expect(fixture.nativeElement.querySelector('.suggestion-adopt')).toBeNull();
+    fixture.destroy();
+
+    await render('host');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text()).not.toContain('Alle Spiele ansehen');
+    (fixture.nativeElement.querySelector('.suggestion-adopt') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'kniffel', {});
   });
 
   it('shows guests the chosen settings', async () => {

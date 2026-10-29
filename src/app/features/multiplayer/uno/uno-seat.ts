@@ -14,6 +14,8 @@ const MAX_FAN = 10;
   templateUrl: './uno-seat.html',
   styleUrl: './uno-seat.scss',
   host: {
+    // Reaktionen im Spiel erscheinen an diesem Platz (ReactionLayer)
+    '[attr.data-player]': 'player().user_id',
     '[attr.data-variant]': 'variant()',
     '[attr.data-state]': 'player().state',
     '[attr.data-seat]': 'player().seat',

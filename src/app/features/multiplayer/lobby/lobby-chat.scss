@@ -1,0 +1,277 @@
+// Gruppen-Chat in der Sprache der App: Blasen mit großem Radius, die innerhalb einer Folge
+// zusammenrücken (kleine Ecke zur Absenderseite), eigene in der Akzentfarbe
+:host {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 12px 8px;
+  scrollbar-width: thin;
+}
+
+:host(.chat--sheet) {
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+}
+
+:host(.chat--sheet) .log {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.empty mat-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-primary-light);
+  font-size: 32px;
+}
+
+.empty p {
+  max-width: 30ch;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 80%;
+}
+
+.msg--first {
+  margin-top: 8px;
+}
+
+.msg--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.name {
+  margin: 0 0 3px 12px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bubble {
+  margin: 0;
+  padding: 8px 13px;
+  border-radius: 18px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.msg--mine .bubble {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+// Folge: zur Absenderseite hin kleinere Ecken, nur die letzte Blase behält ihre Spitze
+.msg:not(.msg--mine):not(.msg--first) .bubble {
+  border-top-left-radius: 6px;
+}
+
+.msg:not(.msg--mine):not(.msg--last) .bubble {
+  border-bottom-left-radius: 6px;
+}
+
+.msg--mine:not(.msg--first) .bubble {
+  border-top-right-radius: 6px;
+}
+
+.msg--mine:not(.msg--last) .bubble {
+  border-bottom-right-radius: 6px;
+}
+
+.time {
+  margin: 3px 10px 0;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+// Vorschlag: kleine Spielkarte mit dem Kachelsymbol aus der Spielwahl
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+  padding: 10px 10px 10px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface-raised);
+}
+
+.msg--mine .suggestion {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: var(--color-primary-soft);
+}
+
+.suggestion-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--tile);
+  color: #fff;
+}
+
+.suggestion-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.suggestion-label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.suggestion-name {
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.suggestion-adopt {
+  flex: none;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.suggestion-adopt:active {
+  scale: 0.96;
+}
+
+.suggestion-state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-success-light);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.suggestion-state mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+// Eingabe wie in Nachrichten-Apps: runde Leiste, Senden als Kreis in der Akzentfarbe
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+:host(.chat--sheet) .composer {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 19px;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+
+.composer-input:focus-visible {
+  border-color: var(--color-primary-light);
+}
+
+.composer-suggest,
+.composer-send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.composer-suggest {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.composer-send {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  transition:
+    opacity 160ms ease,
+    scale 160ms ease;
+}
+
+.composer-send:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.composer-send:not(:disabled):active,
+.composer-suggest:active {
+  scale: 0.92;
+}
+
+.composer-suggest:focus-visible,
+.composer-send:focus-visible,
+.suggestion-adopt:focus-visible {
+  outline: 3px solid var(--color-primary-light);
+  outline-offset: 2px;
+}

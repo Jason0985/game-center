@@ -1,7 +1,12 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
 import { HistoryRow } from '../table/history-sheet';
-import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
+import {
+  ABORT_MESSAGE,
+  injectFinalDelay,
+  injectTableGame,
+  injectTableHistory,
+} from '../table/table-game';
 import { SkipboBoard, SkipboDiscard, SkipboPlay } from './skipbo-board';
 import { SkipboFinal } from './skipbo-final';
 import { SkipboService } from './skipbo.service';
@@ -46,7 +51,8 @@ export class SkipboGameView {
     title: 'Skip-Bo',
     skipAfterS: SKIPBO_SKIP_AFTER_S,
     skipMessage: 'Der Zug endet ohne Ablegen, die Handkarten bleiben.',
-    endMessage: () => 'Danach wird der Endstand angezeigt.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;

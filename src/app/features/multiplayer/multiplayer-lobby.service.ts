@@ -7,7 +7,9 @@ import {
   displayNameOf,
   LobbyDetail,
   LobbyGameSettings,
+  LOBBY_CHAT_LIMIT,
   LobbyMember,
+  LobbyMessage,
   LobbyProfile,
   LobbyStatus,
   LobbySummary,
@@ -238,6 +240,43 @@ export class MultiplayerLobbyService {
     return watchTables(
       name,
       [{ table: 'multiplayer_lobbies' }, { table: 'multiplayer_lobby_members' }],
+      onChange,
+    );
+  }
+
+  // Lobby-Chat: die letzten Nachrichten, älteste zuerst; null = Laden fehlgeschlagen
+  async loadMessages(lobbyId: string): Promise<LobbyMessage[] | null> {
+    const { data, error } = await supabase
+      .from('lobby_messages')
+      .select('id, user_id, body, game_key, created_at')
+      .eq('lobby_id', lobbyId)
+      .order('id', { ascending: false })
+      .limit(LOBBY_CHAT_LIMIT);
+    if (error) {
+      console.error('Chat konnte nicht geladen werden.', error);
+      return null;
+    }
+    return (data as LobbyMessage[]).reverse();
+  }
+
+  // gameKey: Spielvorschlag aus der Übersicht
+  async sendMessage(
+    lobbyId: string,
+    body: string,
+    gameKey: string | null = null,
+  ): Promise<ActionResult> {
+    const { error } = await supabase.rpc('lobby_send_message', {
+      p_lobby_id: lobbyId,
+      p_body: body,
+      p_game_key: gameKey,
+    });
+    return error ? lobbyFailure('Nachricht konnte nicht gesendet werden.', error) : { ok: true };
+  }
+
+  subscribeToMessages(lobbyId: string, onChange: () => void): () => void {
+    return watchTables(
+      'lobby-chat',
+      [{ table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }],
       onChange,
     );
   }

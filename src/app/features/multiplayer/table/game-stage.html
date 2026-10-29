@@ -51,10 +51,57 @@
         }
       </button>
     }
+    @if (reactions) {
+      <button
+        type="button"
+        class="icon-button"
+        aria-label="Reagieren"
+        [attr.aria-expanded]="pickerOpen()"
+        (click)="pickerOpen.set(!pickerOpen())"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">add_reaction</span>
+      </button>
+    }
+    @if (chat) {
+      <button
+        type="button"
+        class="icon-button chat-button"
+        [attr.aria-label]="chat.unread() ? 'Lobby-Chat, ' + chat.unread() + ' neu' : 'Lobby-Chat'"
+        (click)="openChat()"
+      >
+        <span class="material-symbols-rounded" aria-hidden="true">chat</span>
+        @if (chat.unread(); as unread) {
+          <span class="chat-badge" aria-hidden="true">{{ unread > 9 ? '9+' : unread }}</span>
+        }
+      </button>
+    }
     <button type="button" class="icon-button" aria-label="Spielmenü" [matMenuTriggerFor]="menu">
       <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
     </button>
   </header>
+  @if (pickerOpen()) {
+    <button
+      type="button"
+      class="picker-scrim"
+      aria-label="Reaktionen schließen"
+      (click)="pickerOpen.set(false)"
+    ></button>
+    <div class="picker" role="group" aria-label="Reaktion senden">
+      @for (emoji of reactionList; track emoji) {
+        <button
+          type="button"
+          class="picker-emoji"
+          [attr.aria-label]="'Mit ' + emoji + ' reagieren'"
+          (click)="react(emoji)"
+        >
+          {{ emoji }}
+        </button>
+      }
+    </div>
+  }
+  @if (reactions) {
+    <app-reaction-layer />
+  }
   @if (decor() === 'christmas') {
     <app-christmas-lights />
   } @else if (decor() === 'halloween') {
@@ -88,7 +135,7 @@
           >
             <span class="material-symbols-rounded" aria-hidden="true">stop_circle</span>
             <span class="game-menu-text">
-              Spiel beenden
+              {{ endLabel() }}
               <span class="game-menu-sub">{{ endHint() }}</span>
             </span>
           </button>

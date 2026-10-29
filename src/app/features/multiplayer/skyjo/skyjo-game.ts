@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ActionResult } from '../../../services/supabase-errors';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame, injectTableHistory } from '../table/table-game';
+import { ABORT_MESSAGE, injectTableGame, injectTableHistory } from '../table/table-game';
 import { SkyjoBoard } from './skyjo-board';
 import { SkyjoFinal } from './skyjo-final';
 import { SkyjoRound } from './skyjo-round';
@@ -63,8 +63,8 @@ export class SkyjoGameView {
     skipAfterS: SKYJO_SKIP_AFTER_S,
     skipMessage:
       'Der Tisch deckt eine zufällige Karte auf; eine gezogene Karte kommt auf die Ablage.',
-    endMessage: () =>
-      'Gewertet werden die abgeschlossenen Runden. Danach wird der Endstand angezeigt.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;

@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame } from '../table/table-game';
+import { ABORT_MESSAGE, injectTableGame } from '../table/table-game';
 import { KniffelBoard } from './kniffel-board';
 import { KniffelService } from './kniffel.service';
 import {
@@ -28,7 +28,8 @@ import {
       [skipName]="table.canSkip() ? table.activeName() : null"
       [waitingClock]="table.waitingClock()"
       [finished]="game()?.status === 'finished'"
-      endHint="Zum Endstand"
+      endLabel="Spiel abbrechen"
+      endHint="Zählt nicht · zurück in die Lobby"
       [rules]="rules"
       (skip)="table.skip(game()!)"
       (endGame)="table.endGame(game()!)"
@@ -72,7 +73,8 @@ export class KniffelGameView {
     skipAfterS: KNIFFEL_SKIP_AFTER_S,
     skipMessage:
       'Der Tisch würfelt (falls noch nicht geschehen) und trägt ins Feld mit den meisten Punkten ein.',
-    endMessage: () => 'Gewertet wird der Block, wie er jetzt ist.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;
