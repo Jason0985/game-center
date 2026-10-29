@@ -83,6 +83,8 @@ export class Stats {
     if (result.game_key === 'blackjack') return `Guthaben ${formatMoney(result.score)}`;
     // Nimm 6: Hornochsen am Ende (weniger ist besser)
     if (result.game_key === 'nimm-6') return bullsLabel(result.score);
+    // Mensch ärgere dich nicht: Figuren im Ziel
+    if (result.game_key === 'mensch') return `${result.score}/4 im Ziel`;
     return `${result.score} P.`;
   }
 }

@@ -33,10 +33,11 @@ describe('Collection', () => {
       'Nimm 6',
       'Skyjo',
       'Kniffel',
+      'Mensch ärgere dich nicht',
       'Monopoly',
     ]);
     expect(multiplayer.items[0].path).toBe('/multiplayer');
-    expect(multiplayer.items[7].href).toBe('https://richup.io');
+    expect(multiplayer.items[8].href).toBe('https://richup.io');
     expect(
       component
         .groups()

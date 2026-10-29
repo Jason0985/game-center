@@ -1,5 +1,5 @@
 <div class="lobby-root ui-page-root" [class.ui-page-root--spacious]="!started()">
-  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game, uno-game, blackjack-game, nimm6-game, skyjo-game, kniffel-game) -->
+  <!-- Im Spiel hat der Spieltisch seinen eigenen Kopf (flip7-game, skipbo-game, uno-game, blackjack-game, nimm6-game, skyjo-game, kniffel-game, mensch-game) -->
   @if (!started()) {
     <header class="ui-page-head lobby-block lobby-head">
       <div class="lobby-head-row">
@@ -72,6 +72,14 @@
         />
       } @else if (current.game_key === 'kniffel') {
         <app-kniffel-game
+          [lobbyId]="lobbyId"
+          [hostUserId]="current.host_user_id"
+          [userId]="userId()!"
+          (returned)="reload()"
+          (leave)="leave($event)"
+        />
+      } @else if (current.game_key === 'mensch') {
+        <app-mensch-game
           [lobbyId]="lobbyId"
           [hostUserId]="current.host_user_id"
           [userId]="userId()!"

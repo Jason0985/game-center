@@ -1,0 +1,144 @@
+<div class="board">
+  <app-table-decor [rim]="false" />
+  <div class="arena">
+    <div class="plate" [style.--cells]="size">
+      <svg class="path" [attr.viewBox]="'0 0 ' + size + ' ' + size" aria-hidden="true">
+        <polygon [attr.points]="path()" />
+      </svg>
+
+      <span class="center" [style.background]="centerGradient()" aria-hidden="true"></span>
+
+      @for (field of fields(); track $index) {
+        <span
+          [class]="'field ' + field.kind + (field.color === null ? ' empty' : '')"
+          [style.--x]="field.x"
+          [style.--y]="field.y"
+          [style.--c]="field.color === null ? null : colors[field.color].piece"
+          [style.--f]="field.color === null ? null : colors[field.color].field"
+          aria-hidden="true"
+        ></span>
+      }
+
+      @for (arrow of arrows(); track arrow.color) {
+        <span
+          class="arrow"
+          [style.--x]="arrow.x"
+          [style.--y]="arrow.y"
+          [style.--a]="arrow.angle + 'deg'"
+          aria-hidden="true"
+        ></span>
+      }
+
+      @for (marker of markers(); track marker.index) {
+        <span
+          class="marker"
+          [class.aimed]="marker.aimed"
+          [style.--x]="marker.x"
+          [style.--y]="marker.y"
+          [style.--c]="colors[me()!.color].piece"
+          aria-hidden="true"
+        ></span>
+      }
+
+      @for (piece of pieces(); track piece.key) {
+        <button
+          type="button"
+          class="piece"
+          [class.movable]="piece.movable && canMove()"
+          [class.turn]="piece.turn"
+          [class.flying]="flying().has(piece.key)"
+          [style.--x]="piece.x"
+          [style.--y]="piece.y"
+          [style.--c]="colors[piece.color].piece"
+          [style.--d]="colors[piece.color].dark"
+          [disabled]="!(piece.movable && canMove())"
+          [attr.aria-label]="piece.label + (piece.movable && canMove() ? ', ziehen' : '')"
+          (click)="pick(piece.index, piece.mine)"
+          (pointerenter)="piece.movable && aimed.set(piece.index)"
+          (pointerleave)="aimed.set(null)"
+          (focus)="piece.movable && aimed.set(piece.index)"
+          (blur)="aimed.set(null)"
+        >
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <ellipse class="shadow" cx="20" cy="35" rx="12" ry="3.5" />
+            <path
+              class="body"
+              d="M11 34c0-6 3.5-10 6.2-12.4a8.4 8.4 0 1 1 5.6 0C25.5 24 29 28 29 34c0 1.4-4 2.4-9 2.4s-9-1-9-2.4z"
+            />
+            <ellipse class="shine" cx="16.6" cy="11" rx="2.4" ry="3.2" />
+          </svg>
+        </button>
+      }
+
+      @if (banner(); as b) {
+        <div class="banner" role="status" [style.--c]="b.color">{{ b.text }}</div>
+      }
+    </div>
+  </div>
+
+  <ul class="seats" aria-label="Spieler">
+    @for (seat of seats(); track seat.player.seat) {
+      <li
+        class="seat"
+        [class.turn]="seat.turn"
+        [class.left]="seat.player.state === 'left'"
+        [class.winner]="seat.winner"
+        [style.--c]="colors[seat.player.color].piece"
+        [attr.data-player]="seat.player.user_id"
+      >
+        <span class="chip" aria-hidden="true"></span>
+        <span class="who">{{ seat.mine ? 'Du' : seat.player.name }}</span>
+        <span class="goal" [attr.aria-label]="seat.goal + ' von 4 im Ziel'">
+          @for (slot of goalSlots; track slot) {
+            <i [class.in]="slot < seat.goal"></i>
+          }
+        </span>
+      </li>
+    }
+  </ul>
+
+  <div class="panel">
+    @if (finished()) {
+      <div class="final" role="status">
+        <span class="material-symbols-rounded fill trophy" aria-hidden="true">trophy</span>
+        <strong>{{ winnerText() }}</strong>
+      </div>
+      @if (isHost()) {
+        <button type="button" class="primary" [disabled]="busy()" (click)="backToLobby.emit()">
+          <span class="material-symbols-rounded" aria-hidden="true">meeting_room</span>
+          Zurück zur Warte-Lobby
+        </button>
+      } @else {
+        <p class="status">Der Host entscheidet, wie es weitergeht.</p>
+      }
+    } @else {
+      <div class="play">
+        <button
+          type="button"
+          class="die"
+          [class.rolling]="rolling()"
+          [class.ready]="canRoll()"
+          [class.blank]="!face()"
+          [style.--c]="dieColor()?.piece"
+          [disabled]="!canRoll()"
+          [attr.aria-label]="canRoll() ? 'Würfeln' : face() ? 'Würfel zeigt ' + face() : 'Würfel'"
+          (click)="doRoll()"
+        >
+          <span class="face">
+            @for (pip of pips[face() ?? 0] ?? []; track $index) {
+              <i [style.grid-area]="pip"></i>
+            }
+          </span>
+        </button>
+
+        <div class="side">
+          <p class="status" [class.mine]="myTurn()" aria-live="polite">{{ hint() }}</p>
+          <button type="button" class="primary" [disabled]="!canRoll()" (click)="doRoll()">
+            <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+            Würfeln
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,657 @@
+// Holzbrett (in beiden Schemas hell wie ein echtes Brett), quadratisch so groß wie möglich.
+// Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer (iPad quer, Laptop, Handy quer):
+// Spieler und Bedienfeld als Leiste rechts, zusammen mit dem Brett mittig.
+// Felder, Figuren und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
+:host {
+  --wood-light: #f6e7bf;
+  --wood: #e9cf92;
+  --wood-edge: #9a6a35;
+  --ink: #4a3317;
+  --die: 64px;
+  display: grid;
+  min-height: 0;
+}
+
+.board {
+  position: relative;
+  display: grid;
+  grid-template:
+    'seats' auto
+    'arena' minmax(0, 1fr)
+    'panel' auto
+    / minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 35%, var(--table-center), var(--table-edge));
+}
+
+.arena {
+  grid-area: arena;
+  // Über der Tisch-Deko
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 4px 10px 10px;
+  container-type: size;
+}
+
+.plate {
+  position: relative;
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border: clamp(4px, 1.4cqmin, 10px) solid var(--wood-edge);
+  border-radius: 4%;
+  background: radial-gradient(circle at 50% 50%, var(--wood-light), var(--wood) 75%), var(--wood);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.35),
+    inset 0 0 30px rgba(120, 70, 20, 0.25),
+    0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+// Gemeinsames Raster
+.field,
+.piece,
+.marker,
+.arrow,
+.center {
+  position: absolute;
+  left: calc(var(--x) * 100% / var(--cells));
+  top: calc(var(--y) * 100% / var(--cells));
+  width: calc(100% / var(--cells));
+  height: calc(100% / var(--cells));
+}
+
+.path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.path polygon {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linejoin: round;
+  stroke-width: 0.07;
+  opacity: 0.55;
+}
+
+.center {
+  --x: 5;
+  --y: 5;
+  scale: 0.62;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.field::after {
+  content: '';
+  position: absolute;
+  inset: 11%;
+  box-sizing: border-box;
+  border: max(1.5px, 0.35cqmin) solid var(--ink);
+  border-radius: 50%;
+  background: #fffdf6;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+
+.field.start::after {
+  border-color: var(--c);
+  background: var(--c);
+  box-shadow:
+    inset 0 0 0 max(2px, 0.5cqmin) rgba(255, 255, 255, 0.6),
+    0 0 0 max(1px, 0.25cqmin) var(--ink);
+}
+
+.field.goal::after,
+.field.house::after {
+  border-color: var(--c);
+  background: var(--f);
+}
+
+.field.house::after {
+  inset: 9%;
+  border-width: max(2px, 0.5cqmin);
+}
+
+// Haus einer Farbe ohne Spieler
+.field.house.empty::after {
+  border-color: rgba(74, 51, 23, 0.25);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+// Pfeil in Laufrichtung auf dem Startfeld
+.arrow {
+  rotate: var(--a);
+  pointer-events: none;
+}
+
+.arrow::after {
+  content: '';
+  position: absolute;
+  inset: 34% 30% 34% 38%;
+  background: rgba(255, 255, 255, 0.9);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+// Zielfeld einer ziehbaren Figur
+.marker {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marker::after {
+  content: '';
+  position: absolute;
+  inset: 4%;
+  border: max(2px, 0.55cqmin) dashed var(--c);
+  border-radius: 50%;
+  animation: marker 1.6s linear infinite;
+}
+
+.marker.aimed::after {
+  border-style: solid;
+  background: color-mix(in srgb, var(--c) 35%, transparent);
+}
+
+@keyframes marker {
+  to {
+    rotate: 360deg;
+  }
+}
+
+// Figur: Kegel mit Kopf, von schräg oben
+.piece {
+  z-index: 3;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+  transition:
+    left 0.16s cubic-bezier(0.3, 0.7, 0.4, 1),
+    top 0.16s cubic-bezier(0.3, 0.7, 0.4, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piece svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  translate: 0 -12%;
+  transition:
+    translate 0.15s,
+    scale 0.15s;
+}
+
+.piece .shadow {
+  fill: rgba(0, 0, 0, 0.3);
+}
+
+.piece .body {
+  fill: var(--c);
+  stroke: var(--d);
+  stroke-width: 1.6;
+}
+
+.piece .shine {
+  fill: rgba(255, 255, 255, 0.55);
+}
+
+.piece.flying {
+  z-index: 4;
+  transition:
+    left 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2),
+    top 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2);
+}
+
+.piece.movable {
+  z-index: 5;
+  cursor: pointer;
+}
+
+.piece.movable svg {
+  animation: hop 0.9s ease-in-out infinite;
+  filter: drop-shadow(0 0 max(3px, 0.8cqmin) #ffffff);
+}
+
+.piece.movable:hover svg,
+.piece.movable:focus-visible svg {
+  scale: 1.12;
+}
+
+.piece:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+
+@keyframes hop {
+  50% {
+    translate: 0 -24%;
+  }
+}
+
+.banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
+  max-width: 80%;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  font-size: clamp(14px, 3.4cqmin, 20px);
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  translate: -50% -50%;
+  animation: banner 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+  pointer-events: none;
+}
+
+@keyframes banner {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+// Bedienfeld; die schwebende App-Navigation liegt auf der Fläche
+.panel {
+  grid-area: panel;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: 22px 22px 0 0;
+  background: var(--color-surface);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.seats {
+  grid-area: seats;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 10px 6px;
+  list-style: none;
+}
+
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 10px 5px 6px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.seat.turn {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 18%, var(--color-surface));
+}
+
+.seat.left {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.seat.winner {
+  border-color: var(--table-gold);
+}
+
+.chip {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.who {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal {
+  display: flex;
+  gap: 2px;
+}
+
+.goal i {
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid var(--c);
+  border-radius: 50%;
+}
+
+.goal i.in {
+  background: var(--c);
+}
+
+.play {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.die {
+  --c: var(--color-border);
+  position: relative;
+  flex-shrink: 0;
+  width: var(--die);
+  height: var(--die);
+  padding: calc(var(--die) * 0.16);
+  border: 0;
+  border-radius: 22%;
+  background: linear-gradient(145deg, #ffffff, #ece9e2);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 3px var(--c),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.die.ready {
+  cursor: pointer;
+  animation: ready 1.4s ease-in-out infinite;
+}
+
+.die.rolling {
+  animation: tumble 0.75s cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+
+.die.blank .face {
+  opacity: 0;
+}
+
+.die:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 4px;
+}
+
+@keyframes ready {
+  50% {
+    scale: 1.07;
+    box-shadow:
+      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+      0 0 0 3px var(--c),
+      0 0 0 9px color-mix(in srgb, var(--c) 30%, transparent),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes tumble {
+  0% {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+  30% {
+    rotate: 200deg;
+    translate: 0 -40%;
+    scale: 0.85;
+  }
+  60% {
+    rotate: 330deg;
+    translate: 0 6%;
+  }
+  80% {
+    rotate: 370deg;
+    translate: 0 -6%;
+  }
+  100% {
+    rotate: 360deg;
+    translate: 0 0;
+  }
+}
+
+.face {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+.face i {
+  width: calc(var(--die) * 0.17);
+  height: calc(var(--die) * 0.17);
+  place-self: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4a4a4f, #111114);
+}
+
+.status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status.mine {
+  color: var(--color-text);
+}
+
+.panel button.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 440px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.panel button.primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.final {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.trophy {
+  color: var(--table-gold);
+  font-size: 40px;
+}
+
+.fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+// Sehr niedrige Handys: kleineres Bedienfeld
+@media (max-height: 640px) and (orientation: portrait) {
+  :host {
+    --die: 52px;
+  }
+
+  .panel {
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .panel button.primary {
+    min-height: 42px;
+  }
+}
+
+// iPad hochkant: größerer Würfel
+@media (min-width: 600px) and (orientation: portrait) {
+  :host {
+    --die: 76px;
+  }
+
+  .arena {
+    padding: 18px;
+  }
+
+  .seat {
+    font-size: 15px;
+  }
+}
+
+// Quer (Handy quer, iPad quer, Laptop): Spieler und Bedienfeld als Leiste rechts. Die
+// Brettspalte ist höchstens so breit wie hoch, damit Brett und Leiste zusammen mittig stehen.
+@media (orientation: landscape) and (min-width: 640px) {
+  :host {
+    --die: 84px;
+    --nav: calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .board {
+    grid-template:
+      'arena .' minmax(0, 1fr)
+      'arena seats' auto
+      'arena panel' auto
+      'arena .' minmax(0, 1fr)
+      / minmax(0, calc(100dvh - 56px - var(--nav))) clamp(230px, 28vw, 320px);
+    justify-content: center;
+    column-gap: 8px;
+    padding: 0 16px var(--nav);
+  }
+
+  .arena {
+    padding: 14px;
+  }
+
+  .seats {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    padding: 0 0 12px;
+  }
+
+  .seat {
+    padding: 8px 12px 8px 8px;
+  }
+
+  .panel {
+    gap: 16px;
+    padding: 20px 16px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  .who {
+    flex: 1;
+    max-width: none;
+  }
+
+  .play {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .side {
+    align-self: stretch;
+  }
+}
+
+// Handy quer: wenig Höhe, kompakter
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 520px) {
+  :host {
+    --die: 56px;
+  }
+
+  .panel {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .seats {
+    gap: 4px;
+    padding-bottom: 8px;
+  }
+
+  .seat {
+    padding: 4px 10px 4px 6px;
+    font-size: 12px;
+  }
+
+  .play {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .panel button.primary {
+    min-height: 40px;
+  }
+}
+
+// Laptop: Die Bühne deckt die Navigation ab
+@media (min-width: 1280px) and (orientation: landscape) {
+  :host {
+    --nav: 0px;
+    --die: 92px;
+  }
+
+  .arena {
+    padding: 24px;
+  }
+
+  .seat {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piece,
+  .piece.flying {
+    transition: none;
+  }
+
+  .piece.movable svg,
+  .die.ready,
+  .marker::after {
+    animation: none;
+  }
+}
