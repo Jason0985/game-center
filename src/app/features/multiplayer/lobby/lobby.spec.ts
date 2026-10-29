@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { ComponentRef, signal, ViewContainerRef } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
+import { HeaderChatService } from '../../../services/header-chat.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { Flip7Service } from '../flip7/flip7.service';
 import { SkipboService } from '../skipbo/skipbo.service';
@@ -16,6 +17,8 @@ import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
 import { LobbyGameSheet } from './lobby-game-sheet';
 import { LobbyInviteSheet } from './lobby-invite-sheet';
+import { LobbyChat } from './lobby-chat';
+import { LobbyChatSheet } from './lobby-chat-sheet';
 
 function member(userId: string, ready = false): LobbyMember {
   return {
@@ -80,6 +83,17 @@ describe('Lobby', () => {
   }
 
   const text = (): string => fixture.nativeElement.textContent;
+
+  // Chat so, wie ihn das Sheet aus dem App-Kopf zeigt: mit dem Chat-Stand der Lobby
+  async function openChat(): Promise<ComponentRef<LobbyChat>> {
+    const injector = fixture.debugElement.injector;
+    const chat = injector.get(ViewContainerRef).createComponent(LobbyChat, { injector });
+    chat.setInput('currentGame', component.lobby()?.game_key ?? null);
+    chat.setInput('canSuggest', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return chat;
+  }
 
   beforeEach(async () => {
     user = signal<{ id: string } | null>(null);
@@ -329,6 +343,26 @@ describe('Lobby', () => {
     expect(text()).not.toContain('Freie Plätze');
   });
 
+  it('puts the chat with unread messages into the app header instead of the page', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      { id: 1, user_id: 'host', body: 'Hallo', game_key: null, created_at: '2026-10-29T18:00:00Z' },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    const headerChat = TestBed.inject(HeaderChatService);
+
+    expect(fixture.nativeElement.querySelector('app-lobby-chat')).toBeNull();
+    expect(headerChat.chat()!.unread()).toBe(1);
+    headerChat.chat()!.open();
+    expect(bottomSheet.open).toHaveBeenCalledWith(
+      LobbyChatSheet,
+      expect.objectContaining({ data: { currentGame: 'flip-7' } }),
+    );
+
+    fixture.destroy();
+    expect(headerChat.chat()).toBeNull();
+  });
+
   it('shows the lobby chat with names, own messages on the right and sends', async () => {
     lobbyService.loadMessages.mockResolvedValue([
       {
@@ -342,23 +376,23 @@ describe('Lobby', () => {
     ]);
     await render('guest');
     await fixture.whenStable();
-    fixture.detectChanges();
+    const chat = (await openChat()).location.nativeElement as HTMLElement;
 
-    const messages = [
-      ...fixture.nativeElement.querySelectorAll('app-lobby-chat .msg'),
-    ] as HTMLElement[];
+    const messages = [...chat.querySelectorAll('.msg')] as HTMLElement[];
     expect(messages.map((m) => m.querySelector('.bubble')!.textContent!.trim())).toEqual([
       'Wer fängt an?',
       'Ich!',
     ]);
     expect(messages[0].querySelector('.name')!.textContent).toContain('host');
     expect(messages[1].classList).toContain('msg--mine');
+    // Offen heißt gelesen
+    expect(TestBed.inject(HeaderChatService).chat()!.unread()).toBe(0);
 
-    const input = fixture.nativeElement.querySelector('.composer-input') as HTMLInputElement;
+    const input = chat.querySelector('.composer-input') as HTMLInputElement;
     input.value = 'Los gehts';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    (fixture.nativeElement.querySelector('.composer-send') as HTMLButtonElement).click();
+    (chat.querySelector('.composer-send') as HTMLButtonElement).click();
     await fixture.whenStable();
     expect(lobbyService.sendMessage).toHaveBeenCalledWith('lobby-1', 'Los gehts', null);
   });
@@ -377,14 +411,16 @@ describe('Lobby', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(text()).toContain('Alle Spiele ansehen');
-    expect(fixture.nativeElement.querySelector('.suggestion-adopt')).toBeNull();
+    let chat = (await openChat()).location.nativeElement as HTMLElement;
+    expect(chat.querySelector('.suggestion-adopt')).toBeNull();
     fixture.destroy();
 
     await render('host');
     await fixture.whenStable();
     fixture.detectChanges();
     expect(text()).not.toContain('Alle Spiele ansehen');
-    (fixture.nativeElement.querySelector('.suggestion-adopt') as HTMLButtonElement).click();
+    chat = (await openChat()).location.nativeElement as HTMLElement;
+    (chat.querySelector('.suggestion-adopt') as HTMLButtonElement).click();
     await fixture.whenStable();
     expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'kniffel', {});
   });

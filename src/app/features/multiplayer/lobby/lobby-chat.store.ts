@@ -24,7 +24,7 @@ export class LobbyChatStore {
   readonly canAdopt = signal(false);
   adopt: (gameKey: string) => void = () => undefined;
 
-  // Zuletzt gesehene Nachricht (je Lobby gemerkt), daraus der Punkt am Chat-Knopf im Spiel
+  // Zuletzt gesehene Nachricht (je Lobby gemerkt), daraus die Zahl am Chat-Knopf
   private readonly seenId = signal(0);
   readonly unread = computed(
     () => this.messages().filter((m) => m.id > this.seenId() && m.user_id !== this.userId()).length,

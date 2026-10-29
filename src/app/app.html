@@ -11,11 +11,27 @@
     </a>
 
     <div class="header-actions">
-      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen -->
+      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen (und der Lobby-Chat) -->
       @if (onProfile()) {
         <a class="header-icon-button" routerLink="/settings" aria-label="Einstellungen">
           <mat-icon aria-hidden="true">settings</mat-icon>
         </a>
+      }
+      <!-- Chat der Warte-Lobby; im Spiel sitzt er im Spielkopf -->
+      @if (headerChat.chat(); as chat) {
+        <button
+          type="button"
+          class="header-icon-button"
+          [attr.aria-label]="chat.unread() ? 'Lobby-Chat, ' + chat.unread() + ' neu' : 'Lobby-Chat'"
+          (click)="chat.open()"
+        >
+          <mat-icon aria-hidden="true">chat</mat-icon>
+          @if (chat.unread(); as unread) {
+            <span class="notification-badge" aria-hidden="true">{{
+              unread > 9 ? '9+' : unread
+            }}</span>
+          }
+        </button>
       }
       <a
         class="header-icon-button"
