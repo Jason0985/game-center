@@ -9,7 +9,12 @@ import {
   untracked,
 } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectFinalDelay, injectTableGame, injectTableHistory } from '../table/table-game';
+import {
+  ABORT_MESSAGE,
+  injectFinalDelay,
+  injectTableGame,
+  injectTableHistory,
+} from '../table/table-game';
 import { Flip7Board } from './flip7-board';
 import { Flip7Final } from './flip7-final';
 import { Flip7RoundSummary } from './flip7-round-summary';
@@ -60,10 +65,8 @@ export class Flip7GameView {
     skipAfterS: FLIP7_SKIP_AFTER_S,
     skipMessage:
       'Wer gerade am Zug ist, sichert seine Punkte. Eine offene Zielauswahl wird automatisch getroffen.',
-    endMessage: (game) =>
-      game.status === 'playing'
-        ? 'Die laufende Runde wird nicht gewertet.'
-        : 'Danach wird der Endstand angezeigt.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
     activeSeat: activeSeatOf,
   });
   readonly isHost = this.table.isHost;

@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { ActionResult } from '../../../services/supabase-errors';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame, injectTableHistory } from '../table/table-game';
+import { ABORT_MESSAGE, injectTableGame, injectTableHistory } from '../table/table-game';
 import { Nimm6Board } from './nimm6-board';
 import { Nimm6Final } from './nimm6-final';
 import { Nimm6Round } from './nimm6-round';
@@ -61,7 +61,8 @@ export class Nimm6GameView {
     title: 'Nimm 6',
     skipAfterS: NIMM6_TURN_S,
     skipMessage: 'Wer noch nicht gewählt hat, legt eine zufällige Karte.',
-    endMessage: () => 'Gewertet wird der Stand bis hierher. Danach wird der Endstand angezeigt.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;

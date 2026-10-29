@@ -68,6 +68,8 @@ export interface SkSeatTag {
   `,
   styleUrl: './skyjo-seat.scss',
   host: {
+    // Reaktionen im Spiel erscheinen an diesem Platz (ReactionLayer)
+    '[attr.data-player]': 'player().user_id',
     '[attr.data-seat]': 'player().seat',
     '[attr.data-state]': 'player().state',
     '[class.is-turn]': 'turn()',

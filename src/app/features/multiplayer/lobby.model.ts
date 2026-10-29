@@ -68,6 +68,18 @@ export interface LobbyDetail {
 export const displayNameOf = (profile: LobbyProfile | null | undefined): string =>
   profile ? profile.display_name || profile.username : 'Unbekannt';
 
+// Nachricht im Lobby-Chat; game_key: Spielvorschlag aus der Übersicht
+export interface LobbyMessage {
+  id: number;
+  user_id: string;
+  body: string;
+  game_key: string | null;
+  created_at: string;
+}
+
+// So viele Nachrichten lädt der Chat (die Datenbank hält je Lobby 200)
+export const LOBBY_CHAT_LIMIT = 100;
+
 // Abend-Gewinner: die Mitglieder mit den meisten Siegen (Gleichstand = mehrere); null ohne Siege
 export function eveningWinners(
   lobby: Pick<LobbyDetail, 'wins' | 'members'>,

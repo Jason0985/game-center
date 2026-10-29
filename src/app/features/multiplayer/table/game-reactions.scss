@@ -1,0 +1,99 @@
+// Reaktions-Blase: weißer Sprechblasen-Kreis mit Spitze nach unten, springt auf und schwebt
+// zum Schluss ein Stück nach oben weg
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.bubble {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  translate: -50% -100%;
+  transform-origin: 50% 100%;
+  animation: reaction 3.2s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+// Spitze zur Person
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #fff;
+  translate: -50% 0;
+  rotate: 45deg;
+}
+
+.bubble--loose {
+  padding-right: 14px;
+  translate: -50% 0;
+}
+
+.bubble--loose::after {
+  display: none;
+}
+
+.emoji {
+  position: relative;
+  z-index: 1;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.who {
+  color: #1d1d1f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@keyframes reaction {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(10px);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1.12) translateY(0);
+  }
+  20% {
+    transform: scale(1);
+  }
+  82% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation-name: reaction-fade;
+  }
+
+  @keyframes reaction-fade {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    8%,
+    85% {
+      opacity: 1;
+    }
+  }
+}

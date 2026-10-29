@@ -16,6 +16,8 @@ const MAX_MINI = 4;
   templateUrl: './blackjack-seat.html',
   styleUrl: './blackjack-seat.scss',
   host: {
+    // Reaktionen im Spiel erscheinen an diesem Platz (ReactionLayer)
+    '[attr.data-player]': 'player().user_id',
     '[attr.data-variant]': 'variant()',
     '[attr.data-state]': 'player().state',
     '[attr.data-seat]': 'player().seat',

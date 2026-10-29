@@ -274,7 +274,7 @@ describe('Flip7GameView', () => {
     vi.useFakeTimers();
     await render('host', makeGame({ turn_seat: 1 }));
     let items = await openMenu();
-    expect(menuItem(items, 'Spiel beenden')).toBeDefined();
+    expect(menuItem(items, 'Spiel abbrechen')).toBeDefined();
     expect(menuItem(items, 'Lobby schließen')).toBeDefined();
     expect(menuItem(items, 'überspringen')).toBeUndefined();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -297,7 +297,7 @@ describe('Flip7GameView', () => {
     const leave = vi.fn();
     component.leave.subscribe(leave);
     items = await openMenu();
-    expect(menuItem(items, 'Spiel beenden')).toBeUndefined();
+    expect(menuItem(items, 'Spiel abbrechen')).toBeUndefined();
     expect(menuItem(items, 'überspringen')).toBeUndefined();
     menuItem(items, 'Spiel verlassen')!.click();
     expect(leave).toHaveBeenCalledWith(false);

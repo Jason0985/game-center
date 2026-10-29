@@ -10,6 +10,7 @@
             @for (col of columns(); track col.player.user_id) {
               <th
                 scope="col"
+                [attr.data-player]="col.player.user_id"
                 [class.turn]="col.turn"
                 [class.left]="col.player.state === 'left'"
                 [class.win]="revealed() && col.player.total === winners()[0]?.player?.total"

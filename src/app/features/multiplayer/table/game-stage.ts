@@ -1,4 +1,5 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, signal, ViewContainerRef } from '@angular/core';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,13 +16,17 @@ import {
   HalloweenLights,
   HalloweenPumpkins,
 } from '../../../ui/halloween/halloween-decor';
+import { LobbyChatSheet } from '../lobby/lobby-chat-sheet';
+import { LobbyChatStore } from '../lobby/lobby-chat.store';
+import { GameReactions, REACTIONS, ReactionLayer } from './game-reactions';
 import { HistoryRow } from './history-sheet';
 import { RulesDialog, RulesDialogData } from './rules-dialog';
 
 // Bühne eines laufenden Spiels über der App: Kopf mit ⋮-Menü (Host-Aktionen, Verlassen,
 // Regeln) und Inhaltsbereich. Mit Deko hängt unter dem Kopf die Lichterkette und hinter dem
 // Tisch fallen Flocken bzw. fliegen Fledermäuse; zu Weihnachten liegt Schnee auf dem Kopf,
-// zu Halloween stehen Kürbisse auf dem Tisch. Das Spiel liefert nur Zustand und reagiert auf die Ausgaben.
+// zu Halloween stehen Kürbisse auf dem Tisch. Im Kopf außerdem Reaktionen (erscheinen am Platz
+// der Person) und der Lobby-Chat. Das Spiel liefert nur Zustand und reagiert auf die Ausgaben.
 @Component({
   selector: 'app-game-stage',
   imports: [
@@ -35,12 +40,20 @@ import { RulesDialog, RulesDialogData } from './rules-dialog';
     HalloweenBackdrop,
     HalloweenLights,
     HalloweenPumpkins,
+    ReactionLayer,
   ],
   templateUrl: './game-stage.html',
   styleUrl: './game-stage.scss',
 })
 export class GameStage {
   private readonly dialog = inject(MatDialog);
+  private readonly bottomSheet = inject(MatBottomSheet);
+  private readonly viewContainer = inject(ViewContainerRef);
+  // Kommen von der Lobby; ohne Lobby (Tests) gibt es weder Chat noch Reaktionen
+  readonly chat = inject(LobbyChatStore, { optional: true });
+  readonly reactions = inject(GameReactions, { optional: true });
+  readonly reactionList = REACTIONS;
+  readonly pickerOpen = signal(false);
 
   // Saisonale Deko aus den Einstellungen, wie in der App-Schale
   readonly decor = inject(ThemeService).decor;
@@ -61,7 +74,8 @@ export class GameStage {
   readonly skipName = input<string | null>(null);
   readonly waitingClock = input('');
   readonly finished = input(false);
-  // Unterzeile von „Spiel beenden“
+  // Menüpunkt zum Beenden bzw. Abbrechen (Spiele mit eigenem Ende) und seine Unterzeile
+  readonly endLabel = input('Spiel beenden');
   readonly endHint = input('');
   readonly rules = input.required<RulesDialogData>();
   // Letztes Ereignis im Kopf mit Verlauf-Button (Skip-Bo); null = nichts davon zeigen
@@ -75,6 +89,21 @@ export class GameStage {
   readonly leave = output<boolean>();
   readonly backToLobby = output<void>();
   readonly history = output<void>();
+
+  react(emoji: string): void {
+    this.reactions?.send(emoji);
+    this.pickerOpen.set(false);
+  }
+
+  openChat(): void {
+    this.bottomSheet.open(LobbyChatSheet, {
+      viewContainerRef: this.viewContainer,
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Lobby-Chat',
+      autoFocus: 'dialog',
+    });
+  }
 
   openRules(): void {
     this.dialog.open(RulesDialog, { width: '440px', data: this.rules() });
