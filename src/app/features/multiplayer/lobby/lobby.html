@@ -168,6 +168,15 @@
                     }}
                   </span>
                 </span>
+                <!-- Direkt am Spiel, damit Mitspieler das Vorschlagen sehen -->
+                <button
+                  type="button"
+                  class="lobby-invite lobby-suggest"
+                  aria-label="Spiel vorschlagen"
+                  (click)="openSuggestions()"
+                >
+                  <mat-icon aria-hidden="true">lightbulb</mat-icon>Vorschlagen
+                </button>
               </div>
               @if (gameSettings(); as gameSetting) {
                 <div class="ui-row lobby-settings">

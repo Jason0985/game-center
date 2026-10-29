@@ -1,0 +1,84 @@
+// Lichterkette für die saisonale Deko: eigene Zeile unter dem Kopf, damit sie keine Titel
+// überdeckt. Vier Birnenfarben im Wechsel, die leise flackern. Im Host-Selektor einbinden;
+// die Birnen sind .bulb-Elemente.
+@mixin chain($c1, $c2, $c3, $c4, $wire: '555') {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  height: 20px;
+  overflow: hidden;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='20' viewBox='0 0 36 20'%3E%3Cpath d='M0 2 Q18 12 36 2' fill='none' stroke='%23#{$wire}' stroke-width='1.2'/%3E%3C/svg%3E")
+    repeat-x left top / 36px 20px;
+
+  .bulb {
+    position: relative;
+    flex: none;
+    width: 36px;
+    height: 20px;
+  }
+
+  .bulb::before,
+  .bulb::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  // Fassung
+  .bulb::before {
+    top: 6px;
+    width: 4px;
+    height: 3px;
+    border-radius: 1px;
+    background: #4a4a4a;
+  }
+
+  // Birne
+  .bulb::after {
+    top: 8px;
+    width: 6px;
+    height: 9px;
+    border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+    background: var(--bulb);
+    box-shadow: 0 0 6px 1px var(--bulb);
+    animation: decor-twinkle var(--twinkle, 3s) ease-in-out infinite alternate;
+  }
+
+  .bulb:nth-child(4n + 1) {
+    --bulb: #{$c1};
+    --twinkle: 2.6s;
+  }
+  .bulb:nth-child(4n + 2) {
+    --bulb: #{$c2};
+    --twinkle: 3.4s;
+  }
+  .bulb:nth-child(4n + 3) {
+    --bulb: #{$c3};
+    --twinkle: 2.9s;
+  }
+  .bulb:nth-child(4n + 4) {
+    --bulb: #{$c4};
+    --twinkle: 3.8s;
+  }
+  .bulb:nth-child(3n)::after {
+    animation-delay: -1.3s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bulb::after {
+      animation: none;
+    }
+  }
+}
+
+@keyframes decor-twinkle {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+    box-shadow: 0 0 2px 0 var(--bulb);
+  }
+}

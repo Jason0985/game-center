@@ -156,7 +156,6 @@ export class SkyjoBoard {
     return this.others().map((player, i) => ({
       player,
       cells: this.cellsOf(player),
-      sum: openSum(player.cards),
       status: this.statusOf(player),
       turn: this.playing() && game.phase === 'turn' && game.turn_seat === player.seat,
       tag: this.tagOf(player),
@@ -345,7 +344,8 @@ export class SkyjoBoard {
         initial: (player.name.trim().charAt(0) || '?').toUpperCase(),
         color: AVATAR_COLORS[player.seat % AVATAR_COLORS.length],
         total: player.score,
-        open: openSum(player.cards),
+        // Offene Summe nur die eigene, die der anderen rechnet jeder selbst
+        open: player.seat === this.mySeat() ? openSum(player.cards) : null,
         bar: Math.min(100, (player.score / game.end_score) * 100),
       }));
   });

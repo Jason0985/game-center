@@ -34,6 +34,29 @@
       <p class="ui-section-footer">„Automatisch“ folgt der Einstellung deines Geräts.</p>
     </section>
 
+    <section class="ui-section" aria-labelledby="decor-title">
+      <h2 id="decor-title" class="ui-section-title">Deko</h2>
+      <div class="ui-group">
+        <div class="settings-theme">
+          <div class="ui-segmented" role="group" aria-label="Deko">
+            @for (option of decorOptions; track option.id) {
+              <button
+                type="button"
+                [attr.aria-pressed]="themes.decor() === option.id"
+                (click)="themes.setDecor(option.id)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+      <p class="ui-section-footer">
+        Weihnachten: Lichterkette, Girlanden und Schnee. Halloween: Lichterkette, Fledermäuse und
+        Kürbisse – tipp drauf, dann gibt’s Süßes.
+      </p>
+    </section>
+
     <section class="ui-section" aria-labelledby="game-title">
       <h2 id="game-title" class="ui-section-title">Spiele &amp; Mitteilungen</h2>
       <div class="ui-group ui-group--icons">

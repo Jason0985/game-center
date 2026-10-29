@@ -1,0 +1,305 @@
+:host {
+  --rim-w: var(--rim, 10px);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+:host(.table-decor--none) {
+  display: none;
+}
+
+:host(.table-decor--flat) {
+  --rim-w: 0px;
+}
+
+// Filzfläche innerhalb des Rands; Muster und Licht werden hier beschnitten
+.felt {
+  position: absolute;
+  inset: var(--rim-w);
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+// Ring entlang des Rands: Maske lässt nur den Bereich zwischen Außen- und Innenkante stehen,
+// so folgt er jeder Tischform (Bogen, Oval)
+@mixin ring($width) {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  padding: $width;
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+// ---------------------------------------------------------------- Weihnachten
+
+// Fair-Isle-Muster wie auf einem Weihnachtspulli: Schneeflocke, Rauten, Punkte
+.knit {
+  position: absolute;
+  inset: 0;
+  background: var(--decor-pattern);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%23000' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cpath d='M24 15V33M16.2 19.5L31.8 28.5M16.2 28.5L31.8 19.5M21.5 16.5L24 19L26.5 16.5M21.5 31.5L24 29L26.5 31.5M17 22.6L19.6 21.5L18.7 18.9M31 25.4L28.4 26.5L29.3 29.1M17 25.4L19.6 26.5L18.7 29.1M31 22.6L28.4 21.5L29.3 18.9'/%3E%3C/g%3E%3Cpath d='M-3 24L0 21L3 24L0 27ZM45 24L48 21L51 24L48 27ZM21 0L24-3L27 0L24 3ZM21 48L24 45L27 48L24 51Z'/%3E%3Ccircle cx='0' cy='0' r='1.6'/%3E%3Ccircle cx='48' cy='0' r='1.6'/%3E%3Ccircle cx='0' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3C/svg%3E")
+    center / 48px 48px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg stroke='%23000' stroke-width='1.6' stroke-linecap='round' fill='none'%3E%3Cpath d='M24 15V33M16.2 19.5L31.8 28.5M16.2 28.5L31.8 19.5M21.5 16.5L24 19L26.5 16.5M21.5 31.5L24 29L26.5 31.5M17 22.6L19.6 21.5L18.7 18.9M31 25.4L28.4 26.5L29.3 29.1M17 25.4L19.6 26.5L18.7 29.1M31 22.6L28.4 21.5L29.3 18.9'/%3E%3C/g%3E%3Cpath d='M-3 24L0 21L3 24L0 27ZM45 24L48 21L51 24L48 27ZM21 0L24-3L27 0L24 3ZM21 48L24 45L27 48L24 51Z'/%3E%3Ccircle cx='0' cy='0' r='1.6'/%3E%3Ccircle cx='48' cy='0' r='1.6'/%3E%3Ccircle cx='0' cy='48' r='1.6'/%3E%3Ccircle cx='48' cy='48' r='1.6'/%3E%3C/svg%3E")
+    center / 48px 48px;
+}
+
+// Maschenbild: feine V-Reihen über die ganze Fläche
+.stitch {
+  position: absolute;
+  inset: 0;
+  background: var(--decor-pattern);
+  opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M1 2L4 6L7 2' stroke='%23000' stroke-width='1.1' fill='none'/%3E%3C/svg%3E")
+    0 0 / 8px 8px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M1 2L4 6L7 2' stroke='%23000' stroke-width='1.1' fill='none'/%3E%3C/svg%3E")
+    0 0 / 8px 8px;
+}
+
+// Warmes Lampenlicht von oben, zur Kante hin dunkler
+.lamp {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 30%, var(--decor-light), transparent 70%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.28));
+}
+
+// Holzrand: Grundton aus --table-rim, Jahresringe als Bögen, oben Licht, unten Schatten
+.wood {
+  @include ring(var(--rim-w));
+  background:
+    repeating-radial-gradient(
+      ellipse 140% 120% at 50% 115%,
+      rgba(0, 0, 0, 0.16) 0 1px,
+      transparent 1px 5px,
+      rgba(255, 255, 255, 0.04) 5px 6px,
+      transparent 6px 9px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--table-rim), #fff 16%),
+      var(--table-rim) 40%,
+      color-mix(in srgb, var(--table-rim), #000 35%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.wood--charred {
+  background:
+    repeating-radial-gradient(
+      ellipse 140% 120% at 50% 115%,
+      rgba(0, 0, 0, 0.35) 0 1px,
+      transparent 1px 4px,
+      rgba(255, 110, 30, 0.05) 4px 5px,
+      transparent 5px 8px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--table-rim), #fff 10%),
+      var(--table-rim) 45%,
+      color-mix(in srgb, var(--table-rim), #000 45%)
+    );
+}
+
+// Intarsie an der Innenkante des Rands
+.inlay {
+  position: absolute;
+  inset: calc(var(--rim-w) - 3px);
+  border: 1.5px solid var(--table-rim-line);
+  border-radius: inherit;
+}
+
+.inlay--ember {
+  box-shadow:
+    0 0 6px 1px var(--table-rim-line),
+    inset 0 0 8px rgba(255, 122, 26, 0.35);
+}
+
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+// Schneewehe: oben dick, an den Seiten ausdünnend; die Turbulenz am Elternelement macht die
+// Kanten unregelmäßig, erst danach kommt der Schatten
+.drift {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+}
+
+.drift-snow {
+  @include ring(calc(var(--rim-w) + 7px));
+  background: linear-gradient(180deg, #ffffff, #f1f6fb 35%, #d8e5f1);
+  -webkit-mask:
+    linear-gradient(#000 0 22%, transparent 52%),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: source-in, xor;
+  mask:
+    linear-gradient(#000 0 22%, transparent 52%) intersect,
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+// Glitzern auf der Wehe: vier Zacken, die nacheinander kurz aufleuchten
+.glint {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: glint 6s ease-in-out infinite;
+}
+
+.glint--1 {
+  top: calc(var(--rim-w) * 0.2);
+  left: 41%;
+}
+
+.glint--2 {
+  top: calc(var(--rim-w) * 0.35);
+  left: 57%;
+  animation-delay: 2s;
+}
+
+.glint--3 {
+  top: calc(var(--rim-w) * 0.1);
+  left: 49%;
+  animation-delay: 4s;
+}
+
+@keyframes glint {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+
+// ---------------------------------------------------------------- Halloween
+
+// Zwei Nebelbänke ziehen gegeneinander langsam über den Filz
+.fog {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 18% 16% at 12% 62%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 22% 13% at 34% 38%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 16% 18% at 58% 70%, var(--decor-fog), transparent 70%),
+    radial-gradient(ellipse 24% 14% at 82% 45%, var(--decor-fog), transparent 70%);
+  animation: fog 80s linear infinite alternate;
+}
+
+.fog--near {
+  top: 12%;
+  opacity: 0.8;
+  transform: scaleY(-1);
+  animation-duration: 110s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes fog {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: -50% 0;
+  }
+}
+
+// Kerzenlicht aus den unteren Ecken, flackert unregelmäßig
+.candle {
+  position: absolute;
+  inset: 0;
+  animation: flicker 3.4s ease-in-out infinite;
+}
+
+.candle--left {
+  background: radial-gradient(circle at 4% 100%, var(--decor-candle), transparent 48%);
+}
+
+.candle--right {
+  background: radial-gradient(circle at 96% 100%, var(--decor-candle), transparent 48%);
+  animation-duration: 4.1s;
+  animation-delay: -1.7s;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  18% {
+    opacity: 0.78;
+  }
+  31% {
+    opacity: 0.95;
+  }
+  47% {
+    opacity: 0.7;
+  }
+  63% {
+    opacity: 1;
+  }
+  81% {
+    opacity: 0.84;
+  }
+}
+
+// Kleine Spinne am Faden, die langsam auf und ab baumelt
+.spider {
+  position: absolute;
+  top: 0;
+  left: 76%;
+  width: 14px;
+  height: 52px;
+  transform-origin: 50% 0;
+  animation: spider 6s ease-in-out infinite;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg stroke='%23120a18' stroke-width='1.2' fill='none'%3E%3Cpath d='M4 6L0 3M4 8L0 8M4 9L1 12M10 6L14 3M10 8L14 8M10 9L13 12'/%3E%3C/g%3E%3Cellipse cx='7' cy='8' rx='3.4' ry='4' fill='%23120a18'/%3E%3Ccircle cx='5.8' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3Ccircle cx='8.2' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3C/svg%3E")
+      no-repeat center bottom / 14px 14px,
+    linear-gradient(rgba(225, 220, 235, 0.55), rgba(225, 220, 235, 0.55)) no-repeat center top / 1px
+      40px;
+}
+
+@keyframes spider {
+  0%,
+  100% {
+    transform: translateY(-12px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(6px) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glint,
+  .fog,
+  .candle,
+  .spider {
+    animation: none;
+  }
+}

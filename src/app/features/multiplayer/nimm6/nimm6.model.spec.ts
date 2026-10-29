@@ -83,7 +83,7 @@ describe('replaySteps', () => {
       ['place', 64, 0],
     ]);
     // Aufdecken, zwei Karten legen, einmal Reihe nehmen; dieselben Zahlen wie in
-    // _nimm6_replay_ms (20261014180000_nimm6_fairness.sql)
+    // _nimm6_replay_ms (Core-Schema)
     expect(replayMs({ card_rows: after, last_events: events })).toBe(1800 + 1000 + 4300 + 1000);
   });
 

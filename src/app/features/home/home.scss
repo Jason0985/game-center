@@ -75,7 +75,7 @@
 }
 
 .help-chevron {
-  transition: rotate var(--transition-fast);
+  transition: rotate 420ms var(--ease-spring);
 }
 
 .help-item[open] .help-chevron {

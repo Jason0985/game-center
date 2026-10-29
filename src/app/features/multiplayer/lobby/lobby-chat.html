@@ -1,0 +1,86 @@
+<div class="log" #log role="log" aria-label="Lobby-Chat" (scroll)="onScroll(log)">
+  @if (!rows().length) {
+    <div class="empty">
+      <mat-icon aria-hidden="true">forum</mat-icon>
+      <p>
+        Fragen zu den Regeln, wer anfängt oder was ihr als Nächstes spielt – hier könnt ihr euch
+        absprechen.
+      </p>
+    </div>
+  }
+  @for (row of rows(); track row.message.id) {
+    <div
+      class="msg"
+      [class.msg--mine]="row.mine"
+      [class.msg--first]="row.first"
+      [class.msg--last]="row.last"
+    >
+      @if (!row.mine && row.first) {
+        <span class="name">{{ row.name }}</span>
+      }
+      @if (row.game; as game) {
+        <div class="suggestion">
+          <span class="suggestion-tile" [style.--tile]="game.tile">
+            <mat-icon aria-hidden="true">{{ game.icon }}</mat-icon>
+          </span>
+          <span class="suggestion-text">
+            <span class="suggestion-label">{{ row.mine ? 'Dein Vorschlag' : 'Vorschlag' }}</span>
+            <span class="suggestion-name">{{ game.name }}</span>
+          </span>
+          @if (game.key === currentGame()) {
+            <span class="suggestion-state"
+              ><mat-icon aria-hidden="true">check</mat-icon>Gewählt</span
+            >
+          } @else if (store.canAdopt()) {
+            <button
+              type="button"
+              class="suggestion-adopt"
+              [attr.aria-label]="game.name + ' übernehmen'"
+              (click)="store.adopt(game.key)"
+            >
+              Übernehmen
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="bubble">{{ row.body }}</p>
+      }
+      @if (row.last) {
+        <time class="time" [attr.datetime]="row.message.created_at">{{ row.time }}</time>
+      }
+    </div>
+  }
+</div>
+
+<form class="composer" (submit)="send($event)">
+  @if (canSuggest()) {
+    <button
+      type="button"
+      class="composer-suggest"
+      aria-label="Spiel vorschlagen"
+      title="Spiel vorschlagen"
+      (click)="openSuggestions()"
+    >
+      <mat-icon aria-hidden="true">casino</mat-icon>
+    </button>
+  }
+  <input
+    class="composer-input"
+    type="text"
+    maxlength="300"
+    autocomplete="off"
+    enterkeyhint="send"
+    placeholder="Nachricht"
+    aria-label="Nachricht an die Lobby"
+    [value]="draft()"
+    (input)="draft.set($any($event.target).value)"
+  />
+  <button
+    type="submit"
+    class="composer-send"
+    aria-label="Senden"
+    [disabled]="!draft().trim() || store.sending()"
+  >
+    <mat-icon aria-hidden="true">arrow_upward</mat-icon>
+  </button>
+</form>

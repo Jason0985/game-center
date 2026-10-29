@@ -106,19 +106,18 @@ describe('Nimm6GameView', () => {
     vi.useRealTimers();
   });
 
-  it('picks a card, says where it goes and lays it face down', async () => {
+  it('picks a card without saying where it goes and lays it face down', async () => {
     await render('guest', makeGame());
     expect(button('Karte wählen')!.disabled).toBe(true);
 
     card(77)!.click();
     fixture.detectChanges();
-    expect(el().textContent).toContain('77 kommt an Reihe 3 (nach 72)');
-    card(64)!.click();
-    fixture.detectChanges();
-    expect(el().textContent).toContain('64 wäre die 6. Karte in Reihe 2');
+    expect(el().textContent).toContain('77 gewählt');
+    expect(el().textContent).not.toContain('Reihe 3');
+    expect(el().querySelector('.row[data-tone]')).toBeNull();
     card(7)!.click();
     fixture.detectChanges();
-    expect(el().textContent).toContain('7 ist kleiner als jede Reihe');
+    expect(el().textContent).not.toContain('kleiner als jede Reihe');
 
     button('Karte 7 legen')!.click();
     await vi.waitFor(() => expect(nimm6['choose']).toHaveBeenCalledWith(turn, 7));
@@ -239,14 +238,13 @@ describe('Nimm6GameView', () => {
     expect(el().querySelector('[data-seat="0"] .hit')?.textContent).toContain('+8');
   });
 
-  it('plays for the slow ones once after the turn time', async () => {
+  it('has no turn clock and never skips by itself', async () => {
     vi.useFakeTimers();
     await render('guest', makeGame());
-    await vi.advanceTimersByTimeAsync(29_000);
+    await vi.advanceTimersByTimeAsync(120_000);
+    fixture.detectChanges();
     expect(nimm6['skip']).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(3_000);
-    expect(nimm6['skip']).toHaveBeenCalledTimes(1);
-    expect(nimm6['skip']).toHaveBeenCalledWith(turn);
+    expect(el().querySelector('.clock')).toBeNull();
   });
 
   it('shows the round summary and starts the next round by itself', async () => {

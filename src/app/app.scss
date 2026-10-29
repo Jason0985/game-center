@@ -10,18 +10,35 @@ main {
   min-height: 0;
   width: 100%;
   box-sizing: border-box;
-  padding-bottom: var(--bottom-nav-space);
+  padding-bottom: calc(var(--bottom-nav-space) + env(safe-area-inset-bottom, 0px));
 }
 
-// Einheitlicher Kopf auf allen Seiten: Logo mit Namen links, Aktionen rechts
+// Einheitlicher Kopf auf allen Seiten: Logo mit Namen links, Aktionen rechts. Klebt oben
+// und wird beim Scrollen zu Glas (scrolled), damit Inhalt weich darunter verschwindet.
 .top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: var(--top-bar-height);
+  min-height: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px));
   box-sizing: border-box;
-  padding: 4px 6px 4px 16px;
+  padding: env(safe-area-inset-top, 0px) 8px 0 16px;
+  border-bottom: 0.5px solid transparent;
+  transition:
+    background-color 300ms var(--ease-ios),
+    border-color 300ms var(--ease-ios),
+    backdrop-filter 300ms var(--ease-ios);
+  view-transition-name: top-bar;
+}
+
+.top-bar--scrolled {
+  border-bottom-color: var(--color-border);
+  background-color: var(--color-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .top-bar-title {
@@ -30,9 +47,10 @@ main {
   gap: 10px;
   min-height: 44px;
   color: var(--color-text);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-rounded);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -56,31 +74,54 @@ main {
   align-items: center;
 }
 
+.header-actions {
+  gap: 8px;
+}
+
+// Runde Glas-Knöpfe im Kopf (44 px Tippfläche, 40 px sichtbar)
 .header-icon-button {
   position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  margin: 2px;
   border-radius: 50%;
+  background: var(--color-fill);
+  box-shadow: 0 0.5px 0 var(--color-glass-edge) inset;
   color: var(--color-text);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    scale 340ms var(--ease-spring);
+}
+
+button.header-icon-button {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
 .header-icon-button mat-icon {
-  width: 24px;
-  height: 24px;
-  font-size: 24px;
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
 }
 
 .header-icon-button:hover {
-  background: var(--color-white-06);
+  background: var(--color-white-12);
+}
+
+.header-icon-button:active {
+  scale: 0.88;
+  transition-duration: 90ms;
 }
 
 .header-icon-button--active {
-  background: var(--color-surface);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-light);
 }
 
 .header-icon-button:focus {
@@ -94,8 +135,8 @@ main {
 
 .notification-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -2px;
+  right: -2px;
   display: grid;
   place-items: center;
   min-width: 17px;
@@ -112,56 +153,101 @@ main {
   pointer-events: none;
 }
 
-// Tab-Leiste über die volle Breite, aktiver Tab in Textfarbe (weiß im Dunkelmodus)
+// Schwebende Tab-Leiste aus Glas (Liquid-Glass-Vorbild). Die Pille hinter dem aktiven Tab
+// gleitet mit einer Feder an ihren Platz (--tab: Index des aktiven Tabs, -1 = keiner).
 .bottom-nav {
   position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
   z-index: 10;
   display: flex;
   justify-content: center;
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--color-border);
-  background-color: var(--color-navigation-surface);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  width: auto;
+  // Kompakt wie die schwebende Tab-Leiste bei iOS: 44 px Tippfläche, kleine Symbole
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-glass);
+  box-shadow:
+    var(--shadow-navigation),
+    0 0 0 0.5px var(--color-glass-edge) inset;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  view-transition-name: tab-bar;
+}
+
+.bottom-nav-pill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 4);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.08) inset;
+  opacity: 1;
+  transform: translateX(calc(var(--tab, 0) * 100%));
+  transition:
+    transform 560ms var(--ease-spring),
+    opacity 240ms var(--ease-ios);
+  pointer-events: none;
+}
+
+.bottom-nav[style*='--tab: -1'] .bottom-nav-pill {
+  opacity: 0;
 }
 
 .bottom-nav-link {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  max-width: 120px;
-  min-height: 48px;
-  border-radius: 12px;
-  color: var(--color-text-subtle);
-  font-size: 11px;
-  font-weight: 500;
+  gap: 0;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition:
+    color 260ms var(--ease-ios),
+    scale 340ms var(--ease-spring);
 }
 
 .bottom-nav-link mat-icon {
-  width: 26px;
-  height: 26px;
-  font-size: 26px;
+  width: 21px;
+  height: 21px;
+  font-size: 21px;
+  transition: translate 420ms var(--ease-spring);
 }
 
 .bottom-nav-link:hover {
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .bottom-nav-link.active {
-  color: var(--color-text);
-  font-weight: 600;
+  color: var(--color-primary-light);
+}
+
+// Aktiver Tab: Symbol hüpft kurz nach oben
+.bottom-nav-link.active mat-icon {
+  animation: tab-hop 520ms var(--ease-spring);
+}
+
+@keyframes tab-hop {
+  40% {
+    translate: 0 -3px;
+  }
 }
 
 .bottom-nav-link:active {
-  transform: scale(0.96);
+  scale: 0.9;
+  transition-duration: 90ms;
 }
 
 // Hinweise unter dem Kopf: neue Version, offline (PwaService)

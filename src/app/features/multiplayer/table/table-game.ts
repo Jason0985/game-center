@@ -27,6 +27,10 @@ const LOAD_RETRY_MS = 1500;
 // dessen App den Zug nie mitbekommen hat)
 const STALE_RELOAD_MS = 15_000;
 
+// Bestätigung beim Abbruch eines Spiels mit eigenem Ende (Option abort)
+export const ABORT_MESSAGE =
+  'Das Spiel zählt nicht – keine Wertung und keine Siege. Alle sind danach wieder in der Warte-Lobby.';
+
 // Gemeinsamer Rahmen der Spielansichten (Flip 7, Skip-Bo, Uno). Nur im Injection Context
 // (Feld-Initialisierer der Komponente).
 export function injectTableGame<
@@ -54,6 +58,9 @@ export function injectTableGame<
   // Texte der Bestätigungen fürs Überspringen und Beenden
   skipMessage: string;
   endMessage(game: G): string;
+  // Spiel mit eigenem Ende: „Beenden“ ist ein Abbruch ohne Wertung, danach sind alle
+  // gleich wieder in der Warte-Lobby (Blackjack und Uno werten beim Beenden)
+  abort?: boolean;
   // Wer gerade dran ist (sonst turn_seat)
   activeSeat?(game: G): number | null;
 }) {
@@ -218,14 +225,23 @@ export function injectTableGame<
     },
 
     async endGame(current: G): Promise<void> {
-      const confirmed = await confirm({
-        title: 'Spiel beenden?',
-        message: options.endMessage(current),
-        confirmLabel: 'Beenden',
-        icon: 'stop_circle',
-      });
-      if (confirmed) {
-        await run(() => service.endGame(current.id));
+      const confirmed = await confirm(
+        options.abort
+          ? {
+              title: 'Spiel abbrechen?',
+              message: options.endMessage(current),
+              confirmLabel: 'Spiel abbrechen',
+              icon: 'cancel',
+            }
+          : {
+              title: 'Spiel beenden?',
+              message: options.endMessage(current),
+              confirmLabel: 'Beenden',
+              icon: 'stop_circle',
+            },
+      );
+      if (confirmed && (await run(() => service.endGame(current.id))) && options.abort) {
+        options.returned.emit();
       }
     },
 

@@ -1,4 +1,13 @@
-import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+  untracked,
+  ViewContainerRef,
+} from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,6 +16,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from '../../../services/session.service';
+import { HeaderChatService } from '../../../services/header-chat.service';
 import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
 import { ActionResult } from '../../../services/supabase-errors';
@@ -31,6 +41,10 @@ import { UNO_HOUSE_RULES } from '../uno/uno.model';
 import { RulesDialog, RulesDialogData } from '../table/rules-dialog';
 import { LobbyInviteSheet, LobbyInviteSheetData } from './lobby-invite-sheet';
 import { LobbyGameSheet, LobbyGameSheetData } from './lobby-game-sheet';
+import { LobbyChatSheet, LobbyChatSheetData } from './lobby-chat-sheet';
+import { LobbyChatStore } from './lobby-chat.store';
+import { GameReactions } from '../table/game-reactions';
+import { LobbySuggestSheet, LobbySuggestSheetData } from './lobby-suggest-sheet';
 import { Flip7GameView } from '../flip7/flip7-game';
 import { SkipboGameView } from '../skipbo/skipbo-game';
 import { UnoGameView } from '../uno/uno-game';
@@ -60,6 +74,8 @@ import { AvatarColorPipe, InitialsPipe } from '../../../ui/avatar.pipes';
     InitialsPipe,
     AvatarColorPipe,
   ],
+  // Chat gilt für Warte-Lobby und Spieltisch (Chat-Sheet im Spiel), Reaktionen fürs Spiel
+  providers: [LobbyChatStore, GameReactions],
   templateUrl: './lobby.html',
   styleUrl: './lobby.scss',
 })
@@ -72,6 +88,10 @@ export class Lobby {
   private readonly toastService = inject(ToastService);
   private readonly appErrors = inject(AppErrorService);
   private readonly session = inject(SessionService);
+  private readonly viewContainer = inject(ViewContainerRef);
+  readonly chat = inject(LobbyChatStore);
+  private readonly headerChat = inject(HeaderChatService);
+  private readonly reactions = inject(GameReactions);
 
   readonly lobbyId = this.route.snapshot.paramMap.get('lobbyId') ?? '';
   readonly maxMembers = LOBBY_MAX_MEMBERS;
@@ -187,7 +207,75 @@ export class Lobby {
       );
     });
 
+    // Lobby-Chat: Namen bleiben auch für Leute, die gegangen sind; nur der Host übernimmt
+    // Vorschläge, und das nur in der Warte-Lobby
+    effect(() => {
+      const userId = this.userId();
+      const members = this.members();
+      const canAdopt = this.isHost() && !this.started();
+      untracked(() => {
+        this.chat.start(this.lobbyId, userId);
+        this.reactions.start(this.lobbyId, userId);
+        this.chat.names.update((names) => ({
+          ...names,
+          ...Object.fromEntries(members.map((member) => [member.user_id, member.name])),
+        }));
+        this.chat.canAdopt.set(canAdopt);
+      });
+    });
+    this.chat.adopt = (gameKey) => void this.adoptGame(gameKey);
+    this.chat.suggest = () => this.openSuggestions(true);
+
+    // Chat-Knopf im App-Kopf nur in der Warte-Lobby; im Spiel hat der Spielkopf seinen eigenen
+    effect(() => {
+      const waiting = !!this.lobby() && !this.started();
+      untracked(() =>
+        this.headerChat.chat.set(
+          waiting ? { unread: this.chat.unread, open: () => this.openChat() } : null,
+        ),
+      );
+    });
+    inject(DestroyRef).onDestroy(() => this.headerChat.chat.set(null));
+
     inject(DestroyRef).onDestroy(() => (this.leaving = true));
+  }
+
+  // Vorschlag aus dem Chat übernehmen: Spiel mit seinen Standard-Einstellungen
+  private async adoptGame(gameKey: string): Promise<void> {
+    const game = gameOf(gameKey);
+    if (!game || !this.isHost() || this.started()) return;
+    const settings = gameKey === 'flip-7' ? { targetScore: 200 } : {};
+    if (await this.run(() => this.lobbyService.setGame(this.lobbyId, gameKey, settings))) {
+      this.toastService.success('Spiel übernommen', `Ihr spielt jetzt ${game.name}.`);
+    }
+  }
+
+  openChat(): void {
+    this.bottomSheet.open<LobbyChatSheet, LobbyChatSheetData>(LobbyChatSheet, {
+      viewContainerRef: this.viewContainer,
+      data: { currentGame: this.lobby()?.game_key ?? null, canSuggest: !this.isHost() },
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Lobby-Chat',
+      autoFocus: 'dialog',
+    });
+  }
+
+  // Aus dem Chat heraus: Es ist immer nur ein Sheet offen, danach geht es zurück in den Chat
+  openSuggestions(fromChat = false): void {
+    const ref = this.bottomSheet.open<LobbySuggestSheet, LobbySuggestSheetData>(LobbySuggestSheet, {
+      viewContainerRef: this.viewContainer,
+      data: { currentGame: this.lobby()?.game_key ?? null },
+      panelClass: 'app-sheet-panel',
+      backdropClass: 'app-sheet-backdrop',
+      ariaLabel: 'Spiel vorschlagen',
+      autoFocus: 'dialog',
+    });
+    if (fromChat) {
+      ref.afterDismissed().subscribe(() => {
+        if (!this.started()) this.openChat();
+      });
+    }
   }
 
   async toggleReady(): Promise<void> {

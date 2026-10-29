@@ -13,7 +13,13 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom } from 'rxjs';
+import { ConfirmationDialog, ConfirmationDialogData } from '../../../confirmation-dialog';
 import { AVATAR_COLORS } from '../table/table.model';
+import { ThemeService } from '../../../services/theme.service';
+import { TableDecor } from '../table/table-decor';
+import { KniffelDecor } from './kniffel-decor';
 import { reducedMotion } from '../table/table-motion';
 import {
   bonusOf,
@@ -23,8 +29,8 @@ import {
   KNIFFEL_ROLLS,
   KnGame,
   LOWER,
-  points,
   rankPlayers,
+  pointsFor,
   UPPER,
   upperSum,
 } from './kniffel.model';
@@ -60,11 +66,37 @@ const centerOf = (rect: DOMRect): Point => ({
 const shift = (from: Point, to: Point, dy = 0) => `${to.x - from.x}px ${to.y - from.y + dy}px`;
 const randomFace = () => 1 + Math.floor(Math.random() * 6);
 
+// Abrechnung am Ende, für alle gleichzeitig und Zeile für Zeile: erst kurz den letzten
+// Eintrag sehen, dann wandert jedes Feld oben in die Summe oben, der Bonus springt dazu,
+// Summe oben und Bonus gehen ins Gesamt und danach kommt Feld für Feld der untere Teil dazu.
+// Jeder Schritt zählt seine Punkte langsam hoch (COUNT_MS) und bleibt dann kurz stehen.
+type TallyStep = { kind: 'row'; row: number } | { kind: 'bonus' } | { kind: 'carry' };
+const TALLY: TallyStep[] = [
+  ...UPPER.map((row) => ({ kind: 'row' as const, row })),
+  { kind: 'bonus' },
+  { kind: 'carry' },
+  ...LOWER.map((row) => ({ kind: 'row' as const, row })),
+];
+const TALLY_START_MS = 1500;
+const ROW_MS = 1300;
+const BONUS_MS = 1600;
+const CARRY_MS = 1800;
+const COUNT_MS = 750;
+const TALLY_END_MS = 900;
+const stepMs = (step: TallyStep) =>
+  step.kind === 'row' ? ROW_MS : step.kind === 'bonus' ? BONUS_MS : CARRY_MS;
+// Sanft hochzählen: schnell los, langsam ankommen
+const easeOut = (t: number) => 1 - (1 - t) ** 3;
+
 // Spielansicht: oben der Kniffelblock (eine Spalte je Spieler), unten die fünf Würfel mit
 // Würfeln/Eintragen. Neue Würfe (roll_seq) sehen alle gleich: Würfel fliegen in den Becher,
 // er wird geschüttelt und auf den Block geworfen, dann rutschen sie zurück in die Reihe.
+// Der Block zeigt in den freien Feldern, was der liegende Wurf brächte; Streichen (0 Punkte)
+// muss man bestätigen. Die Summen bleiben bis zum Spielende verdeckt und werden dann
+// für alle nachgezählt.
 @Component({
   selector: 'app-kniffel-board',
+  imports: [TableDecor, KniffelDecor],
   templateUrl: './kniffel-board.html',
   styleUrl: './kniffel-board.scss',
 })
@@ -78,6 +110,10 @@ export class KniffelBoard {
   readonly hold = output<boolean[]>();
   readonly score = output<number>();
   readonly backToLobby = output<void>();
+
+  private readonly dialog = inject(MatDialog);
+  // Saisonale Deko: oben braucht der Block Platz für Schneekappe bzw. Kürbisse
+  readonly decor = inject(ThemeService).decor;
 
   readonly categories = CATEGORIES;
   readonly lower = LOWER;
@@ -97,6 +133,9 @@ export class KniffelBoard {
 
   private readonly mySeat = computed(
     () => this.game().players.find((player) => player.user_id === this.userId())?.seat ?? null,
+  );
+  private readonly myScores = computed(
+    () => this.game().players.find((player) => player.user_id === this.userId())?.scores ?? [],
   );
   readonly finished = computed(() => this.game().status === 'finished');
   readonly myTurn = computed(
@@ -121,7 +160,7 @@ export class KniffelBoard {
     computation: () => [...this.game().held],
   });
   readonly held = computed(() => (this.myTurn() ? this.myHeld() : this.game().held));
-  // Angetipptes Feld; zweites Antippen bzw. der Knopf trägt ein
+  // Angetipptes Feld, solange der Dialog zum Eintragen offen ist
   readonly selected = linkedSignal<string, number | null>({
     source: this.rollKey,
     computation: () => null,
@@ -142,11 +181,56 @@ export class KniffelBoard {
     () => this.myTurn() && this.game().rolls > 0 && this.rollsLeft() > 0 && !this.rolling(),
   );
 
+  // Abrechnung am Ende: Index in TALLY (-1 noch verdeckt, TALLY.length fertig) und wie weit
+  // der Schritt ist (ms seit seinem Beginn)
+  readonly tally = signal(-1);
+  private readonly tallyAt = signal(0);
+  private readonly elapsed = signal(0);
+  readonly revealed = computed(() => this.tally() >= TALLY.length);
+  readonly tallyStep = computed<TallyStep | null>(() => TALLY[this.tally()] ?? null);
+  // Zeile, deren Punkte gerade dazugezählt werden
+  readonly addingRow = computed(() => {
+    const step = this.tallyStep();
+    return step?.kind === 'row' ? step.row : null;
+  });
+  readonly tallyText = computed(() => {
+    const step = this.tallyStep();
+    if (!step) return 'Abrechnung – gleich wird zusammengezählt …';
+    if (step.kind === 'bonus') return `Bonus: ab ${KNIFFEL_BONUS_AT} oben gibt es ${KNIFFEL_BONUS}`;
+    if (step.kind === 'carry') return 'Summe oben und Bonus ins Gesamt';
+    return `${CATEGORIES[step.row].name} kommt dazu`;
+  });
+
   readonly columns = computed(() => {
     const game = this.game();
     const dice = this.settled();
+    const index = this.tally();
+    const step = TALLY[index];
+    const progress = easeOut(Math.min(1, this.elapsed() / COUNT_MS));
+    const upperEnd = UPPER.length;
+    const carryAt = upperEnd + 1;
     return game.players.map((player) => {
       const turn = !this.finished() && player.seat === game.turn_seat;
+      const score = (row: number) => player.scores[row] ?? 0;
+      // Summe der Felder aus den Schritten vor index, dazu der laufende Schritt anteilig
+      const doneRows = (rows: readonly number[]) =>
+        TALLY.slice(0, index).reduce(
+          (sum, s) => (s.kind === 'row' && rows.includes(s.row) ? sum + score(s.row) : sum),
+          0,
+        );
+      const current = step?.kind === 'row' ? Math.round(score(step.row) * progress) : 0;
+      const upper = upperSum(player.scores);
+      const bonus = bonusOf(player.scores);
+      const upperShown = index < 0 ? '' : index < upperEnd ? doneRows(UPPER) + current : upper;
+      const totalShown =
+        index < carryAt
+          ? ''
+          : index >= TALLY.length
+            ? player.total
+            : index === carryAt
+              ? Math.round((upper + bonus) * progress)
+              : upper + bonus + doneRows(LOWER) + current;
+      const rising = progress < 1 && (step?.kind === 'row' ? score(step.row) > 0 : true);
       return {
         player,
         turn,
@@ -154,14 +238,22 @@ export class KniffelBoard {
         initial: player.name.trim().charAt(0).toUpperCase() || '?',
         color: AVATAR_COLORS[player.seat % AVATAR_COLORS.length],
         sums: {
-          upper: upperSum(player.scores),
-          bonus: bonusOf(player.scores) || '',
-          total: player.total,
+          upper: upperShown,
+          bonus: index < upperEnd ? '' : bonus || '–',
+          total: totalShown,
+        },
+        // Läuft die Summe gerade noch hoch?
+        counting: {
+          upper: index < upperEnd && step?.kind === 'row' && rising,
+          bonus: false,
+          total: index >= carryAt && index < TALLY.length && rising,
         },
         // Was der liegende Wurf in den freien Feldern bringen würde
         preview:
           turn && game.rolls > 0 && dice.length === 5
-            ? player.scores.map((score, i) => (score === null ? points(dice, i) : null))
+            ? player.scores.map((value, i) =>
+                value === null ? pointsFor(dice, i, player.scores) : null,
+              )
             : null,
       };
     });
@@ -169,6 +261,7 @@ export class KniffelBoard {
 
   readonly hint = computed(() => {
     const game = this.game();
+    if (this.finished()) return 'Abrechnung läuft …';
     if (!this.myTurn()) return `${this.activeName()} ist dran`;
     if (this.rolling()) return 'Die Würfel rollen …';
     if (game.rolls === 0) return 'Du bist dran – würfeln!';
@@ -176,16 +269,8 @@ export class KniffelBoard {
     return 'Würfel halten, nochmal würfeln oder eintragen';
   });
 
-  readonly selectedLabel = computed(() => {
-    const category = this.selected();
-    if (category === null) return null;
-    const value = points(this.settled(), category);
-    const name = CATEGORIES[category].name;
-    return value ? `${name} eintragen · ${value}` : `${name} streichen`;
-  });
-
   readonly winners = computed(() =>
-    this.finished() ? rankPlayers(this.game().players).filter((row) => row.rank === 1) : [],
+    this.revealed() ? rankPlayers(this.game().players).filter((row) => row.rank === 1) : [],
   );
   readonly winnerText = computed(() => {
     const names = this.winners().map((row) =>
@@ -201,6 +286,8 @@ export class KniffelBoard {
 
   private run = 0;
   private timers: ReturnType<typeof setTimeout>[] = [];
+  private tallyTimers: ReturnType<typeof setTimeout>[] = [];
+  private frame = 0;
 
   constructor() {
     let seq: number | null = null;
@@ -235,7 +322,69 @@ export class KniffelBoard {
       });
     });
 
-    inject(DestroyRef).onDestroy(() => this.stop());
+    // Spielende: beim Laden eines beendeten Spiels gleich alles zeigen, live die Abrechnung
+    let wasFinished: boolean | null = null;
+    effect(() => {
+      const finished = this.finished();
+      const before = wasFinished;
+      wasFinished = finished;
+      untracked(() => {
+        if (!finished) this.setTally(-1);
+        else if (before === false && !reducedMotion()) this.playTally();
+        else this.setTally(TALLY.length);
+      });
+    });
+
+    // Die Zeile, die gerade dazukommt, auf kleinen Bildschirmen ins Bild holen
+    effect(() => {
+      const row = this.addingRow();
+      if (row === null) return;
+      untracked(() =>
+        this.sheet()
+          ?.nativeElement.querySelector(`[data-row="${row}"]`)
+          ?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }),
+      );
+    });
+
+    inject(DestroyRef).onDestroy(() => {
+      this.stop();
+      this.stopTally();
+    });
+  }
+
+  private setTally(index: number): void {
+    this.stopTally();
+    this.tally.set(index);
+  }
+
+  private stopTally(): void {
+    this.tallyTimers.forEach(clearTimeout);
+    this.tallyTimers = [];
+    cancelAnimationFrame(this.frame);
+  }
+
+  // Zeitleiste der Abrechnung; das Hochzählen innerhalb eines Schritts läuft per Frame
+  private playTally(): void {
+    this.setTally(-1);
+    const at = (ms: number, index: number) =>
+      this.tallyTimers.push(
+        setTimeout(() => {
+          this.tally.set(index);
+          this.tallyAt.set(performance.now());
+          this.elapsed.set(0);
+        }, ms),
+      );
+    let t = TALLY_START_MS;
+    TALLY.forEach((step, index) => {
+      at(t, index);
+      t += stepMs(step);
+    });
+    at(t + TALLY_END_MS, TALLY.length);
+    const tick = () => {
+      this.elapsed.set(performance.now() - this.tallyAt());
+      if (!this.revealed()) this.frame = requestAnimationFrame(tick);
+    };
+    this.frame = requestAnimationFrame(tick);
   }
 
   toggle(i: number): void {
@@ -249,15 +398,36 @@ export class KniffelBoard {
     if (this.canRoll()) this.roll.emit(this.game().rolls ? this.myHeld() : NO_HOLD);
   }
 
-  pick(category: number): void {
-    if (!this.canPick()) return;
-    if (this.selected() === category) this.score.emit(category);
-    else this.selected.set(category);
-  }
-
-  enter(): void {
-    const category = this.selected();
-    if (category !== null && this.canPick()) this.score.emit(category);
+  // Eintragen immer erst im Dialog bestätigen: Der verdeckt den Würfeln-Knopf, so wird nicht
+  // aus Versehen nochmal gewürfelt. Eingetragen wird nur, wenn danach noch derselbe Wurf liegt
+  async pick(category: number): Promise<void> {
+    if (!this.canPick() || this.selected() !== null) return;
+    this.selected.set(category);
+    const key = this.rollKey();
+    const value = pointsFor(this.settled(), category, this.myScores());
+    const name = CATEGORIES[category].name;
+    const ref = this.dialog.open<ConfirmationDialog, ConfirmationDialogData, boolean>(
+      ConfirmationDialog,
+      {
+        data: value
+          ? {
+              title: `${name} eintragen?`,
+              message: `Du trägst ${value} Punkte bei ${name} ein. Danach ist dein Zug vorbei.`,
+              confirmLabel: 'Eintragen',
+              icon: 'check',
+            }
+          : {
+              title: `${name} streichen?`,
+              message: 'Der Wurf bringt hier keine Punkte – das Feld wird mit 0 gestrichen.',
+              confirmLabel: 'Streichen',
+              icon: 'block',
+            },
+      },
+    );
+    const confirmed = (await firstValueFrom(ref.afterClosed())) === true;
+    if (key !== this.rollKey()) return;
+    this.selected.set(null);
+    if (confirmed && this.canPick()) this.score.emit(category);
   }
 
   dieLabel(i: number): string {

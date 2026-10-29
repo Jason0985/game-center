@@ -13,6 +13,35 @@
   min-height: 0;
 }
 
+// Saisonaler Block (html[data-decor], ThemeService): Weihnachten rote Tinte und ein
+// Zuckerstangen-Streifen unter dem Kopf, Halloween altes Pergament mit oranger Tinte
+:host-context(html[data-decor='christmas']) {
+  --accent: #b51f2e;
+  --turn: rgba(181, 31, 46, 0.09);
+}
+
+:host-context(html[data-decor='christmas']) thead th {
+  background: repeating-linear-gradient(-45deg, #c62433 0 5px, #fffdf6 5px 10px) left bottom / 100%
+    4px no-repeat;
+}
+
+:host-context(html[data-decor='halloween']) {
+  --paper: #f3e4c2;
+  --paper-sum: #e6d0a3;
+  --ink: #2b1a0d;
+  --ink-soft: #7b6146;
+  --line: rgba(95, 55, 15, 0.24);
+  --accent: #c2500c;
+  --turn: rgba(194, 80, 12, 0.11);
+}
+
+:host-context(html[data-decor='halloween']) .sheet {
+  background:
+    radial-gradient(circle at 16% 18%, rgba(140, 80, 25, 0.09), transparent 28%),
+    radial-gradient(circle at 84% 64%, rgba(140, 80, 25, 0.08), transparent 32%),
+    radial-gradient(circle at 40% 92%, rgba(140, 80, 25, 0.06), transparent 26%), var(--paper);
+}
+
 .board {
   position: relative;
   display: grid;
@@ -24,15 +53,32 @@
 }
 
 .sheet-wrap {
+  // Über der Tisch-Deko (Schnee bzw. Spinnennetze am Rand)
+  position: relative;
+  z-index: 1;
   min-height: 0;
   overflow: auto;
   padding: 12px 10px 14px;
 }
 
-.sheet {
-  width: 100%;
+// Rahmen um den Block, an dem die Deko hängt
+.sheet-frame {
+  position: relative;
   max-width: 620px;
   margin: 0 auto;
+  border-radius: 10px;
+}
+
+.sheet-wrap[data-decor='christmas'] {
+  padding-top: 18px;
+}
+
+.sheet-wrap[data-decor='halloween'] {
+  padding-top: 34px;
+}
+
+.sheet {
+  width: 100%;
   border-collapse: collapse;
   border-radius: 10px;
   background: var(--paper);
@@ -177,7 +223,10 @@ thead th.win {
   opacity: 0.8;
 }
 
+// Freies Feld zum Eintragen mit den Punkten, die der Wurf brächte
 .pick {
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 22px;
   padding: 0;
@@ -188,6 +237,13 @@ thead th.win {
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.pick:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .nil {
@@ -214,6 +270,133 @@ thead th.win {
   0% {
     background: rgba(245, 200, 75, 0.85);
   }
+}
+
+// Abrechnung: Zeile für Zeile leuchten die Felder auf, ihre Punkte fliegen als „+N“
+// Richtung Summe, die Summe zählt hoch; der Bonus springt dazu, der Sieger leuchtet
+tr.adding > * {
+  background: color-mix(in srgb, var(--paper), var(--table-gold, #f5c84b) 38%);
+  transition: background-color 0.3s ease;
+}
+
+tr.adding th {
+  color: var(--accent);
+}
+
+tr.adding td {
+  position: relative;
+  animation: adding 0.5s ease-out both;
+}
+
+@keyframes adding {
+  from {
+    transform: scale(1.18);
+  }
+}
+
+.plus {
+  position: absolute;
+  top: 50%;
+  // Rechts neben der Zahl, damit sie lesbar bleibt
+  left: calc(50% + 12px);
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: plus 1.1s ease-in forwards;
+}
+
+@keyframes plus {
+  0% {
+    opacity: 0;
+    transform: translate(0, -50%) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(0, -60%) scale(1.1);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(0, -65%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 120%) scale(0.7);
+  }
+}
+
+.counting {
+  color: var(--accent);
+  animation: tally 0.38s ease-in-out infinite alternate;
+}
+
+.carry {
+  animation: carry 1.2s ease-out both;
+}
+
+@keyframes carry {
+  0% {
+    background: color-mix(in srgb, var(--paper-sum), var(--accent) 30%);
+  }
+}
+
+@keyframes tally {
+  to {
+    transform: scale(1.14);
+  }
+}
+
+.pop {
+  animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+.champion {
+  animation: champion 1.6s ease-out both;
+  color: #8a5a00;
+}
+
+@keyframes champion {
+  0% {
+    background: rgba(245, 200, 75, 0.95);
+    transform: scale(1.25);
+  }
+  40% {
+    transform: scale(1);
+  }
+  100% {
+    background: rgba(245, 200, 75, 0.45);
+  }
+}
+
+.tally {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.tally .material-symbols-rounded {
+  animation: tally 0.5s ease-in-out infinite alternate;
+  color: var(--table-gold);
+}
+
+.final {
+  animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
 
 // Bedienfeld unten; die schwebende App-Navigation liegt auf der Fläche
@@ -317,11 +500,7 @@ thead th.win {
   height: 88px;
   border-radius: 8px 8px 16px 16px;
   background:
-    repeating-linear-gradient(
-      0deg,
-      transparent 0 20px,
-      rgba(0, 0, 0, 0.18) 20px 22px
-    ),
+    repeating-linear-gradient(0deg, transparent 0 20px, rgba(0, 0, 0, 0.18) 20px 22px),
     linear-gradient(90deg, #4a230e, #8d4b22 35%, #a8602e 50%, #6b3519 80%, #3f1d0b);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
   opacity: 0;
@@ -387,18 +566,6 @@ thead th.win {
 .primary {
   background: var(--color-primary);
   color: var(--color-primary-text);
-}
-
-.enter {
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-  font-size: 14px !important;
-}
-
-.enter .label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .actions button:disabled,
@@ -482,7 +649,15 @@ thead th.win {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fresh {
+  .fresh,
+  .counting,
+  tr.adding td,
+  .plus,
+  .carry,
+  .pop,
+  .champion,
+  .final,
+  .tally .material-symbols-rounded {
     animation: none;
   }
 }

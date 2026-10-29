@@ -1,16 +1,37 @@
 <div class="app-shell">
-  <header class="top-bar">
+  @if (decor() === 'christmas') {
+    <app-christmas-backdrop />
+  } @else if (decor() === 'halloween') {
+    <app-halloween-backdrop />
+  }
+  <header class="top-bar" [class.top-bar--scrolled]="scrolled()">
     <a class="top-bar-title" routerLink="/" aria-label="Game Center, zur Startseite">
       <img src="icons/app-icon.svg" alt="" aria-hidden="true" />
       Game Center
     </a>
 
     <div class="header-actions">
-      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen -->
+      <!-- Einstellungen nur auf der Profilseite, sonst nur die Benachrichtigungen (und der Lobby-Chat) -->
       @if (onProfile()) {
         <a class="header-icon-button" routerLink="/settings" aria-label="Einstellungen">
           <mat-icon aria-hidden="true">settings</mat-icon>
         </a>
+      }
+      <!-- Chat der Warte-Lobby; im Spiel sitzt er im Spielkopf -->
+      @if (headerChat.chat(); as chat) {
+        <button
+          type="button"
+          class="header-icon-button"
+          [attr.aria-label]="chat.unread() ? 'Lobby-Chat, ' + chat.unread() + ' neu' : 'Lobby-Chat'"
+          (click)="chat.open()"
+        >
+          <mat-icon aria-hidden="true">chat</mat-icon>
+          @if (chat.unread(); as unread) {
+            <span class="notification-badge" aria-hidden="true">{{
+              unread > 9 ? '9+' : unread
+            }}</span>
+          }
+        </button>
       }
       <a
         class="header-icon-button"
@@ -29,6 +50,11 @@
       </a>
     </div>
   </header>
+  @if (decor() === 'christmas') {
+    <app-christmas-lights />
+  } @else if (decor() === 'halloween') {
+    <app-halloween-lights />
+  }
 
   <app-toast-host />
 
@@ -53,10 +79,17 @@
     <router-outlet></router-outlet>
   </main>
 
-  <nav class="bottom-nav" aria-label="Hauptnavigation">
+  <nav class="bottom-nav" aria-label="Hauptnavigation" [style.--tab]="tabIndex()">
+    <span class="bottom-nav-pill" aria-hidden="true"></span>
+    @if (decor() === 'christmas') {
+      <app-christmas-snowbank shape="pill" />
+    } @else if (decor() === 'halloween') {
+      <app-halloween-pumpkins [spots]="navPumpkins" />
+    }
     <a
       class="bottom-nav-link"
       routerLink="/"
+      [class.active]="tabIndex() === 0"
       routerLinkActive="active"
       [routerLinkActiveOptions]="{ exact: true }"
       ariaCurrentWhenActive="page"
@@ -68,6 +101,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/multiplayer"
+      [class.active]="tabIndex() === 1"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
@@ -77,6 +111,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/collection"
+      [class.active]="tabIndex() === 2"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >
@@ -86,6 +121,7 @@
     <a
       class="bottom-nav-link"
       routerLink="/profile"
+      [class.active]="tabIndex() === 3"
       routerLinkActive="active"
       ariaCurrentWhenActive="page"
     >

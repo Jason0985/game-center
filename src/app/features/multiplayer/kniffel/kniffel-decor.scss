@@ -1,0 +1,111 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+// Ränder des Papiers: kalt angelaufen bzw. orange glimmend
+.edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.edge--frost {
+  box-shadow:
+    inset 0 0 0 1px rgba(170, 200, 230, 0.55),
+    inset 0 0 20px 3px rgba(150, 190, 230, 0.28);
+}
+
+// Angesengte Ränder wie bei altem Pergament, ganz außen glimmt es noch
+.edge--glow {
+  box-shadow:
+    inset 0 0 0 1px rgba(70, 30, 5, 0.55),
+    inset 0 0 3px 1px rgba(255, 122, 24, 0.45),
+    inset 0 0 26px 5px rgba(100, 45, 8, 0.38);
+}
+
+// Schneekappe: Haufen auf der Oberkante, vorne hängen kleine Zapfen über
+.snowcap {
+  position: absolute;
+  top: -9px;
+  right: -4px;
+  left: -4px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='20' viewBox='0 0 180 20'%3E%3Cpath fill='%23fbfdff' d='M0 10 Q12 3 26 8 Q40 1 58 7 Q72 4 84 8 Q102 0 122 7 Q136 3 150 8 Q166 2 180 9 L180 12 Q174 12 172 17 Q170 12 162 12 Q150 13 146 12 Q141 12 139 19 Q137 12 128 12 Q110 13 98 12 Q92 12 90 16 Q88 12 80 12 Q60 13 46 12 Q40 12 38 18 Q36 12 28 12 Q14 13 8 12 Q4 12 2 15 Q0 12 0 12 Z'/%3E%3C/svg%3E")
+    repeat-x left top / 180px 20px;
+  filter: drop-shadow(0 2px 2px rgba(60, 90, 130, 0.35));
+}
+
+// Stechpalmenzweig an der linken oberen Ecke
+.holly {
+  position: absolute;
+  top: -13px;
+  left: -10px;
+  width: 50px;
+  height: 36px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 36'%3E%3Cpath fill='%232f7d3e' d='M24 18 L18 12 L19 7 L14 8 L11 3 L8 7 L3 5 L4 10 L1 14 L6 16 L8 21 L12 18 L16 21 Z'/%3E%3Cpath fill='%23266a33' d='M26 18 L33 24 L33 29 L38 28 L41 33 L43 28 L48 30 L47 25 L49 21 L44 19 L42 14 L38 17 L34 14 Z'/%3E%3Cpath d='M24 18 L6 9 M26 18 L45 27' stroke='%231d5227' stroke-width='0.8'/%3E%3Ccircle cx='23' cy='20' r='3.6' fill='%23d62839'/%3E%3Ccircle cx='28.5' cy='17' r='3.4' fill='%23c41f30'/%3E%3Ccircle cx='27' cy='22.8' r='3.2' fill='%23e03141'/%3E%3Ccircle cx='22' cy='19' r='1' fill='%23ff9aa4'/%3E%3Ccircle cx='27.5' cy='16' r='0.9' fill='%23ff9aa4'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+// Spinnennetz in der rechten unteren Ecke (dunkel, weil das Papier hell ist)
+.web {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 74px;
+  height: 74px;
+  border-bottom-right-radius: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%234a4352' stroke-width='1.3'%3E%3Cpath d='M0 0 L120 30 M0 0 L95 75 M0 0 L60 110 M0 0 L20 120'/%3E%3Cpath d='M30 7.5 Q26 20 24 24 Q18 34 15 50 Q10 54 5 30 Q20 22 30 7.5Z'/%3E%3Cpath d='M60 15 Q52 40 48 48 Q38 66 30 100 Q20 94 10 60 Q35 40 60 15Z'/%3E%3Cpath d='M90 22.5 Q78 58 71 71 Q57 95 45 118 Q30 112 15 90 Q52 60 90 22.5Z'/%3E%3C/svg%3E")
+    no-repeat right bottom / contain;
+  opacity: 0.4;
+  transform: rotate(180deg);
+}
+
+// Spinne sitzt im Netz und krabbelt ab und zu ein Stück
+.spider {
+  position: absolute;
+  right: 24px;
+  bottom: 26px;
+  width: 13px;
+  height: 13px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg stroke='%23140d1c' stroke-width='1.2' fill='none'%3E%3Cpath d='M4 6 L0 3 M4 8 L0 8 M4 9 L1 12 M10 6 L14 3 M10 8 L14 8 M10 9 L13 12'/%3E%3C/g%3E%3Cellipse cx='7' cy='8' rx='3.4' ry='4' fill='%23140d1c'/%3E%3Ccircle cx='5.8' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3Ccircle cx='8.2' cy='7' r='0.8' fill='%23ff8a1f'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  animation: kn-crawl 9s ease-in-out infinite;
+}
+
+@keyframes kn-crawl {
+  0%,
+  60%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  70% {
+    transform: translate(9px, 7px) rotate(25deg);
+  }
+  85% {
+    transform: translate(9px, 7px) rotate(25deg);
+  }
+}
+
+// Fledermaus als Stempel neben dem Kniffel-Schriftzug
+.bat {
+  position: absolute;
+  top: 10px;
+  left: 80px;
+  width: 34px;
+  height: 17px;
+  opacity: 0.32;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 20'%3E%3Cpath fill='%233a1f4f' d='M20 6 Q18 2 17 5 Q12 1 0 4 Q6 8 5 13 Q10 10 13 14 Q15 10 20 16 Q25 10 27 14 Q30 10 35 13 Q34 8 40 4 Q28 1 23 5 Q22 2 20 6Z'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+  transform: rotate(-8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spider {
+    animation: none;
+  }
+}

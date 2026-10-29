@@ -1,9 +1,15 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { GameStage } from '../table/game-stage';
-import { injectTableGame } from '../table/table-game';
+import { ABORT_MESSAGE, injectTableGame } from '../table/table-game';
 import { KniffelBoard } from './kniffel-board';
 import { KniffelService } from './kniffel.service';
-import { CATEGORIES, filledCount, KNIFFEL_RULES, KNIFFEL_SKIP_AFTER_S, KnGame } from './kniffel.model';
+import {
+  CATEGORIES,
+  filledCount,
+  KNIFFEL_RULES,
+  KNIFFEL_SKIP_AFTER_S,
+  KnGame,
+} from './kniffel.model';
 
 // Lädt das Spiel einer gestarteten Lobby und hält es per Realtime aktuell. Keine Zugzeit;
 // nur der Host kann nach KNIFFEL_SKIP_AFTER_S überspringen. Der Endstand steht auf dem Block.
@@ -22,7 +28,8 @@ import { CATEGORIES, filledCount, KNIFFEL_RULES, KNIFFEL_SKIP_AFTER_S, KnGame } 
       [skipName]="table.canSkip() ? table.activeName() : null"
       [waitingClock]="table.waitingClock()"
       [finished]="game()?.status === 'finished'"
-      endHint="Zum Endstand"
+      endLabel="Spiel abbrechen"
+      endHint="Zählt nicht · zurück in die Lobby"
       [rules]="rules"
       (skip)="table.skip(game()!)"
       (endGame)="table.endGame(game()!)"
@@ -66,7 +73,8 @@ export class KniffelGameView {
     skipAfterS: KNIFFEL_SKIP_AFTER_S,
     skipMessage:
       'Der Tisch würfelt (falls noch nicht geschehen) und trägt ins Feld mit den meisten Punkten ein.',
-    endMessage: () => 'Gewertet wird der Block, wie er jetzt ist.',
+    endMessage: () => ABORT_MESSAGE,
+    abort: true,
   });
   readonly isHost = this.table.isHost;
   readonly game = this.table.game;
@@ -81,7 +89,8 @@ export class KniffelGameView {
     if (game.status === 'finished') return 'Spiel beendet';
     const active = game.players.find((player) => player.seat === game.turn_seat);
     const round = Math.min(filledCount(active?.scores ?? []) + 1, CATEGORIES.length);
-    const who = this.table.mySeat() === game.turn_seat ? 'Du bist dran' : `${active?.name} ist dran`;
+    const who =
+      this.table.mySeat() === game.turn_seat ? 'Du bist dran' : `${active?.name} ist dran`;
     return `Runde ${round}/${CATEGORIES.length} · ${who}`;
   });
 

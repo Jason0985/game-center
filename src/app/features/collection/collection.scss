@@ -51,7 +51,7 @@
   width: 20px;
   height: 20px;
   font-size: 20px;
-  transition: rotate var(--transition-fast);
+  transition: rotate 420ms var(--ease-spring);
 }
 
 .collection-section:not([open]) .collection-summary-icon {

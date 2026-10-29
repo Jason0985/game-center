@@ -1,81 +1,105 @@
 <div class="board">
-  <div class="sheet-wrap" #sheet>
-    <table class="sheet" [style.--cols]="columns().length">
-      <thead>
-        <tr>
-          <th class="logo" scope="col">Kniffel</th>
-          @for (col of columns(); track col.player.user_id) {
-            <th
-              scope="col"
-              [class.turn]="col.turn"
-              [class.left]="col.player.state === 'left'"
-              [class.win]="finished() && col.player.total === winners()[0]?.player?.total"
-            >
-              <span class="avatar" [style.background]="col.color" aria-hidden="true">{{
-                col.initial
-              }}</span>
-              <span class="who">{{ col.mine ? 'Du' : col.player.name }}</span>
-            </th>
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of rows; track r) {
-          @if (typeof r === 'number') {
-            <tr [class.first-lower]="r === lower[0]">
-              <th scope="row">
-                {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
+  <app-table-decor [rim]="false" />
+  <div class="sheet-wrap" #sheet [attr.data-decor]="decor()">
+    <div class="sheet-frame">
+      <app-kniffel-decor />
+      <table class="sheet" [style.--cols]="columns().length">
+        <thead>
+          <tr>
+            <th class="logo" scope="col">Kniffel</th>
+            @for (col of columns(); track col.player.user_id) {
+              <th
+                scope="col"
+                [attr.data-player]="col.player.user_id"
+                [class.turn]="col.turn"
+                [class.left]="col.player.state === 'left'"
+                [class.win]="revealed() && col.player.total === winners()[0]?.player?.total"
+              >
+                <span class="avatar" [style.background]="col.color" aria-hidden="true">{{
+                  col.initial
+                }}</span>
+                <span class="who">{{ col.mine ? 'Du' : col.player.name }}</span>
               </th>
-              @for (col of columns(); track col.player.user_id) {
-                @let value = col.player.scores[r];
-                @let preview = col.preview?.[r] ?? null;
-                <td
-                  [class.turn]="col.turn"
-                  [class.fresh]="fresh() === col.player.seat + ':' + r"
-                  [class.zero]="value === 0"
-                >
-                  @if (value !== null) {
-                    {{ value || '–' }}
-                  } @else if (preview !== null && col.mine) {
-                    <button
-                      type="button"
-                      class="pick"
-                      [class.selected]="selected() === r"
-                      [class.nil]="!preview"
-                      [disabled]="!canPick()"
-                      [attr.aria-label]="
-                        categories[r].name +
-                        (preview ? ' eintragen: ' + preview + ' Punkte' : ' streichen')
-                      "
-                      (click)="pick(r)"
-                    >
-                      {{ preview }}
-                    </button>
-                  } @else if (preview !== null) {
-                    <span class="ghost" [class.nil]="!preview">{{ preview }}</span>
-                  }
-                </td>
-              }
-            </tr>
-          } @else {
-            <tr class="sum" [class.total]="r === 'total'">
-              <th scope="row">
-                {{ sumRows[r].name }} <span class="hint">{{ sumRows[r].hint }}</span>
-              </th>
-              @for (col of columns(); track col.player.user_id) {
-                <td [class.turn]="col.turn">{{ col.sums[r] }}</td>
-              }
-            </tr>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows; track r) {
+            @if (typeof r === 'number') {
+              <tr
+                [class.first-lower]="r === lower[0]"
+                [class.adding]="addingRow() === r"
+                [attr.data-row]="r"
+              >
+                <th scope="row">
+                  {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
+                </th>
+                @for (col of columns(); track col.player.user_id) {
+                  @let value = col.player.scores[r];
+                  @let preview = col.preview?.[r] ?? null;
+                  <td
+                    [class.turn]="col.turn"
+                    [class.fresh]="fresh() === col.player.seat + ':' + r"
+                    [class.zero]="value === 0"
+                  >
+                    @if (value !== null) {
+                      {{ value || '–' }}
+                      @if (addingRow() === r && value) {
+                        <span class="plus" aria-hidden="true">+{{ value }}</span>
+                      }
+                    } @else if (preview !== null && col.mine) {
+                      <button
+                        type="button"
+                        class="pick"
+                        [class.selected]="selected() === r"
+                        [class.nil]="!preview"
+                        [disabled]="!canPick()"
+                        [attr.aria-label]="
+                          categories[r].name +
+                          (preview ? ' eintragen: ' + preview + ' Punkte' : ' streichen')
+                        "
+                        (click)="pick(r)"
+                      >
+                        {{ preview }}
+                      </button>
+                    } @else if (preview !== null) {
+                      <span class="ghost" [class.nil]="!preview">{{ preview }}</span>
+                    }
+                  </td>
+                }
+              </tr>
+            } @else {
+              <tr class="sum" [class.total]="r === 'total'">
+                <th scope="row">
+                  {{ sumRows[r].name }} <span class="hint">{{ sumRows[r].hint }}</span>
+                </th>
+                @for (col of columns(); track col.player.user_id) {
+                  <td
+                    [class.turn]="col.turn"
+                    [class.counting]="col.counting[r]"
+                    [class.pop]="r === 'bonus' && tallyStep()?.kind === 'bonus'"
+                    [class.carry]="r === 'total' && tallyStep()?.kind === 'carry'"
+                    [class.champion]="
+                      r === 'total' &&
+                      revealed() &&
+                      col.player.total === winners()[0]?.player?.total
+                    "
+                  >
+                    {{ col.sums[r] }}
+                  </td>
+                }
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="tray">
     <div #cup class="cup" aria-hidden="true"></div>
 
-    @if (finished()) {
+    @if (revealed()) {
       <div class="final" role="status">
         <span class="material-symbols-rounded fill trophy" aria-hidden="true">trophy</span>
         <div class="final-text">
@@ -93,6 +117,11 @@
       } @else {
         <p class="status">Der Host entscheidet, wie es weitergeht.</p>
       }
+    } @else if (finished()) {
+      <div class="tally" role="status">
+        <span class="material-symbols-rounded" aria-hidden="true">calculate</span>
+        {{ tallyText() }}
+      </div>
     } @else {
       <div class="dice" role="group" aria-label="Würfel">
         @for (i of slots; track i) {
@@ -123,12 +152,6 @@
       <p class="status" [class.mine]="myTurn()" aria-live="polite">{{ hint() }}</p>
 
       <div class="actions">
-        @if (selectedLabel(); as label) {
-          <button type="button" class="enter" [disabled]="!canPick()" (click)="enter()">
-            <span class="material-symbols-rounded" aria-hidden="true">check</span>
-            <span class="label">{{ label }}</span>
-          </button>
-        }
         <button type="button" class="primary" [disabled]="!canRoll()" (click)="doRoll()">
           <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
           Würfeln

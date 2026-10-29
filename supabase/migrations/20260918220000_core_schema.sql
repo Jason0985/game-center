@@ -1,8 +1,8 @@
 -- Game Center core schema: builds the complete database on an empty Supabase
--- project. Consolidates all migrations up to 2026-10-09: profiles, roles, friends,
--- notifications, F1 strategy, lobbies (guests, host transfer, inactivity cleanup),
--- Flip 7, Skip-Bo, Uno, game results, saved tool state, push notifications,
--- error monitoring and the name filter.
+-- project. Consolidates all migrations up to 2026-10-28: profiles, roles, friends,
+-- notifications, F1 strategy, lobbies (guests, host transfer, inactivity cleanup,
+-- wins per lobby), Flip 7, Skip-Bo, Uno, game results, saved tool state, push
+-- notifications, error monitoring, the name filter, Blackjack, Nimm 6, Skyjo and Kniffel.
 --
 -- Later changes go into small follow-up files in this folder, named
 -- <YYYYMMDDHHMMSS>_<what_it_does>.sql, and are run in order after this one.
@@ -101,8 +101,8 @@ drop policy if exists "Eigenes Profil darf geändert werden" on public.profiles;
 create policy "Eigenes Profil darf geändert werden"
   on public.profiles for update
   to authenticated
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
 -- Guests get a generated username and the display name chosen when joining.
 create or replace function public.handle_new_user()
@@ -174,20 +174,20 @@ drop policy if exists "own ranking game - select" on public.ranking_games;
 create policy "own ranking game - select"
   on public.ranking_games for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "own ranking game - insert" on public.ranking_games;
 create policy "own ranking game - insert"
   on public.ranking_games for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own ranking game - update" on public.ranking_games;
 create policy "own ranking game - update"
   on public.ranking_games for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 -- ===========================================================================
 -- Friendships
@@ -224,14 +224,14 @@ drop policy if exists "Users can read their friendships" on public.friendships;
 create policy "Users can read their friendships"
   on public.friendships for select
   to authenticated
-  using (auth.uid() = requester_id or auth.uid() = addressee_id);
+  using ((select auth.uid()) = requester_id or (select auth.uid()) = addressee_id);
 
 -- Requests must start as 'pending'.
 drop policy if exists "Users can create friendship requests" on public.friendships;
 create policy "Users can create friendship requests"
   on public.friendships for insert
   to authenticated
-  with check (auth.uid() = requester_id and status = 'pending');
+  with check ((select auth.uid()) = requester_id and status = 'pending');
 
 -- Only the addressee answers a pending request (column grants below limit
 -- the update to status/updated_at).
@@ -239,8 +239,8 @@ drop policy if exists "Addressee can answer pending requests" on public.friendsh
 create policy "Addressee can answer pending requests"
   on public.friendships for update
   to authenticated
-  using (auth.uid() = addressee_id and status = 'pending')
-  with check (auth.uid() = addressee_id and status in ('accepted', 'declined', 'blocked'));
+  using ((select auth.uid()) = addressee_id and status = 'pending')
+  with check ((select auth.uid()) = addressee_id and status in ('accepted', 'declined', 'blocked'));
 
 -- ===========================================================================
 -- Notifications (read/delete only; created server-side, never by clients)
@@ -272,19 +272,22 @@ create table if not exists public.notifications (
 create index if not exists notifications_recipient_created_at_idx
   on public.notifications (recipient_id, created_at desc);
 
+create index if not exists notifications_sender_idx
+  on public.notifications (sender_id);
+
 alter table public.notifications enable row level security;
 
 drop policy if exists "Users can read their own notifications" on public.notifications;
 create policy "Users can read their own notifications"
   on public.notifications for select
   to authenticated
-  using (auth.uid() = recipient_id);
+  using ((select auth.uid()) = recipient_id);
 
 drop policy if exists "Users can delete their own notifications" on public.notifications;
 create policy "Users can delete their own notifications"
   on public.notifications for delete
   to authenticated
-  using (auth.uid() = recipient_id);
+  using ((select auth.uid()) = recipient_id);
 
 -- ===========================================================================
 -- F1 strategy overrides (per user and track)
@@ -308,29 +311,29 @@ drop policy if exists "Users can read their own F1 strategy overrides"
 create policy "Users can read their own F1 strategy overrides"
   on public.f1_strategy_overrides for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can create their own F1 strategy overrides"
   on public.f1_strategy_overrides;
 create policy "Users can create their own F1 strategy overrides"
   on public.f1_strategy_overrides for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can update their own F1 strategy overrides"
   on public.f1_strategy_overrides;
 create policy "Users can update their own F1 strategy overrides"
   on public.f1_strategy_overrides for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can delete their own F1 strategy overrides"
   on public.f1_strategy_overrides;
 create policy "Users can delete their own F1 strategy overrides"
   on public.f1_strategy_overrides for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 -- ===========================================================================
 -- Multiplayer lobbies
@@ -344,12 +347,18 @@ create table if not exists public.multiplayer_lobbies (
   id uuid primary key default gen_random_uuid(),
   host_user_id uuid not null references auth.users(id) on delete cascade,
   game_key text default 'flip-7'
-    check (game_key is null or game_key in ('flip-7', 'skip-bo', 'monopoly', 'uno')),
+    check (game_key is null
+           or game_key in ('flip-7', 'skip-bo', 'monopoly', 'uno', 'blackjack', 'nimm-6', 'skyjo',
+                           'kniffel')),
   status text not null default 'open' check (status in ('open', 'started')),
   created_at timestamptz not null default now(),
   started_at timestamptz,
   game_settings jsonb not null default '{"targetScore": 200}'
-    check (jsonb_typeof(game_settings) = 'object' and octet_length(game_settings::text) <= 1024)
+    check (jsonb_typeof(game_settings) = 'object' and octet_length(game_settings::text) <= 1024),
+  -- Siege je Lobby („Abend-Wertung“): solange die Lobby offen ist, zählt jeder Sieg
+  -- (Uno: jede gewonnene Runde). Schlüssel = user_id, bleibt beim Verlassen und erneuten
+  -- Beitreten erhalten und verschwindet mit der Lobby. Gezählt in den Ergebnis-Triggern.
+  wins jsonb not null default '{}' check (jsonb_typeof(wins) = 'object')
 );
 
 create table if not exists public.multiplayer_lobby_members (
@@ -362,6 +371,9 @@ create table if not exists public.multiplayer_lobby_members (
 
 create index if not exists multiplayer_lobbies_status_created_idx
   on public.multiplayer_lobbies (status, created_at desc);
+
+create index if not exists multiplayer_lobbies_host_user_idx
+  on public.multiplayer_lobbies (host_user_id);
 
 alter table public.multiplayer_lobbies enable row level security;
 
@@ -587,8 +599,8 @@ drop policy if exists "Users can mark their own notifications as read" on public
 create policy "Users can mark their own notifications as read"
   on public.notifications for update
   to authenticated
-  using (auth.uid() = recipient_id)
-  with check (auth.uid() = recipient_id);
+  using ((select auth.uid()) = recipient_id)
+  with check ((select auth.uid()) = recipient_id);
 
 grant update (read_at) on public.notifications to authenticated;
 
@@ -601,7 +613,7 @@ drop policy if exists "Participants can remove friendships" on public.friendship
 create policy "Participants can remove friendships"
   on public.friendships for delete
   to authenticated
-  using (auth.uid() = addressee_id or (auth.uid() = requester_id and status <> 'blocked'));
+  using ((select auth.uid()) = addressee_id or ((select auth.uid()) = requester_id and status <> 'blocked'));
 
 -- The open request notification disappears together with the request.
 create or replace function public.cleanup_friendship_notifications()
@@ -1060,6 +1072,8 @@ $$;
 -- Lobby game functions (pick a game, start)
 -- ===========================================================================
 
+-- Starten nur, wenn alle Spieler der Lobby bereit sind. Mindestens 2 Spieler, Blackjack
+-- geht auch allein; Skip-Bo höchstens 6, Blackjack höchstens 5.
 create or replace function public.start_lobby(p_lobby_id uuid)
 returns void
 language plpgsql
@@ -1093,16 +1107,16 @@ begin
   select count(*), count(*) filter (where ready) into member_count, ready_count
   from public.multiplayer_lobby_members where lobby_id = p_lobby_id;
 
-  if member_count < 2 then
+  if lobby.game_key is null then
+    raise exception 'Bitte wähle zuerst ein Spiel aus.';
+  end if;
+
+  if member_count < (case when lobby.game_key = 'blackjack' then 1 else 2 end) then
     raise exception 'Zum Starten braucht es mindestens 2 Spieler.';
   end if;
 
-  if ready_count * 2 < member_count then
-    raise exception 'Mindestens die Hälfte muss bereit sein.';
-  end if;
-
-  if lobby.game_key is null then
-    raise exception 'Bitte wähle zuerst ein Spiel aus.';
+  if ready_count < member_count then
+    raise exception 'Alle Spieler müssen bereit sein.';
   end if;
 
   if lobby.game_key = 'monopoly' then
@@ -1111,6 +1125,10 @@ begin
 
   if lobby.game_key = 'skip-bo' and member_count > 6 then
     raise exception 'Skip-Bo geht mit höchstens 6 Spielern.';
+  end if;
+
+  if lobby.game_key = 'blackjack' and member_count > 5 then
+    raise exception 'Blackjack geht mit höchstens 5 Spielern.';
   end if;
 
   update public.multiplayer_lobbies
@@ -1124,6 +1142,14 @@ begin
     perform public._skipbo_create_game(p_lobby_id);
   elsif lobby.game_key = 'uno' then
     perform public._uno_create_game(p_lobby_id);
+  elsif lobby.game_key = 'blackjack' then
+    perform public._blackjack_create_game(p_lobby_id);
+  elsif lobby.game_key = 'nimm-6' then
+    perform public._nimm6_create_game(p_lobby_id);
+  elsif lobby.game_key = 'skyjo' then
+    perform public._skyjo_create_game(p_lobby_id);
+  elsif lobby.game_key = 'kniffel' then
+    perform public._kniffel_create_game(p_lobby_id);
   else
     perform public._flip7_create_game(p_lobby_id);
   end if;
@@ -1188,6 +1214,9 @@ revoke execute on function public._cleanup_lobby_invites() from public, anon, au
 -- game_settings {"stockSize": n}; {} (ältere Lobbys, Standard) = 30, ab 5 Spielern 20.
 -- 6 × 50 Karten passen nicht in ein Deck (162): dann kommen weitere gemischte Decks dazu,
 -- wie beim unbegrenzten Nachziehstapel.
+-- Blackjack: {} = 1000 Startgeld, sonst genau {"startMoney": n} mit n von 100 bis 10.000 in
+-- Zehnerschritten. Skyjo: {} = Standard (100, beide Regeln an), sonst genau endScore,
+-- clearColumns und doubleEnder. Monopoly, Nimm 6 und Kniffel haben keine Einstellungen.
 
 create or replace function public.set_lobby_game(p_lobby_id uuid, p_game_key text, p_settings jsonb)
 returns void
@@ -1198,6 +1227,7 @@ declare
   target jsonb;
   target_score integer;
   stock jsonb;
+  money jsonb;
   settings jsonb;
 begin
   if not public.can_use_multiplayer(auth.uid()) then
@@ -1247,8 +1277,8 @@ begin
       end if;
       settings := jsonb_build_object('stockSize', stock::numeric::integer);
     end if;
-  elsif p_game_key = 'monopoly' then
-    -- Läuft extern
+  elsif p_game_key in ('monopoly', 'nimm-6', 'kniffel') then
+    -- Monopoly läuft extern, Nimm 6 und Kniffel haben keine Einstellungen
     if p_settings <> '{}'::jsonb then
       raise exception 'Ungültige Einstellungen.';
     end if;
@@ -1261,6 +1291,38 @@ begin
       raise exception 'Ungültige Einstellungen.';
     end if;
     settings := p_settings;
+  elsif p_game_key = 'blackjack' then
+    if p_settings = '{}'::jsonb then
+      settings := '{}'::jsonb;
+    else
+      money := p_settings -> 'startMoney';
+      if (select count(*) from jsonb_object_keys(p_settings)) <> 1
+         or jsonb_typeof(money) is distinct from 'number'
+         or money::numeric <> trunc(money::numeric)
+         or money::numeric not between 100 and 10000
+         or money::numeric % 10 <> 0 then
+        raise exception 'Ungültige Einstellungen.';
+      end if;
+      settings := jsonb_build_object('startMoney', money::numeric::integer);
+    end if;
+  elsif p_game_key = 'skyjo' then
+    -- {} = Standard (100, beide Regeln an), sonst genau die drei Werte
+    if p_settings = '{}'::jsonb then
+      settings := '{}'::jsonb;
+    else
+      if (select array_agg(k order by k) from jsonb_object_keys(p_settings) as k)
+           is distinct from array['clearColumns', 'doubleEnder', 'endScore']
+         or jsonb_typeof(p_settings -> 'clearColumns') is distinct from 'boolean'
+         or jsonb_typeof(p_settings -> 'doubleEnder') is distinct from 'boolean'
+         or jsonb_typeof(p_settings -> 'endScore') is distinct from 'number'
+         or (p_settings ->> 'endScore')::numeric not in (50, 100, 150) then
+        raise exception 'Ungültige Einstellungen.';
+      end if;
+      settings := jsonb_build_object(
+        'endScore', (p_settings ->> 'endScore')::numeric::integer,
+        'clearColumns', (p_settings ->> 'clearColumns')::boolean,
+        'doubleEnder', (p_settings ->> 'doubleEnder')::boolean);
+    end if;
   else
     raise exception 'Ungültige Einstellungen.';
   end if;
@@ -2389,7 +2451,7 @@ begin
 end;
 $$;
 
--- Host ends the game; a running round is not scored.
+-- Host bricht das Spiel ab: kein Ergebnis, keine Abend-Siege, alle zurück in die Warte-Lobby.
 create or replace function public.flip7_end_game(p_game_id uuid)
 returns void
 language plpgsql
@@ -2401,12 +2463,15 @@ begin
   game := public._flip7_lock(p_game_id);
 
   if not public._flip7_is_host(p_game_id) then
-    raise exception 'Nur der Host kann das Spiel beenden.';
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
   end if;
 
   if game.status = 'finished' then
-    raise exception 'Das Spiel ist bereits beendet.';
+    raise exception 'Das Spiel ist bereits vorbei.';
   end if;
+
+  -- Abbruch: die Ergebnis-Trigger werten das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
 
   update public.flip7_games set last_events = '[]' where id = p_game_id;
   if game.status = 'playing' then
@@ -2415,6 +2480,7 @@ begin
 
   update public.flip7_games set status = 'finished' where id = p_game_id;
   perform public._flip7_tick(game.lobby_id);
+  perform public.flip7_return_to_lobby(game.lobby_id);
 end;
 $$;
 
@@ -3316,7 +3382,7 @@ begin
 end;
 $$;
 
--- Host beendet das Spiel vorzeitig, ohne Sieger.
+-- Host bricht das Spiel ab: kein Ergebnis, keine Abend-Siege, alle zurück in die Warte-Lobby.
 create or replace function public.skipbo_end_game(p_game_id uuid)
 returns void
 language plpgsql
@@ -3328,18 +3394,22 @@ begin
   game := public._skipbo_lock(p_game_id);
 
   if not public._skipbo_is_host(p_game_id) then
-    raise exception 'Nur der Host kann das Spiel beenden.';
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
   end if;
 
   if game.status <> 'playing' then
-    raise exception 'Das Spiel ist bereits beendet.';
+    raise exception 'Das Spiel ist bereits vorbei.';
   end if;
+
+  -- Abbruch: die Ergebnis-Trigger werten das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
 
   update public.skipbo_games
   set last_events = '[]', status = 'finished', winner_seat = null,
       turn_seat = null, waiting_since = null
   where id = p_game_id;
   perform public._skipbo_log(p_game_id, jsonb_build_object('t', 'end'));
+  perform public.skipbo_return_to_lobby(game.lobby_id);
 end;
 $$;
 
@@ -4939,7 +5009,8 @@ create table if not exists public.game_results (
   -- Uno: Rundennummer, sonst 0
   round_no integer not null default 0,
   user_id uuid not null references auth.users(id) on delete cascade,
-  game_key text not null check (game_key in ('flip-7', 'skip-bo', 'uno')),
+  game_key text not null
+    check (game_key in ('flip-7', 'skip-bo', 'uno', 'blackjack', 'nimm-6', 'skyjo', 'kniffel')),
   placement smallint not null check (placement >= 1),
   player_count smallint not null check (player_count >= 2),
   won boolean not null,
@@ -4966,8 +5037,32 @@ revoke all on public.game_results from anon, authenticated;
 
 grant select on public.game_results to authenticated;
 
+-- Abend-Wertung: +1 Sieg je Gewinner dieses Ergebnisses (Spiel und Runde). Die Ergebnis-
+-- Trigger rufen das nur auf, wenn sie wirklich neue Ergebnisse geschrieben haben.
+create or replace function public._lobby_count_wins(p_lobby_id uuid, p_game_id uuid,
+                                                    p_round_no integer)
+returns void
+language sql
+security definer set search_path = ''
+as $$
+  update public.multiplayer_lobbies l
+  set wins = l.wins || coalesce((
+    select jsonb_object_agg(r.user_id, coalesce((l.wins ->> r.user_id::text)::int, 0) + 1)
+    from public.game_results r
+    where r.game_id = p_game_id and r.round_no = p_round_no and r.won
+  ), '{}')
+  where l.id = p_lobby_id;
+$$;
+
+revoke execute on function public._lobby_count_wins(uuid, uuid, integer)
+  from public, anon, authenticated;
+
 -- Platzierung über alle Spieler, gespeichert nur für noch vorhandene Konten. Ein Fehler hier
 -- darf den Spielzug nie abbrechen, daher nur eine Warnung.
+--
+-- Flip 7 „Weiterspielen“: Das Spiel kann nach 'finished' wieder laufen und erneut enden.
+-- Der Endstand ersetzt dann das erste Ergebnis, Statistik und Abend-Sieg wandern zu dem,
+-- der am Ende vorne liegt.
 
 create or replace function public._flip7_record_result()
 returns trigger
@@ -4980,6 +5075,16 @@ begin
     return null;
   end if;
 
+  -- Abend-Siege aus einem früheren Ende dieses Spiels zurücknehmen, unten neu zählen
+  update public.multiplayer_lobbies l
+  set wins = l.wins || coalesce((
+    select jsonb_object_agg(r.user_id,
+             greatest(coalesce((l.wins ->> r.user_id::text)::int, 0) - 1, 0))
+    from public.game_results r
+    where r.game_id = new.id and r.round_no = 0 and r.won
+  ), '{}')
+  where l.id = new.lobby_id;
+
   insert into public.game_results (game_id, user_id, game_key, placement, player_count, won, score)
   select new.id, r.user_id, 'flip-7', r.placement, r.player_count,
          r.placement = 1 and r.state <> 'left', r.total_score
@@ -4991,7 +5096,14 @@ begin
     where p.game_id = new.id
   ) r
   where exists (select 1 from auth.users u where u.id = r.user_id)
-  on conflict do nothing;
+  on conflict (game_id, round_no, user_id) do update
+    set placement = excluded.placement,
+        player_count = excluded.player_count,
+        won = excluded.won,
+        score = excluded.score,
+        finished_at = now();
+
+  perform public._lobby_count_wins(new.lobby_id, new.id, 0);
   return null;
 exception when others then
   raise warning 'Flip 7: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
@@ -5017,6 +5129,9 @@ begin
   ) r
   where exists (select 1 from auth.users u where u.id = r.user_id)
   on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, 0);
+  end if;
   return null;
 exception when others then
   raise warning 'Skip-Bo: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
@@ -5045,6 +5160,9 @@ begin
   ) r
   where exists (select 1 from auth.users u where u.id = r.user_id)
   on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, new.round_no);
+  end if;
   return null;
 exception when others then
   raise warning 'Uno: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
@@ -5055,14 +5173,16 @@ $$;
 drop trigger if exists flip7_games_record_result on public.flip7_games;
 create trigger flip7_games_record_result
 after update of status on public.flip7_games
-for each row when (new.status = 'finished' and old.status <> 'finished')
+for each row when (new.status = 'finished' and old.status <> 'finished'
+                   and current_setting('game.aborted', true) is distinct from 'on')
 execute function public._flip7_record_result();
 
 drop trigger if exists skipbo_games_record_result on public.skipbo_games;
 create trigger skipbo_games_record_result
 after update of status on public.skipbo_games
 for each row when (new.status = 'finished' and old.status <> 'finished'
-                   and new.winner_seat is not null)
+                   and new.winner_seat is not null
+                   and current_setting('game.aborted', true) is distinct from 'on')
 execute function public._skipbo_record_result();
 
 drop trigger if exists uno_games_record_result on public.uno_games;
@@ -5225,8 +5345,7 @@ create table if not exists public.push_preferences (
   user_id uuid primary key references auth.users(id) on delete cascade,
   muted_types text[] not null default '{}'
     check (muted_types <@ array['friend_request', 'friend_accepted', 'game_invite',
-                                'system_info', 'system_alert', 'your_turn',
-                                'game_started']::text[]),
+                                'system_info', 'system_alert']::text[]),
   updated_at timestamptz not null default now()
 );
 
@@ -5300,6 +5419,30 @@ grant insert (message, stack, url, user_agent, app_version) on public.client_err
 
 grant select, delete on public.client_errors to authenticated;
 
+-- Schreiben darf jeder (auch anonym) – ohne Grenze ließe sich damit der Speicher füllen.
+-- Zu viele Meldungen werden still verworfen, der Client merkt nichts.
+-- ponytail: globales Limit, je IP/Nutzer drosseln, falls echte Fehler verloren gehen.
+create or replace function public._client_errors_throttle()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if (select count(*) from public.client_errors
+      where created_at > now() - interval '1 minute') >= 30 then
+    return null;
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public._client_errors_throttle() from public, anon, authenticated;
+
+drop trigger if exists client_errors_throttle on public.client_errors;
+create trigger client_errors_throttle
+before insert on public.client_errors
+for each row execute function public._client_errors_throttle();
+
 select cron.schedule(
   'cleanup-client-errors', '43 4 * * *',
   $$delete from public.client_errors where created_at < now() - interval '30 days'$$
@@ -5361,15 +5504,12 @@ revoke execute on function public.transfer_lobby_host(uuid, uuid) from public, a
 grant execute on function public.transfer_lobby_host(uuid, uuid) to authenticated;
 
 -- ===========================================================================
--- Push: presence, turns and game start
+-- Push: presence
 -- ===========================================================================
 
--- Push nur, wenn man gerade nicht in der App ist, und neu auch fürs Spielen:
---   your_turn     Du bist dran (Flip 7, Skip-Bo, Uno; auch Zielwahl bei Flip 7)
---   game_started  Der Host hat das Spiel in deiner Lobby gestartet
+-- Push nur, wenn man gerade nicht in der App ist. Spiel-Pushes („Du bist dran“, Spielstart)
+-- gibt es bewusst nicht (zu viele Nachrichten).
 -- Anwesenheit: Die sichtbare App meldet sich alle 30 s (gilt 45 s), beim Verlassen sofort ab.
--- Spiel-Pushes einer Lobby tragen denselben Tag und ersetzen sich auf dem Gerät gegenseitig.
--- send-push muss dafür neu deployt werden (nimmt jetzt url und tag mit).
 
 create table if not exists public.user_presence (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -5447,133 +5587,3965 @@ $$;
 revoke execute on function public._send_push(uuid, text, text, text, text, text)
   from public, anon, authenticated;
 
--- Du bist dran: an den Spieler auf dem Platz, der neu am Zug ist
-create or replace function public._push_turn(
-  p_lobby_id uuid,
-  p_user_id uuid,
-  p_message text
-)
+-- ===========================================================================
+-- Blackjack
+-- ===========================================================================
+
+-- Blackjack als fünftes Lobby-Spiel: 1–5 Spieler gegen einen Dealer, den der Server spielt.
+-- Startgeld stellt der Host in der Lobby ein (game_settings {"startMoney": n}, ohne = 1000).
+-- Wie Uno: alle Züge über die security-definer-Funktionen unten, Clients lesen nur Spiel,
+-- Spieler und Hände; jede öffentliche Funktion erhöht game_ticks genau einmal am Ende.
+--
+-- Regeln: 6 Decks (neu gemischt unter 78 Karten), Blackjack zahlt 3:2 (abgerundet),
+-- Dealer steht auf allen 17, Peek bei Ass/Zehn, Verdoppeln auf zwei Karten, einmal Teilen
+-- (geteilte Asse bekommen je eine Karte). Einsatz ab 10, nach oben nur durch das Guthaben
+-- begrenzt (All-in). Keine Pause nach der Runde: Nach
+-- der Abrechnung beginnt sofort das Setzen der nächsten Runde, die alten Karten bleiben bis
+-- zum nächsten Austeilen liegen. Kann niemand mehr setzen (Guthaben < 10), endet das Spiel.
+--
+-- Karten: Rang + Farbe, z. B. 'AS', '10H', 'KD' (S/H/D/C). Die Hände sind öffentlich (alle
+-- Karten liegen offen). Geheim sind nur der Schuh und die verdeckte Dealerkarte
+-- (blackjack_shoes, ohne Policy und ohne Grants); round_log/last_events nennen die
+-- verdeckte Karte erst beim Aufdecken.
+
+-- ===========================================================================
+-- Blackjack: schema
+-- ===========================================================================
+
+create table if not exists public.blackjack_games (
+  id uuid primary key default gen_random_uuid(),
+  lobby_id uuid not null unique references public.multiplayer_lobbies(id) on delete cascade,
+  status text not null default 'playing' check (status in ('playing', 'finished')),
+  -- betting: Einsätze für round_no; playing: Runde round_no läuft
+  phase text not null default 'betting' check (phase in ('betting', 'playing')),
+  seat_count smallint not null check (seat_count between 1 and 5),
+  start_money integer not null check (start_money between 100 and 10000),
+  -- +1 bei jeder Abrechnung
+  round_no integer not null default 1,
+  -- null beim Setzen
+  turn_seat smallint,
+  turn_hand smallint,
+  -- Nur offene Dealerkarten; die verdeckte liegt in blackjack_shoes.hole
+  dealer_cards text[] not null default '{}',
+  -- Der Client zeichnet hinter dealer_cards einen Rücken
+  dealer_hole boolean not null default false,
+  shoe_count smallint not null default 0,
+  -- Erster Einsatz der Runde: startet die 20 s bis zum Austeilen
+  first_bet_at timestamptz,
+  last_events jsonb not null default '[]' check (jsonb_typeof(last_events) = 'array'),
+  round_log jsonb not null default '[]' check (jsonb_typeof(round_log) = 'array'),
+  -- Neu bei jedem Zugwechsel und jeder gezogenen Karte; null beim Setzen
+  waiting_since timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- user_id ohne Fremdschlüssel, wie uno_players
+create table if not exists public.blackjack_players (
+  game_id uuid not null references public.blackjack_games(id) on delete cascade,
+  user_id uuid not null,
+  seat smallint not null check (seat between 0 and 4),
+  state text not null default 'active' check (state in ('active', 'left')),
+  balance integer not null check (balance >= 0),
+  -- Einsatz fürs nächste Austeilen (schon vom Guthaben abgezogen); 0 = noch keiner
+  bet integer not null default 0 check (bet >= 0),
+  -- „Nochmal · 50“
+  last_bet integer not null default 0,
+  left_at timestamptz,
+  primary key (game_id, user_id),
+  unique (game_id, seat)
+);
+
+-- Hände der laufenden bzw. letzten Runde (öffentlich); hand_no 1 nur nach dem Teilen
+create table if not exists public.blackjack_hands (
+  game_id uuid not null,
+  seat smallint not null,
+  hand_no smallint not null check (hand_no in (0, 1)),
+  cards text[] not null default '{}',
+  bet integer not null check (bet > 0),
+  doubled boolean not null default false,
+  state text not null default 'playing' check (state in ('playing', 'stood', 'bust', 'blackjack')),
+  -- null bis zur Abrechnung; payout inklusive Einsatz
+  result text check (result in ('win', 'blackjack', 'push', 'lose')),
+  payout integer,
+  primary key (game_id, seat, hand_no),
+  foreign key (game_id, seat) references public.blackjack_players(game_id, seat) on delete cascade
+);
+
+-- Geheim: keine Policy, keine Grants, nicht in der Realtime-Publikation.
+create table if not exists public.blackjack_shoes (
+  game_id uuid primary key references public.blackjack_games(id) on delete cascade,
+  -- cards[1] ist die nächste Karte
+  cards text[] not null,
+  -- Verdeckte Dealerkarte bis zum Aufdecken
+  hole text
+);
+
+-- ===========================================================================
+-- Blackjack: row level security and privileges
+-- ===========================================================================
+
+alter table public.blackjack_games enable row level security;
+
+alter table public.blackjack_players enable row level security;
+
+alter table public.blackjack_hands enable row level security;
+
+alter table public.blackjack_shoes enable row level security;
+
+drop policy if exists "Multiplayer users can read blackjack games" on public.blackjack_games;
+create policy "Multiplayer users can read blackjack games"
+  on public.blackjack_games for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Multiplayer users can read blackjack players" on public.blackjack_players;
+create policy "Multiplayer users can read blackjack players"
+  on public.blackjack_players for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Multiplayer users can read blackjack hands" on public.blackjack_hands;
+create policy "Multiplayer users can read blackjack hands"
+  on public.blackjack_hands for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Guests only see their blackjack game" on public.blackjack_games;
+create policy "Guests only see their blackjack game"
+  on public.blackjack_games as restrictive for select
+  to authenticated
+  using (not (select public.is_guest()) or lobby_id = (select public.my_lobby_id()));
+
+drop policy if exists "Guests only see their blackjack players" on public.blackjack_players;
+create policy "Guests only see their blackjack players"
+  on public.blackjack_players as restrictive for select
+  to authenticated
+  using (
+    not (select public.is_guest())
+    or game_id = (
+      select g.id from public.blackjack_games g where g.lobby_id = (select public.my_lobby_id())
+    )
+  );
+
+drop policy if exists "Guests only see their blackjack hands" on public.blackjack_hands;
+create policy "Guests only see their blackjack hands"
+  on public.blackjack_hands as restrictive for select
+  to authenticated
+  using (
+    not (select public.is_guest())
+    or game_id = (
+      select g.id from public.blackjack_games g where g.lobby_id = (select public.my_lobby_id())
+    )
+  );
+
+revoke all on public.blackjack_games, public.blackjack_players, public.blackjack_hands,
+  public.blackjack_shoes from anon;
+
+revoke insert, update, delete, truncate, references, trigger
+  on public.blackjack_games, public.blackjack_players, public.blackjack_hands from authenticated;
+
+grant select on public.blackjack_games, public.blackjack_players, public.blackjack_hands
+  to authenticated;
+
+revoke all on public.blackjack_shoes from authenticated;
+
+-- ===========================================================================
+-- Blackjack: engine (intern, nicht über /rest/v1/rpc aufrufbar)
+-- ===========================================================================
+
+-- 6 Decks = 312 Karten, gemischt.
+create or replace function public._blackjack_new_shoe()
+returns text[]
+language sql
+volatile
+set search_path = ''
+as $$
+  select array_agg(r || s order by gen_random_uuid())
+  from unnest(array['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']) as r,
+       unnest(array['S', 'H', 'D', 'C']) as s,
+       generate_series(1, 6);
+$$;
+
+-- Bester Wert einer Hand: Ass 1, einmal 11, wenn es nicht überkauft. Eine Karte allein
+-- ergibt ihren Teilen-Wert (Ass 11, Bilder 10).
+create or replace function public._blackjack_total(p_cards text[])
+returns smallint
+language sql
+immutable
+set search_path = ''
+as $$
+  select (case when bool_or(r = 'A') and sum(v) + 10 <= 21 then sum(v) + 10
+               else coalesce(sum(v), 0) end)::smallint
+  from (
+    select left(c, -1) as r,
+           case when left(c, -1) = 'A' then 1
+                when left(c, -1) in ('J', 'Q', 'K') then 10
+                else left(c, -1)::integer end as v
+    from unnest(p_cards) as c
+  ) cards;
+$$;
+
+-- Event-Form: {t, seat?, hand?, ...}. Zusätzlich ins round_log mit Runde und Zeit.
+create or replace function public._blackjack_log(p_game_id uuid, p_event jsonb)
+returns void
+language sql
+security definer set search_path = ''
+as $$
+  update public.blackjack_games
+  set last_events = last_events || jsonb_build_array(p_event),
+      -- ponytail: Verlauf auf 60 Einträge begrenzt und bei jeder Aktion mitgeladen (wie Uno)
+      round_log = (
+        select coalesce(jsonb_agg(l.e order by l.i), '[]'::jsonb)
+        from jsonb_array_elements(
+               round_log || jsonb_build_array(p_event || jsonb_build_object('r', round_no, 'at', now()))
+             ) with ordinality as l(e, i)
+        where l.i > jsonb_array_length(round_log) - 59
+      )
+  where id = p_game_id;
+$$;
+
+-- Nächste Karte aus dem Schuh. Leer mitten in der Runde: neuer Schuh (Sicherheitsnetz,
+-- normal wird vor dem Austeilen gemischt).
+create or replace function public._blackjack_draw(p_game_id uuid)
+returns text
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_cards text[];
+begin
+  select cards into v_cards from public.blackjack_shoes where game_id = p_game_id for update;
+  if cardinality(v_cards) = 0 then
+    v_cards := public._blackjack_new_shoe();
+  end if;
+
+  update public.blackjack_shoes set cards = v_cards[2:] where game_id = p_game_id;
+  update public.blackjack_games set shoe_count = cardinality(v_cards) - 1 where id = p_game_id;
+  return v_cards[1];
+end;
+$$;
+
+-- Aufdecken, Dealer zieht bis 17, jede Hand abrechnen. Danach direkt Setzen für die nächste
+-- Runde; kann niemand mehr setzen, ist das Spiel vorbei.
+create or replace function public._blackjack_settle(p_game_id uuid)
 returns void
 language plpgsql
 security definer set search_path = ''
 as $$
+declare
+  v_hole text;
+  dealer text[];
+  dealer_total smallint;
+  dealer_bj boolean;
+  hand record;
 begin
-  if p_user_id is not null then
-    perform public._send_push(p_user_id, 'your_turn', 'Du bist dran', p_message,
-                              'multiplayer/' || p_lobby_id, 'game-' || p_lobby_id);
+  select g.dealer_cards || array_remove(array[s.hole], null), s.hole into dealer, v_hole
+  from public.blackjack_games g join public.blackjack_shoes s on s.game_id = g.id
+  where g.id = p_game_id;
+  update public.blackjack_shoes set hole = null where game_id = p_game_id;
+  if v_hole is not null then
+    perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'reveal', 'card', v_hole));
+  end if;
+
+  -- Gegen überkaufte Hände und Blackjacks muss der Dealer nicht ziehen
+  if exists (select 1 from public.blackjack_hands
+             where game_id = p_game_id and state in ('playing', 'stood')) then
+    while public._blackjack_total(dealer) < 17 loop
+      dealer := dealer || public._blackjack_draw(p_game_id);
+    end loop;
+  end if;
+  dealer_total := public._blackjack_total(dealer);
+  dealer_bj := cardinality(dealer) = 2 and dealer_total = 21;
+  perform public._blackjack_log(p_game_id, jsonb_build_object(
+    't', 'dealer', 'n', dealer_total, 'bj', dealer_bj));
+
+  update public.blackjack_hands h
+  set result = r.result,
+      payout = case r.result when 'blackjack' then h.bet + h.bet * 3 / 2
+                             when 'win' then h.bet * 2
+                             when 'push' then h.bet
+                             else 0 end
+  from (
+    select seat, hand_no,
+           case when state = 'bust' then 'lose'
+                when state = 'blackjack' and dealer_bj then 'push'
+                when state = 'blackjack' then 'blackjack'
+                when dealer_bj then 'lose'
+                when dealer_total > 21 or public._blackjack_total(cards) > dealer_total then 'win'
+                when public._blackjack_total(cards) = dealer_total then 'push'
+                else 'lose' end as result
+    from public.blackjack_hands where game_id = p_game_id
+  ) r
+  where h.game_id = p_game_id and h.seat = r.seat and h.hand_no = r.hand_no;
+
+  update public.blackjack_players p
+  set balance = p.balance + h.total
+  from (select seat, sum(payout)::integer as total from public.blackjack_hands
+        where game_id = p_game_id group by seat) h
+  where p.game_id = p_game_id and p.seat = h.seat;
+
+  for hand in
+    select seat, hand_no, result, payout - bet as delta from public.blackjack_hands
+    where game_id = p_game_id order by seat, hand_no
+  loop
+    perform public._blackjack_log(p_game_id, jsonb_build_object(
+      't', 'result', 'seat', hand.seat, 'hand', hand.hand_no, 'k', hand.result, 'n', hand.delta));
+  end loop;
+
+  update public.blackjack_games
+  set dealer_cards = dealer, dealer_hole = false, round_no = round_no + 1, phase = 'betting',
+      turn_seat = null, turn_hand = null, waiting_since = null, first_bet_at = null
+  where id = p_game_id;
+
+  if not exists (select 1 from public.blackjack_players
+                 where game_id = p_game_id and state = 'active' and balance >= 10) then
+    update public.blackjack_games set status = 'finished' where id = p_game_id;
+    perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'broke'));
   end if;
 end;
 $$;
 
-create or replace function public._flip7_push_turn()
-returns trigger
+-- Nächste offene Hand in Sitzreihenfolge; keine mehr: abrechnen.
+create or replace function public._blackjack_next_turn(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_seat smallint;
+  v_hand smallint;
+begin
+  select h.seat, h.hand_no into v_seat, v_hand
+  from public.blackjack_hands h
+  join public.blackjack_players p on p.game_id = h.game_id and p.seat = h.seat
+  where h.game_id = p_game_id and h.state = 'playing' and p.state = 'active'
+  order by h.seat, h.hand_no
+  limit 1;
+
+  if v_seat is null then
+    perform public._blackjack_settle(p_game_id);
+  else
+    update public.blackjack_games
+    set phase = 'playing', turn_seat = v_seat, turn_hand = v_hand, waiting_since = now()
+    where id = p_game_id;
+  end if;
+end;
+$$;
+
+-- Austeilen wie am echten Tisch: je Hand eine Karte, Dealer offen, je Hand die zweite,
+-- Dealer verdeckt. Hat der Dealer Blackjack (Peek), wird sofort abgerechnet.
+create or replace function public._blackjack_deal(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+  dealer text[];
+  v_hole text;
+  v_seat smallint;
+begin
+  select * into game from public.blackjack_games where id = p_game_id;
+
+  if game.shoe_count < 78 then
+    update public.blackjack_shoes set cards = public._blackjack_new_shoe() where game_id = p_game_id;
+    update public.blackjack_games set shoe_count = 312 where id = p_game_id;
+    perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'shuffle'));
+  end if;
+
+  delete from public.blackjack_hands where game_id = p_game_id;
+  insert into public.blackjack_hands (game_id, seat, hand_no, bet)
+  select p_game_id, seat, 0, bet from public.blackjack_players
+  where game_id = p_game_id and state = 'active' and bet > 0;
+  update public.blackjack_players set bet = 0 where game_id = p_game_id;
+
+  for v_seat in select seat from public.blackjack_hands where game_id = p_game_id order by seat loop
+    update public.blackjack_hands set cards = cards || public._blackjack_draw(p_game_id)
+    where game_id = p_game_id and seat = v_seat;
+  end loop;
+  dealer := array[public._blackjack_draw(p_game_id)];
+  for v_seat in select seat from public.blackjack_hands where game_id = p_game_id order by seat loop
+    update public.blackjack_hands set cards = cards || public._blackjack_draw(p_game_id)
+    where game_id = p_game_id and seat = v_seat;
+  end loop;
+  v_hole := public._blackjack_draw(p_game_id);
+  update public.blackjack_shoes set hole = v_hole where game_id = p_game_id;
+
+  update public.blackjack_hands set state = 'blackjack'
+  where game_id = p_game_id and public._blackjack_total(cards) = 21;
+  update public.blackjack_games
+  set dealer_cards = dealer, dealer_hole = true, first_bet_at = null
+  where id = p_game_id;
+  perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'deal', 'round', game.round_no));
+
+  if public._blackjack_total(dealer || v_hole) = 21 then
+    perform public._blackjack_settle(p_game_id);
+  else
+    perform public._blackjack_next_turn(p_game_id);
+  end if;
+end;
+$$;
+
+-- Alle, die setzen können (Guthaben ab 10), haben gesetzt: austeilen. Gibt true zurück,
+-- wenn ausgeteilt wurde.
+create or replace function public._blackjack_deal_if_ready(p_game_id uuid)
+returns boolean
 language plpgsql
 security definer set search_path = ''
 as $$
 begin
-  if new.status <> 'playing' then
-    return null;
+  if exists (select 1 from public.blackjack_players
+             where game_id = p_game_id and state = 'active' and bet > 0)
+     and not exists (select 1 from public.blackjack_players
+                     where game_id = p_game_id and state = 'active' and bet = 0 and balance >= 10) then
+    perform public._blackjack_deal(p_game_id);
+    return true;
   end if;
-  if new.pending_seat is not null and new.pending_seat is distinct from old.pending_seat then
-    perform public._push_turn(new.lobby_id,
-      (select user_id from public.flip7_players where game_id = new.id and seat = new.pending_seat),
-      'Flip 7 – wähle, wer deine Aktionskarte bekommt.');
-  elsif new.turn_seat is not null and new.turn_seat is distinct from old.turn_seat then
-    perform public._push_turn(new.lobby_id,
-      (select user_id from public.flip7_players where game_id = new.id and seat = new.turn_seat),
-      'Flip 7 – zieh eine Karte oder sichere deine Punkte.');
-  end if;
-  return null;
+  return false;
 end;
 $$;
 
-create or replace function public._skipbo_push_turn()
-returns trigger
+-- Ein Zug auf der Hand am Zug (Prüfung, wer dran ist, macht der Aufrufer).
+-- skip: wie stand, nur anders geloggt (Zeit abgelaufen).
+create or replace function public._blackjack_apply(p_game_id uuid, p_action text)
+returns void
 language plpgsql
 security definer set search_path = ''
 as $$
+declare
+  game public.blackjack_games;
+  hand public.blackjack_hands;
+  v_balance integer;
+  card text;
+  card2 text;
+  v_total smallint;
 begin
-  if new.status = 'playing' and new.turn_seat is not null
-     and new.turn_seat is distinct from old.turn_seat then
-    perform public._push_turn(new.lobby_id,
-      (select user_id from public.skipbo_players where game_id = new.id and seat = new.turn_seat),
-      'Skip-Bo – du bist am Zug.');
+  select * into game from public.blackjack_games where id = p_game_id;
+  select * into hand from public.blackjack_hands
+  where game_id = p_game_id and seat = game.turn_seat and hand_no = game.turn_hand;
+  select balance into v_balance from public.blackjack_players
+  where game_id = p_game_id and seat = game.turn_seat;
+
+  if p_action = 'hit' then
+    card := public._blackjack_draw(p_game_id);
+    v_total := public._blackjack_total(hand.cards || card);
+    update public.blackjack_hands
+    set cards = cards || card,
+        state = case when v_total > 21 then 'bust' when v_total = 21 then 'stood' else 'playing' end
+    where game_id = p_game_id and seat = hand.seat and hand_no = hand.hand_no;
+    perform public._blackjack_log(p_game_id, jsonb_build_object(
+      't', 'hit', 'seat', hand.seat, 'hand', hand.hand_no, 'card', card, 'n', v_total));
+    if v_total >= 21 then
+      perform public._blackjack_next_turn(p_game_id);
+    else
+      update public.blackjack_games set waiting_since = now() where id = p_game_id;
+    end if;
+
+  elsif p_action in ('stand', 'skip') then
+    update public.blackjack_hands set state = 'stood'
+    where game_id = p_game_id and seat = hand.seat and hand_no = hand.hand_no;
+    perform public._blackjack_log(p_game_id, jsonb_build_object(
+      't', p_action, 'seat', hand.seat, 'hand', hand.hand_no,
+      'n', public._blackjack_total(hand.cards)));
+    perform public._blackjack_next_turn(p_game_id);
+
+  elsif p_action = 'double' then
+    if cardinality(hand.cards) <> 2 then
+      raise exception 'Verdoppeln geht nur mit zwei Karten.';
+    end if;
+    if v_balance < hand.bet then
+      raise exception 'Dafür reicht dein Guthaben nicht.';
+    end if;
+    card := public._blackjack_draw(p_game_id);
+    v_total := public._blackjack_total(hand.cards || card);
+    update public.blackjack_players set balance = balance - hand.bet
+    where game_id = p_game_id and seat = hand.seat;
+    update public.blackjack_hands
+    set cards = cards || card, bet = bet * 2, doubled = true,
+        state = case when v_total > 21 then 'bust' else 'stood' end
+    where game_id = p_game_id and seat = hand.seat and hand_no = hand.hand_no;
+    perform public._blackjack_log(p_game_id, jsonb_build_object(
+      't', 'double', 'seat', hand.seat, 'hand', hand.hand_no, 'card', card, 'n', v_total));
+    perform public._blackjack_next_turn(p_game_id);
+
+  elsif p_action = 'split' then
+    if cardinality(hand.cards) <> 2
+       or public._blackjack_total(hand.cards[1:1]) <> public._blackjack_total(hand.cards[2:2]) then
+      raise exception 'Teilen geht nur mit zwei gleichwertigen Karten.';
+    end if;
+    if exists (select 1 from public.blackjack_hands
+               where game_id = p_game_id and seat = hand.seat and hand_no = 1) then
+      raise exception 'Du hast schon geteilt.';
+    end if;
+    if v_balance < hand.bet then
+      raise exception 'Dafür reicht dein Guthaben nicht.';
+    end if;
+    update public.blackjack_players set balance = balance - hand.bet
+    where game_id = p_game_id and seat = hand.seat;
+    card := public._blackjack_draw(p_game_id);
+    card2 := public._blackjack_draw(p_game_id);
+    -- Je Hand eine neue Karte; 21 nach dem Teilen ist kein Blackjack. Geteilte Asse
+    -- bekommen nur diese eine Karte.
+    insert into public.blackjack_hands (game_id, seat, hand_no, cards, bet, state)
+    values (p_game_id, hand.seat, 1, array[hand.cards[2], card2], hand.bet,
+            case when left(hand.cards[2], -1) = 'A'
+                      or public._blackjack_total(array[hand.cards[2], card2]) = 21
+                 then 'stood' else 'playing' end);
+    update public.blackjack_hands
+    set cards = array[hand.cards[1], card],
+        state = case when left(hand.cards[1], -1) = 'A'
+                          or public._blackjack_total(array[hand.cards[1], card]) = 21
+                     then 'stood' else 'playing' end
+    where game_id = p_game_id and seat = hand.seat and hand_no = 0;
+    perform public._blackjack_log(p_game_id, jsonb_build_object(
+      't', 'split', 'seat', hand.seat, 'cards', jsonb_build_array(card, card2)));
+    perform public._blackjack_next_turn(p_game_id);
+
+  else
+    raise exception 'Unbekannter Zug.';
   end if;
-  return null;
 end;
 $$;
 
-create or replace function public._uno_push_turn()
-returns trigger
+-- Ersetzt ein altes Spiel der Lobby. Sitze in Beitrittsreihenfolge, Host zuerst.
+-- Der Aufrufer (start_lobby) hält die Sperren auf Lobby und Mitglieder.
+create or replace function public._blackjack_create_game(p_lobby_id uuid)
+returns void
 language plpgsql
 security definer set search_path = ''
 as $$
+declare
+  lobby public.multiplayer_lobbies;
+  new_game_id uuid;
+  money integer;
 begin
-  if new.status = 'playing' and new.turn_seat is not null
-     and new.turn_seat is distinct from old.turn_seat then
-    perform public._push_turn(new.lobby_id,
-      (select user_id from public.uno_players where game_id = new.id and seat = new.turn_seat),
-      'Uno – du bist am Zug.');
-  end if;
-  return null;
+  select * into lobby from public.multiplayer_lobbies where id = p_lobby_id;
+  delete from public.blackjack_games where lobby_id = p_lobby_id;
+  money := coalesce((lobby.game_settings ->> 'startMoney')::integer, 1000);
+
+  insert into public.blackjack_games (lobby_id, seat_count, start_money, shoe_count)
+  values (p_lobby_id,
+          (select count(*) from public.multiplayer_lobby_members where lobby_id = p_lobby_id),
+          money, 312)
+  returning id into new_game_id;
+
+  insert into public.blackjack_players (game_id, user_id, seat, balance)
+  select new_game_id, m.user_id,
+         (row_number() over (order by (m.user_id = lobby.host_user_id) desc, m.joined_at, m.user_id) - 1),
+         money
+  from public.multiplayer_lobby_members m
+  where m.lobby_id = p_lobby_id;
+
+  insert into public.blackjack_shoes (game_id, cards) values (new_game_id, public._blackjack_new_shoe());
+
+  -- Erste Tick-Zeile jetzt, solange die Lobby gesperrt ist (wie _uno_create_game)
+  perform public._game_tick(p_lobby_id);
 end;
 $$;
 
-drop trigger if exists flip7_games_push_turn on public.flip7_games;
-create trigger flip7_games_push_turn
-after update of turn_seat, pending_seat on public.flip7_games
-for each row execute function public._flip7_push_turn();
+-- Ein Spieler verlässt das Spiel (Kick, Verlassen, Konto gelöscht). Wirft nie, damit
+-- Verlassen der Lobby immer klappt; ein Fehler rollt nur den Spielteil zurück.
+-- Einsätze auf dem Tisch verfallen.
+create or replace function public._blackjack_remove_player(p_game_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+  player public.blackjack_players;
+begin
+  begin
+    select * into game from public.blackjack_games where id = p_game_id;
+    if not found then
+      return;
+    end if;
 
-drop trigger if exists skipbo_games_push_turn on public.skipbo_games;
-create trigger skipbo_games_push_turn
-after update of turn_seat on public.skipbo_games
-for each row execute function public._skipbo_push_turn();
+    select * into player
+    from public.blackjack_players where game_id = p_game_id and user_id = p_user_id;
+    if not found or player.state = 'left' then
+      return;
+    end if;
 
-drop trigger if exists uno_games_push_turn on public.uno_games;
-create trigger uno_games_push_turn
-after update of turn_seat on public.uno_games
-for each row execute function public._uno_push_turn();
+    update public.blackjack_games set last_events = '[]' where id = p_game_id;
+    delete from public.blackjack_hands where game_id = p_game_id and seat = player.seat;
+    update public.blackjack_players set state = 'left', left_at = now(), bet = 0
+    where game_id = p_game_id and seat = player.seat;
+    perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'left', 'seat', player.seat));
 
--- Spielstart: an alle in der Lobby außer dem Host
-create or replace function public._push_game_started()
+    if game.status = 'playing' then
+      if not exists (select 1 from public.blackjack_players
+                     where game_id = p_game_id and state = 'active'
+                       and (bet > 0 or balance >= 10 or game.phase = 'playing')) then
+        update public.blackjack_games
+        set status = 'finished', phase = 'betting', turn_seat = null, turn_hand = null,
+            waiting_since = null
+        where id = p_game_id;
+      elsif game.phase = 'playing' and game.turn_seat = player.seat then
+        perform public._blackjack_next_turn(p_game_id);
+      elsif game.phase = 'betting' then
+        perform public._blackjack_deal_if_ready(p_game_id);
+      end if;
+    end if;
+  exception when others then
+    raise warning 'Blackjack: Spieler % konnte nicht aus Spiel % entfernt werden: %',
+      p_user_id, p_game_id, sqlerrm;
+  end;
+end;
+$$;
+
+create or replace function public._blackjack_on_member_removed()
 returns trigger
 language plpgsql
 security definer set search_path = ''
 as $$
 declare
-  v_host text;
-  v_game text;
+  v_game_id uuid;
 begin
-  select coalesce(display_name, username) into v_host
-  from public.profiles where id = new.host_user_id;
-  v_game := case new.game_key
-              when 'flip-7' then 'Flip 7'
-              when 'skip-bo' then 'Skip-Bo'
-              when 'uno' then 'Uno'
-              else 'das Spiel'
-            end;
+  -- Wird die ganze Lobby gelöscht, verschwindet das Spiel ohnehin
+  if not exists (select 1 from public.multiplayer_lobbies where id = old.lobby_id) then
+    return null;
+  end if;
 
-  perform public._send_push(m.user_id, 'game_started', 'Das Spiel geht los',
-                            coalesce(v_host, 'Der Host') || ' hat ' || v_game || ' gestartet.',
-                            'multiplayer/' || new.id, 'game-' || new.id)
-  from public.multiplayer_lobby_members m
-  where m.lobby_id = new.id and m.user_id <> new.host_user_id;
+  select id into v_game_id
+  from public.blackjack_games where lobby_id = old.lobby_id
+  for update;
+
+  if v_game_id is not null then
+    perform public._blackjack_remove_player(v_game_id, old.user_id);
+    perform public._game_tick(old.lobby_id);
+  end if;
   return null;
 end;
 $$;
 
-drop trigger if exists multiplayer_lobbies_push_started on public.multiplayer_lobbies;
-create trigger multiplayer_lobbies_push_started
-after update of status on public.multiplayer_lobbies
-for each row when (old.status = 'open' and new.status = 'started')
-execute function public._push_game_started();
+-- Läuft neben den Triggern der anderen Spiele; jeder findet nur sein eigenes Spiel.
+drop trigger if exists multiplayer_lobby_members_blackjack_leave on public.multiplayer_lobby_members;
+create trigger multiplayer_lobby_members_blackjack_leave
+after delete on public.multiplayer_lobby_members
+for each row execute function public._blackjack_on_member_removed();
 
-revoke execute on function public._push_turn(uuid, uuid, text) from public, anon, authenticated;
+-- Sitz des Aufrufers, wenn er noch mitspielt.
+create or replace function public._blackjack_my_seat(p_game_id uuid)
+returns smallint
+language plpgsql
+stable
+security definer set search_path = ''
+as $$
+declare
+  my_seat smallint;
+begin
+  select seat into my_seat
+  from public.blackjack_players
+  where game_id = p_game_id and user_id = auth.uid() and state = 'active';
 
-revoke execute on function public._flip7_push_turn() from public, anon, authenticated;
+  if my_seat is null then
+    raise exception 'Du spielst in diesem Spiel nicht mit.';
+  end if;
+  return my_seat;
+end;
+$$;
 
-revoke execute on function public._skipbo_push_turn() from public, anon, authenticated;
+-- Sperrt das Spiel für eine öffentliche Funktion (immer zuerst, vor allen Schreibzugriffen).
+create or replace function public._blackjack_lock(p_game_id uuid)
+returns public.blackjack_games
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
 
-revoke execute on function public._uno_push_turn() from public, anon, authenticated;
+  select * into game from public.blackjack_games where id = p_game_id for update;
+  if game.id is null then
+    raise exception 'Dieses Spiel gibt es nicht mehr.';
+  end if;
+  return game;
+end;
+$$;
 
-revoke execute on function public._push_game_started() from public, anon, authenticated;
+create or replace function public._blackjack_is_host(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.blackjack_games g
+    join public.multiplayer_lobbies l on l.id = g.lobby_id
+    where g.id = p_game_id and l.host_user_id = auth.uid()
+  );
+$$;
+
+-- Gemeinsame Prüfung der Zug-Aktionen: Stand wie gesehen (sonst null = still ignorieren),
+-- ich bin am Zug. Setzt last_events zurück.
+create or replace function public._blackjack_begin_turn(p_game_id uuid, p_waiting_since timestamptz)
+returns public.blackjack_games
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+  my_seat smallint;
+begin
+  game := public._blackjack_lock(p_game_id);
+  my_seat := public._blackjack_my_seat(p_game_id);
+
+  if game.waiting_since is distinct from p_waiting_since then
+    return null;
+  end if;
+
+  if game.status <> 'playing' or game.phase <> 'playing' or game.turn_seat is distinct from my_seat then
+    raise exception 'Du bist nicht am Zug.';
+  end if;
+
+  update public.blackjack_games set last_events = '[]' where id = p_game_id returning * into game;
+  return game;
+end;
+$$;
+
+revoke execute on function public._blackjack_new_shoe() from public, anon, authenticated;
+
+revoke execute on function public._blackjack_total(text[]) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_log(uuid, jsonb) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_draw(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_settle(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_next_turn(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_deal(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_deal_if_ready(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_apply(uuid, text) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_create_game(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_remove_player(uuid, uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_on_member_removed() from public, anon, authenticated;
+
+revoke execute on function public._blackjack_my_seat(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_lock(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_is_host(uuid) from public, anon, authenticated;
+
+revoke execute on function public._blackjack_begin_turn(uuid, timestamptz) from public, anon, authenticated;
+
+-- ===========================================================================
+-- Blackjack: öffentliche Funktionen
+-- ===========================================================================
+
+-- Einsatz für die Runde p_round_no (wie gesehen; Doppeltipp und veraltete Ansicht tun
+-- nichts). Haben alle gesetzt, die setzen können, wird sofort ausgeteilt.
+create or replace function public.blackjack_bet(p_game_id uuid, p_round_no integer, p_amount integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+  my_seat smallint;
+  me public.blackjack_players;
+begin
+  game := public._blackjack_lock(p_game_id);
+  my_seat := public._blackjack_my_seat(p_game_id);
+  select * into me from public.blackjack_players where game_id = p_game_id and seat = my_seat;
+
+  if game.status <> 'playing' or game.phase <> 'betting'
+     or game.round_no is distinct from p_round_no or me.bet > 0 then
+    return;
+  end if;
+
+  if p_amount is null or p_amount < 10 then
+    raise exception 'Der Einsatz muss mindestens 10 sein.';
+  end if;
+
+  if p_amount > me.balance then
+    raise exception 'So viel Guthaben hast du nicht.';
+  end if;
+
+  update public.blackjack_players
+  set balance = balance - p_amount, bet = p_amount, last_bet = p_amount
+  where game_id = p_game_id and seat = me.seat;
+  update public.blackjack_games
+  set last_events = '[]', first_bet_at = coalesce(first_bet_at, now())
+  where id = p_game_id;
+  perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'bet', 'seat', me.seat, 'n', p_amount));
+
+  perform public._blackjack_deal_if_ready(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Setzzeit abgelaufen: Jeder am Tisch darf austeilen lassen (Client wartet 20 s, 15 s
+-- lassen Luft für Verzögerung). Wer nicht gesetzt hat, setzt diese Runde aus.
+create or replace function public.blackjack_deal(p_game_id uuid, p_round_no integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+begin
+  game := public._blackjack_lock(p_game_id);
+  perform public._blackjack_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.phase <> 'betting'
+     or game.round_no is distinct from p_round_no
+     or game.first_bet_at is null or game.first_bet_at > now() - interval '15 seconds'
+     or not exists (select 1 from public.blackjack_players
+                    where game_id = p_game_id and state = 'active' and bet > 0) then
+    return;
+  end if;
+
+  update public.blackjack_games set last_events = '[]' where id = p_game_id;
+  perform public._blackjack_deal(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Ein Zug auf der Hand am Zug: hit (Ziehen), stand (Halten), double (Verdoppeln), split
+-- (Teilen). Nimmt das waiting_since, das der Client gesehen hat.
+create or replace function public.blackjack_play(p_game_id uuid, p_waiting_since timestamptz, p_action text)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+begin
+  if p_action is null or p_action not in ('hit', 'stand', 'double', 'split') then
+    raise exception 'Unbekannter Zug.';
+  end if;
+
+  game := public._blackjack_begin_turn(p_game_id, p_waiting_since);
+  if game.id is null then
+    return;
+  end if;
+
+  perform public._blackjack_apply(p_game_id, p_action);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Zeit abgelaufen: Die Hand am Zug hält. Jeder am Tisch (und der Host) darf das auslösen,
+-- nur für die Lage, die er gesehen hat, und erst nach einer Weile (Client nach 30 s,
+-- 25 s lassen Luft für Verzögerung).
+create or replace function public.blackjack_skip(p_game_id uuid, p_waiting_since timestamptz)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+begin
+  game := public._blackjack_lock(p_game_id);
+
+  if not public._blackjack_is_host(p_game_id) then
+    perform public._blackjack_my_seat(p_game_id);
+  end if;
+
+  -- Inzwischen hat der Spieler selbst gehandelt: nichts zu tun
+  if game.waiting_since is distinct from p_waiting_since
+     or game.status <> 'playing' or game.phase <> 'playing' then
+    return;
+  end if;
+
+  if game.waiting_since > now() - interval '25 seconds' then
+    raise exception 'Überspringen geht erst nach 30 Sekunden Wartezeit.';
+  end if;
+
+  update public.blackjack_games set last_events = '[]' where id = p_game_id;
+  perform public._blackjack_apply(p_game_id, 'skip');
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Host beendet das Spiel. Offene Einsätze gehen zurück; Sieger ist, wer am meisten hat.
+create or replace function public.blackjack_end_game(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.blackjack_games;
+begin
+  game := public._blackjack_lock(p_game_id);
+
+  if not public._blackjack_is_host(p_game_id) then
+    raise exception 'Nur der Host kann das Spiel beenden.';
+  end if;
+
+  if game.status <> 'playing' then
+    raise exception 'Das Spiel ist bereits beendet.';
+  end if;
+
+  update public.blackjack_players p
+  set balance = p.balance + p.bet + coalesce((
+        select sum(h.bet) from public.blackjack_hands h
+        where h.game_id = p_game_id and h.seat = p.seat and h.result is null), 0),
+      bet = 0
+  where p.game_id = p_game_id;
+  delete from public.blackjack_hands where game_id = p_game_id and result is null;
+  update public.blackjack_shoes set hole = null where game_id = p_game_id;
+
+  update public.blackjack_games
+  set last_events = '[]', status = 'finished', phase = 'betting', turn_seat = null,
+      turn_hand = null, waiting_since = null, first_bet_at = null,
+      dealer_cards = case when dealer_hole then '{}' else dealer_cards end, dealer_hole = false
+  where id = p_game_id;
+  perform public._blackjack_log(p_game_id, jsonb_build_object('t', 'end'));
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Zurück in die Warte-Lobby mit denselben Leuten (wie uno_return_to_lobby).
+-- Sperrreihenfolge Lobby -> Mitglieder -> Spiel wie Verlassen/Kick.
+create or replace function public.blackjack_return_to_lobby(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  game_status text;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into lobby
+  from public.multiplayer_lobbies where id = p_lobby_id
+  for update;
+
+  if lobby.id is null or lobby.host_user_id <> auth.uid() then
+    raise exception 'Nur der Host kann zur Warte-Lobby zurückkehren.';
+  end if;
+
+  if lobby.status <> 'started' then
+    raise exception 'Die Lobby ist bereits wieder offen.';
+  end if;
+
+  update public.multiplayer_lobby_members set ready = false where lobby_id = p_lobby_id;
+
+  select status into game_status
+  from public.blackjack_games where lobby_id = p_lobby_id
+  for update;
+
+  if game_status is not null and game_status <> 'finished' then
+    raise exception 'Das Spiel läuft noch.';
+  end if;
+
+  delete from public.blackjack_games where lobby_id = p_lobby_id;
+
+  update public.multiplayer_lobbies
+  set status = 'open', started_at = null
+  where id = p_lobby_id;
+end;
+$$;
+
+revoke execute on function public.blackjack_bet(uuid, integer, integer) from public, anon;
+
+revoke execute on function public.blackjack_deal(uuid, integer) from public, anon;
+
+revoke execute on function public.blackjack_play(uuid, timestamptz, text) from public, anon;
+
+revoke execute on function public.blackjack_skip(uuid, timestamptz) from public, anon;
+
+revoke execute on function public.blackjack_end_game(uuid) from public, anon;
+
+revoke execute on function public.blackjack_return_to_lobby(uuid) from public, anon;
+
+grant execute on function public.blackjack_bet(uuid, integer, integer) to authenticated;
+
+grant execute on function public.blackjack_deal(uuid, integer) to authenticated;
+
+grant execute on function public.blackjack_play(uuid, timestamptz, text) to authenticated;
+
+grant execute on function public.blackjack_skip(uuid, timestamptz) to authenticated;
+
+grant execute on function public.blackjack_end_game(uuid) to authenticated;
+
+grant execute on function public.blackjack_return_to_lobby(uuid) to authenticated;
+
+-- ===========================================================================
+-- Blackjack: Statistik und Abend-Wertung
+-- ===========================================================================
+
+-- Ein Ergebnis je Spieler, Rang nach Guthaben. Allein (am Ende unter 2 Spielern, wie
+-- Flip 7) oder ohne eine abgerechnete Runde zählt nichts. Ein Fehler hier darf den Zug nie
+-- abbrechen.
+create or replace function public._blackjack_record_result()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if new.round_no <= 1
+     or (select count(*) from public.blackjack_players
+         where game_id = new.id and state <> 'left') < 2 then
+    return null;
+  end if;
+
+  insert into public.game_results (game_id, user_id, game_key, placement, player_count, won, score)
+  select new.id, r.user_id, 'blackjack', r.placement, r.player_count,
+         r.placement = 1 and r.state <> 'left', r.balance
+  from (
+    select p.user_id, p.state, p.balance,
+           rank() over (order by p.state = 'left', p.balance desc) as placement,
+           count(*) over () as player_count
+    from public.blackjack_players p
+    where p.game_id = new.id
+  ) r
+  where exists (select 1 from auth.users u where u.id = r.user_id)
+  on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, 0);
+  end if;
+  return null;
+exception when others then
+  raise warning 'Blackjack: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
+  return null;
+end;
+$$;
+
+drop trigger if exists blackjack_games_record_result on public.blackjack_games;
+create trigger blackjack_games_record_result
+after update of status on public.blackjack_games
+for each row when (new.status = 'finished' and old.status <> 'finished')
+execute function public._blackjack_record_result();
+
+revoke execute on function public._blackjack_record_result() from public, anon, authenticated;
+
+-- ===========================================================================
+-- Nimm 6
+-- ===========================================================================
+
+-- Nimm 6 als sechstes Lobby-Spiel: 2–8 Spieler, Karten 1–104 mit Hornochsen
+-- (1; endet auf 5: 2; endet auf 0: 3; Schnapszahl: 5; 55: 7). Je Runde 10 Karten pro
+-- Spieler und 4 Reihen. Alle wählen gleichzeitig verdeckt eine Karte; sind alle bereit,
+-- werden die Karten aufgedeckt und aufsteigend angelegt: an die Reihe mit dem höchsten
+-- Ende unter der Karte. Wäre sie dort die 6. Karte, nimmt der Spieler die 5 Karten und
+-- beginnt die Reihe neu. Ist sie kleiner als jedes Reihenende (das kann nur die kleinste
+-- aufgedeckte Karte sein), wählt der Spieler eine Reihe, nimmt sie und beginnt sie neu.
+-- Nach 10 Zügen endet die Runde; hat dann jemand 66 Hornochsen oder mehr, endet das
+-- Spiel, und es gewinnt, wer die wenigsten hat.
+--
+-- Wie Uno und Blackjack: alle Züge über die security-definer-Funktionen unten, Clients
+-- lesen Spiel und Spieler; jede öffentliche Funktion erhöht game_ticks genau einmal am Ende.
+--
+-- Geheim: Hände samt gewählter Karte (nimm6_hands, RLS nur eigene Zeile). Öffentlich ist
+-- nur, wer schon gewählt hat (nimm6_players.ready). Erst beim Aufdecken stehen die
+-- gewählten Karten in revealed und im Verlauf.
+
+-- ===========================================================================
+-- Nimm 6: schema
+-- ===========================================================================
+
+create table if not exists public.nimm6_games (
+  id uuid primary key default gen_random_uuid(),
+  lobby_id uuid not null unique references public.multiplayer_lobbies(id) on delete cascade,
+  status text not null default 'playing' check (status in ('playing', 'finished')),
+  -- choose: alle wählen eine Karte; take: take_seat wählt eine Reihe; round_over: Runde
+  -- vorbei, die nächste startet per nimm6_next_round
+  phase text not null default 'choose' check (phase in ('choose', 'take', 'round_over')),
+  seat_count smallint not null check (seat_count between 2 and 8),
+  end_score smallint not null default 66,
+  round_no integer not null default 1,
+  -- Zug in der Runde, 1–10
+  turn_no smallint not null default 1,
+  -- Die 4 Reihen, je ein Array der Karten (älteste zuerst)
+  card_rows jsonb not null default '[]' check (jsonb_typeof(card_rows) = 'array'),
+  -- Aufgedeckte Karten des letzten Zuges, aufsteigend: [{"s": Sitz, "c": Karte}]
+  revealed jsonb not null default '[]' check (jsonb_typeof(revealed) = 'array'),
+  -- So viele Karten aus revealed liegen schon
+  resolve_at smallint not null default 0,
+  -- Wer gerade eine Reihe wählen muss (phase take)
+  take_seat smallint,
+  last_events jsonb not null default '[]' check (jsonb_typeof(last_events) = 'array'),
+  round_log jsonb not null default '[]' check (jsonb_typeof(round_log) = 'array'),
+  -- Neu bei jedem Zug, jeder Reihenwahl und am Rundenende
+  waiting_since timestamptz,
+  -- Dauer des Nachspielens ab waiting_since (siehe _nimm6_replay_ms)
+  replay_ms integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- user_id ohne Fremdschlüssel, wie uno_players
+create table if not exists public.nimm6_players (
+  game_id uuid not null references public.nimm6_games(id) on delete cascade,
+  user_id uuid not null,
+  seat smallint not null check (seat between 0 and 7),
+  state text not null default 'active' check (state in ('active', 'left')),
+  -- Hornochsen gesamt (inklusive laufender Runde) und in dieser Runde
+  score integer not null default 0,
+  round_bulls integer not null default 0,
+  -- Hat in diesem Zug schon eine Karte gewählt
+  ready boolean not null default false,
+  -- Für den Endstand
+  rows_taken integer not null default 0,
+  sixths integer not null default 0,
+  left_at timestamptz,
+  primary key (game_id, user_id),
+  unique (game_id, seat)
+);
+
+-- Geheim: jeder sieht nur seine eigene Zeile.
+create table if not exists public.nimm6_hands (
+  game_id uuid not null references public.nimm6_games(id) on delete cascade,
+  seat smallint not null,
+  user_id uuid not null,
+  -- Aufsteigend sortiert; die gewählte Karte bleibt bis zum Aufdecken darin
+  cards smallint[] not null default '{}',
+  chosen smallint,
+  primary key (game_id, seat)
+);
+
+-- ===========================================================================
+-- Nimm 6: row level security and privileges
+-- ===========================================================================
+
+alter table public.nimm6_games enable row level security;
+
+alter table public.nimm6_players enable row level security;
+
+alter table public.nimm6_hands enable row level security;
+
+drop policy if exists "Multiplayer users can read nimm6 games" on public.nimm6_games;
+create policy "Multiplayer users can read nimm6 games"
+  on public.nimm6_games for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Multiplayer users can read nimm6 players" on public.nimm6_players;
+create policy "Multiplayer users can read nimm6 players"
+  on public.nimm6_players for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Players can read their own nimm6 hand" on public.nimm6_hands;
+create policy "Players can read their own nimm6 hand"
+  on public.nimm6_hands for select
+  to authenticated
+  using (user_id = (select auth.uid()));
+
+drop policy if exists "Guests only see their nimm6 game" on public.nimm6_games;
+create policy "Guests only see their nimm6 game"
+  on public.nimm6_games as restrictive for select
+  to authenticated
+  using (not (select public.is_guest()) or lobby_id = (select public.my_lobby_id()));
+
+drop policy if exists "Guests only see their nimm6 players" on public.nimm6_players;
+create policy "Guests only see their nimm6 players"
+  on public.nimm6_players as restrictive for select
+  to authenticated
+  using (
+    not (select public.is_guest())
+    or game_id = (
+      select g.id from public.nimm6_games g where g.lobby_id = (select public.my_lobby_id())
+    )
+  );
+
+revoke all on public.nimm6_games, public.nimm6_players, public.nimm6_hands from anon;
+
+revoke insert, update, delete, truncate, references, trigger
+  on public.nimm6_games, public.nimm6_players, public.nimm6_hands from authenticated;
+
+grant select on public.nimm6_games, public.nimm6_players, public.nimm6_hands to authenticated;
+
+-- ===========================================================================
+-- Nimm 6: engine (intern, nicht über /rest/v1/rpc aufrufbar)
+-- ===========================================================================
+
+-- Hornochsen einer Karte
+create or replace function public._nimm6_bulls(p_card integer)
+returns smallint
+language sql
+immutable
+set search_path = ''
+as $$
+  select (case when p_card = 55 then 7
+               when p_card % 11 = 0 then 5
+               when p_card % 10 = 0 then 3
+               when p_card % 5 = 0 then 2
+               else 1 end)::smallint;
+$$;
+
+-- Hornochsen einer Reihe (jsonb-Array von Karten)
+create or replace function public._nimm6_row_bulls(p_row jsonb)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(sum(public._nimm6_bulls(c::integer)), 0)::integer
+  from jsonb_array_elements_text(p_row) as c;
+$$;
+
+-- Event-Form: {t, seat?, card?, row?, n?, ...}. Zusätzlich ins round_log mit Runde und Zeit.
+create or replace function public._nimm6_log(p_game_id uuid, p_event jsonb)
+returns void
+language sql
+security definer set search_path = ''
+as $$
+  update public.nimm6_games
+  set last_events = last_events || jsonb_build_array(p_event),
+      -- ponytail: Verlauf auf 60 Einträge begrenzt und bei jeder Aktion mitgeladen (wie Uno)
+      round_log = (
+        select coalesce(jsonb_agg(l.e order by l.i), '[]'::jsonb)
+        from jsonb_array_elements(
+               round_log || jsonb_build_array(p_event || jsonb_build_object('r', round_no, 'at', now()))
+             ) with ordinality as l(e, i)
+        where l.i > jsonb_array_length(round_log) - 59
+      )
+  where id = p_game_id;
+$$;
+
+-- Die Uhr eines Zuges (waiting_since) startet, sobald der vorige Zug angelegt ist. Die
+-- Clients spielen das Anlegen aber erst nach (Aufdecken, Karten fliegen, Reihen werden
+-- genommen) und lassen solange niemanden wählen. Überspringen und die nächste Runde
+-- zählen deshalb erst ab dem Ende dieses Nachspielens. replay_ms wird mit waiting_since
+-- gesetzt (aus last_events in diesem Moment), weil nimm6_choose die last_events danach
+-- überschreibt. Dauer wie im Client (nimm6.model.ts: REVEAL_MS, PLACE_MS, TAKE_MS).
+create or replace function public._nimm6_replay_ms(p_events jsonb)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(sum(case e ->> 't'
+                        when 'reveal' then 1800
+                        when 'place' then 1000
+                        when 'six' then 4300
+                        when 'take' then 4300
+                        else 0 end), 0)::integer
+  from jsonb_array_elements(p_events) as e;
+$$;
+
+-- Neue Runde: 104 Karten mischen, je aktivem Spieler 10, dazu 4 Reihen (aufsteigend).
+create or replace function public._nimm6_deal(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  deck smallint[];
+  v_seat smallint;
+  i integer := 0;
+begin
+  select array_agg(n::smallint order by gen_random_uuid()) into deck
+  from generate_series(1, 104) as n;
+
+  for v_seat in
+    select seat from public.nimm6_players
+    where game_id = p_game_id and state = 'active' order by seat
+  loop
+    update public.nimm6_hands
+    set cards = (select array_agg(c order by c) from unnest(deck[i * 10 + 1:i * 10 + 10]) as c),
+        chosen = null
+    where game_id = p_game_id and seat = v_seat;
+    i := i + 1;
+  end loop;
+
+  update public.nimm6_players set ready = false, round_bulls = 0 where game_id = p_game_id;
+  update public.nimm6_games
+  set phase = 'choose', turn_no = 1, revealed = '[]', resolve_at = 0, take_seat = null,
+      waiting_since = now(), replay_ms = 0,
+      card_rows = (select jsonb_agg(jsonb_build_array(c) order by c)
+              from unnest(deck[i * 10 + 1:i * 10 + 4]) as c)
+  where id = p_game_id;
+  perform public._nimm6_log(p_game_id, jsonb_build_object(
+    't', 'deal', 'round', (select round_no from public.nimm6_games where id = p_game_id)));
+end;
+$$;
+
+-- Reihe p_row nehmen: Hornochsen auf den Spieler, p_card beginnt die Reihe neu.
+-- p_kind: take (zu klein, Reihe gewählt) oder six (6. Karte).
+create or replace function public._nimm6_take(
+  p_game_id uuid, p_seat smallint, p_row integer, p_card integer, p_kind text
+)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_rows jsonb;
+  bulls integer;
+begin
+  select card_rows into v_rows from public.nimm6_games where id = p_game_id;
+  bulls := public._nimm6_row_bulls(v_rows -> p_row);
+
+  update public.nimm6_players
+  set score = score + bulls, round_bulls = round_bulls + bulls, rows_taken = rows_taken + 1,
+      sixths = sixths + (case when p_kind = 'six' then 1 else 0 end)
+  where game_id = p_game_id and seat = p_seat;
+  update public.nimm6_games
+  set card_rows = jsonb_set(card_rows, array[p_row::text], jsonb_build_array(p_card))
+  where id = p_game_id;
+  perform public._nimm6_log(p_game_id, jsonb_build_object(
+    't', p_kind, 'seat', p_seat, 'card', p_card, 'row', p_row, 'n', bulls,
+    'cards', v_rows -> p_row));
+end;
+$$;
+
+-- Reihe mit den wenigsten Hornochsen (bei Gleichstand die obere): für abgelaufene Zeit
+-- und verlassene Spieler
+create or replace function public._nimm6_cheapest_row(p_game_id uuid)
+returns integer
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select (r.i - 1)::integer
+  from public.nimm6_games g,
+       jsonb_array_elements(g.card_rows) with ordinality as r(cards, i)
+  where g.id = p_game_id
+  order by public._nimm6_row_bulls(r.cards), r.i
+  limit 1;
+$$;
+
+-- Runde vorbei: hat jemand das Limit erreicht, endet das Spiel, sonst Rundenübersicht.
+create or replace function public._nimm6_end_round(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+begin
+  select * into game from public.nimm6_games where id = p_game_id;
+  perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'round_end', 'round', game.round_no));
+
+  if exists (select 1 from public.nimm6_players
+             where game_id = p_game_id and state = 'active' and score >= game.end_score) then
+    update public.nimm6_games
+    set status = 'finished', phase = 'round_over', take_seat = null, waiting_since = null
+    where id = p_game_id;
+  else
+    update public.nimm6_games
+    set phase = 'round_over', take_seat = null, waiting_since = now(),
+        replay_ms = public._nimm6_replay_ms(last_events)
+    where id = p_game_id;
+  end if;
+end;
+$$;
+
+-- Aufgedeckte Karten der Reihe nach anlegen, ab resolve_at. Braucht eine Karte eine
+-- Reihenwahl, wartet das Spiel auf take_seat (verlassene Spieler nehmen sofort die
+-- billigste Reihe). Danach nächster Zug bzw. Rundenende.
+create or replace function public._nimm6_resolve(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+  v_seat smallint;
+  v_card integer;
+  target integer;
+  best integer;
+  last_card integer;
+  i integer;
+begin
+  loop
+    select * into game from public.nimm6_games where id = p_game_id;
+    exit when game.resolve_at >= jsonb_array_length(game.revealed);
+
+    v_seat := (game.revealed -> game.resolve_at ->> 's')::smallint;
+    v_card := (game.revealed -> game.resolve_at ->> 'c')::integer;
+
+    target := null;
+    best := -1;
+    for i in 0 .. jsonb_array_length(game.card_rows) - 1 loop
+      last_card := (game.card_rows -> i ->> -1)::integer;
+      if last_card < v_card and last_card > best then
+        best := last_card;
+        target := i;
+      end if;
+    end loop;
+
+    if target is null then
+      if exists (select 1 from public.nimm6_players
+                 where game_id = p_game_id and seat = v_seat and state = 'active') then
+        update public.nimm6_games
+        set phase = 'take', take_seat = v_seat, waiting_since = now(),
+            replay_ms = public._nimm6_replay_ms(last_events)
+        where id = p_game_id;
+        return;
+      end if;
+      perform public._nimm6_take(p_game_id, v_seat, public._nimm6_cheapest_row(p_game_id), v_card, 'take');
+    elsif jsonb_array_length(game.card_rows -> target) >= 5 then
+      perform public._nimm6_take(p_game_id, v_seat, target, v_card, 'six');
+    else
+      update public.nimm6_games
+      set card_rows = jsonb_set(card_rows, array[target::text], (card_rows -> target) || to_jsonb(v_card))
+      where id = p_game_id;
+      perform public._nimm6_log(p_game_id, jsonb_build_object(
+        't', 'place', 'seat', v_seat, 'card', v_card, 'row', target));
+    end if;
+
+    update public.nimm6_games set resolve_at = resolve_at + 1 where id = p_game_id;
+  end loop;
+
+  update public.nimm6_games set take_seat = null where id = p_game_id;
+
+  if game.turn_no >= 10
+     or not exists (select 1 from public.nimm6_hands h
+                    join public.nimm6_players p on p.game_id = h.game_id and p.seat = h.seat
+                    where h.game_id = p_game_id and p.state = 'active' and cardinality(h.cards) > 0) then
+    perform public._nimm6_end_round(p_game_id);
+  else
+    update public.nimm6_games
+    set phase = 'choose', turn_no = turn_no + 1, waiting_since = now(),
+        replay_ms = public._nimm6_replay_ms(last_events)
+    where id = p_game_id;
+  end if;
+end;
+$$;
+
+-- Haben alle aktiven Spieler gewählt: aufdecken (Karten aus den Händen nehmen) und anlegen.
+create or replace function public._nimm6_reveal_if_ready(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_revealed jsonb;
+begin
+  if exists (select 1 from public.nimm6_players
+             where game_id = p_game_id and state = 'active' and not ready) then
+    return;
+  end if;
+
+  select coalesce(jsonb_agg(jsonb_build_object('s', h.seat, 'c', h.chosen) order by h.chosen), '[]')
+  into v_revealed
+  from public.nimm6_hands h
+  join public.nimm6_players p on p.game_id = h.game_id and p.seat = h.seat
+  where h.game_id = p_game_id and p.state = 'active' and h.chosen is not null;
+
+  if jsonb_array_length(v_revealed) = 0 then
+    return;
+  end if;
+
+  update public.nimm6_hands
+  set cards = array_remove(cards, chosen), chosen = null
+  where game_id = p_game_id and chosen is not null;
+  update public.nimm6_players set ready = false where game_id = p_game_id;
+  update public.nimm6_games
+  set revealed = v_revealed, resolve_at = 0, take_seat = null
+  where id = p_game_id;
+  perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'reveal', 'played', v_revealed));
+  perform public._nimm6_resolve(p_game_id);
+end;
+$$;
+
+-- Ersetzt ein altes Spiel der Lobby. Sitze in Beitrittsreihenfolge, Host zuerst.
+-- Der Aufrufer (start_lobby) hält die Sperren auf Lobby und Mitglieder.
+create or replace function public._nimm6_create_game(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  new_game_id uuid;
+begin
+  select * into lobby from public.multiplayer_lobbies where id = p_lobby_id;
+  delete from public.nimm6_games where lobby_id = p_lobby_id;
+
+  insert into public.nimm6_games (lobby_id, seat_count)
+  values (p_lobby_id,
+          (select count(*) from public.multiplayer_lobby_members where lobby_id = p_lobby_id))
+  returning id into new_game_id;
+
+  insert into public.nimm6_players (game_id, user_id, seat)
+  select new_game_id, m.user_id,
+         (row_number() over (order by (m.user_id = lobby.host_user_id) desc, m.joined_at, m.user_id) - 1)
+  from public.multiplayer_lobby_members m
+  where m.lobby_id = p_lobby_id;
+
+  insert into public.nimm6_hands (game_id, seat, user_id)
+  select game_id, seat, user_id from public.nimm6_players where game_id = new_game_id;
+
+  perform public._nimm6_deal(new_game_id);
+
+  -- Erste Tick-Zeile jetzt, solange die Lobby gesperrt ist (wie _uno_create_game)
+  perform public._game_tick(p_lobby_id);
+end;
+$$;
+
+-- Ein Spieler verlässt das Spiel (Kick, Verlassen, Konto gelöscht). Wirft nie, damit
+-- Verlassen der Lobby immer klappt; ein Fehler rollt nur den Spielteil zurück. Seine
+-- schon aufgedeckte Karte wird noch angelegt (eine Reihenwahl übernimmt der Server).
+create or replace function public._nimm6_remove_player(p_game_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+  player public.nimm6_players;
+  v_card integer;
+begin
+  begin
+    select * into game from public.nimm6_games where id = p_game_id;
+    if not found then
+      return;
+    end if;
+
+    select * into player
+    from public.nimm6_players where game_id = p_game_id and user_id = p_user_id;
+    if not found or player.state = 'left' then
+      return;
+    end if;
+
+    update public.nimm6_games set last_events = '[]' where id = p_game_id;
+    update public.nimm6_hands set cards = '{}', chosen = null
+    where game_id = p_game_id and seat = player.seat;
+    update public.nimm6_players set state = 'left', left_at = now(), ready = false
+    where game_id = p_game_id and seat = player.seat;
+    perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'left', 'seat', player.seat));
+
+    if game.status <> 'playing' then
+      return;
+    end if;
+
+    if (select count(*) from public.nimm6_players
+        where game_id = p_game_id and state = 'active') < 2 then
+      update public.nimm6_games
+      set status = 'finished', take_seat = null, waiting_since = null
+      where id = p_game_id;
+    elsif game.phase = 'choose' then
+      perform public._nimm6_reveal_if_ready(p_game_id);
+    elsif game.phase = 'take' and game.take_seat = player.seat then
+      v_card := (game.revealed -> game.resolve_at ->> 'c')::integer;
+      perform public._nimm6_take(p_game_id, player.seat, public._nimm6_cheapest_row(p_game_id), v_card, 'take');
+      update public.nimm6_games set resolve_at = resolve_at + 1 where id = p_game_id;
+      perform public._nimm6_resolve(p_game_id);
+    end if;
+  exception when others then
+    raise warning 'Nimm 6: Spieler % konnte nicht aus Spiel % entfernt werden: %',
+      p_user_id, p_game_id, sqlerrm;
+  end;
+end;
+$$;
+
+create or replace function public._nimm6_on_member_removed()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_game_id uuid;
+begin
+  -- Wird die ganze Lobby gelöscht, verschwindet das Spiel ohnehin
+  if not exists (select 1 from public.multiplayer_lobbies where id = old.lobby_id) then
+    return null;
+  end if;
+
+  select id into v_game_id
+  from public.nimm6_games where lobby_id = old.lobby_id
+  for update;
+
+  if v_game_id is not null then
+    perform public._nimm6_remove_player(v_game_id, old.user_id);
+    perform public._game_tick(old.lobby_id);
+  end if;
+  return null;
+end;
+$$;
+
+-- Läuft neben den Triggern der anderen Spiele; jeder findet nur sein eigenes Spiel.
+drop trigger if exists multiplayer_lobby_members_nimm6_leave on public.multiplayer_lobby_members;
+create trigger multiplayer_lobby_members_nimm6_leave
+after delete on public.multiplayer_lobby_members
+for each row execute function public._nimm6_on_member_removed();
+
+-- Sitz des Aufrufers, wenn er noch mitspielt.
+create or replace function public._nimm6_my_seat(p_game_id uuid)
+returns smallint
+language plpgsql
+stable
+security definer set search_path = ''
+as $$
+declare
+  my_seat smallint;
+begin
+  select seat into my_seat
+  from public.nimm6_players
+  where game_id = p_game_id and user_id = auth.uid() and state = 'active';
+
+  if my_seat is null then
+    raise exception 'Du spielst in diesem Spiel nicht mit.';
+  end if;
+  return my_seat;
+end;
+$$;
+
+-- Sperrt das Spiel für eine öffentliche Funktion (immer zuerst, vor allen Schreibzugriffen).
+create or replace function public._nimm6_lock(p_game_id uuid)
+returns public.nimm6_games
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into game from public.nimm6_games where id = p_game_id for update;
+  if game.id is null then
+    raise exception 'Dieses Spiel gibt es nicht mehr.';
+  end if;
+  return game;
+end;
+$$;
+
+create or replace function public._nimm6_is_host(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.nimm6_games g
+    join public.multiplayer_lobbies l on l.id = g.lobby_id
+    where g.id = p_game_id and l.host_user_id = auth.uid()
+  );
+$$;
+
+revoke execute on function public._nimm6_bulls(integer) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_row_bulls(jsonb) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_replay_ms(jsonb) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_log(uuid, jsonb) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_deal(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_take(uuid, smallint, integer, integer, text)
+  from public, anon, authenticated;
+
+revoke execute on function public._nimm6_cheapest_row(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_end_round(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_resolve(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_reveal_if_ready(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_create_game(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_remove_player(uuid, uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_on_member_removed() from public, anon, authenticated;
+
+revoke execute on function public._nimm6_my_seat(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_lock(uuid) from public, anon, authenticated;
+
+revoke execute on function public._nimm6_is_host(uuid) from public, anon, authenticated;
+
+-- ===========================================================================
+-- Nimm 6: öffentliche Funktionen
+-- ===========================================================================
+
+-- Karte für diesen Zug wählen (verdeckt). Nimmt das waiting_since, das der Client gesehen
+-- hat; veraltete Ansicht oder schon gewählt: nichts tun. Haben alle gewählt, wird
+-- aufgedeckt und angelegt. Die Karte wird vor dem Cast geprüft (sonst Überlauf-Fehler statt
+-- verständlicher Meldung).
+create or replace function public.nimm6_choose(p_game_id uuid, p_waiting_since timestamptz, p_card integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+  my_seat smallint;
+  hand public.nimm6_hands;
+begin
+  game := public._nimm6_lock(p_game_id);
+  my_seat := public._nimm6_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.phase <> 'choose'
+     or game.waiting_since is distinct from p_waiting_since then
+    return;
+  end if;
+
+  select * into hand from public.nimm6_hands where game_id = p_game_id and seat = my_seat;
+  if hand.chosen is not null then
+    return;
+  end if;
+
+  if p_card is null or p_card not between 1 and 104
+     or not (p_card::smallint = any (hand.cards)) then
+    raise exception 'Diese Karte hast du nicht.';
+  end if;
+
+  update public.nimm6_hands set chosen = p_card where game_id = p_game_id and seat = my_seat;
+  update public.nimm6_players set ready = true where game_id = p_game_id and seat = my_seat;
+  -- Nur fürs Anzeigen (Rücken am Platz), nicht im Verlauf
+  update public.nimm6_games
+  set last_events = jsonb_build_array(jsonb_build_object('t', 'ready', 'seat', my_seat))
+  where id = p_game_id;
+
+  perform public._nimm6_reveal_if_ready(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Zu kleine Karte: Reihe p_row (0–3) nehmen, die Karte beginnt sie neu; dann weiter anlegen.
+create or replace function public.nimm6_take_row(p_game_id uuid, p_waiting_since timestamptz, p_row integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+  my_seat smallint;
+begin
+  game := public._nimm6_lock(p_game_id);
+  my_seat := public._nimm6_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.phase <> 'take'
+     or game.waiting_since is distinct from p_waiting_since then
+    return;
+  end if;
+
+  if game.take_seat is distinct from my_seat then
+    raise exception 'Du bist nicht am Zug.';
+  end if;
+
+  if p_row is null or p_row not between 0 and jsonb_array_length(game.card_rows) - 1 then
+    raise exception 'Diese Reihe gibt es nicht.';
+  end if;
+
+  update public.nimm6_games set last_events = '[]' where id = p_game_id;
+  perform public._nimm6_take(p_game_id, my_seat, p_row,
+                             (game.revealed -> game.resolve_at ->> 'c')::integer, 'take');
+  update public.nimm6_games set resolve_at = resolve_at + 1 where id = p_game_id;
+  perform public._nimm6_resolve(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Zeit abgelaufen: Wer noch nicht gewählt hat, legt eine zufällige Karte; bei der
+-- Reihenwahl nimmt der Spieler die billigste Reihe. Jeder am Tisch (und der Host) darf das
+-- auslösen, nur für die Lage, die er gesehen hat, und erst eine Weile nach dem Nachspielen
+-- (Client 30 s danach, 25 s lassen Luft für Verzögerung).
+create or replace function public.nimm6_skip(p_game_id uuid, p_waiting_since timestamptz)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+  v_seat smallint;
+begin
+  game := public._nimm6_lock(p_game_id);
+
+  if not public._nimm6_is_host(p_game_id) then
+    perform public._nimm6_my_seat(p_game_id);
+  end if;
+
+  -- Inzwischen ist es weitergegangen: nichts zu tun
+  if game.waiting_since is distinct from p_waiting_since
+     or game.status <> 'playing' or game.phase not in ('choose', 'take') then
+    return;
+  end if;
+
+  if game.waiting_since > now() - interval '25 seconds'
+                              - make_interval(secs => game.replay_ms / 1000.0) then
+    raise exception 'Überspringen geht erst nach 30 Sekunden Wartezeit.';
+  end if;
+
+  update public.nimm6_games set last_events = '[]' where id = p_game_id;
+
+  if game.phase = 'choose' then
+    for v_seat in
+      select p.seat from public.nimm6_players p
+      where p.game_id = p_game_id and p.state = 'active' and not p.ready
+      order by p.seat
+    loop
+      update public.nimm6_hands
+      set chosen = cards[1 + floor(random() * cardinality(cards))::integer]
+      where game_id = p_game_id and seat = v_seat and cardinality(cards) > 0;
+      update public.nimm6_players set ready = true where game_id = p_game_id and seat = v_seat;
+      perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'skip', 'seat', v_seat));
+    end loop;
+    perform public._nimm6_reveal_if_ready(p_game_id);
+  else
+    perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'skip', 'seat', game.take_seat));
+    perform public._nimm6_take(p_game_id, game.take_seat, public._nimm6_cheapest_row(p_game_id),
+                               (game.revealed -> game.resolve_at ->> 'c')::integer, 'take');
+    update public.nimm6_games set resolve_at = resolve_at + 1 where id = p_game_id;
+    perform public._nimm6_resolve(p_game_id);
+  end if;
+
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Nächste Runde nach der Rundenübersicht. Jeder am Tisch darf das auslösen (Knopf oder
+-- Uhr); p_round_no ist die Runde, die er gesehen hat (Doppeltipp tut nichts). Die
+-- Rundenübersicht steht nach dem Nachspielen mindestens 4 s (Client: Knopf erst nach Pause
+-- und 3 s, die Uhr nach NIMM6_NEXT_ROUND_S).
+create or replace function public.nimm6_next_round(p_game_id uuid, p_round_no integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+begin
+  game := public._nimm6_lock(p_game_id);
+  perform public._nimm6_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.phase <> 'round_over'
+     or game.round_no is distinct from p_round_no then
+    return;
+  end if;
+
+  if game.waiting_since > now() - make_interval(secs => (game.replay_ms + 4000) / 1000.0) then
+    raise exception 'Die Rundenübersicht läuft noch.';
+  end if;
+
+  update public.nimm6_games set last_events = '[]', round_no = round_no + 1 where id = p_game_id;
+  perform public._nimm6_deal(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Host bricht das Spiel ab: kein Ergebnis, keine Abend-Siege, alle zurück in die Warte-Lobby.
+create or replace function public.nimm6_end_game(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.nimm6_games;
+begin
+  game := public._nimm6_lock(p_game_id);
+
+  if not public._nimm6_is_host(p_game_id) then
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
+  end if;
+
+  if game.status <> 'playing' then
+    raise exception 'Das Spiel ist bereits vorbei.';
+  end if;
+
+  -- Abbruch: die Ergebnis-Trigger werten das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
+
+  update public.nimm6_hands set chosen = null where game_id = p_game_id;
+  update public.nimm6_players set ready = false where game_id = p_game_id;
+  update public.nimm6_games
+  set last_events = '[]', status = 'finished', take_seat = null, waiting_since = null
+  where id = p_game_id;
+  perform public._nimm6_log(p_game_id, jsonb_build_object('t', 'end'));
+  perform public._game_tick(game.lobby_id);
+  perform public.nimm6_return_to_lobby(game.lobby_id);
+end;
+$$;
+
+-- Zurück in die Warte-Lobby mit denselben Leuten (wie uno_return_to_lobby).
+-- Sperrreihenfolge Lobby -> Mitglieder -> Spiel wie Verlassen/Kick.
+create or replace function public.nimm6_return_to_lobby(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  game_status text;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into lobby
+  from public.multiplayer_lobbies where id = p_lobby_id
+  for update;
+
+  if lobby.id is null or lobby.host_user_id <> auth.uid() then
+    raise exception 'Nur der Host kann zur Warte-Lobby zurückkehren.';
+  end if;
+
+  if lobby.status <> 'started' then
+    raise exception 'Die Lobby ist bereits wieder offen.';
+  end if;
+
+  update public.multiplayer_lobby_members set ready = false where lobby_id = p_lobby_id;
+
+  select status into game_status
+  from public.nimm6_games where lobby_id = p_lobby_id
+  for update;
+
+  if game_status is not null and game_status <> 'finished' then
+    raise exception 'Das Spiel läuft noch.';
+  end if;
+
+  delete from public.nimm6_games where lobby_id = p_lobby_id;
+
+  update public.multiplayer_lobbies
+  set status = 'open', started_at = null
+  where id = p_lobby_id;
+end;
+$$;
+
+revoke execute on function public.nimm6_choose(uuid, timestamptz, integer) from public, anon;
+
+revoke execute on function public.nimm6_take_row(uuid, timestamptz, integer) from public, anon;
+
+revoke execute on function public.nimm6_skip(uuid, timestamptz) from public, anon;
+
+revoke execute on function public.nimm6_next_round(uuid, integer) from public, anon;
+
+revoke execute on function public.nimm6_end_game(uuid) from public, anon;
+
+revoke execute on function public.nimm6_return_to_lobby(uuid) from public, anon;
+
+grant execute on function public.nimm6_choose(uuid, timestamptz, integer) to authenticated;
+
+grant execute on function public.nimm6_take_row(uuid, timestamptz, integer) to authenticated;
+
+grant execute on function public.nimm6_skip(uuid, timestamptz) to authenticated;
+
+grant execute on function public.nimm6_next_round(uuid, integer) to authenticated;
+
+grant execute on function public.nimm6_end_game(uuid) to authenticated;
+
+grant execute on function public.nimm6_return_to_lobby(uuid) to authenticated;
+
+-- ===========================================================================
+-- Nimm 6: Statistik und Abend-Wertung
+-- ===========================================================================
+
+-- Ein Ergebnis je Spieler, Rang nach Hornochsen (wenigste zuerst). Am Ende allein oder ohne
+-- eine abgeschlossene Runde zählt nichts. Ein Fehler hier darf den Zug nie abbrechen.
+create or replace function public._nimm6_record_result()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if (new.round_no <= 1 and new.phase <> 'round_over')
+     or (select count(*) from public.nimm6_players
+         where game_id = new.id and state <> 'left') < 2 then
+    return null;
+  end if;
+
+  insert into public.game_results (game_id, user_id, game_key, placement, player_count, won, score)
+  select new.id, r.user_id, 'nimm-6', r.placement, r.player_count,
+         r.placement = 1 and r.state <> 'left', r.score
+  from (
+    select p.user_id, p.state, p.score,
+           rank() over (order by p.state = 'left', p.score) as placement,
+           count(*) over () as player_count
+    from public.nimm6_players p
+    where p.game_id = new.id
+  ) r
+  where exists (select 1 from auth.users u where u.id = r.user_id)
+  on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, 0);
+  end if;
+  return null;
+exception when others then
+  raise warning 'Nimm 6: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
+  return null;
+end;
+$$;
+
+drop trigger if exists nimm6_games_record_result on public.nimm6_games;
+create trigger nimm6_games_record_result
+after update of status on public.nimm6_games
+for each row when (new.status = 'finished' and old.status <> 'finished'
+                   and current_setting('game.aborted', true) is distinct from 'on')
+execute function public._nimm6_record_result();
+
+revoke execute on function public._nimm6_record_result() from public, anon, authenticated;
+
+-- ===========================================================================
+-- Skyjo
+-- ===========================================================================
+
+-- Skyjo als siebtes Lobby-Spiel: 2–8 Spieler, 150 Karten (−2: 5×, −1: 10×, 0: 15×,
+-- 1–12: je 10×). Jeder hat 12 verdeckte Karten im Raster (3 Reihen × 4 Spalten,
+-- zeilenweise gezählt, Zelle 0–11, Spalte = Zelle % 4) und deckt zum Rundenstart 2 auf;
+-- wer dann die höchste Summe zeigt, beginnt. Am Zug: vom Stapel oder der Ablage ziehen,
+-- dann gegen eine eigene Karte tauschen (die alte geht offen auf die Ablage) oder – nur
+-- vom Stapel – abwerfen und eine verdeckte Karte aufdecken. Drei gleiche offene Karten
+-- in einer Spalte gehen auf die Ablage (abschaltbar). Hat jemand alles offen, hat jeder
+-- andere noch einen Zug; dann wird alles aufgedeckt und gezählt. Der Rundenbeender zählt
+-- doppelt, wenn er positiv ist und nicht allein am wenigsten hat (abschaltbar). Erreicht
+-- jemand das Spielende (50/100/150), gewinnt, wer die wenigsten Punkte hat.
+--
+-- Wie Nimm 6: alle Züge über die security-definer-Funktionen unten, Clients lesen Spiel
+-- und Spieler; jede öffentliche Funktion erhöht game_ticks genau einmal am Ende.
+--
+-- Geheim: die wahren Werte aller Karten (skyjo_hands) und der Stapel (skyjo_decks), ohne
+-- jede Policy – auch der Besitzer kennt seine verdeckten Karten nicht. Öffentlich sind nur
+-- die offenen Karten (skyjo_players.cards), die Ablage und die gezogene Karte.
+
+-- ===========================================================================
+-- Skyjo: schema
+-- ===========================================================================
+
+create table if not exists public.skyjo_games (
+  id uuid primary key default gen_random_uuid(),
+  lobby_id uuid not null unique references public.multiplayer_lobbies(id) on delete cascade,
+  status text not null default 'playing' check (status in ('playing', 'finished')),
+  -- reveal: alle decken 2 Karten auf; turn: turn_seat ist am Zug; round_over: Runde
+  -- vorbei, die nächste startet per skyjo_next_round
+  phase text not null default 'reveal' check (phase in ('reveal', 'turn', 'round_over')),
+  -- Im Zug: draw (ziehen), place (gezogene Karte tauschen bzw. abwerfen), flip (nach dem
+  -- Abwerfen eine Karte aufdecken)
+  step text check (step in ('draw', 'place', 'flip')),
+  seat_count smallint not null check (seat_count between 2 and 8),
+  end_score smallint not null default 100 check (end_score in (50, 100, 150)),
+  clear_columns boolean not null default true,
+  double_ender boolean not null default true,
+  round_no integer not null default 1,
+  turn_seat smallint,
+  -- Gezogene Karte (für alle sichtbar) und woher
+  drawn smallint,
+  drawn_from text check (drawn_from in ('pile', 'discard')),
+  -- Ablage, oberste zuletzt (alle Karten darauf sind offen)
+  discard smallint[] not null default '{}',
+  deck_count smallint not null default 0,
+  -- Hat als Erster alles aufgedeckt; last_turns: wer danach noch einen Zug hat
+  ender_seat smallint,
+  last_turns smallint[] not null default '{}',
+  last_events jsonb not null default '[]' check (jsonb_typeof(last_events) = 'array'),
+  round_log jsonb not null default '[]' check (jsonb_typeof(round_log) = 'array'),
+  -- Neu bei jedem Zug, beim Rundenstart und am Rundenende
+  waiting_since timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- user_id ohne Fremdschlüssel, wie nimm6_players
+create table if not exists public.skyjo_players (
+  game_id uuid not null references public.skyjo_games(id) on delete cascade,
+  user_id uuid not null,
+  seat smallint not null check (seat between 0 and 7),
+  state text not null default 'active' check (state in ('active', 'left')),
+  -- Offene Karten des Rasters (Zelle 0–11 an Index 1–12); null = verdeckt bzw. abgeräumt
+  cards smallint[] not null default array_fill(null::smallint, array[12]),
+  -- Abgeräumte Spalten 0–3 (Index 1–4)
+  cleared boolean[] not null default array[false, false, false, false],
+  -- Beim Rundenstart schon aufgedeckt (bis 2)
+  flips smallint not null default 0,
+  -- Punkte aus abgeschlossenen Runden; letzte Runde roh und gewertet (null: keine)
+  score integer not null default 0,
+  round_raw integer,
+  round_score integer,
+  -- Für den Endstand
+  columns integer not null default 0,
+  doubled integer not null default 0,
+  best_round integer,
+  left_at timestamptz,
+  primary key (game_id, user_id),
+  unique (game_id, seat)
+);
+
+-- Geheim: die wahren Werte aller 12 Karten je Platz
+create table if not exists public.skyjo_hands (
+  game_id uuid not null references public.skyjo_games(id) on delete cascade,
+  seat smallint not null,
+  user_id uuid not null,
+  cards smallint[] not null default '{}',
+  primary key (game_id, seat)
+);
+
+-- Geheim: der Stapel, oberste Karte zuerst
+create table if not exists public.skyjo_decks (
+  game_id uuid primary key references public.skyjo_games(id) on delete cascade,
+  cards smallint[] not null default '{}'
+);
+
+-- ===========================================================================
+-- Skyjo: row level security and privileges
+-- ===========================================================================
+
+alter table public.skyjo_games enable row level security;
+
+alter table public.skyjo_players enable row level security;
+
+alter table public.skyjo_hands enable row level security;
+
+alter table public.skyjo_decks enable row level security;
+
+drop policy if exists "Multiplayer users can read skyjo games" on public.skyjo_games;
+create policy "Multiplayer users can read skyjo games"
+  on public.skyjo_games for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Multiplayer users can read skyjo players" on public.skyjo_players;
+create policy "Multiplayer users can read skyjo players"
+  on public.skyjo_players for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Guests only see their skyjo game" on public.skyjo_games;
+create policy "Guests only see their skyjo game"
+  on public.skyjo_games as restrictive for select
+  to authenticated
+  using (not (select public.is_guest()) or lobby_id = (select public.my_lobby_id()));
+
+drop policy if exists "Guests only see their skyjo players" on public.skyjo_players;
+create policy "Guests only see their skyjo players"
+  on public.skyjo_players as restrictive for select
+  to authenticated
+  using (
+    not (select public.is_guest())
+    or game_id = (
+      select g.id from public.skyjo_games g where g.lobby_id = (select public.my_lobby_id())
+    )
+  );
+
+revoke all on public.skyjo_games, public.skyjo_players, public.skyjo_hands, public.skyjo_decks
+  from anon;
+
+revoke all on public.skyjo_hands, public.skyjo_decks from authenticated;
+
+revoke insert, update, delete, truncate, references, trigger
+  on public.skyjo_games, public.skyjo_players from authenticated;
+
+grant select on public.skyjo_games, public.skyjo_players to authenticated;
+
+-- ===========================================================================
+-- Skyjo: engine (intern, nicht über /rest/v1/rpc aufrufbar)
+-- ===========================================================================
+
+-- Event-Form: {t, seat?, cell?, card?, ...}. Zusätzlich ins round_log mit Runde und Zeit.
+create or replace function public._skyjo_log(p_game_id uuid, p_event jsonb)
+returns void
+language sql
+security definer set search_path = ''
+as $$
+  update public.skyjo_games
+  set last_events = last_events || jsonb_build_array(p_event),
+      -- ponytail: Verlauf auf 60 Einträge begrenzt und bei jeder Aktion mitgeladen (wie Uno)
+      round_log = (
+        select coalesce(jsonb_agg(l.e order by l.i), '[]'::jsonb)
+        from jsonb_array_elements(
+               round_log || jsonb_build_array(p_event || jsonb_build_object('r', round_no, 'at', now()))
+             ) with ordinality as l(e, i)
+        where l.i > jsonb_array_length(round_log) - 59
+      )
+  where id = p_game_id;
+$$;
+
+-- Neue Runde: 150 Karten mischen, je aktivem Spieler 12 verdeckt, eine auf die Ablage,
+-- der Rest ist der Stapel. Danach decken alle 2 Karten auf (phase reveal).
+create or replace function public._skyjo_deal(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  deck smallint[];
+  v_seat smallint;
+  i integer := 0;
+  n integer;
+begin
+  select array_agg(g.v::smallint order by gen_random_uuid()) into deck
+  from generate_series(-2, 12) as g(v),
+       generate_series(1, case when g.v = -2 then 5 when g.v = 0 then 15 else 10 end);
+
+  for v_seat in
+    select seat from public.skyjo_players
+    where game_id = p_game_id and state = 'active' order by seat
+  loop
+    update public.skyjo_hands
+    set cards = deck[i * 12 + 1:i * 12 + 12]
+    where game_id = p_game_id and seat = v_seat;
+    i := i + 1;
+  end loop;
+  n := i * 12;
+
+  update public.skyjo_hands h
+  set cards = '{}'
+  from public.skyjo_players p
+  where p.game_id = h.game_id and p.seat = h.seat and h.game_id = p_game_id and p.state = 'left';
+  update public.skyjo_players
+  set cards = array_fill(null::smallint, array[12]), cleared = array[false, false, false, false],
+      flips = 0
+  where game_id = p_game_id;
+
+  insert into public.skyjo_decks (game_id, cards)
+  values (p_game_id, deck[n + 2:cardinality(deck)])
+  on conflict (game_id) do update set cards = excluded.cards;
+
+  update public.skyjo_games
+  set phase = 'reveal', step = null, turn_seat = null, drawn = null, drawn_from = null,
+      discard = array[deck[n + 1]], deck_count = cardinality(deck) - n - 1,
+      ender_seat = null, last_turns = '{}', waiting_since = now()
+  where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'deal', 'round', (select round_no from public.skyjo_games where id = p_game_id)));
+end;
+$$;
+
+-- Verdeckte, nicht abgeräumte Zellen (0–11) eines Platzes
+create or replace function public._skyjo_hidden_cells(p_game_id uuid, p_seat smallint)
+returns integer[]
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select coalesce(array_agg(i - 1 order by i), '{}')
+  from public.skyjo_players p, generate_subscripts(p.cards, 1) as i
+  where p.game_id = p_game_id and p.seat = p_seat
+    and p.cards[i] is null and not p.cleared[(i - 1) % 4 + 1];
+$$;
+
+-- Zelle aufdecken: der wahre Wert wird öffentlich
+create or replace function public._skyjo_reveal(p_game_id uuid, p_seat smallint, p_cell integer)
+returns smallint
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v smallint;
+begin
+  select cards[p_cell + 1] into v
+  from public.skyjo_hands where game_id = p_game_id and seat = p_seat;
+  update public.skyjo_players set cards[p_cell + 1] = v
+  where game_id = p_game_id and seat = p_seat;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'flip', 'seat', p_seat, 'cell', p_cell, 'card', v));
+  return v;
+end;
+$$;
+
+-- Drei gleiche offene Karten in der Spalte von p_cell: Spalte abräumen, die drei Karten
+-- auf die Ablage (wenn die Regel an ist)
+create or replace function public._skyjo_check_column(p_game_id uuid, p_seat smallint, p_cell integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  col integer := p_cell % 4;
+  player public.skyjo_players;
+  v_cards smallint[];
+  v_cleared boolean[];
+  v smallint;
+begin
+  if not (select clear_columns from public.skyjo_games where id = p_game_id) then
+    return;
+  end if;
+
+  select * into player from public.skyjo_players where game_id = p_game_id and seat = p_seat;
+  v := player.cards[col + 1];
+  if player.cleared[col + 1] or v is null
+     or player.cards[col + 5] is distinct from v or player.cards[col + 9] is distinct from v then
+    return;
+  end if;
+
+  v_cards := player.cards;
+  v_cards[col + 1] := null;
+  v_cards[col + 5] := null;
+  v_cards[col + 9] := null;
+  v_cleared := player.cleared;
+  v_cleared[col + 1] := true;
+  update public.skyjo_players
+  set cards = v_cards, cleared = v_cleared, columns = columns + 1
+  where game_id = p_game_id and seat = p_seat;
+  update public.skyjo_games set discard = discard || array[v, v, v] where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'clear', 'seat', p_seat, 'col', col, 'card', v, 'n', 3 * v));
+end;
+$$;
+
+-- Oberste Karte vom Stapel; ist er leer, wird die Ablage ohne ihre oberste Karte neu gemischt
+create or replace function public._skyjo_take_from_deck(p_game_id uuid)
+returns smallint
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  deck smallint[];
+  pile smallint[];
+begin
+  select cards into deck from public.skyjo_decks where game_id = p_game_id for update;
+
+  if cardinality(deck) = 0 then
+    select discard into pile from public.skyjo_games where id = p_game_id;
+    if cardinality(pile) <= 1 then
+      raise exception 'Es gibt keine Karten mehr zum Ziehen.';
+    end if;
+    select array_agg(c order by gen_random_uuid()) into deck
+    from unnest(pile[1:cardinality(pile) - 1]) as c;
+    update public.skyjo_games set discard = array[pile[cardinality(pile)]] where id = p_game_id;
+    perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'shuffle', 'n', cardinality(deck)));
+  end if;
+
+  update public.skyjo_decks set cards = deck[2:cardinality(deck)] where game_id = p_game_id;
+  update public.skyjo_games set deck_count = cardinality(deck) - 1 where id = p_game_id;
+  return deck[1];
+end;
+$$;
+
+-- Runde vorbei: alles aufdecken, roh zählen, ggf. den Rundenbeender verdoppeln, Punkte
+-- gutschreiben. Hat jemand das Spielende erreicht, endet das Spiel, sonst Rundenübersicht.
+create or replace function public._skyjo_end_round(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  r record;
+  ender_raw integer;
+  v_double boolean;
+begin
+  select * into game from public.skyjo_games where id = p_game_id;
+
+  for r in
+    select p.seat, p.cleared, h.cards
+    from public.skyjo_players p
+    join public.skyjo_hands h on h.game_id = p.game_id and h.seat = p.seat
+    where p.game_id = p_game_id and p.state = 'active'
+  loop
+    update public.skyjo_players
+    set cards = (select array_agg(case when r.cleared[(i - 1) % 4 + 1] then null else r.cards[i] end
+                                  order by i)
+                 from generate_subscripts(r.cards, 1) as i),
+        round_raw = (select coalesce(sum(r.cards[i]), 0)
+                     from generate_subscripts(r.cards, 1) as i
+                     where not r.cleared[(i - 1) % 4 + 1])
+    where game_id = p_game_id and seat = r.seat;
+  end loop;
+
+  select round_raw into ender_raw
+  from public.skyjo_players
+  where game_id = p_game_id and seat = game.ender_seat and state = 'active';
+  v_double := game.double_ender and ender_raw is not null and ender_raw > 0
+    and exists (select 1 from public.skyjo_players
+                where game_id = p_game_id and state = 'active' and seat <> game.ender_seat
+                  and round_raw <= ender_raw);
+
+  update public.skyjo_players
+  set round_score = case when v_double and seat = game.ender_seat then round_raw * 2 else round_raw end,
+      doubled = doubled + (case when v_double and seat = game.ender_seat then 1 else 0 end)
+  where game_id = p_game_id and state = 'active';
+  update public.skyjo_players
+  set score = score + round_score,
+      best_round = least(coalesce(best_round, round_score), round_score)
+  where game_id = p_game_id and state = 'active';
+  update public.skyjo_players set round_raw = null, round_score = null
+  where game_id = p_game_id and state = 'left';
+
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'round_end', 'round', game.round_no, 'seat', game.ender_seat, 'doubled', v_double));
+
+  if exists (select 1 from public.skyjo_players
+             where game_id = p_game_id and state = 'active' and score >= game.end_score) then
+    update public.skyjo_games
+    set status = 'finished', phase = 'round_over', step = null, turn_seat = null,
+        drawn = null, drawn_from = null, waiting_since = null
+    where id = p_game_id;
+  else
+    update public.skyjo_games
+    set phase = 'round_over', step = null, turn_seat = null, drawn = null, drawn_from = null,
+        waiting_since = now()
+    where id = p_game_id;
+  end if;
+end;
+$$;
+
+-- Haben alle aktiven Spieler 2 Karten aufgedeckt: wer die höchste Summe zeigt, beginnt
+-- (bei Gleichstand der frühere Platz).
+create or replace function public._skyjo_reveal_done(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_seat smallint;
+  v_total integer;
+begin
+  if exists (select 1 from public.skyjo_players
+             where game_id = p_game_id and state = 'active' and flips < 2) then
+    return;
+  end if;
+
+  select p.seat, (select coalesce(sum(c), 0) from unnest(p.cards) as c)
+  into v_seat, v_total
+  from public.skyjo_players p
+  where p.game_id = p_game_id and p.state = 'active'
+  order by 2 desc, p.seat
+  limit 1;
+
+  if v_seat is null then
+    return;
+  end if;
+
+  update public.skyjo_games
+  set phase = 'turn', step = 'draw', turn_seat = v_seat, waiting_since = now()
+  where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'start', 'seat', v_seat, 'n', v_total));
+end;
+$$;
+
+-- Zug von turn_seat ist fertig: Hat er jetzt alles offen, beginnt die letzte Runde (jeder
+-- andere noch einen Zug). Danach der Nächste reihum bzw. Rundenende.
+create or replace function public._skyjo_end_turn(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  v_state text;
+  v_next smallint;
+begin
+  select * into game from public.skyjo_games where id = p_game_id;
+  select state into v_state
+  from public.skyjo_players where game_id = p_game_id and seat = game.turn_seat;
+
+  if game.ender_seat is null then
+    if v_state = 'active' and cardinality(public._skyjo_hidden_cells(p_game_id, game.turn_seat)) = 0 then
+      update public.skyjo_games
+      set ender_seat = game.turn_seat,
+          last_turns = (select coalesce(array_agg(p.seat order by (p.seat - game.turn_seat + game.seat_count) % game.seat_count), '{}')
+                        from public.skyjo_players p
+                        where p.game_id = p_game_id and p.state = 'active' and p.seat <> game.turn_seat)
+      where id = p_game_id;
+      perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'last', 'seat', game.turn_seat));
+    end if;
+  else
+    update public.skyjo_games set last_turns = array_remove(last_turns, game.turn_seat)
+    where id = p_game_id;
+  end if;
+
+  select * into game from public.skyjo_games where id = p_game_id;
+  if game.ender_seat is not null and cardinality(game.last_turns) = 0 then
+    perform public._skyjo_end_round(p_game_id);
+    return;
+  end if;
+
+  select p.seat into v_next
+  from public.skyjo_players p
+  where p.game_id = p_game_id and p.state = 'active'
+    and (game.ender_seat is null or p.seat = any (game.last_turns))
+  order by (p.seat - game.turn_seat - 1 + 2 * game.seat_count) % game.seat_count
+  limit 1;
+
+  if v_next is null then
+    perform public._skyjo_end_round(p_game_id);
+    return;
+  end if;
+
+  update public.skyjo_games
+  set turn_seat = v_next, step = 'draw', drawn = null, drawn_from = null, waiting_since = now()
+  where id = p_game_id;
+end;
+$$;
+
+-- Ersetzt ein altes Spiel der Lobby. Sitze in Beitrittsreihenfolge, Host zuerst; Regeln aus
+-- game_settings. Der Aufrufer (start_lobby) hält die Sperren auf Lobby und Mitglieder.
+create or replace function public._skyjo_create_game(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  new_game_id uuid;
+begin
+  select * into lobby from public.multiplayer_lobbies where id = p_lobby_id;
+  delete from public.skyjo_games where lobby_id = p_lobby_id;
+
+  insert into public.skyjo_games (lobby_id, seat_count, end_score, clear_columns, double_ender)
+  values (p_lobby_id,
+          (select count(*) from public.multiplayer_lobby_members where lobby_id = p_lobby_id),
+          coalesce((lobby.game_settings ->> 'endScore')::smallint, 100),
+          coalesce((lobby.game_settings ->> 'clearColumns')::boolean, true),
+          coalesce((lobby.game_settings ->> 'doubleEnder')::boolean, true))
+  returning id into new_game_id;
+
+  insert into public.skyjo_players (game_id, user_id, seat)
+  select new_game_id, m.user_id,
+         (row_number() over (order by (m.user_id = lobby.host_user_id) desc, m.joined_at, m.user_id) - 1)
+  from public.multiplayer_lobby_members m
+  where m.lobby_id = p_lobby_id;
+
+  insert into public.skyjo_hands (game_id, seat, user_id)
+  select game_id, seat, user_id from public.skyjo_players where game_id = new_game_id;
+
+  perform public._skyjo_deal(new_game_id);
+
+  -- Erste Tick-Zeile jetzt, solange die Lobby gesperrt ist (wie _nimm6_create_game)
+  perform public._game_tick(p_lobby_id);
+end;
+$$;
+
+-- Ein Spieler verlässt das Spiel (Kick, Verlassen, Konto gelöscht). Wirft nie, damit
+-- Verlassen der Lobby immer klappt; ein Fehler rollt nur den Spielteil zurück. Ist er am
+-- Zug, geht seine gezogene Karte auf die Ablage und der Nächste ist dran.
+create or replace function public._skyjo_remove_player(p_game_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  player public.skyjo_players;
+begin
+  begin
+    select * into game from public.skyjo_games where id = p_game_id;
+    if not found then
+      return;
+    end if;
+
+    select * into player
+    from public.skyjo_players where game_id = p_game_id and user_id = p_user_id;
+    if not found or player.state = 'left' then
+      return;
+    end if;
+
+    update public.skyjo_games set last_events = '[]' where id = p_game_id;
+    update public.skyjo_players set state = 'left', left_at = now()
+    where game_id = p_game_id and seat = player.seat;
+    perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'left', 'seat', player.seat));
+
+    if game.status <> 'playing' then
+      return;
+    end if;
+
+    if (select count(*) from public.skyjo_players
+        where game_id = p_game_id and state = 'active') < 2 then
+      update public.skyjo_games
+      set status = 'finished', step = null, turn_seat = null, drawn = null, drawn_from = null,
+          waiting_since = null
+      where id = p_game_id;
+    elsif game.phase = 'reveal' then
+      perform public._skyjo_reveal_done(p_game_id);
+    elsif game.phase = 'turn' and game.turn_seat = player.seat then
+      if game.drawn is not null then
+        update public.skyjo_games
+        set discard = discard || game.drawn, drawn = null, drawn_from = null
+        where id = p_game_id;
+      end if;
+      perform public._skyjo_end_turn(p_game_id);
+    elsif game.phase = 'turn' and game.ender_seat is not null then
+      update public.skyjo_games set last_turns = array_remove(last_turns, player.seat)
+      where id = p_game_id;
+    end if;
+  exception when others then
+    raise warning 'Skyjo: Spieler % konnte nicht aus Spiel % entfernt werden: %',
+      p_user_id, p_game_id, sqlerrm;
+  end;
+end;
+$$;
+
+create or replace function public._skyjo_on_member_removed()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_game_id uuid;
+begin
+  -- Wird die ganze Lobby gelöscht, verschwindet das Spiel ohnehin
+  if not exists (select 1 from public.multiplayer_lobbies where id = old.lobby_id) then
+    return null;
+  end if;
+
+  select id into v_game_id
+  from public.skyjo_games where lobby_id = old.lobby_id
+  for update;
+
+  if v_game_id is not null then
+    perform public._skyjo_remove_player(v_game_id, old.user_id);
+    perform public._game_tick(old.lobby_id);
+  end if;
+  return null;
+end;
+$$;
+
+-- Läuft neben den Triggern der anderen Spiele; jeder findet nur sein eigenes Spiel.
+drop trigger if exists multiplayer_lobby_members_skyjo_leave on public.multiplayer_lobby_members;
+create trigger multiplayer_lobby_members_skyjo_leave
+after delete on public.multiplayer_lobby_members
+for each row execute function public._skyjo_on_member_removed();
+
+-- Sitz des Aufrufers, wenn er noch mitspielt.
+create or replace function public._skyjo_my_seat(p_game_id uuid)
+returns smallint
+language plpgsql
+stable
+security definer set search_path = ''
+as $$
+declare
+  my_seat smallint;
+begin
+  select seat into my_seat
+  from public.skyjo_players
+  where game_id = p_game_id and user_id = auth.uid() and state = 'active';
+
+  if my_seat is null then
+    raise exception 'Du spielst in diesem Spiel nicht mit.';
+  end if;
+  return my_seat;
+end;
+$$;
+
+-- Sperrt das Spiel für eine öffentliche Funktion (immer zuerst, vor allen Schreibzugriffen).
+create or replace function public._skyjo_lock(p_game_id uuid)
+returns public.skyjo_games
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into game from public.skyjo_games where id = p_game_id for update;
+  if game.id is null then
+    raise exception 'Dieses Spiel gibt es nicht mehr.';
+  end if;
+  return game;
+end;
+$$;
+
+create or replace function public._skyjo_is_host(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.skyjo_games g
+    join public.multiplayer_lobbies l on l.id = g.lobby_id
+    where g.id = p_game_id and l.host_user_id = auth.uid()
+  );
+$$;
+
+-- Im Zug: Spiel läuft, Ansicht aktuell und der Aufrufer ist dran. false = veraltete
+-- Ansicht (nichts tun); nicht am Zug wirft.
+create or replace function public._skyjo_my_turn(
+  p_game public.skyjo_games, p_seat smallint, p_waiting_since timestamptz
+)
+returns boolean
+language plpgsql
+stable
+security definer set search_path = ''
+as $$
+begin
+  if p_game.status <> 'playing' or p_game.phase <> 'turn'
+     or p_game.waiting_since is distinct from p_waiting_since then
+    return false;
+  end if;
+  if p_game.turn_seat is distinct from p_seat then
+    raise exception 'Du bist nicht am Zug.';
+  end if;
+  return true;
+end;
+$$;
+
+revoke execute on function public._skyjo_log(uuid, jsonb) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_deal(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_hidden_cells(uuid, smallint) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_reveal(uuid, smallint, integer) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_check_column(uuid, smallint, integer)
+  from public, anon, authenticated;
+
+revoke execute on function public._skyjo_take_from_deck(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_end_round(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_reveal_done(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_end_turn(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_create_game(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_remove_player(uuid, uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_on_member_removed() from public, anon, authenticated;
+
+revoke execute on function public._skyjo_my_seat(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_lock(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_is_host(uuid) from public, anon, authenticated;
+
+revoke execute on function public._skyjo_my_turn(public.skyjo_games, smallint, timestamptz)
+  from public, anon, authenticated;
+
+-- ===========================================================================
+-- Skyjo: öffentliche Funktionen
+-- ===========================================================================
+
+-- Karte aufdecken: beim Rundenstart (bis 2 je Spieler, alle gleichzeitig) bzw. im Zug nach
+-- dem Abwerfen. Veraltete Ansicht oder schon offen: nichts tun.
+create or replace function public.skyjo_flip(p_game_id uuid, p_waiting_since timestamptz, p_cell integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  my_seat smallint;
+  player public.skyjo_players;
+begin
+  game := public._skyjo_lock(p_game_id);
+  my_seat := public._skyjo_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.waiting_since is distinct from p_waiting_since then
+    return;
+  end if;
+
+  if p_cell is null or p_cell not between 0 and 11 then
+    raise exception 'Diese Karte gibt es nicht.';
+  end if;
+
+  select * into player from public.skyjo_players where game_id = p_game_id and seat = my_seat;
+  if player.cleared[p_cell % 4 + 1] or player.cards[p_cell + 1] is not null then
+    return;
+  end if;
+
+  if game.phase = 'reveal' then
+    if player.flips >= 2 then
+      return;
+    end if;
+    update public.skyjo_games set last_events = '[]' where id = p_game_id;
+    perform public._skyjo_reveal(p_game_id, my_seat, p_cell);
+    update public.skyjo_players set flips = flips + 1 where game_id = p_game_id and seat = my_seat;
+    perform public._skyjo_reveal_done(p_game_id);
+  elsif public._skyjo_my_turn(game, my_seat, p_waiting_since) and game.step = 'flip' then
+    update public.skyjo_games set last_events = '[]' where id = p_game_id;
+    perform public._skyjo_reveal(p_game_id, my_seat, p_cell);
+    perform public._skyjo_check_column(p_game_id, my_seat, p_cell);
+    perform public._skyjo_end_turn(p_game_id);
+  else
+    return;
+  end if;
+
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Karte ziehen: p_source pile (Stapel) oder discard (oberste Ablagekarte).
+create or replace function public.skyjo_draw(p_game_id uuid, p_waiting_since timestamptz, p_source text)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  my_seat smallint;
+  v smallint;
+begin
+  game := public._skyjo_lock(p_game_id);
+  my_seat := public._skyjo_my_seat(p_game_id);
+
+  if not public._skyjo_my_turn(game, my_seat, p_waiting_since) or game.step <> 'draw' then
+    return;
+  end if;
+
+  update public.skyjo_games set last_events = '[]' where id = p_game_id;
+  if p_source = 'pile' then
+    v := public._skyjo_take_from_deck(p_game_id);
+  elsif p_source = 'discard' then
+    if cardinality(game.discard) = 0 then
+      raise exception 'Die Ablage ist leer.';
+    end if;
+    v := game.discard[cardinality(game.discard)];
+    update public.skyjo_games set discard = discard[1:cardinality(discard) - 1] where id = p_game_id;
+  else
+    raise exception 'Diesen Stapel gibt es nicht.';
+  end if;
+
+  update public.skyjo_games set drawn = v, drawn_from = p_source, step = 'place' where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'draw', 'seat', my_seat, 'from', p_source, 'card', v));
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Gezogene Karte gegen Zelle p_cell tauschen (offen oder verdeckt); die alte Karte geht
+-- offen auf die Ablage.
+create or replace function public.skyjo_swap(p_game_id uuid, p_waiting_since timestamptz, p_cell integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  my_seat smallint;
+  player public.skyjo_players;
+  old smallint;
+begin
+  game := public._skyjo_lock(p_game_id);
+  my_seat := public._skyjo_my_seat(p_game_id);
+
+  if not public._skyjo_my_turn(game, my_seat, p_waiting_since) or game.step <> 'place' then
+    return;
+  end if;
+
+  if p_cell is null or p_cell not between 0 and 11 then
+    raise exception 'Diese Karte gibt es nicht.';
+  end if;
+
+  select * into player from public.skyjo_players where game_id = p_game_id and seat = my_seat;
+  if player.cleared[p_cell % 4 + 1] then
+    raise exception 'Diese Spalte ist schon abgeräumt.';
+  end if;
+
+  select cards[p_cell + 1] into old
+  from public.skyjo_hands where game_id = p_game_id and seat = my_seat;
+  update public.skyjo_hands set cards[p_cell + 1] = game.drawn
+  where game_id = p_game_id and seat = my_seat;
+  update public.skyjo_players set cards[p_cell + 1] = game.drawn
+  where game_id = p_game_id and seat = my_seat;
+  update public.skyjo_games
+  set last_events = '[]', discard = discard || old, drawn = null, drawn_from = null
+  where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'swap', 'seat', my_seat, 'cell', p_cell, 'card', game.drawn, 'old', old,
+    'hidden', player.cards[p_cell + 1] is null, 'from', game.drawn_from));
+
+  perform public._skyjo_check_column(p_game_id, my_seat, p_cell);
+  perform public._skyjo_end_turn(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Gezogene Stapelkarte abwerfen; danach eine verdeckte Karte aufdecken (skyjo_flip).
+create or replace function public.skyjo_discard(p_game_id uuid, p_waiting_since timestamptz)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  my_seat smallint;
+begin
+  game := public._skyjo_lock(p_game_id);
+  my_seat := public._skyjo_my_seat(p_game_id);
+
+  if not public._skyjo_my_turn(game, my_seat, p_waiting_since) or game.step <> 'place' then
+    return;
+  end if;
+
+  if game.drawn_from is distinct from 'pile' then
+    raise exception 'Eine Karte von der Ablage musst du tauschen.';
+  end if;
+
+  update public.skyjo_games
+  set last_events = '[]', discard = discard || game.drawn, drawn = null, drawn_from = null,
+      step = 'flip'
+  where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object(
+    't', 'discard', 'seat', my_seat, 'card', game.drawn));
+
+  -- Nichts mehr verdeckt (kommt praktisch nicht vor): Zug ist fertig
+  if cardinality(public._skyjo_hidden_cells(p_game_id, my_seat)) = 0 then
+    perform public._skyjo_end_turn(p_game_id);
+  end if;
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Zeit abgelaufen: beim Rundenstart deckt der Tisch für die Fehlenden zufällig auf; im Zug
+-- geht eine gezogene Karte auf die Ablage und eine zufällige verdeckte Karte wird
+-- aufgedeckt. Es gibt keine Zugzeit: nur der Host darf das auslösen, nur für die Lage, die
+-- er gesehen hat, und erst nach 30 s Wartezeit (25 s lassen Luft für Verzögerung).
+create or replace function public.skyjo_skip(p_game_id uuid, p_waiting_since timestamptz)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+  r record;
+  hidden integer[];
+  v_cell integer;
+  k integer;
+begin
+  game := public._skyjo_lock(p_game_id);
+
+  if not public._skyjo_is_host(p_game_id) then
+    raise exception 'Nur der Host kann überspringen.';
+  end if;
+
+  -- Inzwischen ist es weitergegangen: nichts zu tun
+  if game.waiting_since is distinct from p_waiting_since
+     or game.status <> 'playing' or game.phase not in ('reveal', 'turn') then
+    return;
+  end if;
+
+  if game.waiting_since > now() - interval '25 seconds' then
+    raise exception 'Überspringen geht erst nach 30 Sekunden Wartezeit.';
+  end if;
+
+  update public.skyjo_games set last_events = '[]' where id = p_game_id;
+
+  if game.phase = 'reveal' then
+    for r in
+      select p.seat, p.flips from public.skyjo_players p
+      where p.game_id = p_game_id and p.state = 'active' and p.flips < 2
+      order by p.seat
+    loop
+      perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'skip', 'seat', r.seat));
+      for k in 1 .. 2 - r.flips loop
+        hidden := public._skyjo_hidden_cells(p_game_id, r.seat);
+        exit when cardinality(hidden) = 0;
+        perform public._skyjo_reveal(p_game_id, r.seat,
+                                     hidden[1 + floor(random() * cardinality(hidden))::integer]);
+      end loop;
+      update public.skyjo_players set flips = 2 where game_id = p_game_id and seat = r.seat;
+    end loop;
+    perform public._skyjo_reveal_done(p_game_id);
+  else
+    perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'skip', 'seat', game.turn_seat));
+    if game.drawn is not null then
+      update public.skyjo_games
+      set discard = discard || game.drawn, drawn = null, drawn_from = null
+      where id = p_game_id;
+    end if;
+    hidden := public._skyjo_hidden_cells(p_game_id, game.turn_seat);
+    if cardinality(hidden) > 0 then
+      v_cell := hidden[1 + floor(random() * cardinality(hidden))::integer];
+      perform public._skyjo_reveal(p_game_id, game.turn_seat, v_cell);
+      perform public._skyjo_check_column(p_game_id, game.turn_seat, v_cell);
+    end if;
+    perform public._skyjo_end_turn(p_game_id);
+  end if;
+
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Nächste Runde nach der Rundenübersicht (mindestens 5 s). Jeder am Tisch darf das auslösen
+-- (Knopf oder Uhr); p_round_no ist die Runde, die er gesehen hat (Doppeltipp tut nichts).
+create or replace function public.skyjo_next_round(p_game_id uuid, p_round_no integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+begin
+  game := public._skyjo_lock(p_game_id);
+  perform public._skyjo_my_seat(p_game_id);
+
+  if game.status <> 'playing' or game.phase <> 'round_over'
+     or game.round_no is distinct from p_round_no then
+    return;
+  end if;
+
+  if game.waiting_since > now() - interval '5 seconds' then
+    raise exception 'Die Rundenübersicht läuft noch.';
+  end if;
+
+  update public.skyjo_games set last_events = '[]', round_no = round_no + 1 where id = p_game_id;
+  perform public._skyjo_deal(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Host bricht das Spiel ab: kein Ergebnis, keine Abend-Siege, alle zurück in die Warte-Lobby.
+create or replace function public.skyjo_end_game(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.skyjo_games;
+begin
+  game := public._skyjo_lock(p_game_id);
+
+  if not public._skyjo_is_host(p_game_id) then
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
+  end if;
+
+  if game.status <> 'playing' then
+    raise exception 'Das Spiel ist bereits vorbei.';
+  end if;
+
+  -- Abbruch: die Ergebnis-Trigger werten das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
+
+  update public.skyjo_games
+  set last_events = '[]', status = 'finished', step = null, turn_seat = null, drawn = null,
+      drawn_from = null, waiting_since = null
+  where id = p_game_id;
+  perform public._skyjo_log(p_game_id, jsonb_build_object('t', 'end'));
+  perform public._game_tick(game.lobby_id);
+  perform public.skyjo_return_to_lobby(game.lobby_id);
+end;
+$$;
+
+-- Zurück in die Warte-Lobby mit denselben Leuten (wie nimm6_return_to_lobby).
+-- Sperrreihenfolge Lobby -> Mitglieder -> Spiel wie Verlassen/Kick.
+create or replace function public.skyjo_return_to_lobby(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  game_status text;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into lobby
+  from public.multiplayer_lobbies where id = p_lobby_id
+  for update;
+
+  if lobby.id is null or lobby.host_user_id <> auth.uid() then
+    raise exception 'Nur der Host kann zur Warte-Lobby zurückkehren.';
+  end if;
+
+  if lobby.status <> 'started' then
+    raise exception 'Die Lobby ist bereits wieder offen.';
+  end if;
+
+  update public.multiplayer_lobby_members set ready = false where lobby_id = p_lobby_id;
+
+  select status into game_status
+  from public.skyjo_games where lobby_id = p_lobby_id
+  for update;
+
+  if game_status is not null and game_status <> 'finished' then
+    raise exception 'Das Spiel läuft noch.';
+  end if;
+
+  delete from public.skyjo_games where lobby_id = p_lobby_id;
+
+  update public.multiplayer_lobbies
+  set status = 'open', started_at = null
+  where id = p_lobby_id;
+end;
+$$;
+
+revoke execute on function public.skyjo_flip(uuid, timestamptz, integer) from public, anon;
+
+revoke execute on function public.skyjo_draw(uuid, timestamptz, text) from public, anon;
+
+revoke execute on function public.skyjo_swap(uuid, timestamptz, integer) from public, anon;
+
+revoke execute on function public.skyjo_discard(uuid, timestamptz) from public, anon;
+
+revoke execute on function public.skyjo_skip(uuid, timestamptz) from public, anon;
+
+revoke execute on function public.skyjo_next_round(uuid, integer) from public, anon;
+
+revoke execute on function public.skyjo_end_game(uuid) from public, anon;
+
+revoke execute on function public.skyjo_return_to_lobby(uuid) from public, anon;
+
+grant execute on function public.skyjo_flip(uuid, timestamptz, integer) to authenticated;
+
+grant execute on function public.skyjo_draw(uuid, timestamptz, text) to authenticated;
+
+grant execute on function public.skyjo_swap(uuid, timestamptz, integer) to authenticated;
+
+grant execute on function public.skyjo_discard(uuid, timestamptz) to authenticated;
+
+grant execute on function public.skyjo_skip(uuid, timestamptz) to authenticated;
+
+grant execute on function public.skyjo_next_round(uuid, integer) to authenticated;
+
+grant execute on function public.skyjo_end_game(uuid) to authenticated;
+
+grant execute on function public.skyjo_return_to_lobby(uuid) to authenticated;
+
+-- ===========================================================================
+-- Skyjo: Statistik und Abend-Wertung
+-- ===========================================================================
+
+-- Ein Ergebnis je Spieler, Rang nach Punkten (wenigste zuerst). Am Ende allein oder ohne
+-- eine abgeschlossene Runde zählt nichts. Ein Fehler hier darf den Zug nie abbrechen.
+create or replace function public._skyjo_record_result()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if (new.round_no <= 1 and new.phase <> 'round_over')
+     or (select count(*) from public.skyjo_players
+         where game_id = new.id and state <> 'left') < 2 then
+    return null;
+  end if;
+
+  insert into public.game_results (game_id, user_id, game_key, placement, player_count, won, score)
+  select new.id, r.user_id, 'skyjo', r.placement, r.player_count,
+         r.placement = 1 and r.state <> 'left', r.score
+  from (
+    select p.user_id, p.state, p.score,
+           rank() over (order by p.state = 'left', p.score) as placement,
+           count(*) over () as player_count
+    from public.skyjo_players p
+    where p.game_id = new.id
+  ) r
+  where exists (select 1 from auth.users u where u.id = r.user_id)
+  on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, 0);
+  end if;
+  return null;
+exception when others then
+  raise warning 'Skyjo: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
+  return null;
+end;
+$$;
+
+drop trigger if exists skyjo_games_record_result on public.skyjo_games;
+create trigger skyjo_games_record_result
+after update of status on public.skyjo_games
+for each row when (new.status = 'finished' and old.status <> 'finished'
+                   and current_setting('game.aborted', true) is distinct from 'on')
+execute function public._skyjo_record_result();
+
+revoke execute on function public._skyjo_record_result() from public, anon, authenticated;
+
+-- ===========================================================================
+-- Kniffel
+-- ===========================================================================
+
+-- Kniffel als achtes Lobby-Spiel: 2–8 Spieler, je 13 Felder auf dem Block. Wer dran ist,
+-- würfelt bis zu dreimal (gehaltene Würfel bleiben liegen) und trägt den Wurf in ein freies
+-- Feld ein, notfalls mit 0. Oben zählen nur die Augen der Zahl (Bonus 35 ab 63), unten:
+-- Dreier-/Viererpasch = alle Augen, Full House 25, Kleine Straße 30, Große Straße 40,
+-- Kniffel 50, Chance = alle Augen. Sind alle Felder voll, gewinnt die höchste Summe.
+--
+-- Wie Skyjo: alle Züge über die security-definer-Funktionen unten, Clients lesen Spiel und
+-- Spieler; jede öffentliche Funktion erhöht game_ticks genau einmal am Ende. Gewürfelt wird
+-- nur hier (random()), geheim ist nichts.
+
+-- ===========================================================================
+-- Kniffel: schema
+-- ===========================================================================
+
+create table if not exists public.kniffel_games (
+  id uuid primary key default gen_random_uuid(),
+  lobby_id uuid not null unique references public.multiplayer_lobbies(id) on delete cascade,
+  status text not null default 'playing' check (status in ('playing', 'finished')),
+  seat_count smallint not null check (seat_count between 2 and 8),
+  turn_seat smallint,
+  -- Würfel des laufenden Zugs (leer vor dem ersten Wurf), gehaltene Würfel, Würfe 0–3
+  dice smallint[] not null default '{}',
+  held boolean[] not null default array[false, false, false, false, false],
+  rolls smallint not null default 0 check (rolls between 0 and 3),
+  -- Zählt jeden Wurf; daran erkennen die Clients, dass sie die Würfel animieren müssen
+  roll_seq integer not null default 0,
+  -- Neu bei jedem Wurf und jedem Zug (Halten ändert ihn nicht)
+  waiting_since timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- user_id ohne Fremdschlüssel, wie skyjo_players
+create table if not exists public.kniffel_players (
+  game_id uuid not null references public.kniffel_games(id) on delete cascade,
+  user_id uuid not null,
+  seat smallint not null check (seat between 0 and 7),
+  state text not null default 'active' check (state in ('active', 'left')),
+  -- Felder 0–12 an Index 1–13 (Einser … Sechser, Dreierpasch, Viererpasch, Full House,
+  -- Kleine Straße, Große Straße, Kniffel, Chance); null = frei
+  scores smallint[] not null default array_fill(null::smallint, array[13]),
+  -- Summe mit Bonus
+  total integer not null default 0,
+  left_at timestamptz,
+  primary key (game_id, user_id),
+  unique (game_id, seat)
+);
+
+-- ===========================================================================
+-- Kniffel: row level security and privileges
+-- ===========================================================================
+
+alter table public.kniffel_games enable row level security;
+
+alter table public.kniffel_players enable row level security;
+
+drop policy if exists "Multiplayer users can read kniffel games" on public.kniffel_games;
+create policy "Multiplayer users can read kniffel games"
+  on public.kniffel_games for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Multiplayer users can read kniffel players" on public.kniffel_players;
+create policy "Multiplayer users can read kniffel players"
+  on public.kniffel_players for select
+  to authenticated
+  using ((select public.can_use_multiplayer((select auth.uid()))));
+
+drop policy if exists "Guests only see their kniffel game" on public.kniffel_games;
+create policy "Guests only see their kniffel game"
+  on public.kniffel_games as restrictive for select
+  to authenticated
+  using (not (select public.is_guest()) or lobby_id = (select public.my_lobby_id()));
+
+drop policy if exists "Guests only see their kniffel players" on public.kniffel_players;
+create policy "Guests only see their kniffel players"
+  on public.kniffel_players as restrictive for select
+  to authenticated
+  using (
+    not (select public.is_guest())
+    or game_id = (
+      select g.id from public.kniffel_games g where g.lobby_id = (select public.my_lobby_id())
+    )
+  );
+
+revoke all on public.kniffel_games, public.kniffel_players from anon;
+
+revoke insert, update, delete, truncate, references, trigger
+  on public.kniffel_games, public.kniffel_players from authenticated;
+
+grant select on public.kniffel_games, public.kniffel_players to authenticated;
+
+-- ===========================================================================
+-- Kniffel: engine (intern, nicht über /rest/v1/rpc aufrufbar)
+-- ===========================================================================
+
+-- Punkte von fünf Würfeln im Feld p_category (0–12); gespiegelt in kniffel.model.ts
+create or replace function public._kniffel_points(p_dice smallint[], p_category integer)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  with counts as (
+    select f, (select count(*) from unnest(p_dice) as d where d = f)::integer as n
+    from generate_series(1, 6) as f
+  ),
+  s as (
+    select (select coalesce(sum(d), 0) from unnest(p_dice) as d)::integer as total,
+           (select max(n) from counts) as most,
+           (select array_agg(f order by f) from counts where n > 0) as faces,
+           (select array_agg(n order by n) from counts where n > 0) as shape
+  )
+  select case
+    when p_category between 0 and 5 then
+      (p_category + 1) * (select n from counts where f = p_category + 1)
+    when p_category = 6 then case when most >= 3 then total else 0 end
+    when p_category = 7 then case when most >= 4 then total else 0 end
+    when p_category = 8 then case when shape = array[2, 3] then 25 else 0 end
+    when p_category = 9 then
+      case when faces @> array[1, 2, 3, 4] or faces @> array[2, 3, 4, 5]
+                or faces @> array[3, 4, 5, 6] then 30 else 0 end
+    when p_category = 10 then
+      case when faces = array[1, 2, 3, 4, 5] or faces = array[2, 3, 4, 5, 6] then 40 else 0 end
+    when p_category = 11 then case when most = 5 then 50 else 0 end
+    when p_category = 12 then total
+  end
+  from s;
+$$;
+
+-- Punkte für p_category mit Blick auf den Block p_scores. Joker: ist das Kniffel-Feld schon
+-- belegt (mit 50 oder gestrichen) und fällt noch ein Kniffel, zählt er als Full House (25),
+-- kleine (30) oder große Straße (40). Sonst wie _kniffel_points; gespiegelt in kniffel.model.ts
+create or replace function public._kniffel_score(
+  p_dice smallint[],
+  p_category integer,
+  p_scores smallint[]
+)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select case
+    when p_category in (8, 9, 10)
+         and public._kniffel_points(p_dice, 11) = 50
+         and p_scores[12] is not null
+      then (array[25, 30, 40])[p_category - 7]
+    else public._kniffel_points(p_dice, p_category)
+  end;
+$$;
+
+-- Summe eines Blocks mit Bonus (35, wenn oben mindestens 63)
+create or replace function public._kniffel_total(p_scores smallint[])
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(sum(v), 0)::integer
+         + case when coalesce(sum(v) filter (where i <= 6), 0) >= 63 then 35 else 0 end
+  from unnest(p_scores) with ordinality as s(v, i);
+$$;
+
+-- Fünf neue Würfel; gehaltene (p_held) bleiben liegen
+create or replace function public._kniffel_throw(p_dice smallint[], p_held boolean[])
+returns smallint[]
+language sql
+volatile
+set search_path = ''
+as $$
+  select array_agg(case when coalesce(p_held[i], false) and p_dice[i] is not null then p_dice[i]
+                        else (1 + floor(random() * 6))::smallint end
+                   order by i)
+  from generate_series(1, 5) as i;
+$$;
+
+-- Wurf p_category für p_seat eintragen (Punkte aus den aktuellen Würfeln, mit Joker)
+create or replace function public._kniffel_enter(p_game_id uuid, p_seat smallint, p_category integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_dice smallint[];
+begin
+  select dice into v_dice from public.kniffel_games where id = p_game_id;
+  update public.kniffel_players
+  set scores[p_category + 1] = public._kniffel_score(v_dice, p_category, scores)
+  where game_id = p_game_id and seat = p_seat;
+  update public.kniffel_players set total = public._kniffel_total(scores)
+  where game_id = p_game_id and seat = p_seat;
+end;
+$$;
+
+-- Nächster aktiver Spieler reihum, der noch freie Felder hat; keiner mehr: Spiel vorbei
+create or replace function public._kniffel_next_turn(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+  v_next smallint;
+begin
+  select * into game from public.kniffel_games where id = p_game_id;
+
+  select p.seat into v_next
+  from public.kniffel_players p
+  where p.game_id = p_game_id and p.state = 'active' and array_position(p.scores, null) is not null
+  order by (p.seat - coalesce(game.turn_seat, -1) - 1 + 2 * game.seat_count) % game.seat_count
+  limit 1;
+
+  if v_next is null then
+    update public.kniffel_games
+    set status = 'finished', turn_seat = null, dice = '{}',
+        held = array[false, false, false, false, false], rolls = 0, waiting_since = null
+    where id = p_game_id;
+  else
+    update public.kniffel_games
+    set turn_seat = v_next, dice = '{}', held = array[false, false, false, false, false],
+        rolls = 0, waiting_since = now()
+    where id = p_game_id;
+  end if;
+end;
+$$;
+
+-- Ersetzt ein altes Spiel der Lobby. Sitze in Beitrittsreihenfolge, Host zuerst und beginnt.
+-- Der Aufrufer (start_lobby) hält die Sperren auf Lobby und Mitglieder.
+create or replace function public._kniffel_create_game(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  new_game_id uuid;
+begin
+  select * into lobby from public.multiplayer_lobbies where id = p_lobby_id;
+  delete from public.kniffel_games where lobby_id = p_lobby_id;
+
+  insert into public.kniffel_games (lobby_id, seat_count, turn_seat, waiting_since)
+  values (p_lobby_id,
+          (select count(*) from public.multiplayer_lobby_members where lobby_id = p_lobby_id),
+          0, now())
+  returning id into new_game_id;
+
+  insert into public.kniffel_players (game_id, user_id, seat)
+  select new_game_id, m.user_id,
+         (row_number() over (order by (m.user_id = lobby.host_user_id) desc, m.joined_at, m.user_id) - 1)
+  from public.multiplayer_lobby_members m
+  where m.lobby_id = p_lobby_id;
+
+  -- Erste Tick-Zeile jetzt, solange die Lobby gesperrt ist (wie _skyjo_create_game)
+  perform public._game_tick(p_lobby_id);
+end;
+$$;
+
+-- Ein Spieler verlässt das Spiel (Kick, Verlassen, Konto gelöscht). Wirft nie, damit
+-- Verlassen der Lobby immer klappt; ein Fehler rollt nur den Spielteil zurück. Ist er
+-- dran, ist der Nächste dran.
+create or replace function public._kniffel_remove_player(p_game_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+  player public.kniffel_players;
+begin
+  begin
+    select * into game from public.kniffel_games where id = p_game_id;
+    if not found then
+      return;
+    end if;
+
+    select * into player
+    from public.kniffel_players where game_id = p_game_id and user_id = p_user_id;
+    if not found or player.state = 'left' then
+      return;
+    end if;
+
+    update public.kniffel_players set state = 'left', left_at = now()
+    where game_id = p_game_id and seat = player.seat;
+
+    if game.status <> 'playing' then
+      return;
+    end if;
+
+    if (select count(*) from public.kniffel_players
+        where game_id = p_game_id and state = 'active') < 2 then
+      update public.kniffel_games
+      set status = 'finished', turn_seat = null, dice = '{}', rolls = 0, waiting_since = null
+      where id = p_game_id;
+    elsif game.turn_seat = player.seat then
+      perform public._kniffel_next_turn(p_game_id);
+    end if;
+  exception when others then
+    raise warning 'Kniffel: Spieler % konnte nicht aus Spiel % entfernt werden: %',
+      p_user_id, p_game_id, sqlerrm;
+  end;
+end;
+$$;
+
+create or replace function public._kniffel_on_member_removed()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_game_id uuid;
+begin
+  -- Wird die ganze Lobby gelöscht, verschwindet das Spiel ohnehin
+  if not exists (select 1 from public.multiplayer_lobbies where id = old.lobby_id) then
+    return null;
+  end if;
+
+  select id into v_game_id
+  from public.kniffel_games where lobby_id = old.lobby_id
+  for update;
+
+  if v_game_id is not null then
+    perform public._kniffel_remove_player(v_game_id, old.user_id);
+    perform public._game_tick(old.lobby_id);
+  end if;
+  return null;
+end;
+$$;
+
+-- Läuft neben den Triggern der anderen Spiele; jeder findet nur sein eigenes Spiel.
+drop trigger if exists multiplayer_lobby_members_kniffel_leave on public.multiplayer_lobby_members;
+create trigger multiplayer_lobby_members_kniffel_leave
+after delete on public.multiplayer_lobby_members
+for each row execute function public._kniffel_on_member_removed();
+
+-- Sperrt das Spiel für eine öffentliche Funktion (immer zuerst, vor allen Schreibzugriffen).
+create or replace function public._kniffel_lock(p_game_id uuid)
+returns public.kniffel_games
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into game from public.kniffel_games where id = p_game_id for update;
+  if game.id is null then
+    raise exception 'Dieses Spiel gibt es nicht mehr.';
+  end if;
+  return game;
+end;
+$$;
+
+create or replace function public._kniffel_is_host(p_game_id uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.kniffel_games g
+    join public.multiplayer_lobbies l on l.id = g.lobby_id
+    where g.id = p_game_id and l.host_user_id = auth.uid()
+  );
+$$;
+
+-- Der Aufrufer ist dran und die Ansicht aktuell. false = veraltete Ansicht (nichts tun);
+-- nicht dran bzw. nicht dabei wirft.
+create or replace function public._kniffel_my_turn(p_game public.kniffel_games, p_waiting_since timestamptz)
+returns boolean
+language plpgsql
+stable
+security definer set search_path = ''
+as $$
+begin
+  if p_game.status <> 'playing' or p_game.waiting_since is distinct from p_waiting_since then
+    return false;
+  end if;
+  if not exists (select 1 from public.kniffel_players
+                 where game_id = p_game.id and seat = p_game.turn_seat
+                   and user_id = auth.uid() and state = 'active') then
+    raise exception 'Du bist nicht am Zug.';
+  end if;
+  return true;
+end;
+$$;
+
+revoke execute on function public._kniffel_points(smallint[], integer) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_score(smallint[], integer, smallint[]) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_total(smallint[]) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_throw(smallint[], boolean[]) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_enter(uuid, smallint, integer) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_next_turn(uuid) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_create_game(uuid) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_remove_player(uuid, uuid) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_on_member_removed() from public, anon, authenticated;
+
+revoke execute on function public._kniffel_lock(uuid) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_is_host(uuid) from public, anon, authenticated;
+
+revoke execute on function public._kniffel_my_turn(public.kniffel_games, timestamptz)
+  from public, anon, authenticated;
+
+-- ===========================================================================
+-- Kniffel: öffentliche Funktionen
+-- ===========================================================================
+
+-- Würfeln (höchstens dreimal je Zug). p_held: welche Würfel liegen bleiben; beim ersten
+-- Wurf werden alle geworfen.
+create or replace function public.kniffel_roll(p_game_id uuid, p_waiting_since timestamptz, p_held boolean[])
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+  v_held boolean[];
+begin
+  game := public._kniffel_lock(p_game_id);
+
+  if not public._kniffel_my_turn(game, p_waiting_since) then
+    return;
+  end if;
+
+  if game.rolls >= 3 then
+    raise exception 'Du hast schon dreimal gewürfelt.';
+  end if;
+
+  if game.rolls = 0 then
+    v_held := array[false, false, false, false, false];
+  elsif cardinality(p_held) is distinct from 5 or array_position(p_held, null) is not null then
+    raise exception 'Ungültige Würfel.';
+  elsif array_position(p_held, false) is null then
+    raise exception 'Alle Würfel werden gehalten.';
+  else
+    v_held := p_held;
+  end if;
+
+  update public.kniffel_games
+  set dice = public._kniffel_throw(dice, v_held), held = v_held, rolls = rolls + 1,
+      roll_seq = roll_seq + 1, waiting_since = now()
+  where id = p_game_id;
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Würfel halten bzw. freigeben, damit alle am Tisch es sehen. Ändert waiting_since nicht;
+-- der Wurf bringt die gehaltenen Würfel ohnehin mit.
+create or replace function public.kniffel_hold(p_game_id uuid, p_waiting_since timestamptz, p_held boolean[])
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+begin
+  game := public._kniffel_lock(p_game_id);
+
+  if not public._kniffel_my_turn(game, p_waiting_since) or game.rolls = 0 then
+    return;
+  end if;
+
+  if cardinality(p_held) is distinct from 5 or array_position(p_held, null) is not null then
+    raise exception 'Ungültige Würfel.';
+  end if;
+
+  update public.kniffel_games set held = p_held where id = p_game_id;
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Wurf in ein freies Feld p_category (0–12) eintragen; danach ist der Nächste dran.
+create or replace function public.kniffel_score(p_game_id uuid, p_waiting_since timestamptz, p_category integer)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+begin
+  game := public._kniffel_lock(p_game_id);
+
+  if not public._kniffel_my_turn(game, p_waiting_since) then
+    return;
+  end if;
+
+  if game.rolls = 0 then
+    raise exception 'Erst würfeln, dann eintragen.';
+  end if;
+
+  if p_category is null or p_category not between 0 and 12 then
+    raise exception 'Dieses Feld gibt es nicht.';
+  end if;
+
+  if (select scores[p_category + 1] from public.kniffel_players
+      where game_id = p_game_id and seat = game.turn_seat) is not null then
+    raise exception 'Das Feld ist schon ausgefüllt.';
+  end if;
+
+  perform public._kniffel_enter(p_game_id, game.turn_seat, p_category);
+  perform public._kniffel_next_turn(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Host überspringt nach 30 s Wartezeit (25 s lassen Luft): noch nicht gewürfelt, würfelt
+-- der Tisch einmal; eingetragen wird ins freie Feld mit den meisten Punkten (mit Joker).
+create or replace function public.kniffel_skip(p_game_id uuid, p_waiting_since timestamptz)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+  v_dice smallint[];
+  v_category integer;
+begin
+  game := public._kniffel_lock(p_game_id);
+
+  if not public._kniffel_is_host(p_game_id) then
+    raise exception 'Nur der Host kann überspringen.';
+  end if;
+
+  -- Inzwischen ist es weitergegangen: nichts zu tun
+  if game.waiting_since is distinct from p_waiting_since or game.status <> 'playing' then
+    return;
+  end if;
+
+  if game.waiting_since > now() - interval '25 seconds' then
+    raise exception 'Überspringen geht erst nach 30 Sekunden Wartezeit.';
+  end if;
+
+  v_dice := game.dice;
+  if game.rolls = 0 then
+    v_dice := public._kniffel_throw('{}', '{}');
+    update public.kniffel_games
+    set dice = v_dice, rolls = 1, roll_seq = roll_seq + 1
+    where id = p_game_id;
+  end if;
+
+  select c into v_category
+  from public.kniffel_players p, generate_series(0, 12) as c
+  where p.game_id = p_game_id and p.seat = game.turn_seat and p.scores[c + 1] is null
+  order by public._kniffel_score(v_dice, c, p.scores) desc, c
+  limit 1;
+
+  if v_category is not null then
+    perform public._kniffel_enter(p_game_id, game.turn_seat, v_category);
+  end if;
+  perform public._kniffel_next_turn(p_game_id);
+  perform public._game_tick(game.lobby_id);
+end;
+$$;
+
+-- Host bricht das Spiel ab: kein Ergebnis, keine Abend-Siege, alle zurück in die Warte-Lobby.
+create or replace function public.kniffel_end_game(p_game_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  game public.kniffel_games;
+begin
+  game := public._kniffel_lock(p_game_id);
+
+  if not public._kniffel_is_host(p_game_id) then
+    raise exception 'Nur der Host kann das Spiel abbrechen.';
+  end if;
+
+  if game.status <> 'playing' then
+    raise exception 'Das Spiel ist bereits vorbei.';
+  end if;
+
+  -- Abbruch: die Ergebnis-Trigger werten das nicht (gilt nur in dieser Transaktion)
+  perform set_config('game.aborted', 'on', true);
+
+  update public.kniffel_games
+  set status = 'finished', turn_seat = null, dice = '{}', rolls = 0, waiting_since = null
+  where id = p_game_id;
+  perform public._game_tick(game.lobby_id);
+  perform public.kniffel_return_to_lobby(game.lobby_id);
+end;
+$$;
+
+-- Zurück in die Warte-Lobby mit denselben Leuten (wie skyjo_return_to_lobby).
+-- Sperrreihenfolge Lobby -> Mitglieder -> Spiel wie Verlassen/Kick.
+create or replace function public.kniffel_return_to_lobby(p_lobby_id uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  lobby public.multiplayer_lobbies;
+  game_status text;
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  select * into lobby
+  from public.multiplayer_lobbies where id = p_lobby_id
+  for update;
+
+  if lobby.id is null or lobby.host_user_id <> auth.uid() then
+    raise exception 'Nur der Host kann zur Warte-Lobby zurückkehren.';
+  end if;
+
+  if lobby.status <> 'started' then
+    raise exception 'Die Lobby ist bereits wieder offen.';
+  end if;
+
+  update public.multiplayer_lobby_members set ready = false where lobby_id = p_lobby_id;
+
+  select status into game_status
+  from public.kniffel_games where lobby_id = p_lobby_id
+  for update;
+
+  if game_status is not null and game_status <> 'finished' then
+    raise exception 'Das Spiel läuft noch.';
+  end if;
+
+  delete from public.kniffel_games where lobby_id = p_lobby_id;
+
+  update public.multiplayer_lobbies
+  set status = 'open', started_at = null
+  where id = p_lobby_id;
+end;
+$$;
+
+revoke execute on function public.kniffel_roll(uuid, timestamptz, boolean[]) from public, anon;
+
+revoke execute on function public.kniffel_hold(uuid, timestamptz, boolean[]) from public, anon;
+
+revoke execute on function public.kniffel_score(uuid, timestamptz, integer) from public, anon;
+
+revoke execute on function public.kniffel_skip(uuid, timestamptz) from public, anon;
+
+revoke execute on function public.kniffel_end_game(uuid) from public, anon;
+
+revoke execute on function public.kniffel_return_to_lobby(uuid) from public, anon;
+
+grant execute on function public.kniffel_roll(uuid, timestamptz, boolean[]) to authenticated;
+
+grant execute on function public.kniffel_hold(uuid, timestamptz, boolean[]) to authenticated;
+
+grant execute on function public.kniffel_score(uuid, timestamptz, integer) to authenticated;
+
+grant execute on function public.kniffel_skip(uuid, timestamptz) to authenticated;
+
+grant execute on function public.kniffel_end_game(uuid) to authenticated;
+
+grant execute on function public.kniffel_return_to_lobby(uuid) to authenticated;
+
+-- ===========================================================================
+-- Kniffel: Statistik und Abend-Wertung
+-- ===========================================================================
+
+-- Ein Ergebnis je Spieler, Rang nach Summe (höchste zuerst). Am Ende allein oder bevor
+-- jeder etwas eingetragen hat, zählt nichts. Ein Fehler hier darf den Zug nie abbrechen.
+create or replace function public._kniffel_record_result()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if (select count(*) from public.kniffel_players
+      where game_id = new.id and state <> 'left') < 2
+     or exists (select 1 from public.kniffel_players
+                where game_id = new.id and state <> 'left' and array_remove(scores, null) = '{}') then
+    return null;
+  end if;
+
+  insert into public.game_results (game_id, user_id, game_key, placement, player_count, won, score)
+  select new.id, r.user_id, 'kniffel', r.placement, r.player_count,
+         r.placement = 1 and r.state <> 'left', r.total
+  from (
+    select p.user_id, p.state, p.total,
+           rank() over (order by p.state = 'left', p.total desc) as placement,
+           count(*) over () as player_count
+    from public.kniffel_players p
+    where p.game_id = new.id
+  ) r
+  where exists (select 1 from auth.users u where u.id = r.user_id)
+  on conflict do nothing;
+  if found then
+    perform public._lobby_count_wins(new.lobby_id, new.id, 0);
+  end if;
+  return null;
+exception when others then
+  raise warning 'Kniffel: Ergebnis von Spiel % nicht gespeichert: %', new.id, sqlerrm;
+  return null;
+end;
+$$;
+
+drop trigger if exists kniffel_games_record_result on public.kniffel_games;
+create trigger kniffel_games_record_result
+after update of status on public.kniffel_games
+for each row when (new.status = 'finished' and old.status <> 'finished'
+                   and current_setting('game.aborted', true) is distinct from 'on')
+execute function public._kniffel_record_result();
+
+revoke execute on function public._kniffel_record_result() from public, anon, authenticated;
+
+-- ===========================================================================
+-- Lobby-Chat: Fragen zum Spiel und Spielvorschläge
+-- ===========================================================================
+-- Nachrichten gehören zur Lobby und verschwinden mit ihr. Lesen dürfen nur die Mitglieder
+-- (auch im laufenden Spiel), schreiben nur über lobby_send_message. game_key: Vorschlag eines
+-- Spiels aus der Übersicht; der Host kann ihn mit einem Tipp übernehmen. Je Lobby bleiben die
+-- letzten 200 Nachrichten.
+
+create table if not exists public.lobby_messages (
+  id bigint generated always as identity primary key,
+  lobby_id uuid not null references public.multiplayer_lobbies(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 300),
+  game_key text
+    check (game_key is null
+           or game_key in ('flip-7', 'skip-bo', 'monopoly', 'uno', 'blackjack', 'nimm-6', 'skyjo',
+                           'kniffel')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists lobby_messages_lobby_idx on public.lobby_messages (lobby_id, id desc);
+
+alter table public.lobby_messages enable row level security;
+
+drop policy if exists "Lobby members can read the lobby chat" on public.lobby_messages;
+create policy "Lobby members can read the lobby chat"
+  on public.lobby_messages for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.multiplayer_lobby_members m
+      where m.lobby_id = lobby_messages.lobby_id and m.user_id = (select auth.uid())
+    )
+  );
+
+revoke all on public.lobby_messages from anon, authenticated;
+grant select on public.lobby_messages to authenticated;
+
+-- Nachricht senden (Mitglieder der Lobby). Höchstens 8 Nachrichten in 20 Sekunden je Person.
+create or replace function public.lobby_send_message(
+  p_lobby_id uuid,
+  p_body text,
+  p_game_key text default null
+)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  v_body text := btrim(coalesce(p_body, ''));
+begin
+  if not public.can_use_multiplayer(auth.uid()) then
+    raise exception 'Multiplayer ist für dich noch nicht freigeschaltet.' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1 from public.multiplayer_lobby_members
+    where lobby_id = p_lobby_id and user_id = auth.uid()
+  ) then
+    raise exception 'Du bist nicht in dieser Lobby.';
+  end if;
+
+  if v_body = '' then
+    raise exception 'Die Nachricht ist leer.';
+  end if;
+
+  if char_length(v_body) > 300 then
+    raise exception 'Die Nachricht ist zu lang (höchstens 300 Zeichen).';
+  end if;
+
+  if (select count(*) from public.lobby_messages
+      where lobby_id = p_lobby_id and user_id = auth.uid()
+        and created_at > now() - interval '20 seconds') >= 8 then
+    raise exception 'Nicht so schnell – warte kurz mit der nächsten Nachricht.';
+  end if;
+
+  insert into public.lobby_messages (lobby_id, user_id, body, game_key)
+  values (p_lobby_id, auth.uid(), v_body, nullif(p_game_key, ''));
+
+  delete from public.lobby_messages
+  where lobby_id = p_lobby_id
+    and id < (select id from public.lobby_messages
+              where lobby_id = p_lobby_id order by id desc offset 199 limit 1);
+end;
+$$;
+
+revoke execute on function public.lobby_send_message(uuid, text, text) from public, anon;
+grant execute on function public.lobby_send_message(uuid, text, text) to authenticated;
+
+-- Neue Nachrichten live (weiterhin durch RLS gefiltert)
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'lobby_messages'
+  ) then
+    alter publication supabase_realtime add table public.lobby_messages;
+  end if;
+end;
+$$;

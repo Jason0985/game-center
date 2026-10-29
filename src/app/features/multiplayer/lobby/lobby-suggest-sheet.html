@@ -1,0 +1,57 @@
+<div class="sheet-grip" aria-hidden="true"></div>
+<div class="sheet-head">
+  <h2>Spiel vorschlagen</h2>
+  <button type="button" class="done" (click)="sheet.dismiss()">Fertig</button>
+</div>
+<p class="lead">Schau dir die Spiele an und schlag eins vor – der Host sieht es im Chat.</p>
+
+<ul class="group">
+  @for (game of games; track game.key) {
+    @let expanded = open() === game.key;
+    <li class="game" [class.game--open]="expanded">
+      <button
+        type="button"
+        class="game-row"
+        [attr.aria-expanded]="expanded"
+        [attr.aria-controls]="'suggest-' + game.key"
+        (click)="toggle(game.key)"
+      >
+        <span class="tile" [style.--tile]="game.tile">
+          <mat-icon aria-hidden="true">{{ game.icon }}</mat-icon>
+        </span>
+        <span class="game-text">
+          <span class="game-name">
+            {{ game.name }}
+            @if (game.key === data.currentGame) {
+              <span class="badge">Gewählt</span>
+            }
+          </span>
+          <span class="game-meta">{{ game.meta }}</span>
+        </span>
+        <mat-icon class="chevron" aria-hidden="true">expand_more</mat-icon>
+      </button>
+
+      @if (expanded) {
+        <div class="detail" [id]="'suggest-' + game.key">
+          <p class="blurb">{{ game.blurb }}</p>
+          <button
+            type="button"
+            class="suggest"
+            [disabled]="sending() || game.key === data.currentGame"
+            (click)="suggest(game)"
+          >
+            <mat-icon aria-hidden="true">casino</mat-icon>
+            {{ game.key === data.currentGame ? 'Ist schon gewählt' : game.name + ' vorschlagen' }}
+          </button>
+          @if (game.rules.length) {
+            <ul class="rules">
+              @for (rule of game.rules; track $index) {
+                <li>{{ rule }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </li>
+  }
+</ul>

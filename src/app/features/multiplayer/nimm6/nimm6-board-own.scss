@@ -155,28 +155,6 @@
   gap: 8px;
 }
 
-.clock {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--table-chip-bg);
-  color: var(--table-chip-text);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
-.clock .material-symbols-rounded {
-  font-size: 16px;
-}
-
-.clock.low {
-  background: color-mix(in srgb, var(--table-danger) 18%, transparent);
-  color: var(--table-danger);
-}
-
 .ready {
   color: var(--color-text-muted);
   font-size: 12px;

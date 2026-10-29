@@ -1,4 +1,4 @@
-import { bonusOf, KnPlayer, points, rankPlayers, upperSum } from './kniffel.model';
+import { bonusOf, KnPlayer, points, pointsFor, rankPlayers, upperSum } from './kniffel.model';
 
 const player = (seat: number, total: number, state: KnPlayer['state'] = 'active'): KnPlayer => ({
   user_id: `u${seat}`,
@@ -10,6 +10,23 @@ const player = (seat: number, total: number, state: KnPlayer['state'] = 'active'
 });
 
 describe('kniffel model', () => {
+  // Gleiche Fälle wie der SQL-Test von _kniffel_score
+  it('counts a further Kniffel as joker once the Kniffel field is filled', () => {
+    const kniffel = [4, 4, 4, 4, 4];
+    const free: (number | null)[] = Array(13).fill(null);
+    const used = free.map((v, i) => (i === 11 ? 50 : v));
+    const crossed = free.map((v, i) => (i === 11 ? 0 : v));
+    expect(pointsFor(kniffel, 8, used)).toBe(25);
+    expect(pointsFor(kniffel, 9, used)).toBe(30);
+    expect(pointsFor(kniffel, 10, crossed)).toBe(40);
+    // Kniffel-Feld noch frei: kein Joker
+    expect(pointsFor(kniffel, 8, free)).toBe(0);
+    expect(pointsFor(kniffel, 10, free)).toBe(0);
+    // Andere Felder und andere Würfe wie immer
+    expect(pointsFor(kniffel, 3, used)).toBe(20);
+    expect(pointsFor([3, 3, 3, 5, 5], 9, used)).toBe(0);
+  });
+
   // Gleiche Fälle wie der SQL-Test von _kniffel_points
   it('scores every category like the database', () => {
     const cases: [number[], number, number][] = [
@@ -41,7 +58,12 @@ describe('kniffel model', () => {
   });
 
   it('ranks the highest total first and players who left last', () => {
-    const ranked = rankPlayers([player(0, 120), player(1, 200), player(2, 120), player(3, 300, 'left')]);
+    const ranked = rankPlayers([
+      player(0, 120),
+      player(1, 200),
+      player(2, 120),
+      player(3, 300, 'left'),
+    ]);
     expect(ranked.map((row) => [row.player.seat, row.rank])).toEqual([
       [1, 1],
       [0, 2],

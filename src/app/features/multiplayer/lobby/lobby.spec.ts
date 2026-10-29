@@ -1,13 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { ComponentRef, signal, ViewContainerRef } from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
 import { AppErrorService } from '../../../services/app-error.service';
+import { HeaderChatService } from '../../../services/header-chat.service';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 import { Flip7Service } from '../flip7/flip7.service';
 import { SkipboService } from '../skipbo/skipbo.service';
@@ -16,6 +17,9 @@ import { LobbyDetail, LobbyMember } from '../lobby.model';
 import { Lobby } from './lobby';
 import { LobbyGameSheet } from './lobby-game-sheet';
 import { LobbyInviteSheet } from './lobby-invite-sheet';
+import { LobbyChat } from './lobby-chat';
+import { LobbyChatSheet } from './lobby-chat-sheet';
+import { LobbySuggestSheet } from './lobby-suggest-sheet';
 
 function member(userId: string, ready = false): LobbyMember {
   return {
@@ -62,6 +66,9 @@ describe('Lobby', () => {
     leave: ReturnType<typeof vi.fn>;
     start: ReturnType<typeof vi.fn>;
     setGame: ReturnType<typeof vi.fn>;
+    loadMessages: ReturnType<typeof vi.fn>;
+    sendMessage: ReturnType<typeof vi.fn>;
+    subscribeToMessages: ReturnType<typeof vi.fn>;
   };
   let flip7: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
   let skipbo: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
@@ -77,6 +84,17 @@ describe('Lobby', () => {
   }
 
   const text = (): string => fixture.nativeElement.textContent;
+
+  // Chat so, wie ihn das Sheet aus dem App-Kopf zeigt: mit dem Chat-Stand der Lobby
+  async function openChat(canSuggest = false): Promise<ComponentRef<LobbyChat>> {
+    const injector = fixture.debugElement.injector;
+    const chat = injector.get(ViewContainerRef).createComponent(LobbyChat, { injector });
+    chat.setInput('currentGame', component.lobby()?.game_key ?? null);
+    chat.setInput('canSuggest', canSuggest);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return chat;
+  }
 
   beforeEach(async () => {
     user = signal<{ id: string } | null>(null);
@@ -94,6 +112,12 @@ describe('Lobby', () => {
       leave: vi.fn().mockResolvedValue({ ok: true }),
       start: vi.fn().mockResolvedValue({ ok: true }),
       setGame: vi.fn().mockResolvedValue({ ok: true }),
+      loadMessages: vi.fn().mockResolvedValue([]),
+      sendMessage: vi.fn().mockResolvedValue({ ok: true }),
+      subscribeToMessages: vi.fn((_id: string, onChange: () => void) => {
+        onChange();
+        return () => {};
+      }),
     };
     flip7 = {
       load: vi.fn().mockResolvedValue({ ok: true, value: null }),
@@ -318,6 +342,103 @@ describe('Lobby', () => {
     await render('guest');
     expect(fixture.nativeElement.querySelector('.lobby-game')).toBeNull();
     expect(text()).not.toContain('Freie Plätze');
+  });
+
+  it('puts the chat with unread messages into the app header instead of the page', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      { id: 1, user_id: 'host', body: 'Hallo', game_key: null, created_at: '2026-10-29T18:00:00Z' },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    const headerChat = TestBed.inject(HeaderChatService);
+
+    expect(fixture.nativeElement.querySelector('app-lobby-chat')).toBeNull();
+    expect(headerChat.chat()!.unread()).toBe(1);
+    headerChat.chat()!.open();
+    expect(bottomSheet.open).toHaveBeenCalledWith(
+      LobbyChatSheet,
+      expect.objectContaining({ data: { currentGame: 'flip-7', canSuggest: true } }),
+    );
+
+    fixture.destroy();
+    expect(headerChat.chat()).toBeNull();
+  });
+
+  it('lets players suggest a game from the chat and returns to the chat afterwards', async () => {
+    await render('guest');
+    await fixture.whenStable();
+    const dismissed = new Subject<void>();
+    bottomSheet.open.mockReturnValue({ afterDismissed: () => dismissed });
+    const chat = (await openChat(true)).location.nativeElement as HTMLElement;
+
+    (chat.querySelector('.composer-suggest') as HTMLButtonElement).click();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(LobbySuggestSheet, expect.anything());
+    dismissed.next();
+    expect(bottomSheet.open).toHaveBeenLastCalledWith(LobbyChatSheet, expect.anything());
+  });
+
+  it('shows the lobby chat with names, own messages on the right and sends', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      {
+        id: 1,
+        user_id: 'host',
+        body: 'Wer fängt an?',
+        game_key: null,
+        created_at: '2026-10-29T18:00:00Z',
+      },
+      { id: 2, user_id: 'guest', body: 'Ich!', game_key: null, created_at: '2026-10-29T18:00:30Z' },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    const chat = (await openChat()).location.nativeElement as HTMLElement;
+
+    const messages = [...chat.querySelectorAll('.msg')] as HTMLElement[];
+    expect(messages.map((m) => m.querySelector('.bubble')!.textContent!.trim())).toEqual([
+      'Wer fängt an?',
+      'Ich!',
+    ]);
+    expect(messages[0].querySelector('.name')!.textContent).toContain('host');
+    expect(messages[1].classList).toContain('msg--mine');
+    // Offen heißt gelesen
+    expect(TestBed.inject(HeaderChatService).chat()!.unread()).toBe(0);
+
+    const input = chat.querySelector('.composer-input') as HTMLInputElement;
+    input.value = 'Los gehts, Scheiße';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (chat.querySelector('.composer-send') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lobbyService.sendMessage).toHaveBeenCalledWith('lobby-1', 'Los gehts, *******', null);
+  });
+
+  it('lets guests browse the games and the host adopt a suggestion', async () => {
+    lobbyService.loadMessages.mockResolvedValue([
+      {
+        id: 3,
+        user_id: 'guest',
+        body: 'Lust auf Kniffel?',
+        game_key: 'kniffel',
+        created_at: '2026-10-29T18:01:00Z',
+      },
+    ]);
+    await render('guest');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const suggest = fixture.nativeElement.querySelector('.lobby-game-row .lobby-suggest');
+    suggest.click();
+    expect(bottomSheet.open).toHaveBeenCalledWith(LobbySuggestSheet, expect.anything());
+    let chat = (await openChat()).location.nativeElement as HTMLElement;
+    expect(chat.querySelector('.suggestion-adopt')).toBeNull();
+    fixture.destroy();
+
+    await render('host');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.lobby-suggest')).toBeNull();
+    chat = (await openChat()).location.nativeElement as HTMLElement;
+    (chat.querySelector('.suggestion-adopt') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(lobbyService.setGame).toHaveBeenCalledWith('lobby-1', 'kniffel', {});
   });
 
   it('shows guests the chosen settings', async () => {
