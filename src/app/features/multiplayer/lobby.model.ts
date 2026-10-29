@@ -6,6 +6,7 @@ import { BLACKJACK_RULES, formatMoney, START_MONEY_DEFAULT } from './blackjack/b
 import { NIMM6_RULES } from './nimm6/nimm6.model';
 import { SKYJO_DEFAULT_SETTINGS, skyjoRules, SkyjoSettings } from './skyjo/skyjo.model';
 import { KNIFFEL_RULES } from './kniffel/kniffel.model';
+import { MENSCH_RULES } from './mensch/mensch.model';
 
 export type LobbyStatus = 'open' | 'started';
 
@@ -164,6 +165,19 @@ export const GAMES = [
     maxPlayers: LOBBY_MAX_MEMBERS,
     url: null,
   },
+  // Klassisches Brett mit vier Farben
+  {
+    key: 'mensch',
+    tile: 'var(--tile-green)',
+    tagline: 'Würfeln, ziehen, rauswerfen',
+    name: 'Mensch ärgere dich nicht',
+    icon: 'apps',
+    blurb:
+      'Mit einer 6 raus aus dem Haus, Gegner rauswerfen und alle vier Figuren ins Ziel bringen.',
+    minPlayers: 2,
+    maxPlayers: 4,
+    url: null,
+  },
   // Läuft extern; die Lobby zeigt nur den Link
   {
     key: 'monopoly',
@@ -270,6 +284,7 @@ export function rulesOf(
   if (gameKey === 'blackjack') return BLACKJACK_RULES;
   if (gameKey === 'nimm-6') return NIMM6_RULES;
   if (gameKey === 'kniffel') return KNIFFEL_RULES;
+  if (gameKey === 'mensch') return MENSCH_RULES;
   if (gameKey === 'skyjo') return skyjoRules(skyjoSettingsOf(settings));
   if (gameKey !== 'uno') return [];
   const active = unoRulesOf(settings);

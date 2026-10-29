@@ -54,6 +54,7 @@ describe('LobbyGameSheet', () => {
       expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('2–8 Spieler'),
       expect.stringContaining('2–8 Spieler'),
+      expect.stringContaining('2–4 Spieler'),
       expect.stringContaining('richup.io'),
     ]);
     expect(games[1].getAttribute('aria-checked')).toBe('true');
