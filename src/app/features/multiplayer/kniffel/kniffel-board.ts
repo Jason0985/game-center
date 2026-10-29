@@ -160,7 +160,7 @@ export class KniffelBoard {
     computation: () => [...this.game().held],
   });
   readonly held = computed(() => (this.myTurn() ? this.myHeld() : this.game().held));
-  // Angetipptes Feld; zweites Antippen bzw. der Knopf trägt ein
+  // Angetipptes Feld, solange der Dialog zum Eintragen offen ist
   readonly selected = linkedSignal<string, number | null>({
     source: this.rollKey,
     computation: () => null,
@@ -267,14 +267,6 @@ export class KniffelBoard {
     if (game.rolls === 0) return 'Du bist dran – würfeln!';
     if (this.rollsLeft() === 0) return 'Trag deinen Wurf in ein freies Feld ein';
     return 'Würfel halten, nochmal würfeln oder eintragen';
-  });
-
-  readonly selectedLabel = computed(() => {
-    const category = this.selected();
-    if (category === null) return null;
-    const value = pointsFor(this.settled(), category, this.myScores());
-    const name = CATEGORIES[category].name;
-    return value ? `${name} eintragen · ${value}` : `${name} streichen`;
   });
 
   readonly winners = computed(() =>
@@ -406,37 +398,36 @@ export class KniffelBoard {
     if (this.canRoll()) this.roll.emit(this.game().rolls ? this.myHeld() : NO_HOLD);
   }
 
-  pick(category: number): void {
-    if (!this.canPick()) return;
-    if (this.selected() === category) void this.submit(category);
-    else this.selected.set(category);
-  }
-
-  enter(): void {
-    const category = this.selected();
-    if (category !== null && this.canPick()) void this.submit(category);
-  }
-
-  // Ein Feld mit 0 zu streichen passiert leicht aus Versehen, deshalb erst nachfragen;
-  // eingetragen wird nur, wenn danach noch derselbe Wurf liegt
-  private async submit(category: number): Promise<void> {
-    if (!pointsFor(this.settled(), category, this.myScores())) {
-      const key = this.rollKey();
-      const ref = this.dialog.open<ConfirmationDialog, ConfirmationDialogData, boolean>(
-        ConfirmationDialog,
-        {
-          data: {
-            title: `${CATEGORIES[category].name} streichen?`,
-            message: 'Der Wurf bringt hier keine Punkte – das Feld wird mit 0 gestrichen.',
-            confirmLabel: 'Streichen',
-            icon: 'block',
-          },
-        },
-      );
-      const confirmed = (await firstValueFrom(ref.afterClosed())) === true;
-      if (!confirmed || key !== this.rollKey() || !this.canPick()) return;
-    }
-    this.score.emit(category);
+  // Eintragen immer erst im Dialog bestätigen: Der verdeckt den Würfeln-Knopf, so wird nicht
+  // aus Versehen nochmal gewürfelt. Eingetragen wird nur, wenn danach noch derselbe Wurf liegt
+  async pick(category: number): Promise<void> {
+    if (!this.canPick() || this.selected() !== null) return;
+    this.selected.set(category);
+    const key = this.rollKey();
+    const value = pointsFor(this.settled(), category, this.myScores());
+    const name = CATEGORIES[category].name;
+    const ref = this.dialog.open<ConfirmationDialog, ConfirmationDialogData, boolean>(
+      ConfirmationDialog,
+      {
+        data: value
+          ? {
+              title: `${name} eintragen?`,
+              message: `Du trägst ${value} Punkte bei ${name} ein. Danach ist dein Zug vorbei.`,
+              confirmLabel: 'Eintragen',
+              icon: 'check',
+            }
+          : {
+              title: `${name} streichen?`,
+              message: 'Der Wurf bringt hier keine Punkte – das Feld wird mit 0 gestrichen.',
+              confirmLabel: 'Streichen',
+              icon: 'block',
+            },
+      },
+    );
+    const confirmed = (await firstValueFrom(ref.afterClosed())) === true;
+    if (key !== this.rollKey()) return;
+    this.selected.set(null);
+    if (confirmed && this.canPick()) this.score.emit(category);
   }
 
   dieLabel(i: number): string {

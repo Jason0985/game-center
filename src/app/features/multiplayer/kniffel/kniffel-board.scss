@@ -568,18 +568,6 @@ tr.adding td {
   color: var(--color-primary-text);
 }
 
-.enter {
-  background: var(--color-surface-raised);
-  color: var(--color-text);
-  font-size: 14px !important;
-}
-
-.enter .label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .actions button:disabled,
 .tray > .primary:disabled {
   opacity: 0.45;

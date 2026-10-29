@@ -5,10 +5,12 @@ import { LobbyChat } from './lobby-chat';
 export interface LobbyChatSheetData {
   // Spiel, das in der Warte-Lobby gewählt ist (Vorschlag dafür zeigt „Gewählt“)
   currentGame: string | null;
+  // Spieler (nicht der Host) sehen links neben dem Eingabefeld den Vorschlags-Knopf
+  canSuggest: boolean;
 }
 
 // Lobby-Chat als Bottom-Sheet: in der Warte-Lobby über die Sprechblase im App-Kopf, im Spiel
-// über die im Spielkopf. Vorschlagen geht in der Warte-Lobby über „Spiel vorschlagen“.
+// über die im Spielkopf. Vorschlagen geht nur in der Warte-Lobby.
 @Component({
   selector: 'app-lobby-chat-sheet',
   imports: [LobbyChat],
@@ -22,7 +24,7 @@ export interface LobbyChatSheetData {
       class="chat"
       variant="sheet"
       [currentGame]="data?.currentGame ?? null"
-      [canSuggest]="false"
+      [canSuggest]="data?.canSuggest ?? false"
     />
   `,
   styles: `
