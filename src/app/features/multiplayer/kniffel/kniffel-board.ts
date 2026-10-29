@@ -29,8 +29,8 @@ import {
   KNIFFEL_ROLLS,
   KnGame,
   LOWER,
-  points,
   rankPlayers,
+  pointsFor,
   UPPER,
   upperSum,
 } from './kniffel.model';
@@ -133,6 +133,9 @@ export class KniffelBoard {
 
   private readonly mySeat = computed(
     () => this.game().players.find((player) => player.user_id === this.userId())?.seat ?? null,
+  );
+  private readonly myScores = computed(
+    () => this.game().players.find((player) => player.user_id === this.userId())?.scores ?? [],
   );
   readonly finished = computed(() => this.game().status === 'finished');
   readonly myTurn = computed(
@@ -248,7 +251,9 @@ export class KniffelBoard {
         // Was der liegende Wurf in den freien Feldern bringen würde
         preview:
           turn && game.rolls > 0 && dice.length === 5
-            ? player.scores.map((score, i) => (score === null ? points(dice, i) : null))
+            ? player.scores.map((value, i) =>
+                value === null ? pointsFor(dice, i, player.scores) : null,
+              )
             : null,
       };
     });
@@ -267,7 +272,7 @@ export class KniffelBoard {
   readonly selectedLabel = computed(() => {
     const category = this.selected();
     if (category === null) return null;
-    const value = points(this.settled(), category);
+    const value = pointsFor(this.settled(), category, this.myScores());
     const name = CATEGORIES[category].name;
     return value ? `${name} eintragen · ${value}` : `${name} streichen`;
   });
@@ -415,7 +420,7 @@ export class KniffelBoard {
   // Ein Feld mit 0 zu streichen passiert leicht aus Versehen, deshalb erst nachfragen;
   // eingetragen wird nur, wenn danach noch derselbe Wurf liegt
   private async submit(category: number): Promise<void> {
-    if (!points(this.settled(), category)) {
+    if (!pointsFor(this.settled(), category, this.myScores())) {
       const key = this.rollKey();
       const ref = this.dialog.open<ConfirmationDialog, ConfirmationDialogData, boolean>(
         ConfirmationDialog,
