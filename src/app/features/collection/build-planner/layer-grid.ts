@@ -12,6 +12,9 @@ interface Cell {
   image?: string;
   mark?: string;
   info?: string;
+  // obere Blockhälfte (umgedrehte Treppe, obere Stufe/Falltür) und schmale Formen
+  top?: boolean;
+  thin?: boolean;
 }
 
 /** Eine Ebene als Raster von oben: unten ist vorne, Spalten von links nach rechts. */
@@ -33,9 +36,11 @@ interface Cell {
               type="button"
               class="cell"
               [class.cell--new]="cell.mode === 'new'"
+              [class.cell--top]="cell.top"
+              [class.cell--thin]="cell.thin"
               [class.cell--dim]="cell.mode === 'dim'"
               [class.cell--selected]="selected() === cell.key"
-              [style.background-color]="cell.def!.color"
+              [style.background-color]="cell.thin ? null : cell.def!.color"
               [style.background-image]="cell.image"
               [attr.aria-label]="cell.info"
               (click)="select(cell)"
@@ -100,6 +105,8 @@ export class LayerGrid {
             def,
             image: url(def),
             mark: mark(def),
+            top: def.half === 'top' || def.shape === 'slab_top',
+            thin: isThin(def),
             info: `${def.name}: Spalte ${x + 1}, Reihe ${z + 1}, Ebene ${y + 1}`,
           });
           continue;
@@ -129,10 +136,25 @@ function url(def: BlockDef): string {
 }
 
 function mark(def: BlockDef): string {
-  if (def.shape === 'stair') {
-    const [dx, dz] = def.dir ?? [0, 1];
-    return dz === 1 ? '▲' : dz === -1 ? '▼' : dx === 1 ? '▶' : '◀';
+  const top = def.half === 'top' && def.shape === 'trapdoor';
+  switch (def.shape) {
+    case 'stair': {
+      const [dx, dz] = def.dir ?? [0, 1];
+      const arrow = dz === 1 ? '▲' : dz === -1 ? '▼' : dx === 1 ? '▶' : '◀';
+      return arrow;
+    }
+    case 'slab':
+      return '½';
+    case 'slab_top':
+      return '½';
+    case 'trapdoor':
+    case 'carpet':
+      return top ? '▔' : '▁';
+    default:
+      return '';
   }
-  if (def.shape === 'slab') return '½';
-  return '';
 }
+
+// Schmale Formen nur als kleines Feld in der Mitte der Zelle
+const THIN = ['fence', 'wall', 'pane', 'small'];
+export const isThin = (def: BlockDef) => THIN.includes(def.shape ?? '');

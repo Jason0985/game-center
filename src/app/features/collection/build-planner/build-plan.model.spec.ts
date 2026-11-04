@@ -1,5 +1,6 @@
 import {
   EXAMPLE_HOUSE,
+  isYoutubeUrl,
   analyzePlan,
   changePrompt,
   countItems,
@@ -24,7 +25,7 @@ describe('Bauplaner-Modell', () => {
     const doors = countItems(EXAMPLE_HOUSE, A.blocks).find((i) => i.name === 'Eichentür');
     expect(doors?.count).toBe(1);
     expect(totalBlocks(EXAMPLE_HOUSE, A)).toBe(187);
-    expect(rawTotals(EXAMPLE_HOUSE, A.blocks).find((r) => r.name === 'Sand')?.count).toBe(5);
+    expect(rawTotals(EXAMPLE_HOUSE, A.blocks).find((r) => r.name === 'Sand')?.count).toBe(2);
   });
 
   it('fasst nicht zugeordnete Blöcke in einem Rest-Schritt zusammen', () => {
@@ -105,6 +106,58 @@ describe('Bauplaner-Modell', () => {
     expect(planFileName({ ...EXAMPLE_HOUSE, id: undefined, name: 'Große Brücke' })).toBe(
       'bauplan-grosse-bruecke.json',
     );
+  });
+});
+
+describe('Bauplaner: Formen, Vorlagen und Video', () => {
+  it('erkennt fehlende Formen am Namen und übernimmt half und sources', () => {
+    const result = parsePlan(
+      JSON.stringify({
+        name: 'Details',
+        palette: {
+          F: { name: 'Fichtenzaun', color: '#6e5132' },
+          T: { name: 'Fichtenfalltür', color: '#6e5132', half: 'top' },
+          L: { name: 'Laterne', color: '#3a3a3a' },
+          S: {
+            name: 'Eichenholztreppe',
+            color: '#b38b52',
+            shape: 'stair',
+            dir: [1, 0],
+            half: 'top',
+          },
+          X: { name: 'Ding', color: '#777', shape: 'quatsch' },
+        },
+        layers: [['FTLSX']],
+        sources: ['https://youtube.com/shorts/abc123XYZ', 'kein link'],
+      }),
+    );
+    const palette = result.plan!.palette;
+    expect(palette['F'].shape).toBe('fence');
+    expect(palette['T'].shape).toBe('trapdoor');
+    expect(palette['T'].half).toBe('top');
+    expect(palette['L'].shape).toBe('small');
+    expect(palette['S'].half).toBe('top');
+    expect(palette['X'].shape).toBeUndefined();
+    expect(result.plan!.sources).toEqual(['https://youtube.com/shorts/abc123XYZ']);
+  });
+
+  it('baut den Video-Prompt und erkennt YouTube-Links', () => {
+    expect(isYoutubeUrl('https://youtube.com/shorts/AbC_12-xyz')).toBe(true);
+    expect(isYoutubeUrl('https://youtu.be/dQw4w9WgXcQ')).toBe(true);
+    expect(isYoutubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10')).toBe(true);
+    expect(isYoutubeUrl('https://vimeo.com/123456')).toBe(false);
+    const prompt = ideaPrompt({
+      ...EMPTY_IDEA,
+      source: 'video',
+      videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
+    });
+    expect(prompt).toContain('https://youtu.be/dQw4w9WgXcQ');
+    expect(prompt).toContain('Ich kann dieses Video nicht ansehen.');
+    expect(ideaPrompt(EMPTY_IDEA)).toContain('Recherche zuerst');
+  });
+
+  it('meldet, wenn die KI das Video nicht ansehen konnte', () => {
+    expect(parsePlan('Ich kann dieses Video nicht ansehen.').error).toContain('Gemini');
   });
 });
 

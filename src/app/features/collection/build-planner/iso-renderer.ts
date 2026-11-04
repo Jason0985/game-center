@@ -39,21 +39,75 @@ function rotDir(dx: number, dz: number, r: number): [number, number] {
   return r === 0 ? [dx, dz] : r === 1 ? [-dz, dx] : r === 2 ? [-dx, -dz] : [dz, -dx];
 }
 
-function boxesFor(def: BlockDef, r: number): Box[] {
-  if (def.shape === 'slab') return [[0, 0, 0, 1, 0.5, 1]];
-  if (def.shape === 'stair') {
-    const [dx, dz] = rotDir(def.dir?.[0] ?? 0, def.dir?.[1] ?? 1, r);
-    const upper: Box =
-      dz === 1
-        ? [0, 0.5, 0.5, 1, 1, 1]
-        : dz === -1
-          ? [0, 0.5, 0, 1, 1, 0.5]
-          : dx === 1
-            ? [0.5, 0.5, 0, 1, 1, 1]
-            : [0, 0.5, 0, 0.5, 1, 1];
-    return [[0, 0, 0, 1, 0.5, 1], upper];
+type Connects = (dx: number, dz: number) => boolean;
+
+// Teilquader einer Zelle (0–1), schon in gedrehten Koordinaten
+function boxesFor(def: BlockDef, r: number, connects: Connects = () => false): Box[] {
+  const top = def.half === 'top';
+  switch (def.shape) {
+    case 'slab':
+      return [[0, 0, 0, 1, 0.5, 1]];
+    case 'slab_top':
+      return [[0, 0.5, 0, 1, 1, 1]];
+    case 'carpet':
+      return [[0, 0, 0, 1, 0.0625, 1]];
+    case 'trapdoor':
+      return [top ? [0, 0.8125, 0, 1, 1, 1] : [0, 0, 0, 1, 0.1875, 1]];
+    case 'small':
+      return [[0.3125, 0, 0.3125, 0.6875, 0.5625, 0.6875]];
+    case 'fence':
+      return [[0.375, 0, 0.375, 0.625, 1, 0.625], ...arms(connects, 0.4375, 0.5625, 0.375, 0.9375)];
+    case 'wall':
+      return [[0.25, 0, 0.25, 0.75, 1, 0.75], ...arms(connects, 0.3125, 0.6875, 0, 0.8125)];
+    case 'pane': {
+      let list = arms(connects, 0.4375, 0.5625, 0, 1);
+      if (!list.length) {
+        // Alleinstehend: verläuft in dir (gedreht), Standard quer von links nach rechts
+        const [dx] = rotDir(def.dir?.[0] ?? 1, def.dir?.[1] ?? 0, r);
+        list =
+          dx !== 0
+            ? arms(() => true, 0.4375, 0.5625, 0, 1, 'x')
+            : arms(() => true, 0.4375, 0.5625, 0, 1, 'z');
+      }
+      return [[0.4375, 0, 0.4375, 0.5625, 1, 0.5625], ...list];
+    }
+    case 'stair': {
+      const [dx, dz] = rotDir(def.dir?.[0] ?? 0, def.dir?.[1] ?? 1, r);
+      const high: Box =
+        dz === 1
+          ? [0, 0.5, 0.5, 1, 1, 1]
+          : dz === -1
+            ? [0, 0.5, 0, 1, 1, 0.5]
+            : dx === 1
+              ? [0.5, 0.5, 0, 1, 1, 1]
+              : [0, 0.5, 0, 0.5, 1, 1];
+      if (!top) return [[0, 0, 0, 1, 0.5, 1], high];
+      // Umgedreht: volle obere Hälfte, Viertel unten auf der hohen Seite
+      return [
+        [high[0], 0, high[2], high[3], 0.5, high[5]],
+        [0, 0.5, 0, 1, 1, 1],
+      ];
+    }
+    default:
+      return [[0, 0, 0, 1, 1, 1]];
   }
-  return [[0, 0, 0, 1, 1, 1]];
+}
+
+/** Verbindungsstücke von der Mitte zu den Nachbarn (Zaun, Mauer, Scheibe). */
+function arms(
+  connects: Connects,
+  lo: number,
+  hi: number,
+  y0: number,
+  y1: number,
+  only?: 'x' | 'z',
+): Box[] {
+  const list: Box[] = [];
+  if (only !== 'z' && connects(-1, 0)) list.push([0, y0, lo, 0.5, y1, hi]);
+  if (only !== 'x' && connects(0, -1)) list.push([lo, y0, 0, hi, y1, 0.5]);
+  if (only !== 'z' && connects(1, 0)) list.push([0.5, y0, lo, 1, y1, hi]);
+  if (only !== 'x' && connects(0, 1)) list.push([lo, y0, 0.5, hi, y1, 1]);
+  return list;
 }
 
 const isFull = (def: BlockDef) => !def.shape || def.shape === 'block';
@@ -274,14 +328,24 @@ export function drawIso(
   };
   const items: Item[] = [];
   const solid = new Set<string>();
+  const byPos = new Map<string, BlockDef>();
   for (const block of analysis.blocks) {
     const mode = options.mode(block);
     if (mode === 'hidden') continue;
     const [x, z] = rotXZ(block.x, block.z, analysis.W, analysis.D, r);
     const def = plan.palette[block.ch];
     items.push({ x, y: block.y, z, block, mode, def });
+    byPos.set(blockKey(x, block.y, z), def);
     if (isOpaque(def)) solid.add(blockKey(x, block.y, z));
   }
+  const connectsFor =
+    (it: Item): Connects =>
+    (dx, dz) => {
+      const other = byPos.get(blockKey(it.x + dx, it.y, it.z + dz));
+      if (!other) return false;
+      if (isOpaque(other) || CONNECTING.includes(other.shape ?? 'block')) return true;
+      return it.def.shape === 'pane' && textureKind(other) === 'glass' && isFull(other);
+    };
   items.sort((a, b) => a.x + a.z + a.y - (b.x + b.z + b.y) || a.y - b.y || a.x - b.x);
 
   const dim = options.dimColor;
@@ -295,8 +359,11 @@ export function drawIso(
     };
     const overlay = it.mode === 'dim' ? dim : null;
     ctx.globalAlpha = it.def.alpha ?? 1;
-    for (const q of boxesFor(it.def, r)) {
-      // Teilquader (Treppe): obere Hälfte verdeckt sonst nichts, also immer alle Flächen
+    // Teilquader von hinten nach vorne; sie verdecken nichts, also immer alle Flächen
+    const boxes = boxesFor(it.def, r, connectsFor(it)).sort(
+      (a, b) => a[0] + a[3] + a[2] + a[5] + a[1] - (b[0] + b[3] + b[2] + b[5] + b[1]),
+    );
+    for (const q of boxes) {
       drawBox(
         it.x,
         it.y,
@@ -310,17 +377,16 @@ export function drawIso(
     }
     ctx.globalAlpha = 1;
     if (it.mode === 'current')
-      outline(
-        ctx,
-        P,
-        it.x,
-        it.y,
-        it.z,
-        boxesFor(it.def, r),
-        options.highlight,
-        Math.max(1.5, s / 16),
-      );
+      outline(ctx, P, it.x, it.y, it.z, [bounds(boxes)], options.highlight, Math.max(1.5, s / 16));
   }
+}
+
+const CONNECTING: string[] = ['fence', 'wall', 'pane'];
+
+function bounds(boxes: Box[]): Box {
+  return [0, 1, 2, 3, 4, 5].map((i) =>
+    i < 3 ? Math.min(...boxes.map((b) => b[i])) : Math.max(...boxes.map((b) => b[i])),
+  ) as Box;
 }
 
 function outline(

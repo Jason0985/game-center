@@ -47,7 +47,7 @@ export class IsoView {
   readonly maxHeight = input(440);
   readonly compact = input(false);
   readonly label = input('3D-Ansicht des Baus');
-  readonly rotation = model(0);
+  readonly rotation = model(2);
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
