@@ -85,13 +85,19 @@
     <span class="ui-row-text">
       <span class="ui-row-title">{{ row.build.name }}</span>
       <span class="ui-row-sub">{{ row.sub }}</span>
+      @if (row.progress && !row.complete) {
+        <app-xp-bar
+          class="bp-row-xp"
+          [compact]="true"
+          [value]="row.done"
+          [max]="row.steps"
+          [label]="'Fortschritt ' + row.progress"
+        />
+      }
     </span>
-    @if (row.progress) {
-      <span class="bp-progress" [class.bp-progress--done]="row.complete">
-        @if (row.complete) {
-          <mat-icon aria-hidden="true">check</mat-icon>
-        }
-        {{ row.progress }}
+    @if (row.complete) {
+      <span class="bp-progress bp-progress--done">
+        <mat-icon aria-hidden="true">check</mat-icon>Fertig
       </span>
     }
     <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>

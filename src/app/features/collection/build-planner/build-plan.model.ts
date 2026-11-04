@@ -604,24 +604,6 @@ function videoPrompt(form: IdeaForm): string {
   ].join('\n');
 }
 
-export function changePrompt(plan: BuildPlan, wish: string): string {
-  return [
-    'Du bist ein erfahrener Minecraft-Baumeister. Hier ist ein Bauplan aus meinem „Bauplaner“. Ändere ihn so, wie ich es unten beschreibe, und gib den kompletten neuen Bauplan als Datei zurück. Behalte alles bei, was ich nicht ändern will, und pass Bauschritte und Materialien an.',
-    '',
-    '## Meine Änderung',
-    wish.trim() || '(bitte ergänzen)',
-    '',
-    DESIGN_RULES,
-    '',
-    '## Aktueller Bauplan',
-    '```json',
-    JSON.stringify(plan),
-    '```',
-    '',
-    FORMAT_SPEC,
-  ].join('\n');
-}
-
 export function planFileName(plan: BuildPlan): string {
   const slug = (plan.id || plan.name)
     .toLowerCase()

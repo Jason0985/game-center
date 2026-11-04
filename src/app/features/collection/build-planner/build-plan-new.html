@@ -115,22 +115,25 @@
           </button>
         </div>
       </div>
-      <div class="bp-tip">
-        <mat-icon aria-hidden="true">{{ isVideo() ? 'smart_display' : 'travel_explore' }}</mat-icon>
-        @if (isVideo()) {
+      @if (isVideo()) {
+        <div class="bp-tip bp-tip--alert" role="note">
+          <mat-icon aria-hidden="true">smart_display</mat-icon>
           <p>
-            <b>Nimm dafür Gemini</b>, am besten in Google AI Studio mit einem Pro-Modell: Es kann
-            YouTube-Videos wirklich ansehen. Claude und ChatGPT sehen meist nur Titel und
-            Beschreibung. Bei schnellen Shorts ist das Ergebnis eine gute Annäherung, nicht jeder
-            Block exakt.
+            <b>Gemini kann Videos am besten verwerten.</b> Füg den Prompt in Gemini ein, am besten
+            in Google AI Studio mit einem Pro-Modell. Claude und ChatGPT sehen bei einem Link meist
+            nur Titel und Beschreibung. Bei schnellen Shorts ist das Ergebnis eine gute Annäherung,
+            nicht jeder Block exakt.
           </p>
-        } @else {
+        </div>
+      } @else {
+        <div class="bp-tip">
+          <mat-icon aria-hidden="true">travel_explore</mat-icon>
           <p>
             <b>Schalte die Websuche ein</b> (Claude, ChatGPT oder Gemini): Die KI sucht sich dann
             echte Vorlagen ähnlicher Bauten und orientiert sich an Proportionen, Dach und Details.
           </p>
-        }
-      </div>
+        </div>
+      }
       @if (isVideo()) {
         <a
           class="ui-pill-btn bp-studio"

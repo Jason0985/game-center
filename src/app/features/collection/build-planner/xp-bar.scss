@@ -1,0 +1,114 @@
+:host {
+  display: block;
+}
+
+.xp {
+  --xp-green: #80ff20;
+  --xp-green-dark: #3f9a0c;
+  --xp-segments: 18;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+// Grüne Zahl mit schwarzer Kontur wie die Level-Anzeige im Spiel
+.xp-level {
+  color: var(--xp-green);
+  font-family: var(--bp-font-pixel);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow:
+    2px 0 0 #000,
+    -2px 0 0 #000,
+    0 2px 0 #000,
+    0 -2px 0 #000,
+    2px 2px 0 #000;
+}
+
+.xp-track {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid #000;
+  background: linear-gradient(180deg, #3a3a3a, #232323);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  image-rendering: pixelated;
+}
+
+.xp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: linear-gradient(
+    180deg,
+    #c6ff7a 0 22%,
+    var(--xp-green) 22% 62%,
+    var(--xp-green-dark) 62%
+  );
+  transition: width 520ms var(--ease-ios);
+}
+
+// Segmente: dunkle Kerben über Leiste und Füllung
+.xp-track::after {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(100% / var(--xp-segments) - 2px),
+    rgba(0, 0, 0, 0.5) calc(100% / var(--xp-segments) - 2px) calc(100% / var(--xp-segments))
+  );
+  content: '';
+  pointer-events: none;
+}
+
+// XP-Kugel: gelb-grün mit Glanzpunkt, pulsiert leicht
+.xp-orb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  translate: -50% -50%;
+  background:
+    radial-gradient(circle at 35% 35%, #fffbd0 0 18%, transparent 20%),
+    radial-gradient(circle, #e8ff5a 0 40%, #9be81f 41% 68%, #3f7d0c 69%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px #000,
+    0 0 10px 2px rgba(200, 255, 60, 0.55);
+  z-index: 1;
+  transition: left 520ms var(--ease-ios);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .xp-orb {
+    animation: xp-glow 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes xp-glow {
+  50% {
+    box-shadow:
+      0 0 0 1px #000,
+      0 0 16px 5px rgba(220, 255, 80, 0.75);
+  }
+}
+
+.xp-caption {
+  align-self: stretch;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.xp--compact .xp-track {
+  height: 8px;
+  border-width: 1.5px;
+}
+
+.xp--compact .xp-orb {
+  width: 9px;
+  height: 9px;
+}

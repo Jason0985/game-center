@@ -7,6 +7,7 @@ import { SkeletonRows } from '../../../ui/skeleton-rows';
 import { PlanAnalysis, analyzePlan, totalBlocks } from './build-plan.model';
 import { BuildPlansService, SavedBuild } from './build-plans.service';
 import { IsoView } from './iso-view';
+import { XpBar } from './xp-bar';
 
 interface BuildRow {
   build: SavedBuild;
@@ -15,12 +16,14 @@ interface BuildRow {
   sub: string;
   progress: string;
   complete: boolean;
+  done: number;
+  steps: number;
 }
 
 /** Startseite: eigene Bauwerke aus Supabase, darunter das Beispielhaus. */
 @Component({
   selector: 'app-build-planner',
-  imports: [MatIcon, NgTemplateOutlet, RouterLink, SkeletonRows, IsoView],
+  imports: [MatIcon, NgTemplateOutlet, RouterLink, SkeletonRows, IsoView, XpBar],
   templateUrl: './build-planner.html',
   styleUrl: './build-planner.scss',
 })
@@ -68,5 +71,7 @@ function toRow(build: SavedBuild): BuildRow {
     sub: `${analysis.W} × ${analysis.D}, ${analysis.H} hoch, ${totalBlocks(build.plan, analysis)} Blöcke`,
     progress: done ? `${Math.min(done, steps)}/${steps}` : '',
     complete: done >= steps,
+    done: Math.min(done, steps),
+    steps,
   };
 }
