@@ -63,7 +63,6 @@ export class BuildPlanDetail {
   readonly layer = signal(0);
   readonly step = signal(0);
   readonly rotation = signal(2);
-  readonly ghost = signal(true);
   private readonly done = signal(new Set<number>());
   private readonly have = signal(new Set<string>());
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -164,9 +163,6 @@ export class BuildPlanDetail {
       ? rawTotals(plan, A.blocks).map((r) => ({ ...r, stacks: stacksLabel(r.count) }))
       : [];
   });
-  readonly hasStairs = computed(() =>
-    Object.values(this.plan()?.palette ?? {}).some((def) => def.shape === 'stair'),
-  );
 
   constructor() {
     inject(ActivatedRoute)

@@ -12,9 +12,7 @@
         }
       </div>
       <h1 class="ui-large-title bp-title">Bauplaner</h1>
-      <p class="ui-page-lead">
-        Bauwerke Ebene für Ebene nachbauen: mit 3D-Ansicht, Bauanleitung und Materialliste.
-      </p>
+      <p class="ui-page-lead">Bauwerke Ebene für Ebene nachbauen.</p>
     </header>
 
     <section class="ui-section" aria-labelledby="bp-mine">
@@ -26,7 +24,7 @@
         <div class="ui-group ui-empty">
           <mat-icon aria-hidden="true">lock</mat-icon>
           <h2>Melde dich an</h2>
-          <p>Mit einem Konto speicherst du eigene Baupläne und deinen Baufortschritt.</p>
+          <p>Dann speichern wir deine Baupläne und deinen Fortschritt.</p>
           <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
         </div>
       } @else if (loading() && !rows().length) {
@@ -44,10 +42,7 @@
         <div class="ui-group ui-empty">
           <span class="bp-empty-block" aria-hidden="true"></span>
           <h2>Noch nichts gebaut</h2>
-          <p>
-            Beschreib deine Idee, kopier den fertigen Prompt in eine KI und importier die Datei, die
-            sie dir gibt.
-          </p>
+          <p>Plane deinen ersten Bau aus einer Idee oder einem Video.</p>
           <a class="ui-btn" routerLink="/collection/bauplaner/neu">Neue Bauidee</a>
         </div>
       } @else {
@@ -60,13 +55,10 @@
     </section>
 
     <section class="ui-section" aria-labelledby="bp-example">
-      <h2 id="bp-example" class="ui-section-title">Zum Ausprobieren</h2>
+      <h2 id="bp-example" class="ui-section-title">Beispiel</h2>
       <div class="ui-group bp-list">
         <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: example }" />
       </div>
-      <p class="ui-section-footer">
-        Das Beispielhaus ist immer dabei. Deinen Fortschritt daran merkt sich nur dieses Gerät.
-      </p>
     </section>
   </div>
 </div>

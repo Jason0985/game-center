@@ -2,12 +2,16 @@
 
 @include bp.tokens;
 
+// Ein Abstand für alles zwischen den Blöcken einer Ansicht
 .bp-page {
-  gap: 22px;
+  gap: 20px;
 }
 
+// Monocraft ist breit: Titel kleiner als der normale große Titel
 .bp-title {
   @include bp.pixel-title;
+  font-size: 28px;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
@@ -16,6 +20,7 @@
   position: sticky;
   top: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px) + 6px);
   z-index: 5;
+  margin-top: -4px;
   background: var(--color-glass);
   box-shadow:
     0 0 0 0.5px var(--color-glass-edge) inset,
@@ -29,67 +34,6 @@
   font-size: 14px;
 }
 
-.bp-hero {
-  margin: -4px -4px 0;
-}
-
-.bp-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 14px 0;
-}
-
-.bp-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-}
-
-.bp-stat + .bp-stat {
-  border-left: 1px solid var(--color-border);
-}
-
-.bp-stat strong {
-  font-family: var(--bp-font-pixel);
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.bp-stat span {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.bp-description {
-  max-width: 62ch;
-  margin: 0;
-  padding: 0 4px;
-  color: var(--color-text-muted);
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.bp-cta {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bp-cta-row,
-.bp-nav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.bp-nav {
-  grid-template-columns: 1fr 1.6fr;
-}
-
 .bp-primary,
 .bp-primary:hover:not(:disabled) {
   background: var(--bp-accent-fill);
@@ -97,6 +41,71 @@
   color: var(--bp-on-accent);
 }
 
+// --- Übersicht ---------------------------------------------------------------
+
+// 3D-Ansicht und Kennzahlen als eine Karte
+.bp-hero {
+  --iso-radius: 15px;
+  padding: 6px 6px 0;
+}
+
+.bp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 14px 0 16px;
+}
+
+.bp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-stat + .bp-stat {
+  border-left: 0.5px solid var(--color-border);
+}
+
+.bp-stat strong {
+  font-family: var(--bp-font-pixel);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bp-stat span {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.bp-description {
+  max-width: 62ch;
+  margin: 0;
+  padding: 0 6px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bp-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// Schlichte Aktionszeilen: farbiges Symbol statt Kachel
+.bp-link-row {
+  min-height: 50px;
+}
+
+.bp-link-icon {
+  flex: none;
+  color: var(--bp-accent);
+}
+
+.bp-danger-row .bp-link-icon,
 .bp-danger-row .ui-row-title {
   color: var(--color-danger-light);
 }
@@ -106,22 +115,36 @@
 .bp-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   padding: 16px;
 }
 
 .bp-layer-ctl {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
+  gap: 8px;
+}
+
+.bp-layer-num {
+  flex: 1;
+  margin: 0;
+  font-family: var(--bp-font-pixel);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bp-layer-num small {
+  color: var(--color-text-subtle);
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .bp-round {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-fill);
@@ -145,34 +168,9 @@
   outline-offset: 2px;
 }
 
-.bp-layer-num,
-.bp-step-title {
-  min-width: 6em;
-  margin: 0;
-  font-family: var(--bp-font-pixel);
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.05;
-  text-align: center;
-}
-
-.bp-layer-num small,
-.bp-step-title small {
-  display: block;
-  color: var(--color-text-muted);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 400;
-}
-
-.bp-step-title {
-  min-width: 0;
-  text-align: left;
-}
-
 .bp-range {
   width: 100%;
-  margin: 0;
+  margin: -4px 0 0;
   accent-color: var(--bp-accent-fill);
 }
 
@@ -185,11 +183,11 @@
 .bp-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 10px 5px 5px;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
   border-radius: 8px;
   background: var(--color-fill);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .bp-chip b {
@@ -199,8 +197,8 @@
 
 .bp-swatch {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 3px;
   background-size: 100% 100%;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
@@ -208,81 +206,35 @@
 }
 
 .bp-swatch--lg {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 4px;
 }
 
-.bp-ghost {
-  align-self: center;
-}
+// --- Anleitung ---------------------------------------------------------------
 
-.bp-note {
-  margin: 0;
-  padding: 4px 0 4px 12px;
-  border-left: 3px solid var(--bp-highlight);
-  color: var(--color-text-muted);
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-.bp-step-head {
+.bp-steps-progress {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 12px;
-}
-
-.bp-done {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 14px 0 10px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--color-fill);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 260ms var(--ease-ios),
-    scale 300ms var(--ease-spring);
-}
-
-.bp-done:active {
-  scale: 0.95;
-}
-
-.bp-done--on {
-  background: var(--bp-accent-soft);
-  color: var(--bp-accent);
-}
-
-.bp-done mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
 }
 
 .bp-dots {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
 }
 
 .bp-dot {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   border-radius: 4px;
   background: var(--color-fill);
   color: var(--color-text-muted);
   font-family: var(--bp-font-pixel);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -294,9 +246,10 @@
   color: var(--bp-on-accent);
 }
 
-.bp-dot--current {
-  outline: 3px solid var(--bp-highlight);
-  outline-offset: 1px;
+.bp-dot--current,
+.bp-dot:focus-visible {
+  outline: 2px solid var(--bp-highlight);
+  outline-offset: 2px;
   color: var(--color-text);
 }
 
@@ -304,58 +257,106 @@
   color: var(--bp-on-accent);
 }
 
-.bp-dot:focus-visible {
-  outline: 3px solid var(--bp-highlight);
-  outline-offset: 1px;
+.bp-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bp-step-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-step-count {
+  color: var(--color-text-subtle);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .bp-step-name {
-  margin: 6px 0 0;
+  margin: 0;
   font-family: var(--font-rounded);
   font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+// Runder Haken wie bei Erinnerungen: leer = offen, grün gefüllt = erledigt
+.bp-done {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: none;
+  color: var(--color-border-strong);
+  cursor: pointer;
+  transition:
+    background-color 260ms var(--ease-ios),
+    border-color 260ms var(--ease-ios),
+    scale 300ms var(--ease-spring);
+}
+
+.bp-done:active {
+  scale: 0.9;
+}
+
+.bp-done:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.bp-done--on {
+  border-color: var(--bp-accent-fill);
+  background: var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+}
+
+.bp-done mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
 }
 
 .bp-step-text {
   max-width: 62ch;
   margin: 0;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.bp-need {
-  margin: 0;
   color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.bp-two {
-  display: grid;
-  gap: 14px;
-}
-
-.bp-stack {
-  display: grid;
-  gap: 14px;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .bp-grid-title {
   margin: 0;
   font-family: var(--bp-font-pixel);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
+}
+
+.bp-nav {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 10px;
 }
 
 .bp-text-btn {
   align-self: center;
   min-height: 40px;
+  margin-top: -8px;
   padding: 0 10px;
   border: 0;
   background: none;
-  color: var(--bp-accent);
+  color: var(--color-text-subtle);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -368,13 +369,13 @@
 
 .bp-count {
   margin-right: 6px;
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-family: var(--bp-font-pixel);
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .bp-mats {
-  --ui-row-inset: 96px;
+  --ui-row-inset: 92px;
 }
 
 .bp-mat {
@@ -394,6 +395,14 @@
   white-space: normal;
 }
 
+// Farm-Tipp nur einzeilig, damit die Liste ruhig bleibt
+.bp-mat-hint {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bp-mat--have .bp-mat-name {
   color: var(--color-text-muted);
   text-decoration: line-through;
@@ -406,38 +415,16 @@
 .bp-mat-count {
   flex: none;
   font-family: var(--bp-font-pixel);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.1;
   text-align: right;
 }
 
 .bp-mat-count small {
   display: block;
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
-}
-
-@media (min-width: 900px) {
-  .bp-two {
-    grid-template-columns: 1.1fr 1fr;
-    align-items: start;
-  }
-}
-
-.bp-source-row > mat-icon:first-child {
-  flex: none;
-  color: var(--bp-accent);
-}
-
-.bp-source-row .ui-row-sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bp-mat-xp {
-  margin: 0 4px 12px;
 }

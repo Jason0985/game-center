@@ -65,8 +65,15 @@ interface Cell {
         <span class="axis">{{ x + 1 }}</span>
       }
     </div>
-    <p class="front">Vorne{{ plan().front ? ' (' + plan().front + ')' : '' }}</p>
-    <p class="info" role="status">{{ info() || 'Tipp auf einen Block für Details' }}</p>
+    <p class="front">
+      <span>▼ Vorne{{ plan().front ? ': ' + plan().front : '' }}</span>
+      @if (hasStairs()) {
+        <span class="front-hint">Pfeil = Treppe steigt an</span>
+      }
+    </p>
+    @if (info()) {
+      <p class="info" role="status">{{ info() }}</p>
+    }
   `,
   styleUrl: './layer-grid.scss',
 })
@@ -80,6 +87,9 @@ export class LayerGrid {
   readonly selected = signal<string | null>(null);
   readonly info = signal('');
 
+  readonly hasStairs = computed(() =>
+    Object.values(this.plan().palette).some((def) => def.shape === 'stair'),
+  );
   readonly columns = computed(() => Array.from({ length: this.analysis().W }, (_, x) => x));
   readonly maxWidth = computed(() => Math.min(this.analysis().W * 46 + 28, 620));
 

@@ -2,175 +2,12 @@
 
 @include bp.tokens;
 
+.bp-page {
+  gap: 28px;
+}
+
 .bp-title {
   @include bp.pixel-title;
-}
-
-// Drei Schritte als Pfad: echte Reihenfolge, daher nummeriert
-.bp-flow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: -8px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.bp-flow li {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.3;
-}
-
-.bp-flow span {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  background: var(--bp-accent-fill);
-  color: var(--bp-on-accent);
-  font-family: var(--bp-font-pixel);
-  font-size: 15px;
-  font-weight: 700;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
-}
-
-.bp-section-h {
-  margin: 0;
-  font: inherit;
-}
-
-.bp-text-btn {
-  min-height: 32px;
-  padding: 0 6px;
-  border: 0;
-  background: none;
-  color: var(--bp-accent);
-  font: inherit;
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.bp-field {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
-
-.bp-field-label {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.bp-field input,
-.bp-field textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 2px 0;
-  border: 0;
-  background: none;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 17px;
-  line-height: 1.35;
-  resize: vertical;
-}
-
-.bp-field input:focus,
-.bp-field textarea:focus {
-  outline: none;
-}
-
-.bp-field:focus-within .bp-field-label {
-  color: var(--bp-accent);
-}
-
-.bp-field input::placeholder,
-.bp-field textarea::placeholder {
-  color: var(--color-text-subtle);
-}
-
-.bp-field .ui-segmented {
-  margin-top: 4px;
-}
-
-.bp-prompt {
-  display: flex;
-  flex-direction: column;
-}
-
-.bp-prompt-details summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 0 14px 0 16px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.bp-prompt-details summary::-webkit-details-marker {
-  display: none;
-}
-
-.bp-prompt-details summary span:first-child {
-  flex: 1;
-  font-weight: 500;
-}
-
-.bp-prompt-size {
-  color: var(--color-text-subtle);
-  font-size: 14px;
-}
-
-.bp-prompt-details summary mat-icon {
-  color: var(--color-text-subtle);
-  transition: rotate 300ms var(--ease-ios);
-}
-
-.bp-prompt-details[open] summary mat-icon {
-  rotate: 180deg;
-}
-
-.bp-prompt-text {
-  max-height: 320px;
-  overflow: auto;
-  margin: 0 12px;
-  padding: 12px;
-  border-radius: var(--radius-medium);
-  background: var(--color-fill);
-  color: var(--color-text);
-  font:
-    12px/1.5 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.bp-prompt-actions {
-  display: grid;
-  gap: 8px;
-  padding: 4px 12px 12px;
-}
-
-.bp-primary,
-.bp-primary:hover:not(:disabled) {
-  background: var(--bp-accent-fill);
-  box-shadow: none;
-  color: var(--bp-on-accent);
 }
 
 .bp-source {
@@ -192,43 +29,203 @@
   font-size: 18px;
 }
 
+// Abschnittstitel mit Schrittnummer als kleiner Grasblock
+.bp-step-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.ui-section-title > .bp-step-h {
+  font: inherit;
+}
+
+h2.ui-section-title.bp-step-h {
+  justify-content: flex-start;
+  margin: 0 0 10px 6px;
+}
+
+.bp-num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  background: var(--bp-accent-fill);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+  color: var(--bp-on-accent);
+  font-family: var(--bp-font-pixel);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bp-text-btn {
+  flex: none;
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--bp-accent);
+  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.bp-text-btn:disabled {
+  color: var(--color-text-subtle);
+  cursor: default;
+}
+
+// Eingabezeilen wie in den iOS-Einstellungen: Label klein darüber
+.bp-field {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.bp-field-label {
+  color: var(--color-text-subtle);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bp-field input,
+.bp-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.35;
+  resize: none;
+  field-sizing: content;
+}
+
+.bp-field input:focus,
+.bp-field textarea:focus {
+  outline: none;
+}
+
+.bp-field:focus-within .bp-field-label {
+  color: var(--bp-accent);
+}
+
+.bp-field input::placeholder,
+.bp-field textarea::placeholder {
+  color: var(--color-text-subtle);
+  opacity: 0.7;
+}
+
+.bp-mode {
+  justify-content: space-between;
+}
+
+.bp-mode-label {
+  font-size: 17px;
+}
+
+.bp-mode .ui-segmented {
+  width: 190px;
+}
+
 .bp-warn {
   color: var(--color-warning);
 }
 
-.bp-tip {
+.bp-primary,
+.bp-primary:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+  box-shadow: 0 8px 20px -10px var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+}
+
+.bp-hint,
+.bp-alert {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 12px 14px;
-  border-radius: var(--radius-medium);
-  background: var(--bp-accent-soft);
-}
-
-.bp-tip mat-icon {
-  flex: none;
-  color: var(--bp-accent);
-}
-
-.bp-tip p {
-  margin: 0;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 6px 0;
+  color: var(--color-text-muted);
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-.bp-tip--alert {
-  border: 1px solid var(--color-danger-45);
+.bp-hint mat-icon,
+.bp-alert mat-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+// Video: Hinweis in Rot
+.bp-alert {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-medium);
   background: var(--color-danger-12);
+  color: var(--color-danger-text);
 }
 
-.bp-tip--alert mat-icon,
-.bp-tip--alert b {
+.bp-alert mat-icon,
+.bp-alert b {
   color: var(--color-danger-light);
 }
 
-.bp-studio {
-  align-self: flex-start;
-  margin-top: 10px;
+.bp-alert a {
+  color: inherit;
+  font-weight: 600;
+}
+
+// „Prompt ansehen“ links, „Als Datei sichern“ rechts in einer Zeile
+.bp-more {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 8px 0 0 6px;
+}
+
+.bp-prompt-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.bp-prompt-details summary {
+  display: inline-block;
+  min-height: 32px;
+  color: var(--bp-accent);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 32px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.bp-prompt-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.bp-prompt-text {
+  max-height: 300px;
+  overflow: auto;
+  margin: 6px 0 0 -6px;
+  padding: 12px;
+  border-radius: var(--radius-medium);
   background: var(--color-fill);
   color: var(--color-text);
+  font:
+    12px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

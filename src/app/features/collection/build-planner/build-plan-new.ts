@@ -19,17 +19,12 @@ interface Field {
 }
 
 const VIDEO_FIELDS: Field[] = [
-  {
-    key: 'videoUrl',
-    label: 'YouTube-Link',
-    placeholder: 'https://youtube.com/shorts/…',
-    type: 'url',
-  },
-  { key: 'name', label: 'Name (optional)', placeholder: 'Sonst wie im Video' },
+  { key: 'videoUrl', label: 'YouTube-Link', placeholder: 'youtube.com/shorts/…', type: 'url' },
+  { key: 'name', label: 'Name', placeholder: 'Optional' },
   {
     key: 'extra',
-    label: 'Änderungen gegenüber dem Video',
-    placeholder: 'z. B. Fichte statt Eiche, ohne Keller, etwas größer',
+    label: 'Änderungen',
+    placeholder: 'Optional, z. B. Fichte statt Eiche',
     multiline: true,
   },
 ];
@@ -48,22 +43,12 @@ export class BuildPlanNew {
   readonly session = inject(SessionService);
 
   private readonly ideaFields: Field[] = [
-    { key: 'name', label: 'Name des Baus', placeholder: 'z. B. Windmühle am Fluss' },
-    {
-      key: 'what',
-      label: 'Was soll es sein?',
-      placeholder: 'Beschreib deine Idee, je genauer, desto besser',
-      multiline: true,
-    },
-    { key: 'size', label: 'Ungefähre Größe', placeholder: 'z. B. 9 × 9, höchstens 15 hoch' },
-    { key: 'style', label: 'Stil und Umgebung', placeholder: 'z. B. mittelalterlich, Birkenwald' },
-    { key: 'blocks', label: 'Wunschblöcke', placeholder: 'z. B. Fichte und Stein, keine Wolle' },
-    {
-      key: 'extra',
-      label: 'Besonderheiten',
-      placeholder: 'z. B. Keller, Balkon, Platz für Truhen',
-      multiline: true,
-    },
+    { key: 'name', label: 'Name', placeholder: 'z. B. Windmühle am Fluss' },
+    { key: 'what', label: 'Beschreibung', placeholder: 'Was soll es werden?', multiline: true },
+    { key: 'size', label: 'Größe', placeholder: 'z. B. 9 × 9, 15 hoch' },
+    { key: 'style', label: 'Stil', placeholder: 'z. B. mittelalterlich, Birkenwald' },
+    { key: 'blocks', label: 'Blöcke', placeholder: 'z. B. Fichte und Stein' },
+    { key: 'extra', label: 'Extras', placeholder: 'z. B. Keller, Balkon', multiline: true },
   ];
 
   readonly form = signal<IdeaForm>(readDraft());
@@ -72,8 +57,7 @@ export class BuildPlanNew {
   readonly urlProblem = computed(() => {
     const url = this.form().videoUrl.trim();
     if (!this.isVideo()) return '';
-    if (!url) return 'Füg den Link zum Video ein, dann kannst du den Prompt kopieren.';
-    return isYoutubeUrl(url) ? '' : 'Das sieht nicht nach einem YouTube-Link aus.';
+    return !url || isYoutubeUrl(url) ? '' : 'Das sieht nicht nach einem YouTube-Link aus.';
   });
   readonly canCopy = computed(() => !this.isVideo() || !!this.form().videoUrl.trim());
   readonly prompt = computed(() => ideaPrompt(this.form()));
