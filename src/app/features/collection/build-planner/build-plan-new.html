@@ -5,10 +5,6 @@
         <mat-icon aria-hidden="true">chevron_left</mat-icon>Bauplaner
       </a>
       <h1 class="ui-large-title bp-title">Neue Bauidee</h1>
-      <p class="ui-page-lead">
-        Beschreib deine Idee oder nimm ein YouTube-Video als Vorlage. Daraus entsteht ein fertiger
-        Prompt für eine KI, und deren Antwort importierst du hier wieder.
-      </p>
     </header>
 
     <div class="ui-segmented bp-source" role="group" aria-label="Vorlage wählen">
@@ -20,26 +16,21 @@
       </button>
     </div>
 
-    <ol class="bp-flow" aria-label="So funktioniert es">
-      <li><span>1</span>{{ isVideo() ? 'Video-Link einfügen' : 'Idee ausfüllen' }}</li>
-      <li>
-        <span>2</span>{{ isVideo() ? 'Prompt in Gemini einfügen' : 'Prompt in eine KI einfügen' }}
-      </li>
-      <li><span>3</span>Datei hier importieren</li>
-    </ol>
-
+    <!-- Drei echte Schritte nacheinander, daher nummeriert -->
     <section class="ui-section" aria-labelledby="bp-idea">
       <div class="ui-section-title">
-        <h2 id="bp-idea" class="bp-section-h">{{ isVideo() ? 'Video' : 'Deine Idee' }}</h2>
+        <h2 id="bp-idea" class="bp-step-h">
+          <span class="bp-num" aria-hidden="true">1</span>{{ isVideo() ? 'Video' : 'Idee' }}
+        </h2>
         <button type="button" class="bp-text-btn" (click)="clear()">Leeren</button>
       </div>
-      <div class="ui-group bp-form">
+      <div class="ui-group">
         @for (field of fields(); track field.key) {
           <label class="ui-row bp-field">
             <span class="bp-field-label">{{ field.label }}</span>
             @if (field.multiline) {
               <textarea
-                rows="3"
+                rows="2"
                 [placeholder]="field.placeholder"
                 [value]="form()[field.key]"
                 (input)="update(field.key, $event)"
@@ -56,8 +47,8 @@
             }
           </label>
         }
-        <div class="ui-row bp-field">
-          <span class="bp-field-label" id="bp-mode">Spielmodus</span>
+        <div class="ui-row bp-mode">
+          <span class="bp-mode-label" id="bp-mode">Spielmodus</span>
           <div class="ui-segmented" role="group" aria-labelledby="bp-mode">
             <button
               type="button"
@@ -78,85 +69,55 @@
       </div>
       @if (urlProblem()) {
         <p class="ui-section-footer bp-warn" role="status">{{ urlProblem() }}</p>
-      } @else {
-        <p class="ui-section-footer">
-          {{
-            form().mode === 'survival'
-              ? 'Survival: Blöcke, die man leicht farmen kann.'
-              : 'Kreativ: Die Optik zählt mehr als der Aufwand.'
-          }}
-        </p>
       }
     </section>
 
     <section class="ui-section" aria-labelledby="bp-prompt">
-      <h2 id="bp-prompt" class="ui-section-title">Prompt für die KI</h2>
-      <div class="ui-group bp-prompt">
+      <h2 id="bp-prompt" class="ui-section-title bp-step-h">
+        <span class="bp-num" aria-hidden="true">2</span
+        >{{ isVideo() ? 'In Gemini einfügen' : 'In eine KI einfügen' }}
+      </h2>
+      <button type="button" class="ui-btn bp-primary" [disabled]="!canCopy()" (click)="copy()">
+        <mat-icon aria-hidden="true">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+        {{ copied() ? 'Kopiert' : 'Prompt kopieren' }}
+      </button>
+
+      @if (isVideo()) {
+        <p class="bp-alert" role="note">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>
+            <b>Gemini kann Videos am besten verwerten.</b> Am besten in
+            <a href="https://aistudio.google.com/" target="_blank" rel="noopener"
+              >Google AI Studio</a
+            >
+            mit einem Pro-Modell.
+          </span>
+        </p>
+      } @else {
+        <p class="bp-hint">
+          <mat-icon aria-hidden="true">travel_explore</mat-icon>
+          Mit eingeschalteter Websuche findet die KI echte Vorlagen.
+        </p>
+      }
+
+      <div class="bp-more">
         <details class="bp-prompt-details">
-          <summary>
-            <span>Prompt ansehen</span>
-            <span class="bp-prompt-size">{{ prompt().length }} Zeichen</span>
-            <mat-icon aria-hidden="true">expand_more</mat-icon>
-          </summary>
+          <summary>Prompt ansehen</summary>
           <pre class="bp-prompt-text">{{ prompt() }}</pre>
         </details>
-        <div class="bp-prompt-actions">
-          <button type="button" class="ui-btn bp-primary" [disabled]="!canCopy()" (click)="copy()">
-            <mat-icon aria-hidden="true">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
-            {{ copied() ? 'Kopiert' : 'Prompt kopieren' }}
-          </button>
-          <button
-            type="button"
-            class="ui-btn ui-btn--secondary"
-            [disabled]="!canCopy()"
-            (click)="download()"
-          >
-            <mat-icon aria-hidden="true">download</mat-icon>Als Textdatei speichern
-          </button>
-        </div>
+        <button type="button" class="bp-text-btn" [disabled]="!canCopy()" (click)="download()">
+          Als Datei sichern
+        </button>
       </div>
-      @if (isVideo()) {
-        <div class="bp-tip bp-tip--alert" role="note">
-          <mat-icon aria-hidden="true">smart_display</mat-icon>
-          <p>
-            <b>Gemini kann Videos am besten verwerten.</b> Füg den Prompt in Gemini ein, am besten
-            in Google AI Studio mit einem Pro-Modell. Claude und ChatGPT sehen bei einem Link meist
-            nur Titel und Beschreibung. Bei schnellen Shorts ist das Ergebnis eine gute Annäherung,
-            nicht jeder Block exakt.
-          </p>
-        </div>
-      } @else {
-        <div class="bp-tip">
-          <mat-icon aria-hidden="true">travel_explore</mat-icon>
-          <p>
-            <b>Schalte die Websuche ein</b> (Claude, ChatGPT oder Gemini): Die KI sucht sich dann
-            echte Vorlagen ähnlicher Bauten und orientiert sich an Proportionen, Dach und Details.
-          </p>
-        </div>
-      }
-      @if (isVideo()) {
-        <a
-          class="ui-pill-btn bp-studio"
-          href="https://aistudio.google.com/"
-          target="_blank"
-          rel="noopener"
-        >
-          <mat-icon aria-hidden="true">open_in_new</mat-icon>Google AI Studio öffnen
-        </a>
-      }
-      <p class="ui-section-footer">
-        Füg den Prompt in einen neuen Chat ein. Die KI antwortet mit einer JSON-Datei oder einem
-        Codeblock, beides kannst du unten importieren.
-      </p>
     </section>
 
     <section class="ui-section" aria-labelledby="bp-import">
-      <h2 id="bp-import" class="ui-section-title">Bauplan importieren</h2>
+      <h2 id="bp-import" class="ui-section-title bp-step-h">
+        <span class="bp-num" aria-hidden="true">3</span>Antwort importieren
+      </h2>
       <app-plan-import
         [busy]="saving()"
-        [confirmLabel]="
-          session.isLoggedIn() ? 'In meinen Bauwerken speichern' : 'Zum Speichern anmelden'
-        "
+        [confirmLabel]="session.isLoggedIn() ? 'Speichern' : 'Zum Speichern anmelden'"
         (confirm)="save($event)"
       />
     </section>

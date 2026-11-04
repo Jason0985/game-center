@@ -19,12 +19,12 @@ import { IsoView } from './iso-view';
             (change)="pick($event)"
           />
         </label>
-        <span class="import-or">oder Text einfügen</span>
+        <span class="import-or">oder einfügen:</span>
       </div>
       <textarea
         class="import-text"
         rows="5"
-        placeholder="Antwort der KI hier einfügen – auch mit Text oder Codeblock drumherum"
+        placeholder="Antwort der KI einfügen"
         aria-label="Bauplan als Text einfügen"
         [value]="text()"
         (input)="onText($event)"

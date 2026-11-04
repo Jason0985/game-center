@@ -100,20 +100,22 @@
 }
 
 .front {
-  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin: 8px 0 0;
   color: var(--color-text-muted);
   font-size: 13px;
   text-align: center;
 }
 
-.front::before {
-  content: '▼ ';
-  font-size: 10px;
+.front-hint {
+  color: var(--color-text-subtle);
 }
 
 .info {
-  min-height: 1.4em;
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--color-text-muted);
   font-size: 13px;
   text-align: center;

@@ -30,9 +30,11 @@
   }
 }
 
-// Seitentitel in Pixelschrift
+// Seitentitel in Pixelschrift; Monocraft läuft breit, daher etwas kleiner als iOS-Titel
 @mixin pixel-title {
   font-family: var(--bp-font-pixel);
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: 0;
+  line-height: 1.2;
 }
