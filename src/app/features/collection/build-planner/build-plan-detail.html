@@ -59,6 +59,15 @@
             </div>
           }
 
+          @if (doneCount() > 0) {
+            <app-xp-bar
+              [value]="doneCount()"
+              [max]="stats()?.steps ?? 0"
+              label="Baufortschritt"
+              [caption]="doneCount() + ' von ' + (stats()?.steps ?? 0) + ' Schritten gebaut'"
+            />
+          }
+
           @if (plan()!.description) {
             <p class="bp-description">{{ plan()!.description }}</p>
           }
@@ -103,41 +112,6 @@
               </button>
             </div>
           </div>
-
-          <section class="ui-section" aria-labelledby="bp-change">
-            <h2 id="bp-change" class="ui-section-title">Mit KI anpassen</h2>
-            <div class="ui-group bp-change">
-              <label class="bp-change-field">
-                <span>Was soll anders werden?</span>
-                <textarea
-                  rows="3"
-                  placeholder="z. B. einen Schornstein, das Dach aus Fichte, einen Keller darunter"
-                  [value]="wish()"
-                  (input)="onWish($event)"
-                ></textarea>
-              </label>
-              <button type="button" class="ui-btn bp-primary" (click)="copyChangePrompt()">
-                <mat-icon aria-hidden="true">{{
-                  wishCopied() ? 'check' : 'content_copy'
-                }}</mat-icon>
-                {{ wishCopied() ? 'Kopiert' : 'Änderungs-Prompt kopieren' }}
-              </button>
-            </div>
-            <p class="ui-section-footer">
-              Der Prompt enthält den kompletten Bauplan. Die Antwort der KI importierst du hier:
-            </p>
-            <app-plan-import
-              [busy]="saving()"
-              [confirmLabel]="
-                !session.isLoggedIn()
-                  ? 'Zum Speichern anmelden'
-                  : isExample()
-                    ? 'Als eigenen Bau speichern'
-                    : 'Als neue Version übernehmen'
-              "
-              (confirm)="importVersion($event)"
-            />
-          </section>
 
           <section class="ui-section" aria-labelledby="bp-file">
             <h2 id="bp-file" class="ui-section-title">Bauplan-Datei</h2>
@@ -274,15 +248,12 @@
                   Erledigt
                 </button>
               </div>
-              <div
-                class="bp-bar"
-                role="progressbar"
-                [attr.aria-valuenow]="doneCount()"
-                aria-valuemin="0"
-                [attr.aria-valuemax]="analysis()!.steps.length"
-              >
-                <i [style.width.%]="(doneCount() / analysis()!.steps.length) * 100"></i>
-              </div>
+              <app-xp-bar
+                [value]="doneCount()"
+                [max]="analysis()!.steps.length"
+                label="Erledigte Bauschritte"
+                [caption]="doneCount() + ' von ' + analysis()!.steps.length + ' Schritten erledigt'"
+              />
               <div class="bp-dots">
                 @for (st of analysis()!.steps; track $index) {
                   <button
@@ -378,6 +349,12 @@
               <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
               <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
             </div>
+            <app-xp-bar
+              class="bp-mat-xp"
+              [value]="haveCount()"
+              [max]="materials().length"
+              label="Gesammelte Materialien"
+            />
             <div class="ui-group bp-mats">
               @for (m of materials(); track m.name) {
                 <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">

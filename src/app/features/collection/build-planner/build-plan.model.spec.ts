@@ -2,7 +2,6 @@ import {
   EXAMPLE_HOUSE,
   isYoutubeUrl,
   analyzePlan,
-  changePrompt,
   countItems,
   extractJson,
   ideaPrompt,
@@ -94,9 +93,6 @@ describe('Bauplaner-Modell', () => {
     expect(prompt).toContain('Windmühle');
     expect(prompt).toContain('bauplaner/1');
     expect(prompt).toContain('Kreativ');
-    const change = changePrompt(EXAMPLE_HOUSE, 'Schornstein dazu');
-    expect(change).toContain('Schornstein dazu');
-    expect(change).toContain('"Gemütliches Eichenhaus"');
   });
 
   it('formatiert Stacks und Dateinamen', () => {

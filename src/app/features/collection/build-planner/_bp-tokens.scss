@@ -2,7 +2,7 @@
 // 3D-Modell. In jeder Bauplaner-Seite auf oberster Ebene einbinden: @include bp.tokens;
 @mixin tokens {
   :host {
-    --bp-font-pixel: 'Pixelify Sans', var(--font-rounded);
+    --bp-font-pixel: 'Monocraft', var(--font-rounded);
     --bp-accent: #7fd65a;
     --bp-accent-fill: #367d24;
     --bp-accent-soft: rgba(127, 214, 90, 0.16);

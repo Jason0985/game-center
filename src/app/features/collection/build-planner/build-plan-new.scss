@@ -216,6 +216,16 @@
   line-height: 1.45;
 }
 
+.bp-tip--alert {
+  border: 1px solid var(--color-danger-45);
+  background: var(--color-danger-12);
+}
+
+.bp-tip--alert mat-icon,
+.bp-tip--alert b {
+  color: var(--color-danger-light);
+}
+
 .bp-studio {
   align-self: flex-start;
   margin-top: 10px;

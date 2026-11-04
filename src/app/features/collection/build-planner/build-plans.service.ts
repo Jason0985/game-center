@@ -57,15 +57,6 @@ export class BuildPlansService {
     return (data as { id: string }).id;
   }
 
-  /** Neue Version eines Plans: Fortschritt passt nicht mehr sicher, also zurücksetzen. */
-  async replacePlan(id: string, plan: BuildPlan): Promise<void> {
-    const { error } = await supabase
-      .from('build_plans')
-      .update({ name: plan.name, plan, progress: {}, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
-  }
-
   async saveProgress(id: string, progress: PlanProgress): Promise<void> {
     if (id === EXAMPLE_ID) {
       writeLocal(EXAMPLE_PROGRESS_KEY, progress);

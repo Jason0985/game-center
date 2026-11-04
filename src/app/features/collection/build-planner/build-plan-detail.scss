@@ -97,40 +97,6 @@
   color: var(--bp-on-accent);
 }
 
-.bp-change {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-}
-
-.bp-change-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.bp-change-field textarea {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: var(--radius-medium);
-  background: var(--color-fill);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 400;
-  resize: vertical;
-}
-
-.bp-change-field textarea:focus {
-  outline: 2px solid var(--bp-accent);
-}
-
 .bp-danger-row .ui-row-title {
   color: var(--color-danger-light);
 }
@@ -299,23 +265,6 @@
   width: 20px;
   height: 20px;
   font-size: 20px;
-}
-
-.bp-bar {
-  overflow: hidden;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--color-fill);
-}
-
-// Fortschritt in Pixel-Segmenten
-.bp-bar i {
-  display: block;
-  height: 100%;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 10px, rgba(0, 0, 0, 0.18) 10px 12px),
-    var(--bp-accent-fill);
-  transition: width 420ms var(--ease-ios);
 }
 
 .bp-dots {
@@ -487,4 +436,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.bp-mat-xp {
+  margin: 0 4px 12px;
 }

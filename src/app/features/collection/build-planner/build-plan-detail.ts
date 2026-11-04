@@ -4,7 +4,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationDialog } from '../../../confirmation-dialog';
-import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
 import { SkeletonRows } from '../../../ui/skeleton-rows';
 import { textureUrl } from './block-textures';
@@ -14,7 +13,6 @@ import {
   PlacedBlock,
   PlanProgress,
   analyzePlan,
-  changePrompt,
   isYoutubeUrl,
   countItems,
   planFileName,
@@ -27,7 +25,7 @@ import { BlockMode } from './iso-renderer';
 import { IsoView } from './iso-view';
 import { CellMode, LayerGrid } from './layer-grid';
 import { copyText, downloadText } from './plan-io';
-import { PlanImport } from './plan-import';
+import { XpBar } from './xp-bar';
 
 type Tab = 'overview' | 'layers' | 'steps' | 'materials';
 
@@ -41,7 +39,7 @@ const TAB_KEY = 'bauplaner:tab';
 
 @Component({
   selector: 'app-build-plan-detail',
-  imports: [MatIcon, RouterLink, SkeletonRows, IsoView, LayerGrid, PlanImport],
+  imports: [MatIcon, RouterLink, SkeletonRows, IsoView, LayerGrid, XpBar],
   templateUrl: './build-plan-detail.html',
   styleUrl: './build-plan-detail.scss',
 })
@@ -50,7 +48,6 @@ export class BuildPlanDetail {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
-  readonly session = inject(SessionService);
 
   readonly tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Übersicht' },
@@ -67,9 +64,6 @@ export class BuildPlanDetail {
   readonly step = signal(0);
   readonly rotation = signal(2);
   readonly ghost = signal(true);
-  readonly wish = signal('');
-  readonly wishCopied = signal(false);
-  readonly saving = signal(false);
   private readonly done = signal(new Set<number>());
   private readonly have = signal(new Set<string>());
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -85,7 +79,7 @@ export class BuildPlanDetail {
     const A = this.analysis();
     if (!plan || !A) return null;
     return {
-      footprint: `${A.W} × ${A.D}`,
+      footprint: `${A.W}×${A.D}`,
       height: A.H,
       blocks: totalBlocks(plan, A),
       steps: A.steps.length,
@@ -328,56 +322,6 @@ export class BuildPlanDetail {
   downloadJson(): void {
     const plan = this.plan();
     if (plan) downloadText(planFileName(plan), JSON.stringify(plan, null, 1), 'application/json');
-  }
-
-  onWish(event: Event): void {
-    this.wish.set((event.target as HTMLTextAreaElement).value);
-  }
-
-  async copyChangePrompt(): Promise<void> {
-    const plan = this.plan();
-    if (!plan) return;
-    if (await copyText(changePrompt(plan, this.wish()))) {
-      this.wishCopied.set(true);
-      setTimeout(() => this.wishCopied.set(false), 2200);
-    } else {
-      downloadText('bauplaner-aenderung.txt', changePrompt(plan, this.wish()));
-    }
-  }
-
-  async importVersion(plan: BuildPlan): Promise<void> {
-    if (!this.session.isLoggedIn()) {
-      void this.router.navigateByUrl('/profile/auth');
-      return;
-    }
-    const build = this.build();
-    if (!build) return;
-    this.saving.set(true);
-    try {
-      if (build.example) {
-        const id = await this.service.create(plan);
-        this.toast.show({
-          tone: 'success',
-          icon: 'check_circle',
-          title: `„${plan.name}“ gespeichert`,
-        });
-        void this.router.navigate(['/collection/bauplaner', id]);
-      } else {
-        await this.service.replacePlan(build.id, plan);
-        this.setBuild({ ...build, name: plan.name, plan, progress: {} });
-        this.wish.set('');
-        this.toast.show({
-          tone: 'success',
-          icon: 'check_circle',
-          title: 'Neue Version übernommen',
-        });
-        scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } catch {
-      this.toast.show({ tone: 'error', icon: 'error_outline', title: 'Speichern fehlgeschlagen' });
-    } finally {
-      this.saving.set(false);
-    }
   }
 
   remove(): void {
