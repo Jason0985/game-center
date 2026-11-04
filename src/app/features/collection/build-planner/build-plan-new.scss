@@ -1,0 +1,174 @@
+@use 'bp-tokens' as bp;
+
+@include bp.tokens;
+
+.bp-title {
+  @include bp.pixel-title;
+}
+
+// Drei Schritte als Pfad: echte Reihenfolge, daher nummeriert
+.bp-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: -8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bp-flow li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.bp-flow span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+  font-family: var(--bp-font-pixel);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.bp-section-h {
+  margin: 0;
+  font: inherit;
+}
+
+.bp-text-btn {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--bp-accent);
+  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.bp-field {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.bp-field-label {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bp-field input,
+.bp-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.bp-field input:focus,
+.bp-field textarea:focus {
+  outline: none;
+}
+
+.bp-field:focus-within .bp-field-label {
+  color: var(--bp-accent);
+}
+
+.bp-field input::placeholder,
+.bp-field textarea::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.bp-field .ui-segmented {
+  margin-top: 4px;
+}
+
+.bp-prompt {
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-prompt-details summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px 0 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.bp-prompt-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.bp-prompt-details summary span:first-child {
+  flex: 1;
+  font-weight: 500;
+}
+
+.bp-prompt-size {
+  color: var(--color-text-subtle);
+  font-size: 14px;
+}
+
+.bp-prompt-details summary mat-icon {
+  color: var(--color-text-subtle);
+  transition: rotate 300ms var(--ease-ios);
+}
+
+.bp-prompt-details[open] summary mat-icon {
+  rotate: 180deg;
+}
+
+.bp-prompt-text {
+  max-height: 320px;
+  overflow: auto;
+  margin: 0 12px;
+  padding: 12px;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font:
+    12px/1.5 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bp-prompt-actions {
+  display: grid;
+  gap: 8px;
+  padding: 4px 12px 12px;
+}
+
+.bp-primary,
+.bp-primary:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+  box-shadow: none;
+  color: var(--bp-on-accent);
+}

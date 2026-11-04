@@ -54,6 +54,27 @@ export const routes: Routes = [
         (module) => module.ArrivalPlanner,
       ),
   },
+  {
+    path: 'collection/bauplaner',
+    loadComponent: () =>
+      import('./features/collection/build-planner/build-planner').then(
+        (module) => module.BuildPlanner,
+      ),
+  },
+  {
+    path: 'collection/bauplaner/neu',
+    loadComponent: () =>
+      import('./features/collection/build-planner/build-plan-new').then(
+        (module) => module.BuildPlanNew,
+      ),
+  },
+  {
+    path: 'collection/bauplaner/:id',
+    loadComponent: () =>
+      import('./features/collection/build-planner/build-plan-detail').then(
+        (module) => module.BuildPlanDetail,
+      ),
+  },
   // Ohne Guard: Ohne Konto kann man dort als Gast mit dem Lobby-Code beitreten
   {
     path: 'multiplayer',
