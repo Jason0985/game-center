@@ -96,6 +96,15 @@ export class Collection {
       path: '/collection/arrival-planner',
     },
     {
+      title: 'Bauplaner',
+      tile: 'var(--tile-green)',
+      group: 'Werkzeuge',
+      category: 'Bauanleitungen',
+      description: 'Bauwerke Ebene für Ebene nachbauen, neue Ideen per KI-Prompt planen.',
+      icon: 'view_in_ar',
+      path: '/collection/bauplaner',
+    },
+    {
       title: 'F1 Strategie',
       tile: 'var(--tile-pink)',
       group: 'Racing',

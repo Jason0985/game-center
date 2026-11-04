@@ -1,0 +1,113 @@
+<div class="ui-page-root">
+  <div class="ui-page bp-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection/bauplaner">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Bauplaner
+      </a>
+      <h1 class="ui-large-title bp-title">Neue Bauidee</h1>
+      <p class="ui-page-lead">
+        Beschreib, was du bauen willst. Daraus entsteht ein fertiger Prompt für Claude, Gemini oder
+        ChatGPT, und deren Antwort importierst du hier wieder.
+      </p>
+    </header>
+
+    <ol class="bp-flow" aria-label="So funktioniert es">
+      <li><span>1</span>Idee ausfüllen</li>
+      <li><span>2</span>Prompt in eine KI einfügen</li>
+      <li><span>3</span>Datei hier importieren</li>
+    </ol>
+
+    <section class="ui-section" aria-labelledby="bp-idea">
+      <div class="ui-section-title">
+        <h2 id="bp-idea" class="bp-section-h">Deine Idee</h2>
+        <button type="button" class="bp-text-btn" (click)="clear()">Leeren</button>
+      </div>
+      <div class="ui-group bp-form">
+        @for (field of fields; track field.key) {
+          <label class="ui-row bp-field">
+            <span class="bp-field-label">{{ field.label }}</span>
+            @if (field.multiline) {
+              <textarea
+                rows="3"
+                [placeholder]="field.placeholder"
+                [value]="form()[field.key]"
+                (input)="update(field.key, $event)"
+              ></textarea>
+            } @else {
+              <input
+                type="text"
+                [placeholder]="field.placeholder"
+                [value]="form()[field.key]"
+                (input)="update(field.key, $event)"
+              />
+            }
+          </label>
+        }
+        <div class="ui-row bp-field">
+          <span class="bp-field-label" id="bp-mode">Spielmodus</span>
+          <div class="ui-segmented" role="group" aria-labelledby="bp-mode">
+            <button
+              type="button"
+              [attr.aria-pressed]="form().mode === 'survival'"
+              (click)="setMode('survival')"
+            >
+              Survival
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="form().mode === 'creative'"
+              (click)="setMode('creative')"
+            >
+              Kreativ
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="ui-section-footer">
+        {{
+          form().mode === 'survival'
+            ? 'Survival: Blöcke, die man leicht farmen kann.'
+            : 'Kreativ: Die Optik zählt mehr als der Aufwand.'
+        }}
+      </p>
+    </section>
+
+    <section class="ui-section" aria-labelledby="bp-prompt">
+      <h2 id="bp-prompt" class="ui-section-title">Prompt für die KI</h2>
+      <div class="ui-group bp-prompt">
+        <details class="bp-prompt-details">
+          <summary>
+            <span>Prompt ansehen</span>
+            <span class="bp-prompt-size">{{ prompt().length }} Zeichen</span>
+            <mat-icon aria-hidden="true">expand_more</mat-icon>
+          </summary>
+          <pre class="bp-prompt-text">{{ prompt() }}</pre>
+        </details>
+        <div class="bp-prompt-actions">
+          <button type="button" class="ui-btn bp-primary" (click)="copy()">
+            <mat-icon aria-hidden="true">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+            {{ copied() ? 'Kopiert' : 'Prompt kopieren' }}
+          </button>
+          <button type="button" class="ui-btn ui-btn--secondary" (click)="download()">
+            <mat-icon aria-hidden="true">download</mat-icon>Als Textdatei speichern
+          </button>
+        </div>
+      </div>
+      <p class="ui-section-footer">
+        Füg ihn in einen neuen Chat ein. Die KI antwortet mit einer JSON-Datei oder einem Codeblock,
+        beides kannst du unten importieren.
+      </p>
+    </section>
+
+    <section class="ui-section" aria-labelledby="bp-import">
+      <h2 id="bp-import" class="ui-section-title">Bauplan importieren</h2>
+      <app-plan-import
+        [busy]="saving()"
+        [confirmLabel]="
+          session.isLoggedIn() ? 'In meinen Bauwerken speichern' : 'Zum Speichern anmelden'
+        "
+        (confirm)="save($event)"
+      />
+    </section>
+  </div>
+</div>

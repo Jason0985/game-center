@@ -1,0 +1,99 @@
+<div class="ui-page-root">
+  <div class="ui-page bp-page">
+    <header class="ui-page-head">
+      <div class="bp-head-row">
+        <a class="ui-back-link" routerLink="/collection">
+          <mat-icon aria-hidden="true">chevron_left</mat-icon>Sammlung
+        </a>
+        @if (session.isLoggedIn()) {
+          <a class="ui-pill-btn bp-new" routerLink="/collection/bauplaner/neu">
+            <mat-icon aria-hidden="true">add</mat-icon>Neu
+          </a>
+        }
+      </div>
+      <h1 class="ui-large-title bp-title">Bauplaner</h1>
+      <p class="ui-page-lead">
+        Bauwerke Ebene für Ebene nachbauen: mit 3D-Ansicht, Bauanleitung und Materialliste.
+      </p>
+    </header>
+
+    <section class="ui-section" aria-labelledby="bp-mine">
+      <h2 id="bp-mine" class="ui-section-title">Meine Bauwerke</h2>
+
+      @if (!session.initialized()) {
+        <div class="ui-group"><app-skeleton-rows [count]="2" /></div>
+      } @else if (!session.isLoggedIn()) {
+        <div class="ui-group ui-empty">
+          <mat-icon aria-hidden="true">lock</mat-icon>
+          <h2>Melde dich an</h2>
+          <p>Mit einem Konto speicherst du eigene Baupläne und deinen Baufortschritt.</p>
+          <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
+        </div>
+      } @else if (loading() && !rows().length) {
+        <div class="ui-group"><app-skeleton-rows [count]="3" /></div>
+      } @else if (error()) {
+        <div class="ui-group ui-empty">
+          <mat-icon aria-hidden="true">cloud_off</mat-icon>
+          <h2>Nicht geladen</h2>
+          <p>{{ error() }}</p>
+          <button type="button" class="ui-btn ui-btn--secondary" (click)="load()">
+            Erneut versuchen
+          </button>
+        </div>
+      } @else if (!rows().length) {
+        <div class="ui-group ui-empty">
+          <span class="bp-empty-block" aria-hidden="true"></span>
+          <h2>Noch nichts gebaut</h2>
+          <p>
+            Beschreib deine Idee, kopier den fertigen Prompt in eine KI und importier die Datei, die
+            sie dir gibt.
+          </p>
+          <a class="ui-btn" routerLink="/collection/bauplaner/neu">Neue Bauidee</a>
+        </div>
+      } @else {
+        <div class="ui-group bp-list">
+          @for (row of rows(); track row.build.id) {
+            <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: row }" />
+          }
+        </div>
+      }
+    </section>
+
+    <section class="ui-section" aria-labelledby="bp-example">
+      <h2 id="bp-example" class="ui-section-title">Zum Ausprobieren</h2>
+      <div class="ui-group bp-list">
+        <ng-container *ngTemplateOutlet="rowTpl; context: { $implicit: example }" />
+      </div>
+      <p class="ui-section-footer">
+        Das Beispielhaus ist immer dabei. Deinen Fortschritt daran merkt sich nur dieses Gerät.
+      </p>
+    </section>
+  </div>
+</div>
+
+<ng-template #rowTpl let-row>
+  <a class="ui-row bp-row" [routerLink]="row.link">
+    <span class="bp-thumb">
+      <app-iso-view
+        [plan]="row.build.plan"
+        [analysis]="row.analysis"
+        [compact]="true"
+        [maxHeight]="72"
+        [label]="'Vorschau: ' + row.build.name"
+      />
+    </span>
+    <span class="ui-row-text">
+      <span class="ui-row-title">{{ row.build.name }}</span>
+      <span class="ui-row-sub">{{ row.sub }}</span>
+    </span>
+    @if (row.progress) {
+      <span class="bp-progress" [class.bp-progress--done]="row.complete">
+        @if (row.complete) {
+          <mat-icon aria-hidden="true">check</mat-icon>
+        }
+        {{ row.progress }}
+      </span>
+    }
+    <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+  </a>
+</ng-template>

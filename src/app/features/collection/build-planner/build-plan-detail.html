@@ -1,0 +1,417 @@
+<div class="ui-page-root">
+  <div class="ui-page bp-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection/bauplaner">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Bauplaner
+      </a>
+      @if (build(); as b) {
+        <h1 class="ui-large-title bp-title">{{ b.name }}</h1>
+        @if (b.example) {
+          <p class="ui-page-kicker">Beispielbau</p>
+        }
+      }
+    </header>
+
+    @if (loading()) {
+      <div class="ui-group"><app-skeleton-rows [count]="4" /></div>
+    } @else if (error() || !build()) {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">search_off</mat-icon>
+        <h2>Nicht gefunden</h2>
+        <p>{{ error() }}</p>
+        <a class="ui-btn ui-btn--secondary" routerLink="/collection/bauplaner"
+          >Zu meinen Bauwerken</a
+        >
+      </div>
+    } @else if (plan() && analysis()) {
+      <nav class="ui-segmented bp-tabs" aria-label="Ansicht wählen">
+        @for (t of tabs; track t.id) {
+          <button type="button" [attr.aria-pressed]="tab() === t.id" (click)="setTab(t.id)">
+            {{ t.label }}
+          </button>
+        }
+      </nav>
+
+      @switch (tab()) {
+        @case ('overview') {
+          <section class="bp-hero">
+            <app-iso-view [plan]="plan()!" [analysis]="analysis()!" [(rotation)]="rotation" />
+          </section>
+
+          @if (stats(); as s) {
+            <div class="ui-group bp-stats">
+              <div class="bp-stat">
+                <strong>{{ s.footprint }}</strong
+                ><span>Grundfläche</span>
+              </div>
+              <div class="bp-stat">
+                <strong>{{ s.height }}</strong
+                ><span>Ebenen</span>
+              </div>
+              <div class="bp-stat">
+                <strong>{{ s.blocks }}</strong
+                ><span>Blöcke</span>
+              </div>
+              <div class="bp-stat">
+                <strong>{{ s.steps }}</strong
+                ><span>Schritte</span>
+              </div>
+            </div>
+          }
+
+          @if (plan()!.description) {
+            <p class="bp-description">{{ plan()!.description }}</p>
+          }
+
+          <div class="bp-cta">
+            <button type="button" class="ui-btn bp-primary" (click)="startSteps()">
+              <mat-icon aria-hidden="true">construction</mat-icon>
+              @if (doneCount() === 0) {
+                Bauanleitung starten
+              } @else if (doneCount() >= (stats()?.steps ?? 0)) {
+                Anleitung ansehen
+              } @else {
+                Weiterbauen bei Schritt {{ nextStep() + 1 }}
+              }
+            </button>
+            <div class="bp-cta-row">
+              <button type="button" class="ui-btn ui-btn--secondary" (click)="setTab('layers')">
+                <mat-icon aria-hidden="true">layers</mat-icon>Ebenen
+              </button>
+              <button type="button" class="ui-btn ui-btn--secondary" (click)="setTab('materials')">
+                <mat-icon aria-hidden="true">inventory_2</mat-icon>Material
+              </button>
+            </div>
+          </div>
+
+          <section class="ui-section" aria-labelledby="bp-change">
+            <h2 id="bp-change" class="ui-section-title">Mit KI anpassen</h2>
+            <div class="ui-group bp-change">
+              <label class="bp-change-field">
+                <span>Was soll anders werden?</span>
+                <textarea
+                  rows="3"
+                  placeholder="z. B. einen Schornstein, das Dach aus Fichte, einen Keller darunter"
+                  [value]="wish()"
+                  (input)="onWish($event)"
+                ></textarea>
+              </label>
+              <button type="button" class="ui-btn bp-primary" (click)="copyChangePrompt()">
+                <mat-icon aria-hidden="true">{{
+                  wishCopied() ? 'check' : 'content_copy'
+                }}</mat-icon>
+                {{ wishCopied() ? 'Kopiert' : 'Änderungs-Prompt kopieren' }}
+              </button>
+            </div>
+            <p class="ui-section-footer">
+              Der Prompt enthält den kompletten Bauplan. Die Antwort der KI importierst du hier:
+            </p>
+            <app-plan-import
+              [busy]="saving()"
+              [confirmLabel]="
+                !session.isLoggedIn()
+                  ? 'Zum Speichern anmelden'
+                  : isExample()
+                    ? 'Als eigenen Bau speichern'
+                    : 'Als neue Version übernehmen'
+              "
+              (confirm)="importVersion($event)"
+            />
+          </section>
+
+          <section class="ui-section" aria-labelledby="bp-file">
+            <h2 id="bp-file" class="ui-section-title">Bauplan-Datei</h2>
+            <div class="ui-group ui-group--icons">
+              <button type="button" class="ui-row" (click)="downloadJson()">
+                <span class="ui-row-icon" style="--tile: var(--tile-green)">
+                  <mat-icon aria-hidden="true">download</mat-icon>
+                </span>
+                <span class="ui-row-text"
+                  ><span class="ui-row-title">Als JSON speichern</span></span
+                >
+              </button>
+              <button type="button" class="ui-row" (click)="copyJson()">
+                <span class="ui-row-icon" style="--tile: var(--tile-blue)">
+                  <mat-icon aria-hidden="true">content_copy</mat-icon>
+                </span>
+                <span class="ui-row-text"><span class="ui-row-title">JSON kopieren</span></span>
+              </button>
+              @if (!isExample()) {
+                <button type="button" class="ui-row bp-danger-row" (click)="remove()">
+                  <span class="ui-row-icon" style="--tile: var(--tile-red)">
+                    <mat-icon aria-hidden="true">delete</mat-icon>
+                  </span>
+                  <span class="ui-row-text"><span class="ui-row-title">Bauplan löschen</span></span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+
+        @case ('layers') {
+          <section class="ui-group bp-card">
+            <div class="bp-layer-ctl">
+              <button
+                type="button"
+                class="bp-round"
+                [disabled]="layer() === 0"
+                (click)="moveLayer(-1)"
+                aria-label="Eine Ebene tiefer"
+              >
+                <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
+              </button>
+              <div class="bp-layer-num" aria-live="polite">
+                Ebene {{ layer() + 1 }}<small>von {{ analysis()!.H }}</small>
+              </div>
+              <button
+                type="button"
+                class="bp-round"
+                [disabled]="layer() === analysis()!.H - 1"
+                (click)="moveLayer(1)"
+                aria-label="Eine Ebene höher"
+              >
+                <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
+              </button>
+            </div>
+            <input
+              class="bp-range"
+              type="range"
+              min="1"
+              [max]="analysis()!.H"
+              [value]="layer() + 1"
+              (input)="onLayerRange($event)"
+              aria-label="Ebene wählen"
+            />
+            <app-layer-grid
+              [plan]="plan()!"
+              [analysis]="analysis()!"
+              [y]="layer()"
+              [ghost]="ghost()"
+            />
+            <div class="bp-legend">
+              @for (item of layerItems(); track item.name) {
+                <span class="bp-chip">
+                  <span
+                    class="bp-swatch"
+                    [style.background-color]="item.def.color"
+                    [style.background-image]="item.swatch"
+                  ></span>
+                  <b>{{ item.count }}×</b> {{ item.name }}
+                </span>
+              }
+            </div>
+            <button
+              type="button"
+              class="ui-pill-btn ui-pill-btn--neutral bp-ghost"
+              [attr.aria-pressed]="ghost()"
+              (click)="ghost.set(!ghost())"
+            >
+              <mat-icon aria-hidden="true">{{
+                ghost() ? 'visibility' : 'visibility_off'
+              }}</mat-icon>
+              Ebene darunter {{ ghost() ? 'sichtbar' : 'ausgeblendet' }}
+            </button>
+          </section>
+
+          <section class="ui-section">
+            <h2 class="ui-section-title">Wo du gerade bist</h2>
+            <app-iso-view
+              [plan]="plan()!"
+              [analysis]="analysis()!"
+              [mode]="layerIsoMode()"
+              [maxHeight]="320"
+              [(rotation)]="rotation"
+            />
+            <p class="ui-section-footer">
+              Die gewählte Ebene ist gold umrandet, alles darunter blass.
+            </p>
+          </section>
+          @if (hasStairs()) {
+            <p class="bp-note">
+              Pfeile auf Treppen zeigen, wohin sie ansteigen. Im Raster ist unten vorne. Treppen
+              setzt du am leichtesten von außen mit Blick zur Wand.
+            </p>
+          }
+        }
+
+        @case ('steps') {
+          @if (currentStep(); as s) {
+            <section class="ui-group bp-card">
+              <div class="bp-step-head">
+                <h2 class="bp-step-title">
+                  Schritt {{ step() + 1 }}<small>von {{ analysis()!.steps.length }}</small>
+                </h2>
+                <button
+                  type="button"
+                  class="bp-done"
+                  [class.bp-done--on]="isDone(step())"
+                  [attr.aria-pressed]="isDone(step())"
+                  (click)="toggleDone(step())"
+                >
+                  <mat-icon aria-hidden="true">{{
+                    isDone(step()) ? 'check_circle' : 'radio_button_unchecked'
+                  }}</mat-icon>
+                  Erledigt
+                </button>
+              </div>
+              <div
+                class="bp-bar"
+                role="progressbar"
+                [attr.aria-valuenow]="doneCount()"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="analysis()!.steps.length"
+              >
+                <i [style.width.%]="(doneCount() / analysis()!.steps.length) * 100"></i>
+              </div>
+              <div class="bp-dots">
+                @for (st of analysis()!.steps; track $index) {
+                  <button
+                    type="button"
+                    class="bp-dot"
+                    [class.bp-dot--done]="isDone($index)"
+                    [class.bp-dot--current]="$index === step()"
+                    [attr.aria-label]="'Schritt ' + ($index + 1) + ': ' + st.title"
+                    (click)="goStep($index)"
+                  >
+                    {{ $index + 1 }}
+                  </button>
+                }
+              </div>
+              <h3 class="bp-step-name">{{ s.title }}</h3>
+              @if (s.text) {
+                <p class="bp-step-text">{{ s.text }}</p>
+              }
+              <p class="bp-need">Für diesen Schritt brauchst du</p>
+              <div class="bp-legend">
+                @for (item of stepItems(); track item.name) {
+                  <span class="bp-chip">
+                    <span
+                      class="bp-swatch"
+                      [style.background-color]="item.def.color"
+                      [style.background-image]="item.swatch"
+                    ></span>
+                    <b>{{ item.count }}×</b> {{ item.name }}
+                  </span>
+                } @empty {
+                  <span class="bp-need">nichts Neues</span>
+                }
+              </div>
+            </section>
+
+            <div class="bp-two">
+              <app-iso-view
+                [plan]="plan()!"
+                [analysis]="analysis()!"
+                [mode]="stepIsoMode()"
+                [(rotation)]="rotation"
+              />
+              <div class="bp-stack">
+                @for (y of stepLayers(); track y) {
+                  <section class="ui-group bp-card">
+                    <h3 class="bp-grid-title">Ebene {{ y + 1 }}</h3>
+                    <app-layer-grid
+                      [plan]="plan()!"
+                      [analysis]="analysis()!"
+                      [y]="y"
+                      [mode]="stepGridMode()"
+                    />
+                  </section>
+                }
+              </div>
+            </div>
+
+            @if (hasStairs()) {
+              <p class="bp-note">
+                Pfeile auf Treppen zeigen, wohin sie ansteigen. Gold umrandet ist, was in diesem
+                Schritt dazukommt.
+              </p>
+            }
+
+            <div class="bp-nav">
+              <button
+                type="button"
+                class="ui-btn ui-btn--secondary"
+                [disabled]="step() === 0"
+                (click)="prev()"
+              >
+                <mat-icon aria-hidden="true">chevron_left</mat-icon>Zurück
+              </button>
+              <button type="button" class="ui-btn bp-primary" (click)="next()">
+                @if (step() === analysis()!.steps.length - 1) {
+                  <mat-icon aria-hidden="true">celebration</mat-icon>Fertig gebaut
+                } @else {
+                  Weiter<mat-icon aria-hidden="true">chevron_right</mat-icon>
+                }
+              </button>
+            </div>
+            @if (doneCount()) {
+              <button type="button" class="bp-text-btn bp-reset" (click)="resetProgress()">
+                Fortschritt zurücksetzen
+              </button>
+            }
+          }
+        }
+
+        @case ('materials') {
+          <section class="ui-section" aria-labelledby="bp-mat">
+            <div class="ui-section-title">
+              <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
+              <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
+            </div>
+            <div class="ui-group bp-mats">
+              @for (m of materials(); track m.name) {
+                <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
+                  <input
+                    type="checkbox"
+                    class="bp-check"
+                    [checked]="m.have"
+                    (change)="toggleHave(m.name)"
+                  />
+                  <span
+                    class="bp-swatch bp-swatch--lg"
+                    [style.background-color]="m.def.color"
+                    [style.background-image]="m.swatch"
+                  ></span>
+                  <span class="ui-row-text">
+                    <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
+                    @if (m.def.farm) {
+                      <span class="ui-row-sub">{{ m.def.farm }}</span>
+                    }
+                  </span>
+                  <span class="bp-mat-count">
+                    {{ m.count }}<small>{{ m.stacks }}</small>
+                  </span>
+                </label>
+              }
+            </div>
+            <p class="ui-section-footer">
+              {{ stats()?.blocks }} Blöcke insgesamt, ein Stack sind 64. Abhaken, was du schon hast.
+            </p>
+          </section>
+
+          @if (raw().length) {
+            <section class="ui-section" aria-labelledby="bp-raw">
+              <h2 id="bp-raw" class="ui-section-title">Rohstoffe zum Farmen</h2>
+              <div class="ui-group bp-raw">
+                @for (r of raw(); track r.name) {
+                  <div class="ui-row">
+                    <span class="ui-row-text"
+                      ><span class="ui-row-title">{{ r.name }}</span></span
+                    >
+                    <span class="bp-mat-count"
+                      >{{ r.count }}<small>{{ r.stacks }}</small></span
+                    >
+                  </div>
+                }
+              </div>
+              <p class="ui-section-footer">
+                So viel musst du ungefähr abbauen, bevor du craftest. Aufgerundet, ein kleiner
+                Puffer ist also schon drin.
+              </p>
+            </section>
+          }
+        }
+      }
+    }
+  </div>
+</div>

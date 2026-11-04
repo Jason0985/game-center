@@ -1,0 +1,112 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.import-file {
+  position: relative;
+  overflow: hidden;
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.import-file:focus-within {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.import-file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.import-or {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.import-text {
+  width: 100%;
+  min-height: 110px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font:
+    13px/1.45 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  resize: vertical;
+}
+
+.import-text:focus {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 0;
+}
+
+.import-error {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-danger-light);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.import-error mat-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.preview {
+  padding: 8px;
+}
+
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px 8px;
+}
+
+.preview-body h3 {
+  margin: 0;
+  font-family: var(--bp-font-pixel);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.preview-body p {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.bp-primary,
+.bp-primary:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+  box-shadow: none;
+  color: var(--bp-on-accent);
+}

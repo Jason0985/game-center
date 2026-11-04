@@ -1,0 +1,77 @@
+@use 'bp-tokens' as bp;
+
+@include bp.tokens;
+
+.bp-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-new {
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.bp-title {
+  @include bp.pixel-title;
+}
+
+.bp-list {
+  --ui-row-inset: 108px;
+}
+
+.bp-row {
+  gap: 14px;
+  min-height: 84px;
+  padding-left: 12px;
+}
+
+.bp-thumb {
+  flex: none;
+  width: 80px;
+  pointer-events: none;
+}
+
+.bp-progress {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-text-muted);
+  font-family: var(--bp-font-pixel);
+  font-size: 14px;
+}
+
+.bp-progress--done {
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.bp-progress mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+// Grasblock aus CSS für den leeren Zustand
+.bp-empty-block {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 6px;
+  background: linear-gradient(#5f9e3c 0 32%, #866043 32%);
+  box-shadow:
+    inset 0 0 0 3px rgba(0, 0, 0, 0.18),
+    0 8px 18px -8px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+}
+
+.ui-empty .ui-btn {
+  background: var(--bp-accent-fill);
+  box-shadow: none;
+  color: var(--bp-on-accent);
+}

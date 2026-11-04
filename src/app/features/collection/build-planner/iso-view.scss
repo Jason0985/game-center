@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+// Himmel hinter der Wiese: tagsüber hell, im dunklen Schema Abenddämmerung
+.iso-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-large);
+  background:
+    radial-gradient(120% 70% at 50% 110%, var(--bp-sky-glow), transparent 70%),
+    linear-gradient(180deg, var(--bp-sky-top), var(--bp-sky-bottom));
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.iso-stage--compact {
+  border-radius: 10px;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  image-rendering: pixelated;
+}
+
+.iso-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.iso-turn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-glass);
+  color: var(--color-text);
+  box-shadow: 0 0 0 0.5px var(--color-glass-edge) inset;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 300ms var(--ease-spring);
+}
+
+.iso-turn:active {
+  scale: 0.9;
+}
+
+.iso-turn:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.iso-turn mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}

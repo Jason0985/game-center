@@ -1,0 +1,38 @@
+// Farben des Bauplaners: Grasgrün als Akzent, Gold für „hier bist du“, Himmel hinter dem
+// 3D-Modell. In jeder Bauplaner-Seite auf oberster Ebene einbinden: @include bp.tokens;
+@mixin tokens {
+  :host {
+    --bp-font-pixel: 'Pixelify Sans', var(--font-rounded);
+    --bp-accent: #7fd65a;
+    --bp-accent-fill: #367d24;
+    --bp-accent-soft: rgba(127, 214, 90, 0.16);
+    --bp-on-accent: #ffffff;
+    --bp-highlight: #f5c451;
+    --bp-dim: rgba(17, 21, 40, 0.62);
+    --bp-sky-top: #1b2550;
+    --bp-sky-bottom: #3d3f72;
+    --bp-sky-glow: rgba(245, 196, 81, 0.2);
+    --bp-cell-empty: rgba(255, 255, 255, 0.04);
+    --bp-cell-line: rgba(255, 255, 255, 0.12);
+  }
+
+  :host-context([data-theme='light']) {
+    --bp-accent: #2d7420;
+    --bp-accent-fill: #2d7420;
+    --bp-accent-soft: rgba(45, 116, 32, 0.12);
+    --bp-highlight: #d98f00;
+    --bp-dim: rgba(242, 242, 248, 0.66);
+    --bp-sky-top: #8ccaf7;
+    --bp-sky-bottom: #e3f3ff;
+    --bp-sky-glow: rgba(255, 255, 255, 0.7);
+    --bp-cell-empty: rgba(40, 44, 90, 0.04);
+    --bp-cell-line: rgba(40, 44, 90, 0.16);
+  }
+}
+
+// Seitentitel in Pixelschrift
+@mixin pixel-title {
+  font-family: var(--bp-font-pixel);
+  font-weight: 700;
+  letter-spacing: 0;
+}
