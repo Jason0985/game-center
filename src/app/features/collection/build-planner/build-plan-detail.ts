@@ -15,6 +15,7 @@ import {
   PlanProgress,
   analyzePlan,
   changePrompt,
+  isYoutubeUrl,
   countItems,
   planFileName,
   rawTotals,
@@ -64,7 +65,7 @@ export class BuildPlanDetail {
   readonly tab = signal<Tab>(readTab());
   readonly layer = signal(0);
   readonly step = signal(0);
-  readonly rotation = signal(0);
+  readonly rotation = signal(2);
   readonly ghost = signal(true);
   readonly wish = signal('');
   readonly wishCopied = signal(false);
@@ -407,6 +408,16 @@ export class BuildPlanDetail {
           });
         }
       });
+  }
+
+  readonly isVideoUrl = isYoutubeUrl;
+
+  hostOf(url: string): string {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
   }
 
   private withSwatch(plan: BuildPlan, items: ItemCount[]): (ItemCount & { swatch: string })[] {

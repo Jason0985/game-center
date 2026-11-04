@@ -3,7 +3,7 @@ import { MatIcon } from '@angular/material/icon';
 import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
-import { BuildPlan, EMPTY_IDEA, IdeaForm, ideaPrompt } from './build-plan.model';
+import { BuildPlan, EMPTY_IDEA, IdeaForm, ideaPrompt, isYoutubeUrl } from './build-plan.model';
 import { BuildPlansService } from './build-plans.service';
 import { copyText, downloadText } from './plan-io';
 import { PlanImport } from './plan-import';
@@ -11,11 +11,28 @@ import { PlanImport } from './plan-import';
 const DRAFT_KEY = 'bauplaner:idee';
 
 interface Field {
-  key: Exclude<keyof IdeaForm, 'mode'>;
+  key: Exclude<keyof IdeaForm, 'mode' | 'source'>;
   label: string;
   placeholder: string;
   multiline?: boolean;
+  type?: 'url';
 }
+
+const VIDEO_FIELDS: Field[] = [
+  {
+    key: 'videoUrl',
+    label: 'YouTube-Link',
+    placeholder: 'https://youtube.com/shorts/…',
+    type: 'url',
+  },
+  { key: 'name', label: 'Name (optional)', placeholder: 'Sonst wie im Video' },
+  {
+    key: 'extra',
+    label: 'Änderungen gegenüber dem Video',
+    placeholder: 'z. B. Fichte statt Eiche, ohne Keller, etwas größer',
+    multiline: true,
+  },
+];
 
 /** Neue Bauidee: Formular → Prompt kopieren → Antwort der KI importieren → speichern. */
 @Component({
@@ -30,7 +47,7 @@ export class BuildPlanNew {
   private readonly router = inject(Router);
   readonly session = inject(SessionService);
 
-  readonly fields: Field[] = [
+  private readonly ideaFields: Field[] = [
     { key: 'name', label: 'Name des Baus', placeholder: 'z. B. Windmühle am Fluss' },
     {
       key: 'what',
@@ -50,6 +67,15 @@ export class BuildPlanNew {
   ];
 
   readonly form = signal<IdeaForm>(readDraft());
+  readonly isVideo = computed(() => this.form().source === 'video');
+  readonly fields = computed(() => (this.isVideo() ? VIDEO_FIELDS : this.ideaFields));
+  readonly urlProblem = computed(() => {
+    const url = this.form().videoUrl.trim();
+    if (!this.isVideo()) return '';
+    if (!url) return 'Füg den Link zum Video ein, dann kannst du den Prompt kopieren.';
+    return isYoutubeUrl(url) ? '' : 'Das sieht nicht nach einem YouTube-Link aus.';
+  });
+  readonly canCopy = computed(() => !this.isVideo() || !!this.form().videoUrl.trim());
   readonly prompt = computed(() => ideaPrompt(this.form()));
   readonly copied = signal(false);
   readonly saving = signal(false);
@@ -60,12 +86,16 @@ export class BuildPlanNew {
     this.setForm({ ...this.form(), [key]: value });
   }
 
+  setSource(source: IdeaForm['source']): void {
+    this.setForm({ ...this.form(), source });
+  }
+
   setMode(mode: IdeaForm['mode']): void {
     this.setForm({ ...this.form(), mode });
   }
 
   clear(): void {
-    this.setForm({ ...EMPTY_IDEA });
+    this.setForm({ ...EMPTY_IDEA, source: this.form().source });
   }
 
   async copy(): Promise<void> {

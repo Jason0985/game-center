@@ -63,6 +63,26 @@
             <p class="bp-description">{{ plan()!.description }}</p>
           }
 
+          @if (plan()!.sources?.length) {
+            <section class="ui-section" aria-labelledby="bp-sources">
+              <h2 id="bp-sources" class="ui-section-title">Vorlagen</h2>
+              <div class="ui-group">
+                @for (url of plan()!.sources; track url) {
+                  <a class="ui-row bp-source-row" [href]="url" target="_blank" rel="noopener">
+                    <mat-icon aria-hidden="true">{{
+                      isVideoUrl(url) ? 'smart_display' : 'link'
+                    }}</mat-icon>
+                    <span class="ui-row-text"
+                      ><span class="ui-row-title">{{ hostOf(url) }}</span
+                      ><span class="ui-row-sub">{{ url }}</span></span
+                    >
+                    <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+                  </a>
+                }
+              </div>
+            </section>
+          }
+
           <div class="bp-cta">
             <button type="button" class="ui-btn bp-primary" (click)="startSteps()">
               <mat-icon aria-hidden="true">construction</mat-icon>

@@ -18,7 +18,8 @@ export function textureKind(def: BlockDef): TextureKind {
   const name = def.name.toLowerCase();
   const rules: [RegExp, TextureKind][] = [
     [/glas|glass/, 'glass'],
-    [/tür|tuer|door|falltür/, 'door'],
+    [/falltür|trapdoor/, 'planks'],
+    [/tür|tuer|door/, 'door'],
     [/stamm|holz\b|log|wood/, 'log'],
     [/brett|plank|treppe.*holz|holz.*(treppe|stufe)|zaun/, 'planks'],
     [/bruchstein|cobble/, 'cobblestone'],
@@ -30,7 +31,7 @@ export function textureKind(def: BlockDef): TextureKind {
     [/kies|gravel/, 'gravel'],
     [/laub|blätter|leaves/, 'leaves'],
     [/wolle|wool|teppich|beton|concrete|terrakotta/, 'wool'],
-    [/eisen|gold|kupfer|iron|metall|block aus/, 'metal'],
+    [/eisen|gold|kupfer|iron|metall|block aus|laterne|lantern/, 'metal'],
     [/wasser|water/, 'water'],
     [/quarz|glatt|smooth/, 'smooth'],
     [/stein|stone|andesit|diorit|granit|schiefer/, 'stone'],

@@ -28,7 +28,19 @@ export const TEXTURES = [
 ] as const;
 export type TextureKind = (typeof TEXTURES)[number];
 
-export type BlockShape = 'block' | 'stair' | 'slab';
+export const SHAPES = [
+  'block',
+  'stair',
+  'slab',
+  'slab_top',
+  'fence',
+  'wall',
+  'pane',
+  'trapdoor',
+  'carpet',
+  'small',
+] as const;
+export type BlockShape = (typeof SHAPES)[number];
 
 export interface BlockDef {
   name: string;
@@ -36,8 +48,11 @@ export interface BlockDef {
   top?: string;
   texture?: TextureKind;
   shape?: BlockShape;
-  // Treppe: Richtung, in die sie ansteigt, als [dx, dz]; [0, 1] = nach hinten
+  // Treppe: Richtung, in die sie ansteigt, als [dx, dz]; [0, 1] = nach hinten.
+  // Glasscheibe ohne Nachbarn: Richtung, in der sie verläuft
   dir?: [number, number];
+  // Treppe/Falltür in der oberen Blockhälfte (umgedreht)
+  half?: 'top';
   // Gezählt wird unter diesem Namen (z. B. obere Türhälfte zählt zur Tür)
   item?: string;
   // Wie viele Items ein Block kostet; 0 = zählt nicht extra (obere Türhälfte)
@@ -66,6 +81,8 @@ export interface BuildPlan {
   palette: Record<string, BlockDef>;
   layers: string[][];
   steps?: PlanStep[];
+  // Vorlagen: Video oder Seiten, an denen sich der Bau orientiert
+  sources?: string[];
 }
 
 export interface PlacedBlock {
@@ -218,6 +235,12 @@ const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export function parsePlan(text: string): ParseResult {
   if (!text.trim()) return { error: 'Füg zuerst den Bauplan ein oder wähl eine Datei.' };
+  if (!text.includes('{') && /nicht ansehen|can(no|')t (watch|view|access)/i.test(text)) {
+    return {
+      error:
+        'Die KI konnte das Video nicht ansehen. Nimm dafür Gemini, am besten in Google AI Studio mit einem Pro-Modell.',
+    };
+  }
   let raw: unknown;
   try {
     raw = JSON.parse(extractJson(text));
@@ -343,7 +366,29 @@ export function validatePlan(raw: unknown): ParseResult {
     ...(steps?.length ? { steps } : {}),
   };
   if (typeof input['id'] === 'string') plan.id = input['id'].slice(0, 80);
+  const sources = Array.isArray(input['sources'])
+    ? input['sources'].filter(
+        (url): url is string => typeof url === 'string' && /^https?:\/\/\S+$/.test(url.trim()),
+      )
+    : [];
+  if (sources.length) plan.sources = sources.slice(0, 10).map((url) => url.trim().slice(0, 500));
   return { plan };
+}
+
+// Falls die KI "shape" vergisst: am Blocknamen erkennen
+function shapeFromName(name: string): BlockShape | null {
+  const n = name.toLowerCase();
+  const rules: [RegExp, BlockShape][] = [
+    [/falltür|trapdoor/, 'trapdoor'],
+    [/zaun|fence/, 'fence'],
+    [/mauer$|\bwall\b/, 'wall'],
+    [/scheibe|gitter|pane|bars/, 'pane'],
+    [/teppich|carpet|druckplatte/, 'carpet'],
+    [/laterne|fackel|blumentopf|knopf|lantern|torch/, 'small'],
+    [/treppe|stairs/, 'stair'],
+    [/stufe|slab/, 'slab'],
+  ];
+  return rules.find(([pattern]) => pattern.test(n))?.[1] ?? null;
 }
 
 function cleanBlock(def: BlockDef): BlockDef {
@@ -352,7 +397,17 @@ function cleanBlock(def: BlockDef): BlockDef {
   if (typeof def.texture === 'string' && (TEXTURES as readonly string[]).includes(def.texture)) {
     out.texture = def.texture;
   }
-  if (def.shape === 'stair' || def.shape === 'slab') out.shape = def.shape;
+  if (
+    typeof def.shape === 'string' &&
+    def.shape !== 'block' &&
+    (SHAPES as readonly string[]).includes(def.shape)
+  ) {
+    out.shape = def.shape;
+  } else if (!def.shape) {
+    const shape = shapeFromName(out.name);
+    if (shape) out.shape = shape;
+  }
+  if (def.half === 'top') out.half = 'top';
   if (
     Array.isArray(def.dir) &&
     def.dir.length === 2 &&
@@ -389,6 +444,9 @@ export interface IdeaForm {
   blocks: string;
   extra: string;
   mode: 'survival' | 'creative';
+  // Eigene Idee oder Nachbau aus einem YouTube-Video
+  source: 'idea' | 'video';
+  videoUrl: string;
 }
 
 export const EMPTY_IDEA: IdeaForm = {
@@ -399,7 +457,16 @@ export const EMPTY_IDEA: IdeaForm = {
   blocks: '',
   extra: '',
   mode: 'survival',
+  source: 'idea',
+  videoUrl: '',
 };
+
+const YOUTUBE =
+  /^(https?:\/\/)?((www|m|music)\.)?(youtube\.com\/(watch\?\S*v=|shorts\/|live\/|embed\/)|youtu\.be\/)[\w-]{6,}/i;
+
+export function isYoutubeUrl(url: string): boolean {
+  return YOUTUBE.test(url.trim());
+}
 
 const FORMAT_SPEC = `## Dateiformat „${PLAN_FORMAT}“
 
@@ -417,8 +484,9 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
       "color": "#rrggbb (typische Farbe der Seitenfläche)",
       "top": "#rrggbb (optional, Farbe der Oberseite)",
       "texture": "${TEXTURES.join(' | ')}",
-      "shape": "block | stair | slab (optional, Standard block)",
+      "shape": "${SHAPES.join(' | ')} (optional, Standard block)",
       "dir": [0, 1],
+      "half": "top (optional: umgedrehte Treppe / obere Falltür)",
       "item": "optional: zählt unter diesem Namen",
       "per": 1,
       "abbr": "2 Buchstaben",
@@ -432,7 +500,8 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
   ],
   "steps": [
     { "title": "Kurzer Titel", "text": "1–3 Sätze Anleitung", "layers": [0, 0], "blocks": ["C"] }
-  ]
+  ],
+  "sources": ["https://… (Links zu Vorlagen, an denen du dich orientiert hast)"]
 }
 
 ## Regeln
@@ -440,8 +509,12 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
 1. Koordinaten: layers[y][z] ist eine Zeile, das Zeichen an Position x ist der Block. y = 0 ist die unterste Ebene, z = 0 die vorderste Zeile, x = 0 ganz links (von vorne gesehen). "." ist Luft.
 2. Jede Zeile einer Ebene ist gleich lang, jede Ebene hat gleich viele Zeilen. Höchstens ${LIMITS.size} × ${LIMITS.size} Grundfläche und ${LIMITS.height} Ebenen.
 3. Jeder Block in der palette hat genau ein Zeichen als Schlüssel (Buchstabe oder Ziffer, nicht "."). Jedes Zeichen in layers muss in der palette stehen.
-4. "texture" bestimmt die Pixel-Optik: planks (Bretter, auch Holztreppen/-stufen), log (Stämme), cobblestone, stone, stone_bricks, bricks, dirt, grass, sand, gravel, glass, leaves, wool (auch Beton/Terrakotta), door, metal, smooth, water.
-5. Treppen: "shape": "stair" und "dir" = Richtung, in die sie ansteigt: [0, 1] nach hinten, [0, -1] nach vorne, [1, 0] nach rechts, [-1, 0] nach links. Für jede Richtung ein eigenes Zeichen. Stufen: "shape": "slab" (untere Hälfte).
+4. "texture" bestimmt die Pixel-Optik: planks (Bretter, auch Holztreppen/-stufen/-zäune/-falltüren), log (Stämme), cobblestone, stone, stone_bricks, bricks, dirt, grass, sand, gravel, glass (auch Glasscheiben), leaves, wool (auch Beton/Terrakotta/Teppich), door, metal (auch Laternen/Eisengitter), smooth, water. "color" ist die echte Farbe des Blocks im Spiel (z. B. Fichte #6e5132, Eiche #b38b52, Dunkle Eiche #4a3220, Birke #c5b37b, Bruchstein #878787, Tiefenschiefer #4b4b50).
+5. Formen ("shape"), damit der Bau in der 3D-Ansicht echt aussieht – nutze sie, statt alles aus vollen Blöcken zu bauen:
+   - "stair": Treppe, "dir" = Richtung, in die sie ansteigt: [0, 1] nach hinten, [0, -1] nach vorne, [1, 0] nach rechts, [-1, 0] nach links. Mit "half": "top" umgedreht (z. B. Dachunterseite, Fensterbank). Für jede Richtung/Hälfte ein eigenes Zeichen.
+   - "slab": Stufe unten, "slab_top": Stufe oben.
+   - "fence": Zaun oder Zauntor-Pfosten, "wall": Bruchsteinmauer o. Ä., "pane": Glasscheibe oder Eisengitter (verbinden sich automatisch mit Nachbarn; alleinstehend verläuft eine Scheibe in "dir").
+   - "trapdoor": Falltür (unten, mit "half": "top" oben), "carpet": Teppich oder Druckplatte, "small": Laterne, Fackel, Blumentopf, Knopf.
 6. Türen belegen zwei Blöcke übereinander: unten ein Zeichen für die Tür, oben ein eigenes Zeichen mit "item": "<Türname>" und "per": 0, damit sie nur einmal gezählt wird.
 7. "raw": Rohstoffe pro Block, z. B. Bretter { "Eichenstamm": 0.25 }, Glas { "Sand": 1 }, Treppe { "Eichenstamm": 0.375 }.
 8. "steps": 6–15 sinnvolle Bauschritte von unten nach oben. "layers" ist [von, bis] (0-basiert, inklusive), "blocks" sind die Zeichen, die in diesem Schritt gesetzt werden. Jeder Block muss in genau einem Schritt landen; der erste passende Schritt gewinnt.
@@ -452,24 +525,78 @@ const EXAMPLE = `## Kleines Beispiel (3 × 3, zwei Ebenen)
 
 {"format":"${PLAN_FORMAT}","id":"mini-turm","name":"Mini-Turm","description":"Ein winziger Turm aus Bruchstein mit Holzdach.","front":"Vorderseite","palette":{"C":{"name":"Bruchstein","color":"#878787","texture":"cobblestone","abbr":"Bs","farm":"Stein mit einer Spitzhacke abbauen.","raw":{"Bruchstein":1}},"B":{"name":"Eichenholzstufe","color":"#b38b52","texture":"planks","shape":"slab","abbr":"Sf","farm":"3 Bretter ergeben 6 Stufen.","raw":{"Eichenstamm":0.125}}},"layers":[["CCC","C.C","CCC"],["BBB","BBB","BBB"]],"steps":[{"title":"Mauer","text":"Setz einen 3 × 3 Ring aus Bruchstein.","layers":[0,0],"blocks":["C"]},{"title":"Dach","text":"Deck alles mit Stufen ab.","layers":[1,1],"blocks":["B"]}]}`;
 
+const DESIGN_RULES = `## So wird der Bau schön (wichtig)
+
+- Kein Kasten: Grundriss mit Vorsprüngen, Erkern oder L-Form, Höhe passend zur Breite, mindestens zwei Ebenen Tiefe in der Fassade.
+- Rahmen: Stämme an den Ecken und als Balken zwischen den Geschossen, die Wandfläche dazwischen 1 Block eingerückt oder in einem helleren Material.
+- Dach: steil genug, aus Treppen mit mindestens 1 Block Überstand, Giebel mit eigenem Material, First aus Stufen, Unterseite des Überstands mit umgedrehten Treppen ("half": "top").
+- Fenster: Glasscheiben ("pane") statt voller Glasblöcke, Fensterbänke aus umgedrehten Treppen, Falltüren als Fensterläden.
+- Fundament aus Stein oder Bruchstein, 1 Block breiter als die Wände; Eingang mit Treppenstufen und Laternen ("small").
+- Details: Zäune, Mauern, Blumentöpfe, Laub als Bewuchs, Schornstein; 4–6 Hauptmaterialien mit Hell-Dunkel-Kontrast.`;
+
+const RESEARCH = `## Recherche zuerst
+
+Bevor du den Bauplan schreibst: Such im Internet (und in der Bildersuche) nach 2–3 gelungenen Minecraft-Bauten, die meiner Idee ähneln – z. B. YouTube-Tutorials, Planet Minecraft, Reddit r/Minecraftbuilds oder Pinterest. Orientier dich an deren Proportionen, Dachform, Materialmix und Details und setz das in deinen Bauplan um. Trag die Links unter "sources" ein. Wenn du keine Websuche hast, nutz dein Wissen über bekannte Bau-Stile.`;
+
+const AI_INTRO =
+  'Du bist ein erfahrener Minecraft-Baumeister. Ich nutze eine App („Bauplaner“), die aus einem JSON-Bauplan eine 3D-Ansicht, jede Ebene als Raster, eine Schritt-für-Schritt-Bauanleitung und die Materialliste macht. Erstelle mir so einen Bauplan als Datei.';
+
 export function ideaPrompt(form: IdeaForm): string {
-  const line = (label: string, value: string, fallback: string) =>
-    `- ${label}: ${value.trim() || fallback}`;
+  return form.source === 'video' ? videoPrompt(form) : designPrompt(form);
+}
+
+const line = (label: string, value: string, fallback: string) =>
+  `- ${label}: ${value.trim() || fallback}`;
+
+const modeLine = (form: IdeaForm) =>
+  form.mode === 'creative'
+    ? '- Spielmodus: Kreativ, die Optik zählt mehr als leicht farmbare Blöcke'
+    : '- Spielmodus: Survival, Blöcke möglichst leicht zu farmen, aber trotzdem schön';
+
+function designPrompt(form: IdeaForm): string {
   return [
-    'Du bist ein erfahrener Minecraft-Baumeister. Entwirf für meinen „Bauplaner“ einen kompletten Bauplan, den ich als Datei in die App importiere. Die App zeigt daraus eine 3D-Ansicht, jede Ebene als Raster, eine Schritt-für-Schritt-Bauanleitung und die Materialliste.',
+    AI_INTRO,
     '',
     '## Meine Idee',
     line('Name', form.name, 'denk dir einen passenden aus'),
     line('Was es sein soll', form.what, 'überrasch mich mit einem schönen Bau'),
-    line('Ungefähre Größe', form.size, 'du entscheidest, eher kompakt'),
+    line('Ungefähre Größe', form.size, 'du entscheidest, passend zur Idee'),
     line('Stil und Umgebung', form.style, 'passend zur Idee'),
     line('Wunschblöcke', form.blocks, 'egal'),
     line('Besonderheiten', form.extra, 'keine'),
-    form.mode === 'creative'
-      ? '- Spielmodus: Kreativ, die Optik zählt mehr als leicht farmbare Blöcke'
-      : '- Spielmodus: Survival, Blöcke möglichst leicht zu farmen, aber trotzdem schön',
+    modeLine(form),
     '',
-    'Achte auf Details, die einen Bau lebendig machen: Tiefe in der Fassade (Stämme als Rahmen, Treppen als Fensterbänke), ein Dach mit Überstand und Materialmix statt einfarbiger Wände.',
+    RESEARCH,
+    '',
+    DESIGN_RULES,
+    '',
+    FORMAT_SPEC,
+    '',
+    EXAMPLE,
+  ].join('\n');
+}
+
+function videoPrompt(form: IdeaForm): string {
+  const url = form.videoUrl.trim() || '(Link fehlt)';
+  return [
+    AI_INTRO,
+    '',
+    '## Vorlage: YouTube-Video',
+    url,
+    '',
+    'Bau den Bau aus diesem Video so genau wie möglich nach:',
+    '1. Sieh dir das komplette Video an – das Bild, nicht nur Titel, Beschreibung oder Untertitel. Bei Shorts und Zeitraffer geh es Szene für Szene durch und nutz jedes Bild, in dem eine Ebene, eine Wand oder das Dach gut zu sehen ist.',
+    '2. Wenn du den Inhalt des Videos nicht ansehen kannst, antworte nur mit dem Satz „Ich kann dieses Video nicht ansehen.“ und erfinde keinen Bau.',
+    '3. Zähl die Blöcke an den Kanten, um Grundfläche und Höhe zu bestimmen, und übertrag den Bau Ebene für Ebene in "layers".',
+    '4. Erkenne jeden Blocktyp genau (Holzart, Steinart, Treppe, Stufe, Zaun, Falltür, Glasscheibe, Laterne …) und nutz die passenden "shape"-Werte, damit die Materialliste stimmt.',
+    '5. Übernimm die Bau-Reihenfolge aus dem Video als "steps"; schreib in jeden Schritt, was zu tun ist, gern mit Zeitstempel (z. B. „ab 0:42“).',
+    '6. Was verdeckt ist oder zu schnell geht, ergänzt du plausibel und symmetrisch und schreibst in "description", welche Teile geschätzt sind.',
+    '7. Such zusätzlich im Internet nach dem Video (Titel, Creator, Beschreibung, Kommentare, verlinkte Seiten) – oft gibt es dort Materiallisten oder Maße. Trag das Video und gefundene Seiten unter "sources" ein.',
+    '',
+    '## Meine Wünsche',
+    line('Name', form.name, 'wie im Video'),
+    line('Änderungen gegenüber dem Video', form.extra, 'keine, so nah wie möglich am Original'),
+    modeLine(form),
     '',
     FORMAT_SPEC,
     '',
@@ -483,6 +610,8 @@ export function changePrompt(plan: BuildPlan, wish: string): string {
     '',
     '## Meine Änderung',
     wish.trim() || '(bitte ergänzen)',
+    '',
+    DESIGN_RULES,
     '',
     '## Aktueller Bauplan',
     '```json',
@@ -547,13 +676,14 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       raw: { Eichenstamm: 1 },
     },
     G: {
-      name: 'Glas',
+      name: 'Glasscheibe',
       abbr: 'Gl',
       color: '#a4d6e5',
       texture: 'glass',
+      shape: 'pane',
       glass: true,
-      farm: 'Sand im Ofen schmelzen. 1 Sand ergibt 1 Glas.',
-      raw: { Sand: 1 },
+      farm: 'Sand im Ofen zu Glas schmelzen, 6 Glas ergeben 16 Glasscheiben.',
+      raw: { Sand: 0.375 },
     },
     D: {
       name: 'Eichentür',
@@ -639,7 +769,7 @@ export const EXAMPLE_HOUSE: BuildPlan = {
     },
     {
       title: 'Mittlere Reihe mit Fenstern',
-      text: 'Zweite Reihe: vorne links und rechts neben der Türöffnung je ein Glas, an beiden Seiten und hinten jeweils ein Fenster in der Mitte. Der Rest sind Bretter.',
+      text: 'Zweite Reihe: vorne links und rechts neben der Türöffnung je eine Glasscheibe, an beiden Seiten und hinten jeweils ein Fenster in der Mitte. Der Rest sind Bretter.',
       layers: [2, 2],
       blocks: ['P', 'G'],
     },

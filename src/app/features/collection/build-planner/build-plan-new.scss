@@ -172,3 +172,53 @@
   box-shadow: none;
   color: var(--bp-on-accent);
 }
+
+.bp-source {
+  margin-top: -10px;
+}
+
+.bp-source button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  font-size: 15px;
+}
+
+.bp-source mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.bp-warn {
+  color: var(--color-warning);
+}
+
+.bp-tip {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-medium);
+  background: var(--bp-accent-soft);
+}
+
+.bp-tip mat-icon {
+  flex: none;
+  color: var(--bp-accent);
+}
+
+.bp-tip p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.bp-studio {
+  align-self: flex-start;
+  margin-top: 10px;
+  background: var(--color-fill);
+  color: var(--color-text);
+}

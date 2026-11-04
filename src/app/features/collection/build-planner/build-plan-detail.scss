@@ -477,3 +477,14 @@
     align-items: start;
   }
 }
+
+.bp-source-row > mat-icon:first-child {
+  flex: none;
+  color: var(--bp-accent);
+}
+
+.bp-source-row .ui-row-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
