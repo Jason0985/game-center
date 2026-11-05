@@ -1,7 +1,7 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
-import { BuildPlan, analyzePlan, parsePlan, totalBlocks } from './build-plan.model';
-import { readFileText } from './plan-io';
+import { BuildPlan, analyzePlan, fixPrompt, parsePlan, totalBlocks } from './build-plan.model';
+import { copyText, readFileText } from './plan-io';
 import { IsoView } from './iso-view';
 
 /** Bauplan aus Datei oder eingefügtem Text lesen, prüfen und als Vorschau zeigen. */
@@ -30,9 +30,38 @@ import { IsoView } from './iso-view';
         (input)="onText($event)"
       ></textarea>
       @if (error()) {
-        <p class="import-error" role="alert">
-          <mat-icon aria-hidden="true">error_outline</mat-icon>{{ error() }}
-        </p>
+        <div class="import-problem" role="alert">
+          <p class="import-error">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>{{ error() }}
+          </p>
+          @if (details().length) {
+            <ul class="import-details">
+              @for (detail of details(); track detail) {
+                <li>{{ detail }}</li>
+              }
+            </ul>
+          }
+          <div class="import-fix">
+            @if (details().length) {
+              <button type="button" class="ui-pill-btn" (click)="copyFix(error())">
+                <mat-icon aria-hidden="true">{{ fixCopied() ? 'check' : 'content_copy' }}</mat-icon>
+                {{ fixCopied() ? 'Kopiert' : 'An KI zurückgeben' }}
+              </button>
+            }
+            @if (repairable()) {
+              <button
+                type="button"
+                class="ui-pill-btn ui-pill-btn--neutral"
+                (click)="importAnyway()"
+              >
+                Trotzdem importieren
+              </button>
+            }
+          </div>
+          @if (repairable()) {
+            <p class="import-note">„Trotzdem importieren“ setzt unbekannte Zeichen als Luft ein.</p>
+          }
+        </div>
       }
     </div>
 
@@ -42,6 +71,24 @@ import { IsoView } from './iso-view';
         <div class="preview-body">
           <h3>{{ p.plan.name }}</h3>
           <p>{{ p.stats }}</p>
+          @if (warnings().length) {
+            <div class="import-warn">
+              <p>
+                <mat-icon aria-hidden="true">warning_amber</mat-icon>Kleine Fehler, automatisch
+                ausgeglichen:
+              </p>
+              <ul class="import-details">
+                @for (warning of warnings(); track warning) {
+                  <li>{{ warning }}</li>
+                }
+              </ul>
+              <button type="button" class="import-link" (click)="copyFix()">
+                {{
+                  fixCopied() ? 'Korrektur-Prompt kopiert' : 'Lieber von der KI korrigieren lassen'
+                }}
+              </button>
+            </div>
+          }
           <button
             type="button"
             class="ui-btn bp-primary"
@@ -64,6 +111,10 @@ export class PlanImport {
 
   readonly text = signal('');
   readonly error = signal('');
+  readonly details = signal<string[]>([]);
+  readonly warnings = signal<string[]>([]);
+  readonly repairable = signal(false);
+  readonly fixCopied = signal(false);
   private readonly plan = signal<BuildPlan | null>(null);
 
   readonly preview = computed(() => {
@@ -97,20 +148,30 @@ export class PlanImport {
   }
 
   reset(): void {
-    this.text.set('');
-    this.plan.set(null);
-    this.error.set('');
+    this.apply('');
   }
 
-  private apply(text: string): void {
-    this.text.set(text);
-    if (!text.trim()) {
-      this.plan.set(null);
-      this.error.set('');
-      return;
+  importAnyway(): void {
+    this.apply(this.text(), true);
+  }
+
+  /** Korrektur-Prompt mit allen Fundstellen kopieren, damit die KI selbst nachbessert. */
+  async copyFix(summary = ''): Promise<void> {
+    const problems = this.plan() ? this.warnings() : [summary, ...this.details()].filter(Boolean);
+    if (await copyText(fixPrompt(problems))) {
+      this.fixCopied.set(true);
+      setTimeout(() => this.fixCopied.set(false), 2200);
     }
-    const result = parsePlan(text);
-    this.plan.set(result.plan ?? null);
-    this.error.set(result.error ?? '');
+  }
+
+  private apply(text: string, unknownAsAir = false): void {
+    this.text.set(text);
+    this.fixCopied.set(false);
+    const result = text.trim() ? parsePlan(text, { unknownAsAir }) : null;
+    this.plan.set(result?.plan ?? null);
+    this.error.set(result?.error ?? '');
+    this.details.set(result?.error ? (result.details ?? []) : []);
+    this.repairable.set(!!result?.error && !!result.repairable);
+    this.warnings.set(result?.plan ? result.warnings : []);
   }
 }
