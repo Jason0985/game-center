@@ -389,13 +389,22 @@
                     ></span>
                     <span class="ui-row-text">
                       <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
-                      @if (m.def.farm) {
-                        <span class="ui-row-sub bp-mat-hint">{{ m.def.farm }}</span>
+                      @if (m.hint) {
+                        <span class="ui-row-sub bp-mat-hint">{{ m.hint }}</span>
                       }
                     </span>
                     <span class="bp-mat-count">
                       {{ m.count }}<small>{{ m.stacks }}</small>
                     </span>
+                    <a
+                      class="bp-wiki"
+                      [href]="m.wiki"
+                      target="_blank"
+                      rel="noopener"
+                      [attr.aria-label]="m.name + ' im Minecraft Wiki'"
+                    >
+                      <mat-icon aria-hidden="true">menu_book</mat-icon>
+                    </a>
                   </label>
                 }
               </div>
@@ -406,17 +415,18 @@
                 <h2 id="bp-raw" class="ui-section-title">Rohstoffe</h2>
                 <div class="ui-group">
                   @for (r of raw(); track r.name) {
-                    <div class="ui-row">
+                    <a class="ui-row" [href]="r.wiki" target="_blank" rel="noopener">
                       <span class="ui-row-text"
                         ><span class="ui-row-title">{{ r.name }}</span></span
                       >
                       <span class="bp-mat-count"
                         >{{ r.count }}<small>{{ r.stacks }}</small></span
                       >
-                    </div>
+                      <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+                    </a>
                   }
                 </div>
-                <p class="ui-section-footer">Aufgerundet, ein kleiner Puffer ist schon drin.</p>
+                <p class="ui-section-footer">Aufgerundet. Antippen öffnet das Minecraft Wiki.</p>
               </section>
             }
           </div>

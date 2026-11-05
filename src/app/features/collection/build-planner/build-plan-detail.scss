@@ -393,6 +393,8 @@
 
 .bp-mat-name {
   white-space: normal;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 // Farm-Tipp nur einzeilig, damit die Liste ruhig bleibt
@@ -554,4 +556,34 @@
     position: sticky;
     top: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px) + 72px);
   }
+}
+
+// Buch-Knopf: öffnet die Seite des Blocks im Minecraft Wiki
+.bp-wiki {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-right: -6px;
+  border-radius: 50%;
+  color: var(--bp-accent);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 200ms var(--ease-ios);
+}
+
+.bp-wiki:hover,
+.bp-wiki:active {
+  background: var(--bp-accent-soft);
+}
+
+.bp-wiki:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 0;
+}
+
+.bp-wiki mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
 }

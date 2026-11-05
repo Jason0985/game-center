@@ -58,7 +58,10 @@ export interface BlockDef {
   // Wie viele Items ein Block kostet; 0 = zählt nicht extra (obere Türhälfte)
   per?: number;
   abbr?: string;
+  // Nur bei selteneren Blöcken: wo man ihn findet oder wie man ihn herstellt
   farm?: string;
+  // Seitentitel im deutschen Minecraft Wiki (de.minecraft.wiki), z. B. "Laterne"
+  wiki?: string;
   raw?: Record<string, number>;
   alpha?: number;
   glass?: boolean;
@@ -420,6 +423,7 @@ function cleanBlock(def: BlockDef): BlockDef {
   if (typeof def.per === 'number' && def.per >= 0 && def.per <= 64) out.per = def.per;
   if (typeof def.abbr === 'string') out.abbr = def.abbr.slice(0, 3);
   if (typeof def.farm === 'string') out.farm = def.farm.slice(0, 400);
+  if (typeof def.wiki === 'string' && def.wiki.trim()) out.wiki = def.wiki.trim().slice(0, 80);
   if (def.raw && typeof def.raw === 'object' && !Array.isArray(def.raw)) {
     const raw = Object.entries(def.raw).filter(
       ([, value]) => typeof value === 'number' && value > 0 && value < 1000,
@@ -490,7 +494,8 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
       "item": "optional: zählt unter diesem Namen",
       "per": 1,
       "abbr": "2 Buchstaben",
-      "farm": "1 Satz: wie man den Block im Survival bekommt",
+      "farm": "nur bei selteneren Blöcken: 1 Satz, wo man ihn findet oder wie man ihn herstellt",
+      "wiki": "Seitentitel im deutschen Minecraft Wiki (de.minecraft.wiki), z. B. Laterne",
       "raw": { "Rohstoff": 1 }
     }
   },
@@ -516,14 +521,15 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
    - "fence": Zaun oder Zauntor-Pfosten, "wall": Bruchsteinmauer o. Ä., "pane": Glasscheibe oder Eisengitter (verbinden sich automatisch mit Nachbarn; alleinstehend verläuft eine Scheibe in "dir").
    - "trapdoor": Falltür (unten, mit "half": "top" oben; mit "dir" senkrecht offen an der Wand in dieser Richtung, z. B. als Fensterladen), "carpet": Teppich oder Druckplatte, "small": Laterne, Fackel, Blumentopf, Knopf.
 6. Türen belegen zwei Blöcke übereinander: unten ein Zeichen für die Tür, oben ein eigenes Zeichen mit "item": "<Türname>" und "per": 0, damit sie nur einmal gezählt wird.
-7. "raw": Rohstoffe pro Block, z. B. Bretter { "Eichenstamm": 0.25 }, Glas { "Sand": 1 }, Treppe { "Eichenstamm": 0.375 }.
+7. "farm" nur bei Blöcken, die nicht selbstverständlich sind (z. B. Laterne, Kupfer, Quarz, Terrakotta, Prismarin) – nicht bei Holz, Brettern, Treppen, Stufen, Stein, Bruchstein, Erde, Sand oder Glas. "wiki" bei jedem Block, wenn du den Seitentitel kennst.
+   "raw": Rohstoffe pro Block, z. B. Bretter { "Eichenstamm": 0.25 }, Glas { "Sand": 1 }, Treppe { "Eichenstamm": 0.375 }.
 8. "steps": 6–15 sinnvolle Bauschritte von unten nach oben. "layers" ist [von, bis] (0-basiert, inklusive), "blocks" sind die Zeichen, die in diesem Schritt gesetzt werden. Jeder Block muss in genau einem Schritt landen; der erste passende Schritt gewinnt.
 9. Baue statisch sinnvoll und wirklich im Spiel machbar: geschlossene Wände, Dach ohne Löcher, Eingang erreichbar, Fenster aus Glas oder Glasscheiben.
 10. Prüf vor der Ausgabe selbst: gleiche Zeilenlängen, alle Zeichen in der palette, gültiges JSON.`;
 
 const EXAMPLE = `## Kleines Beispiel (3 × 3, zwei Ebenen)
 
-{"format":"${PLAN_FORMAT}","id":"mini-turm","name":"Mini-Turm","description":"Ein winziger Turm aus Bruchstein mit Holzdach.","front":"Vorderseite","palette":{"C":{"name":"Bruchstein","color":"#878787","texture":"cobblestone","abbr":"Bs","farm":"Stein mit einer Spitzhacke abbauen.","raw":{"Bruchstein":1}},"B":{"name":"Eichenholzstufe","color":"#b38b52","texture":"planks","shape":"slab","abbr":"Sf","farm":"3 Bretter ergeben 6 Stufen.","raw":{"Eichenstamm":0.125}}},"layers":[["CCC","C.C","CCC"],["BBB","BBB","BBB"]],"steps":[{"title":"Mauer","text":"Setz einen 3 × 3 Ring aus Bruchstein.","layers":[0,0],"blocks":["C"]},{"title":"Dach","text":"Deck alles mit Stufen ab.","layers":[1,1],"blocks":["B"]}]}`;
+{"format":"${PLAN_FORMAT}","id":"mini-turm","name":"Mini-Turm","description":"Ein winziger Turm aus Bruchstein mit Holzdach.","front":"Vorderseite","palette":{"C":{"name":"Bruchstein","color":"#878787","texture":"cobblestone","abbr":"Bs","raw":{"Bruchstein":1}},"B":{"name":"Eichenholzstufe","color":"#b38b52","texture":"planks","shape":"slab","abbr":"Sf","raw":{"Eichenstamm":0.125}}},"layers":[["CCC","C.C","CCC"],["BBB","BBB","BBB"]],"steps":[{"title":"Mauer","text":"Setz einen 3 × 3 Ring aus Bruchstein.","layers":[0,0],"blocks":["C"]},{"title":"Dach","text":"Deck alles mit Stufen ab.","layers":[1,1],"blocks":["B"]}]}`;
 
 const DESIGN_RULES = `## So wird der Bau schön (wichtig)
 
@@ -604,6 +610,25 @@ function videoPrompt(form: IdeaForm): string {
   ].join('\n');
 }
 
+// Selbstverständliche Blöcke (Holz, Stein, Glas …) brauchen keinen Hinweis, woher sie kommen
+const EXOTIC =
+  /kupfer|quarz|prismarin|purpur|nether|end|tiefenschiefer|amethyst|schlamm|schwarzstein|basalt|terrakotta|beton|honig|schleim|eis\b|packeis|koralle|moos|kalzit|tuff|laterne|ziegel(?!.*stein)|ton|lehm|kerze|kette|glocke|amboss|leuchtstein|seelaterne|redstone|lapis|gold|smaragd|diamant|obsidian/;
+const COMMON =
+  /bretter|stamm|holz|treppe|stufe|zaun|tür|falltür|bruchstein|^stein$|steinziegel|stein(?:treppe|stufe)|erde|^gras|sand|glas|kies|wolle|teppich|fackel|leiter|laub/;
+
+export function isCommonBlock(name: string): boolean {
+  const n = name.toLowerCase();
+  return !EXOTIC.test(n) && COMMON.test(n);
+}
+
+/** Seite im deutschen Minecraft Wiki: genauer Titel, sonst Suche mit Sprung zum Treffer. */
+export function wikiUrl(def: BlockDef, name = def.item || def.name): string {
+  const base = 'https://de.minecraft.wiki/w/';
+  return def.wiki
+    ? base + encodeURIComponent(def.wiki.replace(/ /g, '_'))
+    : `${base}Spezial:Suche?search=${encodeURIComponent(name)}&go=Seite`;
+}
+
 export function planFileName(plan: BuildPlan): string {
   const slug = (plan.id || plan.name)
     .toLowerCase()
@@ -636,7 +661,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#878787',
       top: '#999999',
       texture: 'cobblestone',
-      farm: 'Stein mit einer Spitzhacke abbauen.',
       raw: { Bruchstein: 1 },
     },
     P: {
@@ -645,7 +669,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#b38b52',
       top: '#c19a60',
       texture: 'planks',
-      farm: '1 Eichenstamm ergibt 4 Bretter.',
       raw: { Eichenstamm: 0.25 },
     },
     L: {
@@ -654,7 +677,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#4a3524',
       top: '#7a5a35',
       texture: 'log',
-      farm: 'Fichten wachsen in kalten Wäldern, gern 2 × 2 Setzlinge pflanzen.',
       raw: { Fichtenstamm: 1 },
     },
     R: {
@@ -663,7 +685,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#d4c48f',
       top: '#ddd0a0',
       texture: 'planks',
-      farm: '1 Birkenstamm ergibt 4 Bretter.',
       raw: { Birkenstamm: 0.25 },
     },
     N: {
@@ -672,7 +693,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '1 Fichtenstamm ergibt 4 Bretter.',
       raw: { Fichtenstamm: 0.25 },
     },
     G: {
@@ -682,7 +702,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       texture: 'glass',
       shape: 'pane',
       glass: true,
-      farm: 'Sand zu Glas schmelzen, 6 Glas ergeben 16 Scheiben.',
       raw: { Sand: 0.375 },
     },
     D: {
@@ -690,7 +709,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       abbr: 'Tü',
       color: '#6e5132',
       texture: 'door',
-      farm: '6 Bretter ergeben 3 Türen.',
       raw: { Fichtenstamm: 0.5 },
     },
     d: {
@@ -708,7 +726,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       texture: 'planks',
       shape: 'trapdoor',
       dir: [0, 1],
-      farm: '6 Bretter ergeben 2 Falltüren. Offen an die Wand gesetzt sind sie Fensterläden.',
       raw: { Fichtenstamm: 0.75 },
     },
     v: {
@@ -718,7 +735,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '6 Bretter ergeben 4 Treppen.',
       raw: { Fichtenstamm: 0.375 },
     },
     h: {
@@ -728,7 +744,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '6 Bretter ergeben 4 Treppen.',
       raw: { Fichtenstamm: 0.375 },
     },
     w: {
@@ -739,7 +754,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '6 Bretter ergeben 4 Treppen. Auf die obere Blockhälfte zielen, dann steht sie kopf.',
       raw: { Fichtenstamm: 0.375 },
     },
     x: {
@@ -750,7 +764,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '6 Bretter ergeben 4 Treppen. Auf die obere Blockhälfte zielen, dann steht sie kopf.',
       raw: { Fichtenstamm: 0.375 },
     },
     B: {
@@ -760,7 +773,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       color: '#6e5132',
       top: '#7d5c39',
       texture: 'planks',
-      farm: '3 Bretter ergeben 6 Stufen.',
       raw: { Fichtenstamm: 0.125 },
     },
     q: {
@@ -769,7 +781,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       dir: [0, 1],
       color: '#878787',
       texture: 'cobblestone',
-      farm: '6 Bruchstein ergeben 4 Treppen.',
       raw: { Bruchstein: 1.5 },
     },
     o: {
@@ -778,6 +789,7 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       shape: 'small',
       color: '#9a5a3c',
       texture: 'smooth',
+      wiki: 'Blumentopf',
       farm: '3 Ziegel ergeben einen Topf, Blume einfach hineinsetzen.',
       raw: { Ton: 3 },
     },
@@ -786,7 +798,6 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       shape: 'fence',
       color: '#6e5132',
       texture: 'planks',
-      farm: '4 Bretter und 2 Stöcke ergeben 3 Zäune.',
       raw: { Fichtenstamm: 0.5 },
     },
     O: {
@@ -794,6 +805,7 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       shape: 'small',
       color: '#3b3b3b',
       texture: 'metal',
+      wiki: 'Laterne',
       farm: 'Eine Fackel mit 8 Eisennuggets umgeben.',
       raw: { Eisenbarren: 1, Kohle: 1 },
     },
@@ -802,6 +814,7 @@ export const EXAMPLE_HOUSE: BuildPlan = {
       abbr: 'Zi',
       color: '#96503f',
       texture: 'bricks',
+      wiki: 'Ziegelsteine',
       farm: 'Ton im Ofen zu Ziegeln brennen, 4 Ziegel ergeben einen Block.',
       raw: { Ton: 4 },
     },

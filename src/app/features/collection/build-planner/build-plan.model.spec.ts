@@ -1,5 +1,7 @@
 import {
   EXAMPLE_HOUSE,
+  isCommonBlock,
+  wikiUrl,
   isYoutubeUrl,
   analyzePlan,
   countItems,
@@ -154,6 +156,41 @@ describe('Bauplaner: Formen, Vorlagen und Video', () => {
 
   it('meldet, wenn die KI das Video nicht ansehen konnte', () => {
     expect(parsePlan('Ich kann dieses Video nicht ansehen.').error).toContain('Gemini');
+  });
+});
+
+describe('Bauplaner: Materialhinweise und Wiki', () => {
+  it('zeigt Hinweise nur bei selteneren Blöcken', () => {
+    for (const name of [
+      'Eichenholzbretter',
+      'Fichtenstamm',
+      'Fichtenholztreppe',
+      'Bruchstein',
+      'Glasscheibe',
+      'Fichtenzaun',
+      'Fichtentür',
+    ]) {
+      expect(isCommonBlock(name)).toBe(true);
+    }
+    for (const name of [
+      'Laterne',
+      'Ziegelsteine',
+      'Blumentopf',
+      'Quarztreppe',
+      'Kupferblock',
+      'Weiße Terrakotta',
+    ]) {
+      expect(isCommonBlock(name)).toBe(false);
+    }
+  });
+
+  it('verlinkt das deutsche Minecraft Wiki', () => {
+    expect(wikiUrl({ name: 'Laterne', color: '#000', wiki: 'Laterne' })).toBe(
+      'https://de.minecraft.wiki/w/Laterne',
+    );
+    expect(wikiUrl({ name: 'Fichtenholztreppe', color: '#000' })).toBe(
+      'https://de.minecraft.wiki/w/Spezial:Suche?search=Fichtenholztreppe&go=Seite',
+    );
   });
 });
 
