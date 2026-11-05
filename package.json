@@ -7,7 +7,7 @@
     "build": "ng build",
     "build:pages": "ng build --base-href /game-center/ --deploy-url /game-center/",
     "predeploy": "npm version minor -m \"chore: Version %s\"",
-    "deploy": "npm run build:pages && npx angular-cli-ghpages --dir=dist/frontend/browser",
+    "deploy": "npm run build:pages && npx angular-cli-ghpages --dir=dist/frontend/browser --add",
     "postdeploy": "git push --follow-tags",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

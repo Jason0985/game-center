@@ -24,7 +24,10 @@ describe('AppErrorService', () => {
 
     service.report('Keine Verbindung zum Server.');
 
-    expect(toast.error).toHaveBeenCalledWith('Keine Verbindung zum Server.', 'Das hat nicht geklappt');
+    expect(toast.error).toHaveBeenCalledWith(
+      'Keine Verbindung zum Server.',
+      'Das hat nicht geklappt',
+    );
     expect(notifications.addLocalError).toHaveBeenCalledWith(
       'Das hat nicht geklappt',
       'Keine Verbindung zum Server.',

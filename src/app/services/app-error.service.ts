@@ -4,6 +4,7 @@ import { supabase } from '../supabase.client';
 import { NotificationsService } from './notifications.service';
 import { describeSupabaseError } from './supabase-errors';
 import { ToastService } from './toast.service';
+import { isChunkLoadError, isOpaqueScriptError, reloadJustStarted, reloadOnce } from './stale-app';
 
 const DEFAULT_TITLE = 'Das hat nicht geklappt';
 
@@ -67,6 +68,10 @@ export class AppErrorHandler implements ErrorHandler {
 
   handleError(error: unknown): void {
     console.error(error);
+    // Alte App nach einem Deploy: einmal neu laden statt Fehler anzeigen
+    if (isChunkLoadError(error) && (reloadJustStarted() || reloadOnce())) return;
+    // „Script error.“ aus fremden Skripten (Erweiterungen) enthält nichts Verwertbares
+    if (isOpaqueScriptError(error)) return;
     this.store(error);
 
     // Außerhalb der laufenden Change Detection melden
