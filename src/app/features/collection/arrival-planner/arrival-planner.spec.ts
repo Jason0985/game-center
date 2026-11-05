@@ -52,7 +52,7 @@ describe('ArrivalPlanner', () => {
     expect(element.querySelector('app-arrival-planner-train')).toBeNull();
     expect(element.querySelector('#arrival-time')).not.toBeNull();
 
-    component.mode.set('train');
+    component.setMode('train');
     await fixture.whenStable();
 
     expect(element.querySelector('app-arrival-planner-train')).not.toBeNull();

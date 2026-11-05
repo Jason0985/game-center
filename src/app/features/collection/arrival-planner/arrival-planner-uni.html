@@ -1,0 +1,143 @@
+@if (!url() || editing()) {
+  <section class="uni-link ui-surface" aria-labelledby="uni-link-label">
+    <div class="arrival-entry-copy">
+      <mat-icon aria-hidden="true">school</mat-icon>
+      <div>
+        <label id="uni-link-label" for="uni-link">Rapla-Link</label>
+        <p>
+          Den Link zu deinem Kurs-Kalender aus Rapla (DHBW) einfügen. Er bleibt in deinem Konto.
+        </p>
+      </div>
+    </div>
+    <input
+      id="uni-link"
+      class="uni-input"
+      type="url"
+      inputmode="url"
+      autocomplete="off"
+      placeholder="https://rapla.dhbw.de/rapla/calendar?key=…"
+      [value]="draftUrl()"
+      (input)="onDraft($event)"
+      (keydown.enter)="saveUrl()"
+    />
+    @if (draftUrl() && !draftValid()) {
+      <p class="uni-warn">Das sieht nicht nach einem Rapla-Link der DHBW aus.</p>
+    }
+    <div class="uni-link-actions">
+      @if (url()) {
+        <button type="button" class="ui-pill-btn ui-pill-btn--neutral" (click)="editing.set(false)">
+          Abbrechen
+        </button>
+      }
+      <button
+        type="button"
+        class="ui-pill-btn ui-pill-btn--filled"
+        [disabled]="!draftValid()"
+        (click)="saveUrl()"
+      >
+        Speichern
+      </button>
+    </div>
+  </section>
+} @else {
+  <div class="uni-day">
+    <button type="button" class="uni-round" (click)="shiftDay(-1)" aria-label="Vorheriger Tag">
+      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    </button>
+    <label class="uni-date">
+      <span>{{ dayLabel() }}</span>
+      <input type="date" [value]="date()" (change)="pickDate($event)" aria-label="Tag wählen" />
+    </label>
+    <button type="button" class="uni-round" (click)="shiftDay(1)" aria-label="Nächster Tag">
+      <mat-icon aria-hidden="true">chevron_right</mat-icon>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="planner-empty ui-surface">
+      <mat-icon class="spin" aria-hidden="true">autorenew</mat-icon>
+      <p>Stundenplan wird geladen …</p>
+    </div>
+  } @else if (error()) {
+    <div class="planner-empty ui-surface">
+      <mat-icon aria-hidden="true">cloud_off</mat-icon>
+      <p>{{ error() }}</p>
+      <button type="button" class="ui-pill-btn" (click)="reload()">Erneut versuchen</button>
+    </div>
+  } @else if (plan(); as times) {
+    <section class="plan-list ui-surface" aria-label="Zeitplan für die erste Vorlesung">
+      <article class="plan-row plan-row-primary">
+        <div class="plan-icon"><mat-icon aria-hidden="true">alarm</mat-icon></div>
+        <div class="plan-copy">
+          <h2>Wecker stellen</h2>
+          <p>Erste Vorlesung um {{ first()!.start }}</p>
+        </div>
+        <div class="plan-time">
+          <strong>{{ times.alarm.time }}</strong>
+          @if (times.alarm.dayBefore) {
+            <span>Vortag</span>
+          }
+        </div>
+      </article>
+      <article class="plan-row">
+        <div class="plan-icon"><mat-icon aria-hidden="true">directions_car</mat-icon></div>
+        <div class="plan-copy">
+          <h2>Losfahren</h2>
+          <p>Mit eingeplantem Verkehrspuffer</p>
+        </div>
+        <div class="plan-time">
+          <strong>{{ times.departure.time }}</strong>
+        </div>
+      </article>
+      <article class="plan-row">
+        <div class="plan-icon"><mat-icon aria-hidden="true">school</mat-icon></div>
+        <div class="plan-copy">
+          <h2>Ankommen</h2>
+          <p class="uni-early">
+            <button type="button" (click)="changeEarly(-5)" aria-label="5 Minuten später">−</button>
+            {{ early() }} Min vor Beginn
+            <button type="button" (click)="changeEarly(5)" aria-label="5 Minuten früher">+</button>
+          </p>
+        </div>
+        <div class="plan-time">
+          <strong>{{ times.arrive }}</strong>
+        </div>
+      </article>
+    </section>
+  } @else {
+    <div class="planner-empty ui-surface">
+      <mat-icon aria-hidden="true">bedtime</mat-icon>
+      <p>Keine Vorlesung – ausschlafen.</p>
+      @if (nextDay(); as next) {
+        <button type="button" class="ui-pill-btn" (click)="date.set(next.date)">
+          Nächste: {{ next.date.slice(8, 10) }}.{{ next.date.slice(5, 7) }}. um {{ next.start }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (!loading() && !error() && lectures().length) {
+    <div class="planner-toolbar"><p>An diesem Tag – antippen schließt ein oder aus</p></div>
+    <section class="uni-lectures ui-surface">
+      @for (lecture of lectures(); track lecture.start + lecture.title) {
+        <button
+          type="button"
+          class="uni-lecture"
+          [class.uni-lecture--first]="lecture === first()"
+          [class.uni-lecture--ignored]="lecture.ignored"
+          [attr.aria-pressed]="!lecture.ignored"
+          (click)="toggleIgnore(lecture.title)"
+        >
+          <span class="uni-lecture-time">{{ lecture.start }}–{{ lecture.end }}</span>
+          <span class="uni-lecture-title">{{ lecture.title }}</span>
+          <mat-icon aria-hidden="true">{{ lecture.ignored ? 'visibility_off' : 'check' }}</mat-icon>
+        </button>
+      }
+    </section>
+  }
+
+  <div class="uni-footer">
+    <button type="button" class="uni-link-btn" (click)="startEdit()">Rapla-Link ändern</button>
+    <button type="button" class="uni-link-btn" (click)="reload()">Aktualisieren</button>
+  </div>
+}
