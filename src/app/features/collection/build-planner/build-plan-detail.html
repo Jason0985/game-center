@@ -261,9 +261,12 @@
                     <button
                       type="button"
                       class="bp-ov-btn"
-                      [disabled]="step() === analysis()!.steps.length - 1"
                       (click)="next()"
-                      aria-label="Nächster Schritt"
+                      [attr.aria-label]="
+                        step() === analysis()!.steps.length - 1
+                          ? 'Fertig gebaut'
+                          : 'Nächster Schritt'
+                      "
                     >
                       <mat-icon aria-hidden="true">chevron_right</mat-icon>
                     </button>
@@ -343,19 +346,6 @@
                   </section>
                 }
 
-                <div class="bp-nav">
-                  <button
-                    type="button"
-                    class="ui-btn ui-btn--secondary"
-                    [disabled]="step() === 0"
-                    (click)="prev()"
-                  >
-                    Zurück
-                  </button>
-                  <button type="button" class="ui-btn bp-primary" (click)="next()">
-                    {{ step() === analysis()!.steps.length - 1 ? 'Fertig gebaut' : 'Weiter' }}
-                  </button>
-                </div>
                 @if (doneCount()) {
                   <button type="button" class="bp-text-btn" (click)="resetProgress()">
                     Fortschritt zurücksetzen
