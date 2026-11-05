@@ -17,14 +17,14 @@ import { blockTextures, textureKind, TEX } from './block-textures';
 describe('Bauplaner-Modell', () => {
   it('wertet das Beispielhaus aus', () => {
     const A = analyzePlan(EXAMPLE_HOUSE);
-    expect([A.W, A.D, A.H]).toEqual([7, 7, 8]);
-    expect(A.steps.length).toBe(11);
+    expect([A.W, A.D, A.H]).toEqual([11, 9, 10]);
+    expect(A.steps.length).toBe(16);
     // Jeder Block landet in einem Schritt, es braucht keinen Rest-Schritt
-    expect(A.blocks.every((b) => b.step >= 0 && b.step < 11)).toBe(true);
-    const doors = countItems(EXAMPLE_HOUSE, A.blocks).find((i) => i.name === 'Eichentür');
+    expect(A.blocks.every((b) => b.step >= 0 && b.step < 16)).toBe(true);
+    const doors = countItems(EXAMPLE_HOUSE, A.blocks).find((i) => i.name === 'Fichtentür');
     expect(doors?.count).toBe(1);
-    expect(totalBlocks(EXAMPLE_HOUSE, A)).toBe(187);
-    expect(rawTotals(EXAMPLE_HOUSE, A.blocks).find((r) => r.name === 'Sand')?.count).toBe(2);
+    expect(totalBlocks(EXAMPLE_HOUSE, A)).toBe(343);
+    expect(rawTotals(EXAMPLE_HOUSE, A.blocks).find((r) => r.name === 'Sand')?.count).toBe(3);
   });
 
   it('fasst nicht zugeordnete Blöcke in einem Rest-Schritt zusammen', () => {
@@ -85,7 +85,7 @@ describe('Bauplaner-Modell', () => {
     expect(result.error).toBeUndefined();
     expect(result.plan?.layers).toEqual(EXAMPLE_HOUSE.layers);
     expect(result.plan?.palette['v'].dir).toEqual([0, 1]);
-    expect(result.plan?.steps?.length).toBe(11);
+    expect(result.plan?.steps?.length).toBe(16);
   });
 
   it('baut Prompts mit Formatbeschreibung', () => {

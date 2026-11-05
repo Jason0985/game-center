@@ -229,3 +229,28 @@ h2.ui-section-title.bp-step-h {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.bp-new-grid,
+.bp-new-col {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .bp-page {
+    width: min(100%, 1080px);
+  }
+
+  .bp-source {
+    width: min(100%, 420px);
+  }
+
+  .bp-new-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 32px;
+  }
+}

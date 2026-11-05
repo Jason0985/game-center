@@ -15,6 +15,12 @@ export interface IsoOptions {
   dimColor: string;
   // Kleine Vorschau (Liste): weniger Rand, keine Konturen
   compact?: boolean;
+  // Zoom (1 = alles sichtbar) und Verschiebung in CSS-Pixeln
+  zoom?: number;
+  panX?: number;
+  panY?: number;
+  // Maßlinien für Breite, Tiefe und Höhe am Boden
+  dims?: boolean;
 }
 
 type Point = [number, number];
@@ -51,8 +57,22 @@ function boxesFor(def: BlockDef, r: number, connects: Connects = () => false): B
       return [[0, 0.5, 0, 1, 1, 1]];
     case 'carpet':
       return [[0, 0, 0, 1, 0.0625, 1]];
-    case 'trapdoor':
+    case 'trapdoor': {
+      if (def.dir) {
+        // Offen an der Wand in Richtung dir (z. B. Fensterladen)
+        const [dx, dz] = rotDir(def.dir[0], def.dir[1], r);
+        return [
+          dz === 1
+            ? [0, 0, 0.8125, 1, 1, 1]
+            : dz === -1
+              ? [0, 0, 0, 1, 1, 0.1875]
+              : dx === 1
+                ? [0.8125, 0, 0, 1, 1, 1]
+                : [0, 0, 0, 0.1875, 1, 1],
+        ];
+      }
       return [top ? [0, 0.8125, 0, 1, 1, 1] : [0, 0, 0, 1, 0.1875, 1]];
+    }
     case 'small':
       return [[0.3125, 0, 0.3125, 0.6875, 0.5625, 0.6875]];
     case 'fence':
@@ -161,8 +181,12 @@ export function drawIso(
   ctx.clearRect(0, 0, cssW, cssH);
   ctx.imageSmoothingEnabled = false;
 
-  const ox = (cssW - (maxX - minX) * s) / 2 - minX * s;
-  const oy = pad - minY * s;
+  // Zoom um die Bildmitte, danach verschieben
+  const centerX = cssW / 2 + (options.panX ?? 0);
+  const centerY = pad + ((maxY - minY) * s) / 2 + (options.panY ?? 0);
+  s *= Math.max(0.5, options.zoom ?? 1);
+  const ox = centerX - ((minX + maxX) / 2) * s;
+  const oy = centerY - ((minY + maxY) / 2) * s;
   const P = (x: number, y: number, z: number): Point => [
     ox + (x - z) * C30 * s,
     oy + ((x + z) * 0.5 - y) * s,
@@ -379,6 +403,68 @@ export function drawIso(
     if (it.mode === 'current')
       outline(ctx, P, it.x, it.y, it.z, [bounds(boxes)], options.highlight, Math.max(1.5, s / 16));
   }
+
+  if (options.dims && ground && !options.compact) {
+    drawDims(ctx, P, rw, rd, analysis.H, s);
+  }
+}
+
+/** Maßlinien wie auf einem Bauplan: Breite und Tiefe am Boden, Höhe an der rechten Außenecke. */
+function drawDims(
+  ctx: CanvasRenderingContext2D,
+  P: (x: number, y: number, z: number) => Point,
+  rw: number,
+  rd: number,
+  H: number,
+  s: number,
+): void {
+  const off = 0.55;
+  const tick = 0.22;
+  const size = Math.max(10, Math.min(16, s * 0.42));
+  const line = (pts: Point[]) => {
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  };
+  const label = (text: string, at: Point) => {
+    ctx.font = `700 ${size}px Monocraft, ui-rounded, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const w = ctx.measureText(text).width + size * 0.7;
+    const h = size * 1.35;
+    ctx.fillStyle = 'rgba(12,16,32,0.78)';
+    ctx.beginPath();
+    ctx.roundRect(at[0] - w / 2, at[1] - h / 2, w, h, 4);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, at[0], at[1] + 1);
+  };
+  ctx.save();
+  ctx.lineCap = 'round';
+  // Breite (entlang x, vor der Vorderkante)
+  const z = rd + off;
+  line([P(0, 0, z), P(rw, 0, z)]);
+  line([P(0, 0, z - tick), P(0, 0, z + tick)]);
+  line([P(rw, 0, z - tick), P(rw, 0, z + tick)]);
+  // Tiefe (entlang z, rechts daneben)
+  const x = rw + off;
+  line([P(x, 0, 0), P(x, 0, rd)]);
+  line([P(x - tick, 0, 0), P(x + tick, 0, 0)]);
+  line([P(x - tick, 0, rd), P(x + tick, 0, rd)]);
+  // Höhe (senkrecht an der rechten Außenecke, verdeckt so nichts)
+  const hz = -off;
+  line([P(x, 0, hz), P(x, H, hz)]);
+  line([P(x - tick, 0, hz), P(x + tick, 0, hz)]);
+  line([P(x - tick, H, hz), P(x + tick, H, hz)]);
+  label(String(rw), P(rw / 2, 0, z));
+  label(String(rd), P(x, 0, rd / 2));
+  label(String(H), P(x, H / 2, hz));
+  ctx.restore();
 }
 
 const CONNECTING: string[] = ['fence', 'wall', 'pane'];

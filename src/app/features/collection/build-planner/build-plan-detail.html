@@ -31,314 +31,395 @@
 
       @switch (tab()) {
         @case ('overview') {
-          <section class="ui-group bp-hero">
-            <app-iso-view [plan]="plan()!" [analysis]="analysis()!" [(rotation)]="rotation" />
-            @if (stats(); as s) {
-              <div class="bp-stats">
-                <div class="bp-stat">
-                  <strong>{{ s.footprint }}</strong
-                  ><span>Fläche</span>
-                </div>
-                <div class="bp-stat">
-                  <strong>{{ s.height }}</strong
-                  ><span>Ebenen</span>
-                </div>
-                <div class="bp-stat">
-                  <strong>{{ s.blocks }}</strong
-                  ><span>Blöcke</span>
-                </div>
-                <div class="bp-stat">
-                  <strong>{{ s.steps }}</strong
-                  ><span>Schritte</span>
-                </div>
-              </div>
-            }
-          </section>
-
-          @if (plan()!.description) {
-            <p class="bp-description">{{ plan()!.description }}</p>
-          }
-
-          <div class="bp-progress-block">
-            @if (doneCount() > 0) {
-              <app-xp-bar
-                [value]="doneCount()"
-                [max]="stats()?.steps ?? 0"
-                label="Baufortschritt"
+          <div class="bp-split">
+            <section class="ui-group bp-hero">
+              <app-iso-view
+                [plan]="plan()!"
+                [analysis]="analysis()!"
+                [maxHeight]="640"
+                [(rotation)]="rotation"
               />
-            }
-            <button type="button" class="ui-btn bp-primary" (click)="startSteps()">
-              @if (doneCount() === 0) {
-                Bauanleitung starten
-              } @else if (doneCount() >= (stats()?.steps ?? 0)) {
-                Anleitung ansehen
-              } @else {
-                Weiter bei Schritt {{ nextStep() + 1 }}
+              @if (stats(); as s) {
+                <div class="bp-stats">
+                  <div class="bp-stat">
+                    <strong>{{ s.footprint }}</strong
+                    ><span>Fläche</span>
+                  </div>
+                  <div class="bp-stat">
+                    <strong>{{ s.height }}</strong
+                    ><span>Ebenen</span>
+                  </div>
+                  <div class="bp-stat">
+                    <strong>{{ s.blocks }}</strong
+                    ><span>Blöcke</span>
+                  </div>
+                  <div class="bp-stat">
+                    <strong>{{ s.steps }}</strong
+                    ><span>Schritte</span>
+                  </div>
+                </div>
               }
-            </button>
-          </div>
-
-          @if (plan()!.sources?.length) {
-            <section class="ui-section" aria-labelledby="bp-sources">
-              <h2 id="bp-sources" class="ui-section-title">Vorlagen</h2>
-              <div class="ui-group">
-                @for (url of plan()!.sources; track url) {
-                  <a class="ui-row bp-link-row" [href]="url" target="_blank" rel="noopener">
-                    <mat-icon class="bp-link-icon" aria-hidden="true">{{
-                      isVideoUrl(url) ? 'smart_display' : 'link'
-                    }}</mat-icon>
-                    <span class="ui-row-text"
-                      ><span class="ui-row-title">{{ hostOf(url) }}</span></span
-                    >
-                    <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
-                  </a>
-                }
-              </div>
             </section>
-          }
 
-          <section class="ui-section" aria-labelledby="bp-file">
-            <h2 id="bp-file" class="ui-section-title">Bauplan</h2>
-            <div class="ui-group">
-              <button type="button" class="ui-row bp-link-row" (click)="downloadJson()">
-                <mat-icon class="bp-link-icon" aria-hidden="true">download</mat-icon>
-                <span class="ui-row-text"><span class="ui-row-title">Als Datei sichern</span></span>
-              </button>
-              <button type="button" class="ui-row bp-link-row" (click)="copyJson()">
-                <mat-icon class="bp-link-icon" aria-hidden="true">content_copy</mat-icon>
-                <span class="ui-row-text"><span class="ui-row-title">Kopieren</span></span>
-              </button>
-              @if (!isExample()) {
-                <button type="button" class="ui-row bp-link-row bp-danger-row" (click)="remove()">
-                  <mat-icon class="bp-link-icon" aria-hidden="true">delete</mat-icon>
-                  <span class="ui-row-text"><span class="ui-row-title">Löschen</span></span>
-                </button>
+            <div class="bp-side">
+              @if (plan()!.description) {
+                <p class="bp-description">{{ plan()!.description }}</p>
               }
+
+              <div class="bp-progress-block">
+                @if (doneCount() > 0) {
+                  <app-xp-bar
+                    [value]="doneCount()"
+                    [max]="stats()?.steps ?? 0"
+                    label="Baufortschritt"
+                  />
+                }
+                <button type="button" class="ui-btn bp-primary" (click)="startSteps()">
+                  @if (doneCount() === 0) {
+                    Bauanleitung starten
+                  } @else if (doneCount() >= (stats()?.steps ?? 0)) {
+                    Anleitung ansehen
+                  } @else {
+                    Weiter bei Schritt {{ nextStep() + 1 }}
+                  }
+                </button>
+              </div>
+
+              @if (plan()!.sources?.length) {
+                <section class="ui-section" aria-labelledby="bp-sources">
+                  <h2 id="bp-sources" class="ui-section-title">Vorlagen</h2>
+                  <div class="ui-group">
+                    @for (url of plan()!.sources; track url) {
+                      <a class="ui-row bp-link-row" [href]="url" target="_blank" rel="noopener">
+                        <mat-icon class="bp-link-icon" aria-hidden="true">{{
+                          isVideoUrl(url) ? 'smart_display' : 'link'
+                        }}</mat-icon>
+                        <span class="ui-row-text"
+                          ><span class="ui-row-title">{{ hostOf(url) }}</span></span
+                        >
+                        <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+                      </a>
+                    }
+                  </div>
+                </section>
+              }
+
+              <section class="ui-section" aria-labelledby="bp-file">
+                <h2 id="bp-file" class="ui-section-title">Bauplan</h2>
+                <div class="ui-group">
+                  <button type="button" class="ui-row bp-link-row" (click)="downloadJson()">
+                    <mat-icon class="bp-link-icon" aria-hidden="true">download</mat-icon>
+                    <span class="ui-row-text"
+                      ><span class="ui-row-title">Als Datei sichern</span></span
+                    >
+                  </button>
+                  <button type="button" class="ui-row bp-link-row" (click)="copyJson()">
+                    <mat-icon class="bp-link-icon" aria-hidden="true">content_copy</mat-icon>
+                    <span class="ui-row-text"><span class="ui-row-title">Kopieren</span></span>
+                  </button>
+                  @if (!isExample()) {
+                    <button
+                      type="button"
+                      class="ui-row bp-link-row bp-danger-row"
+                      (click)="remove()"
+                    >
+                      <mat-icon class="bp-link-icon" aria-hidden="true">delete</mat-icon>
+                      <span class="ui-row-text"><span class="ui-row-title">Löschen</span></span>
+                    </button>
+                  }
+                </div>
+              </section>
             </div>
-          </section>
+          </div>
         }
 
         @case ('layers') {
-          <section class="ui-group bp-card">
-            <div class="bp-layer-ctl">
-              <h2 class="bp-layer-num" aria-live="polite">
-                Ebene {{ layer() + 1 }}<small>/{{ analysis()!.H }}</small>
-              </h2>
-              <button
-                type="button"
-                class="bp-round"
-                [disabled]="layer() === 0"
-                (click)="moveLayer(-1)"
-                aria-label="Eine Ebene tiefer"
-              >
-                <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
-              </button>
-              <button
-                type="button"
-                class="bp-round"
-                [disabled]="layer() === analysis()!.H - 1"
-                (click)="moveLayer(1)"
-                aria-label="Eine Ebene höher"
-              >
-                <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
-              </button>
-            </div>
-            <input
-              class="bp-range"
-              type="range"
-              min="1"
-              [max]="analysis()!.H"
-              [value]="layer() + 1"
-              (input)="onLayerRange($event)"
-              aria-label="Ebene wählen"
-            />
-            <app-layer-grid
-              [plan]="plan()!"
-              [analysis]="analysis()!"
-              [y]="layer()"
-              [ghost]="true"
-            />
-            <div class="bp-legend">
-              @for (item of layerItems(); track item.name) {
-                <span class="bp-chip">
-                  <span
-                    class="bp-swatch"
-                    [style.background-color]="item.def.color"
-                    [style.background-image]="item.swatch"
-                  ></span>
-                  <b>{{ item.count }}</b> {{ item.name }}
-                </span>
-              }
-            </div>
-          </section>
+          <div class="bp-split bp-split--layers">
+            <section class="ui-group bp-card">
+              <div class="bp-layer-ctl">
+                <h2 class="bp-layer-num" aria-live="polite">
+                  Ebene {{ layer() + 1 }}<small>/{{ analysis()!.H }}</small>
+                </h2>
+                <button
+                  type="button"
+                  class="bp-round"
+                  [disabled]="layer() === 0"
+                  (click)="moveLayer(-1)"
+                  aria-label="Eine Ebene tiefer"
+                >
+                  <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
+                </button>
+                <button
+                  type="button"
+                  class="bp-round"
+                  [disabled]="layer() === analysis()!.H - 1"
+                  (click)="moveLayer(1)"
+                  aria-label="Eine Ebene höher"
+                >
+                  <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
+                </button>
+              </div>
+              <input
+                class="bp-range"
+                type="range"
+                min="1"
+                [max]="analysis()!.H"
+                [value]="layer() + 1"
+                (input)="onLayerRange($event)"
+                aria-label="Ebene wählen"
+              />
+              <app-layer-grid
+                [plan]="plan()!"
+                [analysis]="analysis()!"
+                [y]="layer()"
+                [ghost]="true"
+              />
+              <div class="bp-legend">
+                @for (item of layerItems(); track item.name) {
+                  <span class="bp-chip">
+                    <span
+                      class="bp-swatch"
+                      [style.background-color]="item.def.color"
+                      [style.background-image]="item.swatch"
+                    ></span>
+                    <b>{{ item.count }}</b> {{ item.name }}
+                  </span>
+                }
+              </div>
+            </section>
 
-          <app-iso-view
-            [plan]="plan()!"
-            [analysis]="analysis()!"
-            [mode]="layerIsoMode()"
-            [maxHeight]="280"
-            [(rotation)]="rotation"
-            label="Gewählte Ebene im Bau"
-          />
+            <div class="bp-sticky">
+              <app-iso-view
+                [plan]="plan()!"
+                [analysis]="analysis()!"
+                [mode]="layerIsoMode()"
+                [maxHeight]="560"
+                [(rotation)]="rotation"
+                label="Gewählte Ebene im Bau"
+              >
+                <div isoTop class="bp-overlay">
+                  <button
+                    type="button"
+                    class="bp-ov-btn"
+                    [disabled]="layer() === 0"
+                    (click)="moveLayer(-1)"
+                    aria-label="Eine Ebene tiefer"
+                  >
+                    <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
+                  </button>
+                  <span class="bp-ov-label">Ebene {{ layer() + 1 }}/{{ analysis()!.H }}</span>
+                  <button
+                    type="button"
+                    class="bp-ov-btn"
+                    [disabled]="layer() === analysis()!.H - 1"
+                    (click)="moveLayer(1)"
+                    aria-label="Eine Ebene höher"
+                  >
+                    <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
+                  </button>
+                </div>
+              </app-iso-view>
+            </div>
+          </div>
         }
 
         @case ('steps') {
           @if (currentStep(); as s) {
-            <div class="bp-steps-progress">
-              <app-xp-bar
-                [value]="doneCount()"
-                [max]="analysis()!.steps.length"
-                label="Erledigte Bauschritte"
-              />
-              <div class="bp-dots">
-                @for (st of analysis()!.steps; track $index) {
+            <div class="bp-split bp-split--steps">
+              <div class="bp-sticky">
+                <app-iso-view
+                  [plan]="plan()!"
+                  [analysis]="analysis()!"
+                  [mode]="stepIsoMode()"
+                  [maxHeight]="620"
+                  [(rotation)]="rotation"
+                  label="Bau bis zu diesem Schritt"
+                >
+                  <div isoTop class="bp-overlay">
+                    <button
+                      type="button"
+                      class="bp-ov-btn"
+                      [disabled]="step() === 0"
+                      (click)="prev()"
+                      aria-label="Vorheriger Schritt"
+                    >
+                      <mat-icon aria-hidden="true">chevron_left</mat-icon>
+                    </button>
+                    <span class="bp-ov-label"
+                      >Schritt {{ step() + 1 }}/{{ analysis()!.steps.length }}</span
+                    >
+                    <button
+                      type="button"
+                      class="bp-ov-btn bp-ov-check"
+                      [class.bp-ov-check--on]="isDone(step())"
+                      [attr.aria-pressed]="isDone(step())"
+                      (click)="toggleDone(step())"
+                      aria-label="Als erledigt markieren"
+                    >
+                      <mat-icon aria-hidden="true">check</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="bp-ov-btn"
+                      [disabled]="step() === analysis()!.steps.length - 1"
+                      (click)="next()"
+                      aria-label="Nächster Schritt"
+                    >
+                      <mat-icon aria-hidden="true">chevron_right</mat-icon>
+                    </button>
+                  </div>
+                </app-iso-view>
+              </div>
+              <div class="bp-side">
+                <div class="bp-steps-progress">
+                  <app-xp-bar
+                    [value]="doneCount()"
+                    [max]="analysis()!.steps.length"
+                    label="Erledigte Bauschritte"
+                  />
+                  <div class="bp-dots">
+                    @for (st of analysis()!.steps; track $index) {
+                      <button
+                        type="button"
+                        class="bp-dot"
+                        [class.bp-dot--done]="isDone($index)"
+                        [class.bp-dot--current]="$index === step()"
+                        [attr.aria-label]="'Schritt ' + ($index + 1) + ': ' + st.title"
+                        [attr.aria-current]="$index === step() ? 'step' : null"
+                        (click)="goStep($index)"
+                      >
+                        {{ $index + 1 }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <section class="ui-group bp-card">
+                  <div class="bp-step-head">
+                    <div class="bp-step-heading">
+                      <span class="bp-step-count"
+                        >Schritt {{ step() + 1 }} von {{ analysis()!.steps.length }}</span
+                      >
+                      <h2 class="bp-step-name">{{ s.title }}</h2>
+                    </div>
+                    <button
+                      type="button"
+                      class="bp-done"
+                      [class.bp-done--on]="isDone(step())"
+                      [attr.aria-pressed]="isDone(step())"
+                      aria-label="Als erledigt markieren"
+                      (click)="toggleDone(step())"
+                    >
+                      <mat-icon aria-hidden="true">check</mat-icon>
+                    </button>
+                  </div>
+                  @if (s.text) {
+                    <p class="bp-step-text">{{ s.text }}</p>
+                  }
+                  @if (stepItems().length) {
+                    <div class="bp-legend">
+                      @for (item of stepItems(); track item.name) {
+                        <span class="bp-chip">
+                          <span
+                            class="bp-swatch"
+                            [style.background-color]="item.def.color"
+                            [style.background-image]="item.swatch"
+                          ></span>
+                          <b>{{ item.count }}</b> {{ item.name }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </section>
+                @for (y of stepLayers(); track y) {
+                  <section class="ui-group bp-card">
+                    <h3 class="bp-grid-title">Ebene {{ y + 1 }}</h3>
+                    <app-layer-grid
+                      [plan]="plan()!"
+                      [analysis]="analysis()!"
+                      [y]="y"
+                      [mode]="stepGridMode()"
+                    />
+                  </section>
+                }
+
+                <div class="bp-nav">
                   <button
                     type="button"
-                    class="bp-dot"
-                    [class.bp-dot--done]="isDone($index)"
-                    [class.bp-dot--current]="$index === step()"
-                    [attr.aria-label]="'Schritt ' + ($index + 1) + ': ' + st.title"
-                    [attr.aria-current]="$index === step() ? 'step' : null"
-                    (click)="goStep($index)"
+                    class="ui-btn ui-btn--secondary"
+                    [disabled]="step() === 0"
+                    (click)="prev()"
                   >
-                    {{ $index + 1 }}
+                    Zurück
+                  </button>
+                  <button type="button" class="ui-btn bp-primary" (click)="next()">
+                    {{ step() === analysis()!.steps.length - 1 ? 'Fertig gebaut' : 'Weiter' }}
+                  </button>
+                </div>
+                @if (doneCount()) {
+                  <button type="button" class="bp-text-btn" (click)="resetProgress()">
+                    Fortschritt zurücksetzen
                   </button>
                 }
               </div>
             </div>
-
-            <section class="ui-group bp-card">
-              <div class="bp-step-head">
-                <div class="bp-step-heading">
-                  <span class="bp-step-count"
-                    >Schritt {{ step() + 1 }} von {{ analysis()!.steps.length }}</span
-                  >
-                  <h2 class="bp-step-name">{{ s.title }}</h2>
-                </div>
-                <button
-                  type="button"
-                  class="bp-done"
-                  [class.bp-done--on]="isDone(step())"
-                  [attr.aria-pressed]="isDone(step())"
-                  aria-label="Als erledigt markieren"
-                  (click)="toggleDone(step())"
-                >
-                  <mat-icon aria-hidden="true">check</mat-icon>
-                </button>
-              </div>
-              @if (s.text) {
-                <p class="bp-step-text">{{ s.text }}</p>
-              }
-              @if (stepItems().length) {
-                <div class="bp-legend">
-                  @for (item of stepItems(); track item.name) {
-                    <span class="bp-chip">
-                      <span
-                        class="bp-swatch"
-                        [style.background-color]="item.def.color"
-                        [style.background-image]="item.swatch"
-                      ></span>
-                      <b>{{ item.count }}</b> {{ item.name }}
-                    </span>
-                  }
-                </div>
-              }
-            </section>
-
-            <app-iso-view
-              [plan]="plan()!"
-              [analysis]="analysis()!"
-              [mode]="stepIsoMode()"
-              [maxHeight]="300"
-              [(rotation)]="rotation"
-              label="Bau bis zu diesem Schritt"
-            />
-
-            @for (y of stepLayers(); track y) {
-              <section class="ui-group bp-card">
-                <h3 class="bp-grid-title">Ebene {{ y + 1 }}</h3>
-                <app-layer-grid
-                  [plan]="plan()!"
-                  [analysis]="analysis()!"
-                  [y]="y"
-                  [mode]="stepGridMode()"
-                />
-              </section>
-            }
-
-            <div class="bp-nav">
-              <button
-                type="button"
-                class="ui-btn ui-btn--secondary"
-                [disabled]="step() === 0"
-                (click)="prev()"
-              >
-                Zurück
-              </button>
-              <button type="button" class="ui-btn bp-primary" (click)="next()">
-                {{ step() === analysis()!.steps.length - 1 ? 'Fertig gebaut' : 'Weiter' }}
-              </button>
-            </div>
-            @if (doneCount()) {
-              <button type="button" class="bp-text-btn" (click)="resetProgress()">
-                Fortschritt zurücksetzen
-              </button>
-            }
           }
         }
 
         @case ('materials') {
-          <section class="ui-section" aria-labelledby="bp-mat">
-            <div class="ui-section-title">
-              <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
-              <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
-            </div>
-            <div class="ui-group bp-mats">
-              @for (m of materials(); track m.name) {
-                <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
-                  <input
-                    type="checkbox"
-                    class="bp-check"
-                    [checked]="m.have"
-                    (change)="toggleHave(m.name)"
-                  />
-                  <span
-                    class="bp-swatch bp-swatch--lg"
-                    [style.background-color]="m.def.color"
-                    [style.background-image]="m.swatch"
-                  ></span>
-                  <span class="ui-row-text">
-                    <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
-                    @if (m.def.farm) {
-                      <span class="ui-row-sub bp-mat-hint">{{ m.def.farm }}</span>
-                    }
-                  </span>
-                  <span class="bp-mat-count">
-                    {{ m.count }}<small>{{ m.stacks }}</small>
-                  </span>
-                </label>
-              }
-            </div>
-          </section>
-
-          @if (raw().length) {
-            <section class="ui-section" aria-labelledby="bp-raw">
-              <h2 id="bp-raw" class="ui-section-title">Rohstoffe</h2>
-              <div class="ui-group">
-                @for (r of raw(); track r.name) {
-                  <div class="ui-row">
-                    <span class="ui-row-text"
-                      ><span class="ui-row-title">{{ r.name }}</span></span
-                    >
-                    <span class="bp-mat-count"
-                      >{{ r.count }}<small>{{ r.stacks }}</small></span
-                    >
-                  </div>
+          <div class="bp-split bp-split--even">
+            <section class="ui-section" aria-labelledby="bp-mat">
+              <div class="ui-section-title">
+                <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
+                <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
+              </div>
+              <div class="ui-group bp-mats">
+                @for (m of materials(); track m.name) {
+                  <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
+                    <input
+                      type="checkbox"
+                      class="bp-check"
+                      [checked]="m.have"
+                      (change)="toggleHave(m.name)"
+                    />
+                    <span
+                      class="bp-swatch bp-swatch--lg"
+                      [style.background-color]="m.def.color"
+                      [style.background-image]="m.swatch"
+                    ></span>
+                    <span class="ui-row-text">
+                      <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
+                      @if (m.def.farm) {
+                        <span class="ui-row-sub bp-mat-hint">{{ m.def.farm }}</span>
+                      }
+                    </span>
+                    <span class="bp-mat-count">
+                      {{ m.count }}<small>{{ m.stacks }}</small>
+                    </span>
+                  </label>
                 }
               </div>
-              <p class="ui-section-footer">Aufgerundet, ein kleiner Puffer ist schon drin.</p>
             </section>
-          }
+
+            @if (raw().length) {
+              <section class="ui-section" aria-labelledby="bp-raw">
+                <h2 id="bp-raw" class="ui-section-title">Rohstoffe</h2>
+                <div class="ui-group">
+                  @for (r of raw(); track r.name) {
+                    <div class="ui-row">
+                      <span class="ui-row-text"
+                        ><span class="ui-row-title">{{ r.name }}</span></span
+                      >
+                      <span class="bp-mat-count"
+                        >{{ r.count }}<small>{{ r.stacks }}</small></span
+                      >
+                    </div>
+                  }
+                </div>
+                <p class="ui-section-footer">Aufgerundet, ein kleiner Puffer ist schon drin.</p>
+              </section>
+            }
+          </div>
         }
       }
     }
