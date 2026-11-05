@@ -375,37 +375,30 @@
               </div>
               <div class="ui-group bp-mats">
                 @for (m of materials(); track m.name) {
-                  <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
-                    <input
-                      type="checkbox"
-                      class="bp-check"
-                      [checked]="m.have"
-                      (change)="toggleHave(m.name)"
-                    />
-                    <span
-                      class="bp-swatch bp-swatch--lg"
-                      [style.background-color]="m.def.color"
-                      [style.background-image]="m.swatch"
-                    ></span>
-                    <span class="ui-row-text">
-                      <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
-                      @if (m.hint) {
-                        <span class="ui-row-sub bp-mat-hint">{{ m.hint }}</span>
-                      }
-                    </span>
-                    <span class="bp-mat-count">
-                      {{ m.count }}<small>{{ m.stacks }}</small>
-                    </span>
-                    <a
-                      class="bp-wiki"
-                      [href]="m.wiki"
-                      target="_blank"
-                      rel="noopener"
-                      [attr.aria-label]="m.name + ' im Minecraft Wiki'"
-                    >
-                      <mat-icon aria-hidden="true">menu_book</mat-icon>
-                    </a>
-                  </label>
+                  <app-swipe-row [href]="m.wiki" [label]="m.name + ' im Minecraft Wiki'">
+                    <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
+                      <input
+                        type="checkbox"
+                        class="bp-check"
+                        [checked]="m.have"
+                        (change)="toggleHave(m.name)"
+                      />
+                      <span
+                        class="bp-swatch bp-swatch--lg"
+                        [style.background-color]="m.def.color"
+                        [style.background-image]="m.swatch"
+                      ></span>
+                      <span class="ui-row-text">
+                        <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
+                        @if (m.hint) {
+                          <span class="ui-row-sub bp-mat-hint">{{ m.hint }}</span>
+                        }
+                      </span>
+                      <span class="bp-mat-count">
+                        {{ m.count }}<small>{{ m.stacks }}</small>
+                      </span>
+                    </label>
+                  </app-swipe-row>
                 }
               </div>
             </section>
@@ -422,11 +415,12 @@
                       <span class="bp-mat-count"
                         >{{ r.count }}<small>{{ r.stacks }}</small></span
                       >
-                      <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
                     </a>
                   }
                 </div>
-                <p class="ui-section-footer">Aufgerundet. Antippen öffnet das Minecraft Wiki.</p>
+                <p class="ui-section-footer">
+                  Aufgerundet. Antippen oder Material nach links wischen öffnet das Minecraft Wiki.
+                </p>
               </section>
             }
           </div>

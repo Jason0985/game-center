@@ -558,32 +558,16 @@
   }
 }
 
-// Buch-Knopf: öffnet die Seite des Blocks im Minecraft Wiki
-.bp-wiki {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-right: -6px;
-  border-radius: 50%;
-  color: var(--bp-accent);
-  -webkit-tap-highlight-color: transparent;
-  transition: background-color 200ms var(--ease-ios);
-}
-
-.bp-wiki:hover,
-.bp-wiki:active {
-  background: var(--bp-accent-soft);
-}
-
-.bp-wiki:focus-visible {
-  outline: 2px solid var(--bp-accent);
-  outline-offset: 0;
-}
-
-.bp-wiki mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
+// Haarlinie zwischen den wischbaren Zeilen, eingerückt bis zum Text
+.bp-mats > app-swipe-row + app-swipe-row::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--ui-row-inset, 16px);
+  z-index: 1;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
 }
