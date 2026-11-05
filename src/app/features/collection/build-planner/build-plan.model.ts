@@ -222,7 +222,27 @@ export function totalBlocks(plan: BuildPlan, analysis: PlanAnalysis): number {
 export const LIMITS = { size: 64, height: 96, paletteSize: 40, steps: 80 };
 
 export type ParseResult =
-  { plan: BuildPlan; error?: undefined } | { plan?: undefined; error: string };
+  | {
+      plan: BuildPlan;
+      warnings: string[];
+      error?: undefined;
+      details?: undefined;
+      repairable?: undefined;
+    }
+  | {
+      plan?: undefined;
+      warnings?: undefined;
+      error: string;
+      // Fundstellen für die Anzeige und den Korrektur-Prompt
+      details?: string[];
+      // Unbekannte Zeichen: lässt sich mit unknownAsAir trotzdem importieren
+      repairable?: boolean;
+    };
+
+export interface ParseOptions {
+  // Zeichen, die nicht in der palette stehen, als Luft übernehmen
+  unknownAsAir?: boolean;
+}
 
 /** Holt das JSON-Objekt aus einer KI-Antwort: Codeblock, umgebender Text oder reines JSON. */
 export function extractJson(text: string): string {
@@ -236,7 +256,7 @@ export function extractJson(text: string): string {
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
-export function parsePlan(text: string): ParseResult {
+export function parsePlan(text: string, options: ParseOptions = {}): ParseResult {
   if (!text.trim()) return { error: 'Füg zuerst den Bauplan ein oder wähl eine Datei.' };
   if (!text.includes('{') && /nicht ansehen|can(no|')t (watch|view|access)/i.test(text)) {
     return {
@@ -252,10 +272,10 @@ export function parsePlan(text: string): ParseResult {
       error: 'Das ist kein gültiges JSON. Prüf, ob die Antwort der KI vollständig kopiert wurde.',
     };
   }
-  return validatePlan(raw);
+  return validatePlan(raw, options);
 }
 
-export function validatePlan(raw: unknown): ParseResult {
+export function validatePlan(raw: unknown, options: ParseOptions = {}): ParseResult {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return { error: 'Der Bauplan muss ein JSON-Objekt sein.' };
   }
@@ -307,29 +327,56 @@ export function validatePlan(raw: unknown): ParseResult {
   if (width > LIMITS.size || depth > LIMITS.size) {
     return { error: `Höchstens ${LIMITS.size} × ${LIMITS.size} Blöcke Grundfläche.` };
   }
-  const unknown = new Set<string>();
+  const warnings: string[] = [];
+  // Erwartete Maße: die häufigste Zeilenlänge bzw. Zeilenzahl (Ausreißer sind Tippfehler)
+  const rowWidth = mostCommon(layers.flatMap((layer) => layer.map((row) => [...row].length)));
+  const layerDepth = mostCommon(layers.map((layer) => layer.length));
+  layers.forEach((layer, y) => {
+    if (layer.length !== layerDepth) {
+      warnings.push(`Ebene ${y + 1} hat ${layer.length} statt ${layerDepth} Zeilen.`);
+    }
+    layer.forEach((row, z) => {
+      const length = [...row].length;
+      if (length !== rowWidth) {
+        warnings.push(`Ebene ${y + 1}, Zeile ${z + 1} hat ${length} statt ${rowWidth} Zeichen.`);
+      }
+    });
+  });
+
+  const unknown = new Map<string, string[]>();
   let count = 0;
   // Ungleich lange Zeilen und Ebenen mit Luft auffüllen, damit alles ein Quader ist
-  const normalized = layers.map((layer) => {
-    const rows = layer.map((row) => {
-      const chars = [...row];
-      for (const ch of chars) {
-        if (isAir(ch)) continue;
-        if (!palette[ch]) unknown.add(ch);
-        else count++;
-      }
-      return chars
-        .map((ch) => (isAir(ch) ? '.' : ch))
-        .join('')
-        .padEnd(width, '.');
+  const normalized = layers.map((layer, y) => {
+    const rows = layer.map((row, z) => {
+      const chars = [...row].map((ch, x) => {
+        if (isAir(ch)) return '.';
+        if (palette[ch]) {
+          count++;
+          return ch;
+        }
+        const spots = unknown.get(ch) ?? [];
+        spots.push(`Ebene ${y + 1}, Zeile ${z + 1}, Spalte ${x + 1}`);
+        unknown.set(ch, spots);
+        return '.';
+      });
+      return chars.join('').padEnd(width, '.');
     });
     while (rows.length < depth) rows.push('.'.repeat(width));
     return rows;
   });
   if (unknown.size) {
-    return {
-      error: `Diese Zeichen kommen in „layers“ vor, fehlen aber in der „palette“: ${[...unknown].join(' ')}`,
-    };
+    const details = [...unknown.entries()].map(
+      ([ch, spots]) =>
+        `„${ch}“ fehlt in der palette (${spots.length}×, z. B. ${spots.slice(0, 2).join('; ')})`,
+    );
+    if (!options.unknownAsAir) {
+      return {
+        error: `Diese Zeichen kommen in „layers“ vor, fehlen aber in der „palette“: ${[...unknown.keys()].join(' ')}`,
+        details: [...details, ...warnings],
+        repairable: true,
+      };
+    }
+    warnings.unshift(...details.map((d) => `${d} – als Luft übernommen.`));
   }
   if (!count) return { error: 'Der Bauplan enthält keine Blöcke.' };
 
@@ -369,13 +416,26 @@ export function validatePlan(raw: unknown): ParseResult {
     ...(steps?.length ? { steps } : {}),
   };
   if (typeof input['id'] === 'string') plan.id = input['id'].slice(0, 80);
+  // Steps, die Zeichen nennen, die es nicht gibt, oder Blöcke ohne Schritt: nur Hinweis
+  const stepChars = new Set((steps ?? []).flatMap((step) => step.blocks ?? []));
+  if (steps?.length && steps.some((step) => step.blocks?.length)) {
+    const missing = Object.keys(palette).filter(
+      (ch) =>
+        !stepChars.has(ch) && normalized.some((layer) => layer.some((row) => row.includes(ch))),
+    );
+    if (missing.length) {
+      warnings.push(
+        `Keinem Bauschritt zugeordnet: ${missing.join(' ')} (landen unter „Restliche Blöcke“).`,
+      );
+    }
+  }
   const sources = Array.isArray(input['sources'])
     ? input['sources'].filter(
         (url): url is string => typeof url === 'string' && /^https?:\/\/\S+$/.test(url.trim()),
       )
     : [];
   if (sources.length) plan.sources = sources.slice(0, 10).map((url) => url.trim().slice(0, 500));
-  return { plan };
+  return { plan, warnings };
 }
 
 // Falls die KI "shape" vergisst: am Blocknamen erkennen
@@ -392,6 +452,25 @@ function shapeFromName(name: string): BlockShape | null {
     [/stufe|slab/, 'slab'],
   ];
   return rules.find(([pattern]) => pattern.test(n))?.[1] ?? null;
+}
+
+function mostCommon(values: number[]): number {
+  const counts = new Map<number, number>();
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+  let best = values[0] ?? 0;
+  for (const [value, n] of counts) if (n > (counts.get(best) ?? 0)) best = value;
+  return best;
+}
+
+/** Prompt, mit dem die KI ihren fehlerhaften Bauplan selbst korrigiert. */
+export function fixPrompt(problems: string[]): string {
+  return [
+    'Dein Bauplan für meinen Bauplaner hat Fehler. Bitte korrigiere sie und gib die komplette JSON-Datei erneut aus (gleiches Format, nichts weglassen):',
+    '',
+    ...problems.map((problem) => `- ${problem}`),
+    '',
+    'Prüf danach selbst: Jedes Zeichen in "layers" steht als Schlüssel in "palette" (oder ist "."), jede Zeile jeder Ebene ist gleich lang, jede Ebene hat gleich viele Zeilen. Zähl die Zeichen jeder Zeile nach.',
+  ].join('\n');
 }
 
 function cleanBlock(def: BlockDef): BlockDef {
@@ -525,11 +604,46 @@ Antworte mit genau EINER JSON-Datei (UTF-8, kein JavaScript, keine Kommentare). 
    "raw": Rohstoffe pro Block, z. B. Bretter { "Eichenstamm": 0.25 }, Glas { "Sand": 1 }, Treppe { "Eichenstamm": 0.375 }.
 8. "steps": 6–15 sinnvolle Bauschritte von unten nach oben. "layers" ist [von, bis] (0-basiert, inklusive), "blocks" sind die Zeichen, die in diesem Schritt gesetzt werden. Jeder Block muss in genau einem Schritt landen; der erste passende Schritt gewinnt.
 9. Baue statisch sinnvoll und wirklich im Spiel machbar: geschlossene Wände, Dach ohne Löcher, Eingang erreichbar, Fenster aus Glas oder Glasscheiben.
-10. Prüf vor der Ausgabe selbst: gleiche Zeilenlängen, alle Zeichen in der palette, gültiges JSON.`;
+10. Schreib zuerst die vollständige "palette" und verwende in "layers" danach AUSSCHLIESSLICH diese Zeichen (und "." für Luft) – kein Zeichen, das nicht als Schlüssel in "palette" steht.
 
-const EXAMPLE = `## Kleines Beispiel (3 × 3, zwei Ebenen)
+## Strenge Prüfung vor der Ausgabe (Pflicht)
 
-{"format":"${PLAN_FORMAT}","id":"mini-turm","name":"Mini-Turm","description":"Ein winziger Turm aus Bruchstein mit Holzdach.","front":"Vorderseite","palette":{"C":{"name":"Bruchstein","color":"#878787","texture":"cobblestone","abbr":"Bs","raw":{"Bruchstein":1}},"B":{"name":"Eichenholzstufe","color":"#b38b52","texture":"planks","shape":"slab","abbr":"Sf","raw":{"Eichenstamm":0.125}}},"layers":[["CCC","C.C","CCC"],["BBB","BBB","BBB"]],"steps":[{"title":"Mauer","text":"Setz einen 3 × 3 Ring aus Bruchstein.","layers":[0,0],"blocks":["C"]},{"title":"Dach","text":"Deck alles mit Stufen ab.","layers":[1,1],"blocks":["B"]}]}`;
+Geh diese Liste durch, bevor du antwortest, und korrigiere jeden Fund:
+1. Zeichen: Jedes Zeichen in jeder Zeile von "layers" ist ein Schlüssel in "palette" oder ".". Achte besonders auf Verwechslungen wie I/l/1 oder O/0.
+2. Breite: Jede Zeile in JEDER Ebene hat exakt dieselbe Zeichenanzahl. Zähl jede Zeile nach – besonders Zeilen mit Symmetrie, Fenstern oder Säulen.
+3. Tiefe: Jede Ebene hat exakt gleich viele Zeilen.
+4. Schritte: Jeder gesetzte Block ist von einem Schritt abgedeckt – sein Zeichen steht in dessen "blocks" und seine Ebene liegt in dessen "layers"-Bereich.
+5. JSON: gültig, keine Kommentare, keine abschließenden Kommas.`;
+
+const EXAMPLE = `## Formatvorlage (3 × 3, drei Ebenen, 100 % gültig)
+
+\`\`\`json
+{
+  "format": "${PLAN_FORMAT}",
+  "id": "beispiel-stele",
+  "name": "Magische Stele",
+  "description": "Eine kleine Ziersäule mit Sockel, Obsidiankern und Glaskrone. 3 × 3 Grundfläche, 3 Ebenen hoch.",
+  "front": "Vorderseite",
+  "palette": {
+    "S": { "name": "Bruchstein", "color": "#878787", "texture": "cobblestone", "abbr": "Bs", "wiki": "Bruchstein", "raw": { "Bruchstein": 1 } },
+    "O": { "name": "Obsidian", "color": "#141021", "texture": "stone", "abbr": "Ob", "farm": "Entsteht, wenn Wasser auf eine Lavaquelle fließt; nur mit Diamant- oder Netherit-Spitzhacke abbaubar.", "wiki": "Obsidian", "raw": { "Obsidian": 1 } },
+    "G": { "name": "Magenta gefärbtes Glas", "color": "#b24cd8", "texture": "glass", "abbr": "Mg", "wiki": "Gefärbtes Glas", "raw": { "Sand": 1, "Magenta Farbstoff": 0.125 } },
+    "v": { "name": "Bruchsteintreppe", "color": "#878787", "texture": "cobblestone", "shape": "stair", "dir": [0, 1], "wiki": "Treppe", "raw": { "Bruchstein": 1.5 } }
+  },
+  "layers": [
+    ["SvS", "SOS", "SSS"],
+    [".S.", "SGS", ".S."],
+    ["...", ".G.", "..."]
+  ],
+  "steps": [
+    { "title": "Sockel", "text": "Bau einen 3 × 3 Rahmen aus Bruchstein mit Obsidian in der Mitte und einer Treppe vorne.", "layers": [0, 0], "blocks": ["S", "O", "v"] },
+    { "title": "Glaskern und Krone", "text": "Setz das Magenta-Glas in die Mitte, ein Kreuz aus Bruchstein drumherum und ganz oben noch ein Glas.", "layers": [1, 2], "blocks": ["S", "G"] }
+  ],
+  "sources": ["https://de.minecraft.wiki/"]
+}
+\`\`\`
+
+Hier hat jede Zeile genau 3 Zeichen, jede Ebene genau 3 Zeilen, und jedes Zeichen (S, O, G, v) steht in "palette" und in "blocks" eines Schrittes.`;
 
 const DESIGN_RULES = `## So wird der Bau schön (wichtig)
 

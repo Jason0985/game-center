@@ -1,5 +1,6 @@
 import {
   EXAMPLE_HOUSE,
+  fixPrompt,
   isCommonBlock,
   wikiUrl,
   isYoutubeUrl,
@@ -191,6 +192,51 @@ describe('Bauplaner: Materialhinweise und Wiki', () => {
     expect(wikiUrl({ name: 'Fichtenholztreppe', color: '#000' })).toBe(
       'https://de.minecraft.wiki/w/Spezial:Suche?search=Fichtenholztreppe&go=Seite',
     );
+  });
+});
+
+describe('Bauplaner: Import-Reparatur', () => {
+  const broken = JSON.stringify({
+    name: 'Turm',
+    palette: {
+      W: { name: 'Bruchstein', color: '#878787' },
+      T: { name: 'Tiefenschiefer', color: '#4b4b50' },
+    },
+    layers: [
+      ['WWW', 'WTW', 'WWW'],
+      ['WWW', 'WIIW', 'WW'],
+    ],
+    steps: [{ title: 'Alles', blocks: ['W'] }],
+  });
+
+  it('nennt unbekannte Zeichen mit Fundstelle und lässt sich trotzdem importieren', () => {
+    const failed = parsePlan(broken);
+    expect(failed.error).toContain('I');
+    expect(failed.repairable).toBe(true);
+    expect(failed.details?.[0]).toContain('Ebene 2, Zeile 2, Spalte 2');
+    expect(failed.details?.join(' ')).toContain('Ebene 2, Zeile 2 hat 4 statt 3 Zeichen');
+    expect(failed.details?.join(' ')).toContain('Ebene 2, Zeile 3 hat 2 statt 3 Zeichen');
+
+    const repaired = parsePlan(broken, { unknownAsAir: true });
+    expect(repaired.error).toBeUndefined();
+    expect(repaired.plan?.layers[1]).toEqual(['WWW.', 'W..W', 'WW..']);
+    expect(repaired.warnings?.[0]).toContain('als Luft übernommen');
+    expect(repaired.warnings?.join(' ')).toContain('Keinem Bauschritt zugeordnet: T');
+  });
+
+  it('baut einen Korrektur-Prompt für die KI', () => {
+    const prompt = fixPrompt(['Ebene 2, Zeile 3 hat 2 statt 3 Zeichen.']);
+    expect(prompt).toContain('- Ebene 2, Zeile 3 hat 2 statt 3 Zeichen.');
+    expect(prompt).toContain('komplette JSON-Datei');
+  });
+
+  it('enthält die strenge Prüfliste und eine gültige Formatvorlage', () => {
+    const prompt = ideaPrompt(EMPTY_IDEA);
+    expect(prompt).toContain('Strenge Prüfung vor der Ausgabe');
+    const example = prompt.slice(prompt.indexOf('## Formatvorlage'));
+    const result = parsePlan(example);
+    expect(result.error).toBeUndefined();
+    expect(result.warnings).toEqual([]);
   });
 });
 
