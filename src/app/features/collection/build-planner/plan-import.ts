@@ -1,6 +1,16 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
-import { BuildPlan, analyzePlan, fixPrompt, parsePlan, totalBlocks } from './build-plan.model';
+import {
+  BuildPlan,
+  analyzePlan,
+  fixPrompt,
+  isMaterialsOnly,
+  parsePlan,
+  planItems,
+  toMaterialsOnly,
+  totalBlocks,
+} from './build-plan.model';
+import { SCHEMATIC_EXTENSIONS, readSchematic } from './schematic';
 import { copyText, readFileText } from './plan-io';
 import { IsoView } from './iso-view';
 
@@ -15,12 +25,15 @@ import { IsoView } from './iso-view';
           <mat-icon aria-hidden="true">upload_file</mat-icon>Datei wählen
           <input
             type="file"
-            accept=".json,.txt,application/json,text/plain"
+            accept=".json,.txt,.schematic,.schem,.litematic,.nbt,application/json,text/plain"
             (change)="pick($event)"
           />
         </label>
         <span class="import-or">oder einfügen:</span>
       </div>
+      <p class="import-formats">
+        JSON von der KI oder Schematic-Dateien (.schematic, .schem, .litematic, .nbt)
+      </p>
       <textarea
         class="import-text"
         rows="5"
@@ -29,6 +42,11 @@ import { IsoView } from './iso-view';
         [value]="text()"
         (input)="onText($event)"
       ></textarea>
+      @if (reading()) {
+        <p class="import-reading">
+          <mat-icon aria-hidden="true">hourglass_top</mat-icon>Datei wird gelesen …
+        </p>
+      }
       @if (error()) {
         <div class="import-problem" role="alert">
           <p class="import-error">
@@ -67,10 +85,27 @@ import { IsoView } from './iso-view';
 
     @if (preview(); as p) {
       <div class="ui-group preview" aria-live="polite">
-        <app-iso-view [plan]="p.plan" [analysis]="p.analysis" [maxHeight]="260" />
+        @if (!p.materialsOnly) {
+          <app-iso-view [plan]="p.plan" [analysis]="p.analysis" [maxHeight]="260" />
+        }
         <div class="preview-body">
           <h3>{{ p.plan.name }}</h3>
           <p>{{ p.stats }}</p>
+          @if (note()) {
+            <p class="import-note-box">
+              <mat-icon aria-hidden="true">inventory_2</mat-icon>{{ note() }}
+            </p>
+          }
+          @if (p.materialsOnly) {
+            <ul class="import-top">
+              @for (item of p.top; track item.name) {
+                <li>
+                  <span class="import-dot" [style.background]="item.def.color"></span>
+                  <b>{{ item.count.toLocaleString('de-DE') }}</b> {{ item.name }}
+                </li>
+              }
+            </ul>
+          }
           @if (warnings().length) {
             <div class="import-warn">
               <p>
@@ -96,8 +131,18 @@ import { IsoView } from './iso-view';
             (click)="confirm.emit(p.plan)"
           >
             <mat-icon aria-hidden="true">{{ busy() ? 'hourglass_top' : 'save' }}</mat-icon>
-            {{ confirmLabel() }}
+            {{ p.materialsOnly ? materialsLabel() : confirmLabel() }}
           </button>
+          @if (!p.materialsOnly) {
+            <button
+              type="button"
+              class="import-link import-alt"
+              [disabled]="busy()"
+              (click)="confirm.emit(asMaterials(p.plan))"
+            >
+              Nur die Materialliste speichern
+            </button>
+          }
         </div>
       </div>
     }
@@ -106,6 +151,7 @@ import { IsoView } from './iso-view';
 })
 export class PlanImport {
   readonly confirmLabel = input('In meinen Bauwerken speichern');
+  readonly materialsLabel = input('Materialliste speichern');
   readonly busy = input(false);
   readonly confirm = output<BuildPlan>();
 
@@ -115,16 +161,32 @@ export class PlanImport {
   readonly warnings = signal<string[]>([]);
   readonly repairable = signal(false);
   readonly fixCopied = signal(false);
+  readonly reading = signal(false);
+  // Hinweis zum Schematic-Import (Format, warum nur Materialliste)
+  readonly note = signal('');
   private readonly plan = signal<BuildPlan | null>(null);
 
   readonly preview = computed(() => {
     const plan = this.plan();
     if (!plan) return null;
+    if (isMaterialsOnly(plan)) {
+      const items = planItems(plan);
+      const total = items.reduce((sum, item) => sum + item.count, 0);
+      return {
+        plan,
+        analysis: analyzePlan(plan),
+        materialsOnly: true,
+        top: items.slice(0, 6),
+        stats: `Materialliste: ${total.toLocaleString('de-DE')} Blöcke in ${items.length} Sorten`,
+      };
+    }
     const analysis = analyzePlan(plan);
     return {
       plan,
       analysis,
-      stats: `${analysis.W} × ${analysis.D} Grundfläche, ${analysis.H} Ebenen, ${totalBlocks(plan, analysis)} Blöcke, ${analysis.steps.length} ${analysis.steps.length === 1 ? 'Bauschritt' : 'Bauschritte'}`,
+      materialsOnly: false,
+      top: [],
+      stats: `${analysis.W} × ${analysis.D} Grundfläche, ${analysis.H} Ebenen, ${totalBlocks(plan, analysis).toLocaleString('de-DE')} Blöcke, ${analysis.steps.length} ${analysis.steps.length === 1 ? 'Bauschritt' : 'Bauschritte'}`,
     };
   });
 
@@ -134,7 +196,8 @@ export class PlanImport {
     inputEl.value = '';
     if (!file) return;
     try {
-      this.apply(await readFileText(file));
+      if (SCHEMATIC_EXTENSIONS.test(file.name)) await this.applySchematic(file);
+      else this.apply(await readFileText(file));
     } catch (error) {
       this.plan.set(null);
       this.error.set(
@@ -155,6 +218,33 @@ export class PlanImport {
     this.apply(this.text(), true);
   }
 
+  asMaterials(plan: BuildPlan): BuildPlan {
+    return toMaterialsOnly(plan);
+  }
+
+  /** Schematic-Datei lesen: kleine Bauten werden ein Bauplan, große eine Materialliste. */
+  private async applySchematic(file: File): Promise<void> {
+    if (file.size > 30 * 1024 * 1024) throw new Error('Die Datei ist zu groß (höchstens 30 MB).');
+    this.apply('');
+    this.reading.set(true);
+    try {
+      const result = await readSchematic(await file.arrayBuffer(), file.name);
+      this.plan.set(result.plan);
+      this.note.set(
+        result.materialsOnlyReason
+          ? `${result.materialsOnlyReason} Du bekommst die komplette Materialliste.`
+          : `${result.format} gelesen. Bauschritte gehen Ebene für Ebene.`,
+      );
+    } catch (error) {
+      console.error('Schematic', error);
+      throw new Error(
+        'Die Datei konnte nicht gelesen werden. Unterstützt: .schematic, .schem, .litematic und .nbt.',
+      );
+    } finally {
+      this.reading.set(false);
+    }
+  }
+
   /** Korrektur-Prompt mit allen Fundstellen kopieren, damit die KI selbst nachbessert. */
   async copyFix(summary = ''): Promise<void> {
     const problems = this.plan() ? this.warnings() : [summary, ...this.details()].filter(Boolean);
@@ -167,6 +257,7 @@ export class PlanImport {
   private apply(text: string, unknownAsAir = false): void {
     this.text.set(text);
     this.fixCopied.set(false);
+    this.note.set('');
     const result = text.trim() ? parsePlan(text, { unknownAsAir }) : null;
     this.plan.set(result?.plan ?? null);
     this.error.set(result?.error ?? '');

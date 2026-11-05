@@ -1,6 +1,7 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationDialog } from '../../../confirmation-dialog';
@@ -14,6 +15,9 @@ import {
   PlanProgress,
   analyzePlan,
   isCommonBlock,
+  isMaterialsOnly,
+  planItems,
+  planRawTotals,
   isYoutubeUrl,
   wikiUrl,
   countItems,
@@ -45,7 +49,16 @@ const TAB_KEY = 'bauplaner:tab';
 
 @Component({
   selector: 'app-build-plan-detail',
-  imports: [MatIcon, RouterLink, SkeletonRows, IsoView, LayerGrid, SwipeRow, XpBar],
+  imports: [
+    MatIcon,
+    NgTemplateOutlet,
+    RouterLink,
+    SkeletonRows,
+    IsoView,
+    LayerGrid,
+    SwipeRow,
+    XpBar,
+  ],
   templateUrl: './build-plan-detail.html',
   styleUrl: './build-plan-detail.scss',
 })
@@ -79,6 +92,10 @@ export class BuildPlanDetail {
     return plan ? analyzePlan(plan) : null;
   });
   readonly isExample = computed(() => this.build()?.example === true);
+  readonly materialsOnly = computed(() => {
+    const plan = this.plan();
+    return !!plan && isMaterialsOnly(plan);
+  });
   readonly stats = computed(() => {
     const plan = this.plan();
     const A = this.analysis();
@@ -86,7 +103,9 @@ export class BuildPlanDetail {
     return {
       footprint: `${A.W}×${A.D}`,
       height: A.H,
-      blocks: totalBlocks(plan, A),
+      blocks: isMaterialsOnly(plan)
+        ? planItems(plan).reduce((sum, item) => sum + item.count, 0)
+        : totalBlocks(plan, A),
       steps: A.steps.length,
     };
   });
@@ -155,7 +174,7 @@ export class BuildPlanDetail {
     const A = this.analysis();
     if (!plan || !A) return [];
     const have = this.have();
-    return this.withSwatch(plan, countItems(plan, A.blocks)).map((item) => ({
+    return this.withSwatch(plan, planItems(plan)).map((item) => ({
       ...item,
       stacks: stacksLabel(item.count, item.def.stack),
       have: have.has(item.name),
@@ -168,7 +187,7 @@ export class BuildPlanDetail {
     const plan = this.plan();
     const A = this.analysis();
     return plan && A
-      ? rawTotals(plan, A.blocks).map((r) => ({
+      ? planRawTotals(plan).map((r) => ({
           ...r,
           stacks: stacksLabel(r.count),
           wiki: wikiUrl({ name: r.name, color: '#000' }),

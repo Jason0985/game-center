@@ -254,3 +254,12 @@ h2.ui-section-title.bp-step-h {
     gap: 32px;
   }
 }
+
+.bp-switch-row {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bp-switch.ui-switch--on {
+  background: var(--bp-accent-fill);
+}

@@ -565,3 +565,44 @@
   transform: scaleY(0.5);
   transform-origin: top;
 }
+
+// --- Nur Materialliste ----------------------------------------------------------
+
+.bp-mo-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.bp-mo-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bp-mo-badge mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+.bp-mo-total {
+  margin: 0;
+  padding: 0 6px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.bp-mo-total strong {
+  color: var(--color-text);
+  font-family: var(--bp-font-pixel);
+  font-size: 20px;
+}

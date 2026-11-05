@@ -68,6 +68,18 @@ export interface BlockDef {
   stack?: number;
 }
 
+// Eintrag einer reinen Materialliste (ohne Ebenen und Anleitung)
+export interface MaterialEntry {
+  name: string;
+  count: number;
+  color: string;
+  texture?: TextureKind;
+  farm?: string;
+  wiki?: string;
+  raw?: Record<string, number>;
+  stack?: number;
+}
+
 export interface PlanStep {
   title: string;
   text?: string;
@@ -86,6 +98,62 @@ export interface BuildPlan {
   steps?: PlanStep[];
   // Vorlagen: Video oder Seiten, an denen sich der Bau orientiert
   sources?: string[];
+  // Nur Materialliste: dann sind layers leer
+  materials?: MaterialEntry[];
+}
+
+export const isMaterialsOnly = (plan: BuildPlan): boolean =>
+  !plan.layers.length && !!plan.materials?.length;
+
+/** Ganzen Bauplan auf seine Materialliste reduzieren (z. B. „Nur Materialliste speichern“). */
+export function toMaterialsOnly(plan: BuildPlan): BuildPlan {
+  if (isMaterialsOnly(plan)) return plan;
+  const A = analyzePlan(plan);
+  const materials: MaterialEntry[] = countItems(plan, A.blocks).map((item) => {
+    const m: MaterialEntry = { name: item.name, count: item.count, color: item.def.color };
+    if (item.def.texture) m.texture = item.def.texture;
+    if (item.def.farm) m.farm = item.def.farm;
+    if (item.def.wiki) m.wiki = item.def.wiki;
+    if (item.def.raw) m.raw = item.def.raw;
+    if (item.def.stack) m.stack = item.def.stack;
+    return m;
+  });
+  const { steps: _steps, ...rest } = plan;
+  return { ...rest, palette: {}, layers: [], materials };
+}
+
+/** Materialliste als Zähl-Einträge, egal ob aus Ebenen oder aus „materials“. */
+export function planItems(plan: BuildPlan): ItemCount[] {
+  if (isMaterialsOnly(plan)) {
+    return plan.materials!.map((m) => ({
+      name: m.name,
+      count: m.count,
+      key: m.name,
+      def: {
+        name: m.name,
+        color: m.color,
+        texture: m.texture,
+        farm: m.farm,
+        wiki: m.wiki,
+        raw: m.raw,
+        stack: m.stack,
+      },
+    }));
+  }
+  return countItems(plan, analyzePlan(plan).blocks);
+}
+
+export function planRawTotals(plan: BuildPlan): { name: string; count: number }[] {
+  if (!isMaterialsOnly(plan)) return rawTotals(plan, analyzePlan(plan).blocks);
+  const totals = new Map<string, number>();
+  for (const m of plan.materials!) {
+    for (const [name, amount] of Object.entries(m.raw ?? {})) {
+      totals.set(name, (totals.get(name) ?? 0) + amount * m.count);
+    }
+  }
+  return [...totals.entries()]
+    .map(([name, value]) => ({ name, count: Math.ceil(value - 1e-9) }))
+    .sort((a, b) => b.count - a.count);
 }
 
 export interface PlacedBlock {
@@ -283,6 +351,10 @@ export function validatePlan(raw: unknown, options: ParseOptions = {}): ParseRes
   const name = typeof input['name'] === 'string' ? input['name'].trim() : '';
   if (!name) return { error: 'Es fehlt ein Name („name“).' };
 
+  // Nur Materialliste: keine Ebenen, dafür "materials"
+  const layersGiven = Array.isArray(input['layers']) && (input['layers'] as unknown[]).length > 0;
+  if (!layersGiven && Array.isArray(input['materials'])) return validateMaterials(input, name);
+
   const paletteIn = input['palette'];
   if (!paletteIn || typeof paletteIn !== 'object' || Array.isArray(paletteIn)) {
     return { error: 'Es fehlt die Blockliste („palette“).' };
@@ -454,6 +526,55 @@ function shapeFromName(name: string): BlockShape | null {
   return rules.find(([pattern]) => pattern.test(n))?.[1] ?? null;
 }
 
+function validateMaterials(input: Record<string, unknown>, name: string): ParseResult {
+  const warnings: string[] = [];
+  const materials: MaterialEntry[] = [];
+  (input['materials'] as unknown[]).forEach((value, i) => {
+    const m = value as Partial<MaterialEntry> | null;
+    const label = typeof m?.name === 'string' ? m.name.trim() : '';
+    const count = Number(m?.count);
+    if (!label || !Number.isFinite(count) || count <= 0) {
+      warnings.push(`Material ${i + 1} ohne Namen oder Menge – übersprungen.`);
+      return;
+    }
+    const entry: MaterialEntry = {
+      name: label.slice(0, 80),
+      count: Math.round(count),
+      color: typeof m?.color === 'string' && HEX.test(m.color.trim()) ? m.color.trim() : '#8a8a8a',
+    };
+    if (typeof m?.texture === 'string' && (TEXTURES as readonly string[]).includes(m.texture)) {
+      entry.texture = m.texture as TextureKind;
+    }
+    if (typeof m?.farm === 'string') entry.farm = m.farm.slice(0, 400);
+    if (typeof m?.wiki === 'string' && m.wiki.trim()) entry.wiki = m.wiki.trim().slice(0, 80);
+    if (m?.raw && typeof m.raw === 'object' && !Array.isArray(m.raw)) {
+      const raw = Object.entries(m.raw).filter(
+        ([, v]) => typeof v === 'number' && v > 0 && v < 1000,
+      );
+      if (raw.length) entry.raw = Object.fromEntries(raw);
+    }
+    if (typeof m?.stack === 'number' && [1, 16, 64].includes(m.stack)) entry.stack = m.stack;
+    materials.push(entry);
+  });
+  if (!materials.length) return { error: 'Die Materialliste („materials“) ist leer.' };
+  const plan: BuildPlan = {
+    format: PLAN_FORMAT,
+    name: name.slice(0, 120),
+    description: typeof input['description'] === 'string' ? input['description'] : '',
+    palette: {},
+    layers: [],
+    materials: materials.sort((a, b) => b.count - a.count),
+  };
+  if (typeof input['id'] === 'string') plan.id = input['id'].slice(0, 80);
+  const sources = Array.isArray(input['sources'])
+    ? input['sources'].filter(
+        (url): url is string => typeof url === 'string' && /^https?:\/\/\S+$/.test(url.trim()),
+      )
+    : [];
+  if (sources.length) plan.sources = sources.slice(0, 10).map((url) => url.trim().slice(0, 500));
+  return { plan, warnings };
+}
+
 function mostCommon(values: number[]): number {
   const counts = new Map<number, number>();
   for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
@@ -530,6 +651,8 @@ export interface IdeaForm {
   // Eigene Idee oder Nachbau aus einem YouTube-Video
   source: 'idea' | 'video';
   videoUrl: string;
+  // Nur Materialliste statt Bauplan mit Ebenen und Anleitung
+  materialsOnly: boolean;
 }
 
 export const EMPTY_IDEA: IdeaForm = {
@@ -542,6 +665,7 @@ export const EMPTY_IDEA: IdeaForm = {
   mode: 'survival',
   source: 'idea',
   videoUrl: '',
+  materialsOnly: false,
 };
 
 const YOUTUBE =
@@ -662,7 +786,67 @@ const AI_INTRO =
   'Du bist ein erfahrener Minecraft-Baumeister. Ich nutze eine App („Bauplaner“), die aus einem JSON-Bauplan eine 3D-Ansicht, jede Ebene als Raster, eine Schritt-für-Schritt-Bauanleitung und die Materialliste macht. Erstelle mir so einen Bauplan als Datei.';
 
 export function ideaPrompt(form: IdeaForm): string {
+  if (form.materialsOnly) return materialsPrompt(form);
   return form.source === 'video' ? videoPrompt(form) : designPrompt(form);
+}
+
+const MATERIALS_SPEC = `## Dateiformat „${PLAN_FORMAT}“ (nur Materialliste)
+
+Antworte mit genau EINER JSON-Datei (UTF-8, keine Kommentare). Wenn du Dateien erstellen kannst, gib sie als Datei „materialliste-<name>.json“ aus, sonst als einen einzigen \`\`\`json-Codeblock ohne weiteren Text.
+
+{
+  "format": "${PLAN_FORMAT}",
+  "name": "Name des Baus",
+  "description": "1–2 Sätze: was es ist, wie groß, was geschätzt ist",
+  "materials": [
+    { "name": "Blockname auf Deutsch, wie im Spiel", "count": 128, "color": "#rrggbb", "texture": "${TEXTURES.join(' | ')}", "wiki": "Seitentitel im deutschen Minecraft Wiki", "farm": "nur bei seltenen Blöcken: wo man ihn findet", "raw": { "Rohstoff": 0.25 } }
+  ],
+  "sources": ["https://…"]
+}
+
+## Regeln
+1. Eine Zeile pro Item, so wie man es im Inventar braucht: Treppen, Stufen, Zäune usw. einzeln (eine Tür zählt einmal, eine doppelte Stufe als 2 Stufen).
+2. "count" ist die Anzahl Blöcke bzw. Items (ganze Zahl). Zähl lieber großzügig als zu knapp.
+3. Sortiert nach Menge, die größte zuerst.
+4. "raw" pro Stück, z. B. Bretter { "Eichenstamm": 0.25 }, Glas { "Sand": 1 }, Holztreppe { "Eichenstamm": 0.375 } – so sieht man, was man insgesamt farmen muss.
+5. Keine Ebenen ("layers") und keine Bauschritte ("steps").
+6. Prüf vor der Ausgabe: gültiges JSON, jede Menge > 0, jeder Name einmal.`;
+
+/** Nur die Materialliste: was man farmen muss, ohne Anleitung. */
+function materialsPrompt(form: IdeaForm): string {
+  const video = form.source === 'video';
+  return [
+    'Du bist ein erfahrener Minecraft-Baumeister. Ich will nur wissen, welche Materialien ich für einen Bau brauche und farmen muss – keine Bauanleitung. Meine App („Bauplaner“) zeigt daraus eine Materialliste zum Abhaken.',
+    '',
+    ...(video
+      ? [
+          '## Vorlage: YouTube-Video',
+          form.videoUrl.trim() || '(Link fehlt)',
+          '',
+          '1. Sieh dir das komplette Video an – das Bild, nicht nur Titel oder Beschreibung – und zähl, welche Blöcke in welcher Menge verbaut werden.',
+          '2. Wenn du den Inhalt des Videos nicht ansehen kannst, antworte nur mit dem Satz „Ich kann dieses Video nicht ansehen.“',
+          '3. Such auch im Internet nach dem Video (Beschreibung, Kommentare, verlinkte Seiten) – oft gibt es dort schon eine Materialliste.',
+          '4. Was verdeckt ist, schätzt du und schreibst in "description", was geschätzt ist.',
+          '',
+          '## Meine Wünsche',
+          line('Name', form.name, 'wie im Video'),
+          line('Änderungen gegenüber dem Video', form.extra, 'keine'),
+        ]
+      : [
+          '## Mein Bau',
+          line('Name', form.name, 'denk dir einen passenden aus'),
+          line('Was es sein soll', form.what, 'ein schöner Bau'),
+          line('Ungefähre Größe', form.size, 'passend zur Idee'),
+          line('Stil', form.style, 'passend zur Idee'),
+          line('Wunschblöcke', form.blocks, 'egal'),
+          line('Besonderheiten', form.extra, 'keine'),
+          '',
+          'Überleg dir den Bau so, wie ihn erfahrene Builder umsetzen würden (gern mit Websuche nach Vorlagen), und rechne die Materialien dafür aus.',
+        ]),
+    modeLine(form),
+    '',
+    MATERIALS_SPEC,
+  ].join('\n');
 }
 
 const line = (label: string, value: string, fallback: string) =>

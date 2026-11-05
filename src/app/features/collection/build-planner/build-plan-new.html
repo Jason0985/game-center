@@ -48,6 +48,23 @@
               }
             </label>
           }
+          <button
+            type="button"
+            class="ui-row bp-switch-row"
+            role="switch"
+            [attr.aria-checked]="form().materialsOnly"
+            (click)="toggleMaterialsOnly()"
+          >
+            <span class="ui-row-text">
+              <span class="bp-mode-label">Nur Materialliste</span>
+              <span class="ui-row-sub">Ohne Anleitung – nur was du farmen musst</span>
+            </span>
+            <span
+              class="ui-switch bp-switch"
+              [class.ui-switch--on]="form().materialsOnly"
+              aria-hidden="true"
+            ></span>
+          </button>
           <div class="ui-row bp-mode">
             <span class="bp-mode-label" id="bp-mode">Spielmodus</span>
             <div class="ui-segmented" role="group" aria-labelledby="bp-mode">
@@ -120,6 +137,9 @@
           <app-plan-import
             [busy]="saving()"
             [confirmLabel]="session.isLoggedIn() ? 'Speichern' : 'Zum Speichern anmelden'"
+            [materialsLabel]="
+              session.isLoggedIn() ? 'Materialliste speichern' : 'Zum Speichern anmelden'
+            "
             (confirm)="save($event)"
           />
         </section>
