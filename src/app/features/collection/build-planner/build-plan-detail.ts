@@ -13,7 +13,9 @@ import {
   PlacedBlock,
   PlanProgress,
   analyzePlan,
+  isCommonBlock,
   isYoutubeUrl,
+  wikiUrl,
   countItems,
   planFileName,
   rawTotals,
@@ -33,6 +35,9 @@ interface MaterialRow extends ItemCount {
   swatch: string;
   stacks: string;
   have: boolean;
+  // Hinweis zum Beschaffen nur bei selteneren Blöcken
+  hint: string;
+  wiki: string;
 }
 
 const TAB_KEY = 'bauplaner:tab';
@@ -153,6 +158,8 @@ export class BuildPlanDetail {
       ...item,
       stacks: stacksLabel(item.count, item.def.stack),
       have: have.has(item.name),
+      hint: item.def.farm && !isCommonBlock(item.name) ? item.def.farm : '',
+      wiki: wikiUrl(item.def, item.name),
     }));
   });
   readonly haveCount = computed(() => this.materials().filter((m) => m.have).length);
@@ -160,7 +167,11 @@ export class BuildPlanDetail {
     const plan = this.plan();
     const A = this.analysis();
     return plan && A
-      ? rawTotals(plan, A.blocks).map((r) => ({ ...r, stacks: stacksLabel(r.count) }))
+      ? rawTotals(plan, A.blocks).map((r) => ({
+          ...r,
+          stacks: stacksLabel(r.count),
+          wiki: wikiUrl({ name: r.name, color: '#000' }),
+        }))
       : [];
   });
 
