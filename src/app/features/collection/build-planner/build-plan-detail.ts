@@ -27,6 +27,7 @@ import { BlockMode } from './iso-renderer';
 import { IsoView } from './iso-view';
 import { CellMode, LayerGrid } from './layer-grid';
 import { copyText, downloadText } from './plan-io';
+import { SwipeRow } from './swipe-row';
 import { XpBar } from './xp-bar';
 
 type Tab = 'overview' | 'layers' | 'steps' | 'materials';
@@ -44,7 +45,7 @@ const TAB_KEY = 'bauplaner:tab';
 
 @Component({
   selector: 'app-build-plan-detail',
-  imports: [MatIcon, RouterLink, SkeletonRows, IsoView, LayerGrid, XpBar],
+  imports: [MatIcon, RouterLink, SkeletonRows, IsoView, LayerGrid, SwipeRow, XpBar],
   templateUrl: './build-plan-detail.html',
   styleUrl: './build-plan-detail.scss',
 })

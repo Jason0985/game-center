@@ -1,0 +1,73 @@
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+// Aktion hinter der Zeile, rechts
+.sw-action {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 84px;
+  background: var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sw-action mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.sw-track {
+  position: relative;
+  background: var(--color-surface);
+  touch-action: pan-y;
+  transition: transform 320ms var(--ease-ios);
+}
+
+.sw-track--drag {
+  transition: none;
+}
+
+// Maus: kein Wischen nötig, das Buch erscheint beim Darüberfahren
+.sw-hover {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sw-hover {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--color-surface-raised);
+    color: var(--bp-accent);
+    opacity: 0;
+    translate: 0 -50%;
+    transition: opacity 160ms var(--ease-ios);
+  }
+
+  :host(:hover) .sw-hover,
+  .sw-hover:focus-visible {
+    opacity: 1;
+  }
+
+  .sw-hover mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+}
