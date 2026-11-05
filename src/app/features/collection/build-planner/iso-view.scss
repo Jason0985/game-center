@@ -46,7 +46,9 @@ canvas {
   display: none;
 }
 
-.iso-top > * {
+// Eingeschobene Leiste (isoTop) wieder klickbar machen; ::ng-deep, weil sie die
+// Style-Kennung der Elternseite trägt, nicht die dieser Komponente
+.iso-top ::ng-deep [isoTop] {
   pointer-events: auto;
 }
 
