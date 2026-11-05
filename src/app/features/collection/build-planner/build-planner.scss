@@ -34,6 +34,21 @@
   pointer-events: none;
 }
 
+.bp-thumb--list {
+  display: grid;
+  place-items: center;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.bp-thumb--list mat-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
+}
+
 .bp-progress {
   display: inline-flex;
   flex: none;

@@ -20,6 +20,22 @@
           >Zu meinen Bauwerken</a
         >
       </div>
+    } @else if (plan() && analysis() && materialsOnly()) {
+      <!-- Nur Materialliste: keine 3D-Ansicht, keine Ebenen, keine Anleitung -->
+      <div class="bp-mo-head">
+        <span class="bp-mo-badge"
+          ><mat-icon aria-hidden="true">inventory_2</mat-icon>Materialliste</span
+        >
+        <p class="bp-mo-total">
+          <strong>{{ stats()?.blocks?.toLocaleString('de-DE') }}</strong> Blöcke in
+          <strong>{{ materials().length }}</strong> Sorten
+        </p>
+        @if (plan()!.description) {
+          <p class="bp-description">{{ plan()!.description }}</p>
+        }
+      </div>
+      <ng-container *ngTemplateOutlet="materialsTpl" />
+      <ng-container *ngTemplateOutlet="infoTpl" />
     } @else if (plan() && analysis()) {
       <nav class="ui-segmented bp-tabs" aria-label="Ansicht wählen">
         @for (t of tabs; track t.id) {
@@ -85,50 +101,7 @@
                 </button>
               </div>
 
-              @if (plan()!.sources?.length) {
-                <section class="ui-section" aria-labelledby="bp-sources">
-                  <h2 id="bp-sources" class="ui-section-title">Vorlagen</h2>
-                  <div class="ui-group">
-                    @for (url of plan()!.sources; track url) {
-                      <a class="ui-row bp-link-row" [href]="url" target="_blank" rel="noopener">
-                        <mat-icon class="bp-link-icon" aria-hidden="true">{{
-                          isVideoUrl(url) ? 'smart_display' : 'link'
-                        }}</mat-icon>
-                        <span class="ui-row-text"
-                          ><span class="ui-row-title">{{ hostOf(url) }}</span></span
-                        >
-                        <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
-                      </a>
-                    }
-                  </div>
-                </section>
-              }
-
-              <section class="ui-section" aria-labelledby="bp-file">
-                <h2 id="bp-file" class="ui-section-title">Bauplan</h2>
-                <div class="ui-group">
-                  <button type="button" class="ui-row bp-link-row" (click)="downloadJson()">
-                    <mat-icon class="bp-link-icon" aria-hidden="true">download</mat-icon>
-                    <span class="ui-row-text"
-                      ><span class="ui-row-title">Als Datei sichern</span></span
-                    >
-                  </button>
-                  <button type="button" class="ui-row bp-link-row" (click)="copyJson()">
-                    <mat-icon class="bp-link-icon" aria-hidden="true">content_copy</mat-icon>
-                    <span class="ui-row-text"><span class="ui-row-title">Kopieren</span></span>
-                  </button>
-                  @if (!isExample()) {
-                    <button
-                      type="button"
-                      class="ui-row bp-link-row bp-danger-row"
-                      (click)="remove()"
-                    >
-                      <mat-icon class="bp-link-icon" aria-hidden="true">delete</mat-icon>
-                      <span class="ui-row-text"><span class="ui-row-title">Löschen</span></span>
-                    </button>
-                  }
-                </div>
-              </section>
+              <ng-container *ngTemplateOutlet="infoTpl" />
             </div>
           </div>
         }
@@ -357,65 +330,110 @@
         }
 
         @case ('materials') {
-          <div class="bp-split bp-split--even">
-            <section class="ui-section" aria-labelledby="bp-mat">
-              <div class="ui-section-title">
-                <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
-                <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
-              </div>
-              <div class="ui-group bp-mats">
-                @for (m of materials(); track m.name) {
-                  <app-swipe-row [href]="m.wiki" [label]="m.name + ' im Minecraft Wiki'">
-                    <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
-                      <input
-                        type="checkbox"
-                        class="bp-check"
-                        [checked]="m.have"
-                        (change)="toggleHave(m.name)"
-                      />
-                      <span
-                        class="bp-swatch bp-swatch--lg"
-                        [style.background-color]="m.def.color"
-                        [style.background-image]="m.swatch"
-                      ></span>
-                      <span class="ui-row-text">
-                        <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
-                        @if (m.hint) {
-                          <span class="ui-row-sub bp-mat-hint">{{ m.hint }}</span>
-                        }
-                      </span>
-                      <span class="bp-mat-count">
-                        {{ m.count }}<small>{{ m.stacks }}</small>
-                      </span>
-                    </label>
-                  </app-swipe-row>
-                }
-              </div>
-            </section>
-
-            @if (raw().length) {
-              <section class="ui-section" aria-labelledby="bp-raw">
-                <h2 id="bp-raw" class="ui-section-title">Rohstoffe</h2>
-                <div class="ui-group">
-                  @for (r of raw(); track r.name) {
-                    <a class="ui-row" [href]="r.wiki" target="_blank" rel="noopener">
-                      <span class="ui-row-text"
-                        ><span class="ui-row-title">{{ r.name }}</span></span
-                      >
-                      <span class="bp-mat-count"
-                        >{{ r.count }}<small>{{ r.stacks }}</small></span
-                      >
-                    </a>
-                  }
-                </div>
-                <p class="ui-section-footer">
-                  Aufgerundet. Antippen oder Material nach links wischen öffnet das Minecraft Wiki.
-                </p>
-              </section>
-            }
-          </div>
+          <ng-container *ngTemplateOutlet="materialsTpl" />
         }
       }
     }
   </div>
 </div>
+
+<ng-template #materialsTpl>
+  <div class="bp-split bp-split--even">
+    <section class="ui-section" aria-labelledby="bp-mat">
+      <div class="ui-section-title">
+        <h2 id="bp-mat" class="bp-section-h">Materialliste</h2>
+        <span class="bp-count">{{ haveCount() }}/{{ materials().length }}</span>
+      </div>
+      <div class="ui-group bp-mats">
+        @for (m of materials(); track m.name) {
+          <app-swipe-row [href]="m.wiki" [label]="m.name + ' im Minecraft Wiki'">
+            <label class="ui-row bp-mat" [class.bp-mat--have]="m.have">
+              <input
+                type="checkbox"
+                class="bp-check"
+                [checked]="m.have"
+                (change)="toggleHave(m.name)"
+              />
+              <span
+                class="bp-swatch bp-swatch--lg"
+                [style.background-color]="m.def.color"
+                [style.background-image]="m.swatch"
+              ></span>
+              <span class="ui-row-text">
+                <span class="ui-row-title bp-mat-name">{{ m.name }}</span>
+                @if (m.hint) {
+                  <span class="ui-row-sub bp-mat-hint">{{ m.hint }}</span>
+                }
+              </span>
+              <span class="bp-mat-count">
+                {{ m.count.toLocaleString('de-DE') }}<small>{{ m.stacks }}</small>
+              </span>
+            </label>
+          </app-swipe-row>
+        }
+      </div>
+    </section>
+
+    @if (raw().length) {
+      <section class="ui-section" aria-labelledby="bp-raw">
+        <h2 id="bp-raw" class="ui-section-title">Rohstoffe</h2>
+        <div class="ui-group">
+          @for (r of raw(); track r.name) {
+            <a class="ui-row" [href]="r.wiki" target="_blank" rel="noopener">
+              <span class="ui-row-text"
+                ><span class="ui-row-title">{{ r.name }}</span></span
+              >
+              <span class="bp-mat-count"
+                >{{ r.count.toLocaleString('de-DE') }}<small>{{ r.stacks }}</small></span
+              >
+            </a>
+          }
+        </div>
+        <p class="ui-section-footer">
+          Aufgerundet. Antippen oder Material nach links wischen öffnet das Minecraft Wiki.
+        </p>
+      </section>
+    }
+  </div>
+</ng-template>
+
+<ng-template #infoTpl>
+  @if (plan()!.sources?.length) {
+    <section class="ui-section" aria-labelledby="bp-sources">
+      <h2 id="bp-sources" class="ui-section-title">Vorlagen</h2>
+      <div class="ui-group">
+        @for (url of plan()!.sources; track url) {
+          <a class="ui-row bp-link-row" [href]="url" target="_blank" rel="noopener">
+            <mat-icon class="bp-link-icon" aria-hidden="true">{{
+              isVideoUrl(url) ? 'smart_display' : 'link'
+            }}</mat-icon>
+            <span class="ui-row-text"
+              ><span class="ui-row-title">{{ hostOf(url) }}</span></span
+            >
+            <mat-icon class="ui-chevron" aria-hidden="true">open_in_new</mat-icon>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="ui-section" aria-labelledby="bp-file">
+    <h2 id="bp-file" class="ui-section-title">Bauplan</h2>
+    <div class="ui-group">
+      <button type="button" class="ui-row bp-link-row" (click)="downloadJson()">
+        <mat-icon class="bp-link-icon" aria-hidden="true">download</mat-icon>
+        <span class="ui-row-text"><span class="ui-row-title">Als Datei sichern</span></span>
+      </button>
+      <button type="button" class="ui-row bp-link-row" (click)="copyJson()">
+        <mat-icon class="bp-link-icon" aria-hidden="true">content_copy</mat-icon>
+        <span class="ui-row-text"><span class="ui-row-title">Kopieren</span></span>
+      </button>
+      @if (!isExample()) {
+        <button type="button" class="ui-row bp-link-row bp-danger-row" (click)="remove()">
+          <mat-icon class="bp-link-icon" aria-hidden="true">delete</mat-icon>
+          <span class="ui-row-text"><span class="ui-row-title">Löschen</span></span>
+        </button>
+      }
+    </div>
+  </section>
+</ng-template>

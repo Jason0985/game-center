@@ -74,6 +74,10 @@ export class BuildPlanNew {
     this.setForm({ ...this.form(), source });
   }
 
+  toggleMaterialsOnly(): void {
+    this.setForm({ ...this.form(), materialsOnly: !this.form().materialsOnly });
+  }
+
   setMode(mode: IdeaForm['mode']): void {
     this.setForm({ ...this.form(), mode });
   }

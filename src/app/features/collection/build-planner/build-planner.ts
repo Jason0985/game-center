@@ -4,7 +4,13 @@ import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../../services/session.service';
 import { SkeletonRows } from '../../../ui/skeleton-rows';
-import { PlanAnalysis, analyzePlan, totalBlocks } from './build-plan.model';
+import {
+  PlanAnalysis,
+  analyzePlan,
+  isMaterialsOnly,
+  planItems,
+  totalBlocks,
+} from './build-plan.model';
 import { BuildPlansService, SavedBuild } from './build-plans.service';
 import { IsoView } from './iso-view';
 import { XpBar } from './xp-bar';
@@ -18,6 +24,7 @@ interface BuildRow {
   complete: boolean;
   done: number;
   steps: number;
+  materialsOnly: boolean;
 }
 
 /** Startseite: eigene Bauwerke aus Supabase, darunter das Beispielhaus. */
@@ -62,16 +69,34 @@ export class BuildPlanner {
 
 function toRow(build: SavedBuild): BuildRow {
   const analysis = analyzePlan(build.plan);
+  const link = `/collection/bauplaner/${build.id}`;
+  if (isMaterialsOnly(build.plan)) {
+    const items = planItems(build.plan);
+    const total = items.reduce((sum, item) => sum + item.count, 0);
+    const have = build.progress?.have?.length ?? 0;
+    return {
+      build,
+      analysis,
+      link,
+      sub: `Materialliste, ${total.toLocaleString('de-DE')} Blöcke in ${items.length} Sorten`,
+      progress: have ? `${Math.min(have, items.length)}/${items.length}` : '',
+      complete: have >= items.length,
+      done: Math.min(have, items.length),
+      steps: items.length,
+      materialsOnly: true,
+    };
+  }
   const done = build.progress?.done?.length ?? 0;
   const steps = analysis.steps.length;
   return {
     build,
     analysis,
-    link: `/collection/bauplaner/${build.id}`,
-    sub: `${analysis.W} × ${analysis.D}, ${analysis.H} hoch, ${totalBlocks(build.plan, analysis)} Blöcke`,
+    link,
+    sub: `${analysis.W} × ${analysis.D}, ${analysis.H} hoch, ${totalBlocks(build.plan, analysis).toLocaleString('de-DE')} Blöcke`,
     progress: done ? `${Math.min(done, steps)}/${steps}` : '',
     complete: done >= steps,
     done: Math.min(done, steps),
     steps,
+    materialsOnly: false,
   };
 }
