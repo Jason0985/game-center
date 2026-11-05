@@ -8,6 +8,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const UPDATE_CHECK_MS = 30 * 60 * 1000;
+// So kurz nach dem Start hat noch niemand etwas angefangen: neue Version gleich laden
+const STARTUP_MS = 8000;
 
 // Wo es keinen Installationsdialog gibt, zeigt die App eine Anleitung
 export type InstallGuide = 'ios' | 'mac-safari' | 'other';
@@ -48,9 +50,14 @@ export class PwaService {
     };
     // Beim Zurückkehren in die App nach einer neuen Version fragen (Handys schließen sie selten)
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && this.swUpdate?.isEnabled) {
-        void this.swUpdate.checkForUpdate().catch(() => undefined);
+      if (document.visibilityState !== 'visible' || !this.swUpdate?.isEnabled) return;
+      // Neue Version lag schon bereit: beim Zurückkehren still laden (alte Versionen hielten
+      // sich sonst wochenlang, weil kaum jemand „Neu laden“ antippt)
+      if (this.updateReady() && canReloadQuietly()) {
+        location.reload();
+        return;
       }
+      void this.swUpdate.checkForUpdate().catch(() => undefined);
     };
 
     // Bleibt die App lange offen und sichtbar, zusätzlich alle 30 Minuten (nur ngsw.json, wenige KB)
@@ -71,11 +78,19 @@ export class PwaService {
     });
 
     if (this.swUpdate?.isEnabled) {
+      const started = Date.now();
       this.swUpdate.versionUpdates.subscribe((event) => {
-        if (event.type === 'VERSION_READY') this.updateReady.set(true);
+        if (event.type !== 'VERSION_READY') return;
+        this.updateReady.set(true);
+        // Neue Version still übernehmen, solange niemand mitten in etwas steckt; sonst bleibt
+        // das Banner „Neue Version verfügbar“ und beim nächsten Zurückkehren wird geladen
+        if (Date.now() - started < STARTUP_MS && canReloadQuietly()) location.reload();
       });
       // Zwischengespeicherte Version kaputt: nur Neuladen hilft
-      this.swUpdate.unrecoverable.subscribe(() => this.updateReady.set(true));
+      this.swUpdate.unrecoverable.subscribe(() => {
+        this.updateReady.set(true);
+        location.reload();
+      });
     }
   }
 
@@ -91,6 +106,13 @@ export class PwaService {
   reload(): void {
     location.reload();
   }
+}
+
+/** Nicht in einer laufenden Lobby/Partie und nicht beim Tippen in ein Feld. */
+function canReloadQuietly(): boolean {
+  const inGame = /\/multiplayer\/[^/?#]+/.test(location.pathname);
+  const typing = document.activeElement?.matches?.('input, textarea, [contenteditable]') ?? false;
+  return !inGame && !typing;
 }
 
 function isStandalone(): boolean {
