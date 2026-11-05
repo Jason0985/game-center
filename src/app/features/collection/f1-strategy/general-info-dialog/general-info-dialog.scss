@@ -112,7 +112,13 @@ mat-dialog-content {
   position: relative;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-chart-cyan) 0%, var(--color-chart-green) 38%, var(--color-chart-yellow) 67%, var(--color-chart-orange) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-chart-cyan) 0%,
+    var(--color-chart-green) 38%,
+    var(--color-chart-yellow) 67%,
+    var(--color-chart-orange) 100%
+  );
   opacity: 0.35;
 }
 

@@ -62,7 +62,10 @@ export class EditTrackDialog {
     } catch (error) {
       console.error('F1-Strategie konnte nicht gespeichert werden.', error);
       this.saveError = 'Die Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut.';
-      this.appErrors.report(this.saveError, { title: 'F1-Strategie nicht gespeichert', toast: false });
+      this.appErrors.report(this.saveError, {
+        title: 'F1-Strategie nicht gespeichert',
+        toast: false,
+      });
       this.saving = false;
     }
   }

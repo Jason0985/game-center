@@ -11,7 +11,8 @@ export interface SavedBuild {
   example?: boolean;
 }
 
-const EXAMPLE_PROGRESS_KEY = 'bauplaner:beispiel-fortschritt';
+// Neues Beispielhaus (Cottage): eigener Schlüssel, alter Fortschritt passt nicht mehr
+const EXAMPLE_PROGRESS_KEY = 'bauplaner:beispiel-cottage';
 
 /** Baupläne des angemeldeten Kontos (Tabelle build_plans) plus das eingebaute Beispielhaus. */
 @Injectable({ providedIn: 'root' })
