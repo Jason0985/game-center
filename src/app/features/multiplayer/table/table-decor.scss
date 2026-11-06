@@ -303,3 +303,13 @@
     animation: none;
   }
 }
+
+// Akku: nach einer Weile hält alles an, wo es gerade ist (ThemeService, html[data-decor-calm])
+:host-context(html[data-decor-calm]) {
+  .glint,
+  .fog,
+  .candle,
+  .spider {
+    animation-play-state: paused;
+  }
+}

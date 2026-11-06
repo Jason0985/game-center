@@ -147,3 +147,19 @@
     display: none;
   }
 }
+
+// Akku: Deko kommt nach einer Weile zur Ruhe (ThemeService, html[data-decor-calm])
+:host-context(html[data-decor-calm]) .bulb::after {
+  animation-play-state: paused;
+}
+
+:host-context(html[data-decor-calm]) .xmas-flake,
+:host-context(html[data-decor-calm]) .xmas-shooting-star {
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+:host-context(html[data-decor-calm='on']) .xmas-flake,
+:host-context(html[data-decor-calm='on']) .xmas-shooting-star {
+  display: none;
+}

@@ -157,7 +157,8 @@
   inset: 4%;
   border: max(2px, 0.55cqmin) dashed var(--c);
   border-radius: 50%;
-  animation: marker 1.6s linear infinite;
+  // Ein paar Runden, dann steht der Ring (Akku: keine Endlos-Animation im Leerlauf)
+  animation: marker 1.6s linear 3;
 }
 
 .marker.aimed::after {
@@ -219,7 +220,7 @@
 }
 
 .piece.movable svg {
-  animation: hop 0.9s ease-in-out infinite;
+  animation: hop 0.9s ease-in-out 4;
   filter: drop-shadow(0 0 max(3px, 0.8cqmin) #ffffff);
 }
 
@@ -393,7 +394,13 @@
 
 .die.ready {
   cursor: pointer;
-  animation: ready 1.4s ease-in-out infinite;
+  // Ring fest, nur ein paar Pulse (scale wird nicht neu gezeichnet)
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 3px var(--c),
+    0 0 0 9px color-mix(in srgb, var(--c) 30%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: ready 1.4s ease-in-out 3;
 }
 
 .die.rolling {
@@ -412,11 +419,6 @@
 @keyframes ready {
   50% {
     scale: 1.07;
-    box-shadow:
-      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-      0 0 0 3px var(--c),
-      0 0 0 9px color-mix(in srgb, var(--c) 30%, transparent),
-      0 4px 12px rgba(0, 0, 0, 0.4);
   }
 }
 
