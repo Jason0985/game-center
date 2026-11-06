@@ -41,6 +41,8 @@ const PIPS: Record<number, string[]> = {
 
 // Würfel rollt so lange; Figuren hüpfen je Feld so lange; Banner bleibt so lange
 const ROLL_MS = 750;
+// Kommt der Wurf so lange nicht, hört der Würfel auf zu taumeln
+const ROLL_TIMEOUT_MS = 10_000;
 const STEP_MS = 170;
 const BANNER_MS = 2600;
 
@@ -261,6 +263,11 @@ export class MenschBoard {
   private bannerTimer: ReturnType<typeof setTimeout> | undefined;
   private rollTimer: ReturnType<typeof setTimeout> | undefined;
   private shuffle: ReturnType<typeof setInterval> | undefined;
+  // Seit wann der Würfel taumelt; beim eigenen Wurf ab dem Tippen (rollSeq: Stand davor)
+  private rollStarted = 0;
+  private rollSeq: number | null = null;
+  // Eine eigene Aktion lief (busy war an); geht busy aus, ohne dass der Wurf kam, zurück
+  private sawBusy = false;
 
   constructor() {
     let seq: number | null = null;
@@ -273,6 +280,21 @@ export class MenschBoard {
           this.animateRoll(game.die);
         } else if (!this.rolling()) {
           this.face.set(game.die);
+        }
+      });
+    });
+
+    effect(() => {
+      const busy = this.busy();
+      untracked(() => {
+        if (busy) {
+          this.sawBusy = true;
+        } else if (this.sawBusy) {
+          this.sawBusy = false;
+          if (this.rollSeq !== null && this.rollSeq === this.game().roll_seq) {
+            this.stopRoll();
+            this.face.set(this.game().die);
+          }
         }
       });
     });
@@ -293,8 +315,11 @@ export class MenschBoard {
     });
   }
 
+  // Der Würfel taumelt schon beim Tippen, nicht erst, wenn der Wurf vom Server zurück ist
   doRoll(): void {
-    if (this.canRoll()) this.roll.emit();
+    if (!this.canRoll()) return;
+    this.roll.emit();
+    if (!reducedMotion()) this.startRoll(this.game().roll_seq);
   }
 
   pick(index: number, mine: boolean): void {
@@ -401,20 +426,35 @@ export class MenschBoard {
     this.timers = [];
   }
 
-  // Würfel taumelt, die Augen wechseln, am Ende liegt der neue Wurf
-  private animateRoll(die: number | null): void {
+  private startRoll(seq: number | null): void {
     this.stopRoll();
     this.rolling.set(true);
+    this.rollStarted = performance.now();
+    this.rollSeq = seq;
     this.shuffle = setInterval(() => this.face.set(randomFace()), 80);
     this.rollTimer = setTimeout(() => {
       this.stopRoll();
+      this.face.set(this.game().die);
+    }, ROLL_TIMEOUT_MS);
+  }
+
+  // Würfel taumelt, die Augen wechseln, am Ende liegt der neue Wurf; lief er schon seit dem
+  // Tippen, nur noch den Rest
+  private animateRoll(die: number | null): void {
+    if (this.rollSeq === null) this.startRoll(null);
+    this.rollSeq = null;
+    clearTimeout(this.rollTimer);
+    const left = Math.max(250, ROLL_MS - (performance.now() - this.rollStarted));
+    this.rollTimer = setTimeout(() => {
+      this.stopRoll();
       this.face.set(die);
-    }, ROLL_MS);
+    }, left);
   }
 
   private stopRoll(): void {
     clearInterval(this.shuffle);
     clearTimeout(this.rollTimer);
+    this.rollSeq = null;
     this.rolling.set(false);
   }
 }

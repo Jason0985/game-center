@@ -91,6 +91,30 @@ describe('KniffelBoard', () => {
     expect(emitted).toEqual([8]);
   });
 
+  it('shows the own entry at once and takes it back if it does not arrive', async () => {
+    await render(makeGame());
+    const answer = new Subject<boolean>();
+    vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({
+      afterClosed: () => answer,
+    } as unknown as MatDialogRef<unknown, boolean>);
+    const fullHouse = () => el().querySelectorAll('tbody tr')[10].querySelectorAll('td')[0];
+    el().querySelectorAll<HTMLButtonElement>('button.pick')[7].click();
+    answer.next(true);
+    answer.complete();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    // Steht schon im Block, die übrige Vorschau ist weg
+    expect(fullHouse().textContent!.trim()).toBe('25');
+    expect(el().querySelectorAll('button.pick').length).toBe(0);
+
+    // Die Aktion läuft und scheitert: derselbe Wurf liegt noch, der Eintrag verschwindet
+    fixture.componentRef.setInput('busy', true);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('busy', false);
+    fixture.detectChanges();
+    expect(fullHouse().querySelector('button.pick')?.textContent!.trim()).toBe('25');
+  });
+
   it('asks before crossing out a field with 0', async () => {
     await render(makeGame());
     const emitted: number[] = [];

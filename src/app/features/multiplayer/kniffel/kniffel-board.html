@@ -35,7 +35,7 @@
                   {{ categories[r].name }} <span class="hint">{{ categories[r].hint }}</span>
                 </th>
                 @for (col of columns(); track col.player.user_id) {
-                  @let value = col.player.scores[r];
+                  @let value = col.scores[r];
                   @let preview = col.preview?.[r] ?? null;
                   <td
                     [class.turn]="col.turn"
@@ -96,9 +96,7 @@
     </div>
   </div>
 
-  <div class="tray">
-    <div #cup class="cup" aria-hidden="true"></div>
-
+  <div class="tray" [class.rolling]="rolling()">
     @if (revealed()) {
       <div class="final" role="status">
         <span class="material-symbols-rounded fill trophy" aria-hidden="true">trophy</span>
@@ -124,6 +122,7 @@
       </div>
     } @else {
       <div class="dice" role="group" aria-label="Würfel">
+        <div #cup class="cup" aria-hidden="true"></div>
         @for (i of slots; track i) {
           @let face = faces()[i] ?? 0;
           <button

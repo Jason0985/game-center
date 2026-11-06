@@ -1,5 +1,7 @@
 // Kniffelblock als Papier (in beiden Schemas hell wie ein echter Block), darunter die
-// Würfelreihe auf dem Bedienfeld. Der Becher sitzt unsichtbar über der Reihe, bis gewürfelt wird.
+// Würfelreihe auf dem Bedienfeld; quer (Handy, iPad, Laptop) steht das Bedienfeld als Leiste
+// rechts daneben. Die Zeilen wachsen mit der Höhe, damit der ganze Block ohne Scrollen passt.
+// Der Becher sitzt unsichtbar an der Würfelreihe, bis gewürfelt wird.
 :host {
   --paper: #fbf8ef;
   --paper-sum: #f1ecdd;
@@ -53,12 +55,15 @@
 }
 
 .sheet-wrap {
+  // Platz über dem Block (Deko braucht mehr) für die Zeilenhöhe unten
+  --pad-top: 12px;
   // Über der Tisch-Deko (Schnee bzw. Spinnennetze am Rand)
   position: relative;
   z-index: 1;
   min-height: 0;
   overflow: auto;
-  padding: 12px 10px 14px;
+  padding: var(--pad-top) 10px 14px;
+  container-type: size;
 }
 
 // Rahmen um den Block, an dem die Deko hängt
@@ -70,14 +75,16 @@
 }
 
 .sheet-wrap[data-decor='christmas'] {
-  padding-top: 18px;
+  --pad-top: 18px;
 }
 
 .sheet-wrap[data-decor='halloween'] {
-  padding-top: 34px;
+  --pad-top: 34px;
 }
 
 .sheet {
+  // 16 Zeilen unter dem Kopf (44 px), dazu Abstände und Linien; zwischen 20 und 34 px
+  --row: clamp(20px, calc((100cqh - var(--pad-top) - 86px) / 16), 34px);
   width: 100%;
   border-collapse: collapse;
   border-radius: 10px;
@@ -90,10 +97,10 @@
 
 th,
 td {
-  height: 26px;
+  height: var(--row);
   padding: 0 2px;
   border: 1px solid var(--line);
-  font-size: 13px;
+  font-size: clamp(12px, calc(var(--row) * 0.48), 15px);
   text-align: center;
 }
 
@@ -200,7 +207,7 @@ thead th.win {
 }
 
 .total > * {
-  height: 32px;
+  height: calc(var(--row) + 6px);
   border-top: 2px solid var(--ink);
   font-size: 14px;
 }
@@ -228,9 +235,10 @@ thead th.win {
   display: grid;
   place-items: center;
   width: 100%;
-  height: 22px;
+  height: calc(var(--row) - 4px);
   padding: 0;
   border: 1.5px dashed var(--accent);
+  line-height: 1;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.7);
   color: var(--accent);
@@ -415,8 +423,17 @@ tr.adding td {
 }
 
 .dice {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
+}
+
+// Während des Wurfs eigene Ebenen für Becher und Würfel, damit nichts neu gezeichnet wird
+.tray.rolling .die,
+.tray.rolling .cup {
+  will-change: transform, opacity;
 }
 
 .die {
@@ -494,6 +511,7 @@ tr.adding td {
 // Lederbecher: steht über der Würfelreihe, sichtbar nur während der Animation
 .cup {
   position: absolute;
+  z-index: 1;
   bottom: calc(100% + 8px);
   left: calc(50% - 36px);
   width: 72px;
@@ -611,16 +629,10 @@ tr.adding td {
   font-size: 14px;
 }
 
-// Breiter und hoch genug: größere Zellen und Würfel
+// Breiter und hoch genug: größere Würfel
 @media (min-width: 600px) and (min-height: 820px) {
   :host {
     --die: 60px;
-  }
-
-  th,
-  td {
-    height: 30px;
-    font-size: 15px;
   }
 
   .face i {
@@ -641,10 +653,107 @@ tr.adding td {
   }
 }
 
+// Niedrige Handys hochkant: kompakteres Bedienfeld, damit mehr vom Block zu sehen ist
+@media (orientation: portrait) and (max-height: 700px) {
+  :host {
+    --die: 46px;
+  }
+
+  .tray {
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .actions button {
+    min-height: 44px;
+  }
+
+  .face i {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+// Quer: Bedienfeld als Leiste rechts, der Block bekommt die volle Höhe. Unten bleibt Platz
+// für die schwebende App-Navigation (am Laptop deckt die Bühne sie ab)
+@media (orientation: landscape) and (min-width: 640px) {
+  :host {
+    // Fünf Würfel passen in eine Reihe der Leiste
+    --die: 52px;
+    --nav: calc(var(--bottom-nav-space) - 12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .board {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 30vw, 360px);
+    padding-bottom: var(--nav);
+  }
+
+  .tray {
+    justify-content: center;
+    gap: 14px;
+    margin: 10px 10px 10px 0;
+    padding: 16px 14px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  // Becher links neben den Würfeln, über dem Rand des Blocks
+  .cup {
+    top: calc(50% - 44px);
+    right: calc(100% + 20px);
+    bottom: auto;
+    left: auto;
+  }
+
+  .final {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+// Handy quer: wenig Höhe, Kopf und Zeilen knapper
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 500px) {
+  :host {
+    --die: 44px;
+  }
+
+  .sheet {
+    --row: clamp(19px, calc((100cqh - var(--pad-top) - 74px) / 16), 34px);
+  }
+
+  thead th {
+    height: 34px;
+  }
+
+  .avatar {
+    display: none;
+  }
+
+  .tray {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .actions button {
+    min-height: 42px;
+  }
+
+  .face i {
+    width: 8px;
+    height: 8px;
+  }
+}
+
 // Laptop: Die Bühne deckt die Navigation ab
 @media (min-width: 1280px) and (orientation: landscape) {
+  :host {
+    --nav: 0px;
+  }
+
   .tray {
-    padding-bottom: 20px;
+    margin-bottom: 20px;
   }
 }
 
