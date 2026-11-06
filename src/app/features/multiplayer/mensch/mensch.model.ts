@@ -43,12 +43,13 @@ export const MENSCH_TRIES = 3;
 // Erst nach so langem Warten kann der Host überspringen (die Datenbank lässt 25 s zu)
 export const MENSCH_SKIP_AFTER_S = 30;
 
-// Je Farbe Name und Ton wie die Skyjo-Karten
+// Je Farbe Name und Ton: Edelsteinfarben (Rubin, Saphir, Smaragd, Bernstein), satt genug für
+// Ebenholz und Elfenbein
 export const MENSCH_COLORS = [
-  { name: 'Rot', piece: '#ff6b78' },
-  { name: 'Blau', piece: '#4cc3ef' },
-  { name: 'Grün', piece: '#4fbf68' },
-  { name: 'Gelb', piece: '#f5cf3a' },
+  { name: 'Rot', piece: '#e5484d' },
+  { name: 'Blau', piece: '#3e7bfa' },
+  { name: 'Grün', piece: '#2fb67c' },
+  { name: 'Gelb', piece: '#f2b807' },
 ] as const;
 
 export const MENSCH_RULES = [

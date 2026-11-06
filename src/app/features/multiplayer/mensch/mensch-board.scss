@@ -1,26 +1,25 @@
-// Brett wie eine Edel-Edition: im dunklen Schema Nussbaum im Ebenholzrahmen mit gravierten
-// Messingringen, im hellen Elfenbein-Lack im Nussbaumrahmen mit dunklen Ringen. Das Kreuz als
-// Bahn, Felder in den Emaille-Farben der Skyjo-Karten, Figuren aus Dreieck und Kreis.
-// Quadratisch so groß wie möglich.
+// Brett wie eine Edel-Edition: im dunklen Schema Ebenholz mit gravierten Goldringen, im hellen
+// Elfenbein-Lack im Nussbaumrahmen mit dunklen Ringen. Das Kreuz als Bahn, Felder in
+// Edelsteinfarben, Figuren aus Dreieck und Kreis. Quadratisch so groß wie möglich.
 // Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer: Spieler und Bedienfeld als Leiste
 // rechts, zusammen mit dem Brett mittig.
-// Felder, Kegel und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
+// Felder, Figuren und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
 :host {
   --die: 64px;
   // Lack, Rahmen, Feldgrund, Ringe, Bahn des Kreuzes und Ring der ziehbaren Figuren
-  --wood: #3d2b20;
-  --wood-edge: #261a13;
-  --frame: #150e09;
-  --well: #1e1510;
-  --brass: #c9a468;
-  --lane: rgba(255, 228, 185, 0.07);
+  --wood: #241e19;
+  --wood-edge: #14100c;
+  --frame: #0b0907;
+  --well: #110d0a;
+  --brass: #d1ab4c;
+  --lane: rgba(255, 220, 150, 0.06);
   --turn-ring: #f4e7cf;
   // Lichter und Schatten auf der Platte
-  --plate-line: rgba(201, 164, 104, 0.35);
+  --plate-line: rgba(209, 171, 76, 0.4);
   --plate-glow: rgba(0, 0, 0, 0.35);
-  --path-line: rgba(201, 164, 104, 0.3);
+  --path-line: rgba(209, 171, 76, 0.3);
   --well-shade: rgba(0, 0, 0, 0.55);
-  --well-lip: rgba(255, 228, 185, 0.08);
+  --well-lip: rgba(255, 220, 150, 0.08);
   --deep-shadow: rgba(0, 0, 0, 0.5);
   display: grid;
   min-height: 0;
@@ -196,14 +195,15 @@
   background: var(--c);
 }
 
-// Ziel: zur Mitte hin kräftiger (Stufe 1–4)
+// Ziel: zur Mitte hin kräftiger (Stufe 1–4); in OKLab gemischt, sonst wird die Farbe mit dem
+// Feldgrund grau statt satt
 .field.goal::after {
-  background: color-mix(in srgb, var(--c) calc(30% + var(--step) * 17%), var(--well));
+  background: color-mix(in oklab, var(--c) calc(30% + var(--step) * 17%), var(--well));
 }
 
 .field.house::after {
   inset: 13%;
-  background: color-mix(in srgb, var(--c) 30%, var(--well));
+  background: color-mix(in oklab, var(--c) 30%, var(--well));
 }
 
 // Haus einer Farbe ohne Spieler: nur angedeutet
