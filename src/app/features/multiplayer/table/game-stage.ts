@@ -1,4 +1,14 @@
-import { Component, inject, input, output, signal, ViewContainerRef } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+  ViewContainerRef,
+} from '@angular/core';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,6 +27,7 @@ import {
   HalloweenPumpkins,
 } from '../../../ui/halloween/halloween-decor';
 import { LobbyChatSheet } from '../lobby/lobby-chat-sheet';
+import { ChatPopups } from './chat-popups';
 import { LobbyChatStore } from '../lobby/lobby-chat.store';
 import { GameReactions, REACTIONS, ReactionLayer } from './game-reactions';
 import { HistoryRow } from './history-sheet';
@@ -41,6 +52,7 @@ import { RulesDialog, RulesDialogData } from './rules-dialog';
     HalloweenLights,
     HalloweenPumpkins,
     ReactionLayer,
+    ChatPopups,
   ],
   templateUrl: './game-stage.html',
   styleUrl: './game-stage.scss',
@@ -54,6 +66,12 @@ export class GameStage {
   readonly reactions = inject(GameReactions, { optional: true });
   readonly reactionList = REACTIONS;
   readonly pickerOpen = signal(false);
+  // Chat-Knopf im Kopf: neue Nachrichten wachsen aus ihm, er wackelt dabei kurz (chatPing);
+  // bei offenem Chat bleiben sie aus
+  readonly chatButton = viewChild<ElementRef<HTMLElement>>('chatButton');
+  readonly chatOpen = signal(false);
+  readonly chatPing = signal(false);
+  private pingTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Saisonale Deko aus den Einstellungen, wie in der App-Schale
   readonly decor = inject(ThemeService).decor;
@@ -95,14 +113,30 @@ export class GameStage {
     this.pickerOpen.set(false);
   }
 
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.pingTimer));
+  }
+
+  pingChat(): void {
+    clearTimeout(this.pingTimer);
+    // Erst aus, damit das Wackeln bei schnell hintereinander kommenden Nachrichten neu beginnt
+    this.chatPing.set(false);
+    requestAnimationFrame(() => {
+      this.chatPing.set(true);
+      this.pingTimer = setTimeout(() => this.chatPing.set(false), 800);
+    });
+  }
+
   openChat(): void {
-    this.bottomSheet.open(LobbyChatSheet, {
+    this.chatOpen.set(true);
+    const ref = this.bottomSheet.open(LobbyChatSheet, {
       viewContainerRef: this.viewContainer,
       panelClass: 'app-sheet-panel',
       backdropClass: 'app-sheet-backdrop',
       ariaLabel: 'Lobby-Chat',
       autoFocus: 'dialog',
     });
+    ref.afterDismissed().subscribe(() => this.chatOpen.set(false));
   }
 
   openRules(): void {

@@ -63,6 +63,13 @@
   height: calc(100% / var(--cells));
 }
 
+// Figuren laufen per transform (GPU) statt left/top: ein Feld ist genau eine Figur breit
+.piece {
+  left: 0;
+  top: 0;
+  transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+}
+
 .path {
   position: absolute;
   inset: 0;
@@ -172,9 +179,7 @@
   border: 0;
   background: none;
   cursor: default;
-  transition:
-    left 0.16s cubic-bezier(0.3, 0.7, 0.4, 1),
-    top 0.16s cubic-bezier(0.3, 0.7, 0.4, 1);
+  transition: transform 0.16s cubic-bezier(0.3, 0.7, 0.4, 1);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -205,9 +210,7 @@
 
 .piece.flying {
   z-index: 4;
-  transition:
-    left 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2),
-    top 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2);
+  transition: transform 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2);
 }
 
 .piece.movable {
@@ -394,7 +397,7 @@
 }
 
 .die.rolling {
-  animation: tumble 0.75s cubic-bezier(0.3, 0.6, 0.4, 1);
+  animation: tumble 0.75s cubic-bezier(0.3, 0.6, 0.4, 1) infinite;
 }
 
 .die.blank .face {
