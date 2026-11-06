@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+// Himmel hinter der Wiese: tagsüber hell, im dunklen Schema Abenddämmerung
+.iso-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--iso-radius, var(--radius-large));
+  background:
+    radial-gradient(120% 70% at 50% 110%, var(--bp-sky-glow), transparent 70%),
+    linear-gradient(180deg, var(--bp-sky-top), var(--bp-sky-bottom));
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+// Gezoomt gehört jede Geste dem Bild (verschieben), nicht der Seite
+.iso-stage--zoomed {
+  touch-action: none;
+  cursor: grab;
+}
+
+.iso-stage--compact {
+  border-radius: 10px;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  image-rendering: pixelated;
+}
+
+.iso-top {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.iso-top:empty {
+  display: none;
+}
+
+// Eingeschobene Leiste (isoTop) wieder klickbar machen; ::ng-deep, weil sie die
+// Style-Kennung der Elternseite trägt, nicht die dieser Komponente
+.iso-top ::ng-deep [isoTop] {
+  pointer-events: auto;
+}
+
+.iso-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 6px;
+}
+
+.iso-controls--start {
+  right: auto;
+  left: 10px;
+}
+
+.iso-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-glass);
+  color: var(--color-text);
+  box-shadow: 0 0 0 0.5px var(--color-glass-edge) inset;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    scale 300ms var(--ease-spring),
+    opacity 200ms var(--ease-ios);
+}
+
+.iso-btn:active:not(:disabled) {
+  scale: 0.9;
+}
+
+.iso-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.iso-btn:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.iso-btn mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}

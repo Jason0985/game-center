@@ -1,0 +1,258 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.import-file {
+  position: relative;
+  overflow: hidden;
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.import-file:focus-within {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.import-file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.import-or {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.import-text {
+  width: 100%;
+  min-height: 110px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font:
+    13px/1.45 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  resize: vertical;
+}
+
+.import-text:focus {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 0;
+}
+
+.import-error {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-danger-light);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.import-error mat-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.preview {
+  padding: 8px;
+}
+
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px 8px;
+}
+
+.preview-body h3 {
+  margin: 0;
+  font-family: var(--bp-font-pixel);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.preview-body p {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.bp-primary,
+.bp-primary:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+  box-shadow: none;
+  color: var(--bp-on-accent);
+}
+
+.import-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-details {
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  padding: 0 0 0 28px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.import-fix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 28px;
+}
+
+.import-fix .ui-pill-btn:first-child {
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+}
+
+.import-note {
+  margin: 0;
+  padding-left: 28px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.import-warn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: -2px 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+}
+
+.import-warn > p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--color-warning);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.import-warn mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.import-warn .import-details {
+  padding-left: 22px;
+}
+
+.import-link {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--bp-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.import-formats {
+  margin: -4px 0 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.import-reading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.import-note-box {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-medium);
+  background: var(--bp-accent-soft);
+  color: var(--color-text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.import-note-box mat-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--bp-accent);
+  font-size: 18px;
+}
+
+.import-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.import-top li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.import-top b {
+  font-family: var(--bp-font-pixel);
+  min-width: 4.5em;
+  text-align: right;
+}
+
+.import-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.import-alt {
+  align-self: center;
+  margin-top: 8px;
+}

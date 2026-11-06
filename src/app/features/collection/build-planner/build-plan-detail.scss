@@ -1,0 +1,608 @@
+@use 'bp-tokens' as bp;
+
+@include bp.tokens;
+
+// Ein Abstand für alles zwischen den Blöcken einer Ansicht
+.bp-page {
+  gap: 20px;
+}
+
+// Monocraft ist breit: Titel kleiner als der normale große Titel
+.bp-title {
+  @include bp.pixel-title;
+  font-size: 28px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+// Ansichten als Segment-Umschalter, beim Scrollen oben angeheftet
+.bp-tabs {
+  position: sticky;
+  top: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px) + 6px);
+  z-index: 5;
+  margin-top: -4px;
+  background: var(--color-glass);
+  box-shadow:
+    0 0 0 0.5px var(--color-glass-edge) inset,
+    0 8px 24px -14px var(--color-shadow-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.bp-tabs button {
+  padding: 0 4px;
+  font-size: 14px;
+}
+
+.bp-primary,
+.bp-primary:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+  box-shadow: 0 8px 20px -10px var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+}
+
+// --- Übersicht ---------------------------------------------------------------
+
+// 3D-Ansicht und Kennzahlen als eine Karte
+.bp-hero {
+  --iso-radius: 15px;
+  padding: 6px 6px 0;
+}
+
+.bp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 14px 0 16px;
+}
+
+.bp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-stat + .bp-stat {
+  border-left: 0.5px solid var(--color-border);
+}
+
+.bp-stat strong {
+  font-family: var(--bp-font-pixel);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bp-stat span {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.bp-description {
+  max-width: 62ch;
+  margin: 0;
+  padding: 0 6px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bp-progress-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// Schlichte Aktionszeilen: farbiges Symbol statt Kachel
+.bp-link-row {
+  min-height: 50px;
+}
+
+.bp-link-icon {
+  flex: none;
+  color: var(--bp-accent);
+}
+
+.bp-danger-row .bp-link-icon,
+.bp-danger-row .ui-row-title {
+  color: var(--color-danger-light);
+}
+
+// --- Karten der Ebenen und Anleitung ---------------------------------------
+
+.bp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.bp-layer-ctl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-layer-num {
+  flex: 1;
+  margin: 0;
+  font-family: var(--bp-font-pixel);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bp-layer-num small {
+  color: var(--color-text-subtle);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.bp-round {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 300ms var(--ease-spring);
+}
+
+.bp-round:active:not(:disabled) {
+  scale: 0.9;
+}
+
+.bp-round:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.bp-round:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.bp-range {
+  width: 100%;
+  margin: -4px 0 0;
+  accent-color: var(--bp-accent-fill);
+}
+
+.bp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 8px;
+  background: var(--color-fill);
+  font-size: 13px;
+}
+
+.bp-chip b {
+  font-family: var(--bp-font-pixel);
+  font-weight: 700;
+}
+
+.bp-swatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background-size: 100% 100%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  image-rendering: pixelated;
+}
+
+.bp-swatch--lg {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+// --- Anleitung ---------------------------------------------------------------
+
+.bp-steps-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bp-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bp-dot {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-fill);
+  color: var(--color-text-muted);
+  font-family: var(--bp-font-pixel);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bp-dot--done {
+  background: var(--bp-accent-fill);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+  color: var(--bp-on-accent);
+}
+
+.bp-dot--current,
+.bp-dot:focus-visible {
+  outline: 2px solid var(--bp-highlight);
+  outline-offset: 2px;
+  color: var(--color-text);
+}
+
+.bp-dot--done.bp-dot--current {
+  color: var(--bp-on-accent);
+}
+
+.bp-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bp-step-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bp-step-count {
+  color: var(--color-text-subtle);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bp-step-name {
+  margin: 0;
+  font-family: var(--font-rounded);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+// Runder Haken wie bei Erinnerungen: leer = offen, grün gefüllt = erledigt
+.bp-done {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: none;
+  color: var(--color-border-strong);
+  cursor: pointer;
+  transition:
+    background-color 260ms var(--ease-ios),
+    border-color 260ms var(--ease-ios),
+    scale 300ms var(--ease-spring);
+}
+
+.bp-done:active {
+  scale: 0.9;
+}
+
+.bp-done:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: 2px;
+}
+
+.bp-done--on {
+  border-color: var(--bp-accent-fill);
+  background: var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+}
+
+.bp-done mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.bp-step-text {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bp-grid-title {
+  margin: 0;
+  font-family: var(--bp-font-pixel);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bp-text-btn {
+  align-self: center;
+  min-height: 40px;
+  margin-top: -8px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--color-text-subtle);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+// --- Material ----------------------------------------------------------------
+
+.bp-section-h {
+  margin: 0;
+  font: inherit;
+}
+
+.bp-count {
+  margin-right: 6px;
+  color: var(--color-text-subtle);
+  font-family: var(--bp-font-pixel);
+  font-size: 15px;
+}
+
+.bp-mats {
+  --ui-row-inset: 92px;
+}
+
+.bp-mat {
+  gap: 12px;
+  cursor: pointer;
+}
+
+.bp-check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--bp-accent-fill);
+}
+
+.bp-mat-name {
+  white-space: normal;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
+// Farm-Tipp nur einzeilig, damit die Liste ruhig bleibt
+.bp-mat-hint {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bp-mat--have .bp-mat-name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.bp-mat--have .bp-swatch {
+  opacity: 0.5;
+}
+
+.bp-mat-count {
+  flex: none;
+  font-family: var(--bp-font-pixel);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: right;
+}
+
+.bp-mat-count small {
+  display: block;
+  color: var(--color-text-subtle);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+// --- Steuerung im 3D-Fenster ---------------------------------------------------
+
+.bp-overlay {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-glass);
+  box-shadow:
+    0 0 0 0.5px var(--color-glass-edge) inset,
+    0 6px 18px -8px rgba(0, 0, 0, 0.45);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.bp-ov-label {
+  min-width: 7.5em;
+  padding: 0 6px;
+  font-family: var(--bp-font-pixel);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bp-ov-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 200ms var(--ease-ios),
+    scale 300ms var(--ease-spring);
+}
+
+.bp-ov-btn:hover:not(:disabled) {
+  background: var(--color-white-08);
+}
+
+.bp-ov-btn:active:not(:disabled) {
+  scale: 0.88;
+}
+
+.bp-ov-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.bp-ov-btn:focus-visible {
+  outline: 2px solid var(--bp-accent);
+  outline-offset: -2px;
+}
+
+.bp-ov-check {
+  width: 32px;
+  height: 32px;
+  margin: 0 2px;
+  border: 2px solid var(--color-border-strong);
+  color: var(--color-border-strong);
+}
+
+.bp-ov-check mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.bp-ov-check--on {
+  border-color: var(--bp-accent-fill);
+  background: var(--bp-accent-fill);
+  color: var(--bp-on-accent);
+}
+
+.bp-ov-check--on:hover:not(:disabled) {
+  background: var(--bp-accent-fill);
+}
+
+// --- Aufteilung: Handy untereinander, ab Tablet nebeneinander --------------------
+
+.bp-split,
+.bp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  // Mehr Platz: Seite breiter als die übliche Lesebreite
+  .bp-page {
+    width: min(100%, 1180px);
+  }
+
+  .bp-tabs {
+    width: min(100%, 560px);
+  }
+
+  .bp-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  // Ebenen: Raster links, 3D rechts; Anleitung: 3D links, Text und Raster rechts
+  .bp-split--layers {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  }
+
+  .bp-split--even {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  }
+
+  .bp-sticky {
+    position: sticky;
+    top: calc(var(--top-bar-height) + env(safe-area-inset-top, 0px) + 72px);
+  }
+}
+
+// Haarlinie zwischen den wischbaren Zeilen, eingerückt bis zum Text
+.bp-mats > app-swipe-row + app-swipe-row::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--ui-row-inset, 16px);
+  z-index: 1;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+  transform: scaleY(0.5);
+  transform-origin: top;
+}
+
+// --- Nur Materialliste ----------------------------------------------------------
+
+.bp-mo-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.bp-mo-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bp-accent-soft);
+  color: var(--bp-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bp-mo-badge mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+.bp-mo-total {
+  margin: 0;
+  padding: 0 6px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.bp-mo-total strong {
+  color: var(--color-text);
+  font-family: var(--bp-font-pixel);
+  font-size: 20px;
+}

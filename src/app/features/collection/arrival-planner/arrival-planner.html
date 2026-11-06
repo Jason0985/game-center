@@ -21,18 +21,26 @@
 
   <main class="planner-content">
     <div class="ui-segmented mode-switch" role="group" aria-label="Verkehrsmittel wählen">
-      <button type="button" [attr.aria-pressed]="mode() === 'car'" (click)="mode.set('car')">
+      <button type="button" [attr.aria-pressed]="mode() === 'car'" (click)="setMode('car')">
         <mat-icon aria-hidden="true">directions_car</mat-icon>
         Auto
       </button>
-      <button type="button" [attr.aria-pressed]="mode() === 'train'" (click)="mode.set('train')">
+      <button type="button" [attr.aria-pressed]="mode() === 'train'" (click)="setMode('train')">
         <mat-icon aria-hidden="true">train</mat-icon>
         Zug
       </button>
+      @if (session.isAdmin()) {
+        <button type="button" [attr.aria-pressed]="mode() === 'uni'" (click)="setMode('uni')">
+          <mat-icon aria-hidden="true">school</mat-icon>
+          Uni
+        </button>
+      }
     </div>
 
     @if (mode() === 'train') {
       <app-arrival-planner-train />
+    } @else if (mode() === 'uni') {
+      <app-arrival-planner-uni [settings]="settings()" (settingsChange)="updateSettings($event)" />
     } @else {
       <section class="arrival-entry ui-surface" aria-labelledby="arrival-label">
         <div class="arrival-entry-copy">

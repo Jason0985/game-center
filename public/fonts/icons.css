@@ -38,3 +38,21 @@
 .material-symbols-rounded {
   font-family: 'Material Symbols Rounded';
 }
+
+/* Monocraft (SIL Open Font License 1.1, Idrees Hassan) für Titel und Zahlen im Bauplaner.
+   Auf Latein + Umlaute zugeschnitten, ohne Ligaturen */
+@font-face {
+  font-family: 'Monocraft';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(monocraft-400.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Monocraft';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(monocraft-700.woff2) format('woff2');
+}

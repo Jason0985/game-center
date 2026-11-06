@@ -1,0 +1,122 @@
+:host {
+  display: block;
+}
+
+.grid {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.axis {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-subtle);
+  font-family: var(--bp-font-pixel);
+  font-size: 11px;
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background-size: 100% 100%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+  image-rendering: pixelated;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Zaun, Mauer, Scheibe, Laterne: kleines Feld in der Mitte
+.cell--thin {
+  background-color: var(--bp-cell-empty);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 46% 46%;
+  box-shadow: inset 0 0 0 1px var(--bp-cell-line);
+}
+
+// Obere Blockhälfte: Strich oben
+.cell--top::after {
+  position: absolute;
+  inset: 2px 2px auto;
+  height: 3px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  content: '';
+}
+
+.cell--empty {
+  background: var(--bp-cell-empty);
+  box-shadow: inset 0 0 0 1px var(--bp-cell-line);
+  cursor: default;
+}
+
+// Ebene darunter: nur als blasser Schatten
+.cell--ghost {
+  opacity: 0.22;
+  box-shadow: none;
+  cursor: default;
+}
+
+.cell--dim {
+  opacity: 0.32;
+}
+
+.cell--new {
+  z-index: 1;
+  box-shadow:
+    inset 0 0 0 2px var(--bp-highlight),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.cell--selected {
+  z-index: 2;
+  outline: 2px solid var(--color-text);
+  outline-offset: 1px;
+}
+
+.cell:focus-visible {
+  z-index: 2;
+  outline: 2px solid var(--bp-highlight);
+  outline-offset: 1px;
+}
+
+.mark {
+  color: #fff;
+  font-size: clamp(9px, 2.6vw, 13px);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.8),
+    0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.front {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.front-hint {
+  color: var(--color-text-subtle);
+}
+
+.info {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}

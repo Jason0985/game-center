@@ -1,0 +1,189 @@
+@use 'arrival-planner-shared';
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.uni-link {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.uni-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--radius-medium);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.uni-input:focus {
+  outline: 2px solid var(--color-primary-light);
+}
+
+.uni-warn {
+  margin: -4px 0 0;
+  color: var(--color-warning);
+  font-size: 13px;
+}
+
+.uni-link-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+// Tageswahl: Pfeile links/rechts, Datum in der Mitte (antippen öffnet den Kalender)
+.uni-day {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uni-round {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-fill);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.uni-date {
+  position: relative;
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-family: var(--font-rounded);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.uni-date input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uni-early {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.uni-early button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.uni-lectures {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 16px;
+}
+
+.uni-lecture {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uni-lecture mat-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  color: var(--color-text-subtle);
+  font-size: 18px;
+}
+
+.uni-lecture--ignored {
+  color: var(--color-text-subtle);
+}
+
+.uni-lecture--ignored .uni-lecture-title {
+  text-decoration: line-through;
+}
+
+.uni-lecture + .uni-lecture {
+  border-top: 0.5px solid var(--color-border);
+}
+
+.uni-lecture-time {
+  flex: none;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.uni-lecture--first .uni-lecture-time {
+  color: var(--color-primary-light);
+  font-weight: 700;
+}
+
+.uni-lecture-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.uni-footer {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.uni-link-btn {
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: var(--color-text-subtle);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.spin {
+  animation: uni-spin 1s linear infinite;
+}
+
+@keyframes uni-spin {
+  to {
+    rotate: 360deg;
+  }
+}

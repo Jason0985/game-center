@@ -24,7 +24,7 @@ interface CollectionItem {
 
 type CollectionGroup = 'Punkte & Tabellen' | 'Racing' | 'Werkzeuge' | 'Multiplayer';
 
-const GROUP_ORDER: CollectionGroup[] = ['Punkte & Tabellen', 'Racing', 'Werkzeuge', 'Multiplayer'];
+const GROUP_ORDER: CollectionGroup[] = ['Werkzeuge', 'Racing', 'Punkte & Tabellen', 'Multiplayer'];
 // Abschnitte zum Auf- und Zuklappen; anfangs ist nur Multiplayer zu
 const INITIALLY_CLOSED: CollectionGroup[] = ['Multiplayer'];
 // Alle Online-Spiele aus der Lobby-Liste: führen in die Lobbys, externe direkt zum Anbieter
@@ -94,6 +94,15 @@ export class Collection {
       description: 'Berechne Aufsteh- und Abfahrtszeit für deinen Termin.',
       icon: 'alarm',
       path: '/collection/arrival-planner',
+    },
+    {
+      title: 'Bauplaner',
+      tile: 'var(--tile-green)',
+      group: 'Werkzeuge',
+      category: 'Bauanleitungen',
+      description: 'Bauwerke Ebene für Ebene nachbauen, neue Ideen per KI-Prompt planen.',
+      icon: 'view_in_ar',
+      path: '/collection/bauplaner',
     },
     {
       title: 'F1 Strategie',

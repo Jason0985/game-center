@@ -75,7 +75,9 @@ export class FriendsService {
       return { ok: false, message: 'Zwischen euch gibt es bereits eine Anfrage.' };
     }
 
-    return error ? failure('Freundschaftsanfrage konnte nicht gesendet werden.', error) : { ok: true };
+    return error
+      ? failure('Freundschaftsanfrage konnte nicht gesendet werden.', error)
+      : { ok: true };
   }
 
   // Freund entfernen (oder offene Anfrage zurückziehen)
@@ -90,6 +92,8 @@ export class FriendsService {
       return failure('Freund konnte nicht entfernt werden.', error);
     }
 
-    return data?.length ? { ok: true } : { ok: false, message: 'Diese Freundschaft besteht nicht mehr.' };
+    return data?.length
+      ? { ok: true }
+      : { ok: false, message: 'Diese Freundschaft besteht nicht mehr.' };
   }
 }

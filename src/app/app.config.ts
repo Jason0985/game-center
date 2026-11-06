@@ -6,7 +6,7 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
-import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideRouter, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
 import { isDevMode } from '@angular/core';
 import { provideServiceWorker } from '@angular/service-worker';
 import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
@@ -14,6 +14,7 @@ import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
 import { routes } from './app.routes';
 import { onPageTransition } from './page-transitions';
 import { AppErrorHandler } from './services/app-error.service';
+import { isChunkLoadError, reloadOnce } from './services/stale-app';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +26,10 @@ export const appConfig: ApplicationConfig = {
     }),
     provideRouter(
       routes,
+      // Seite einer alten App-Version nicht mehr auf dem Server: direkt zum Ziel neu laden
+      withNavigationErrorHandler((event) => {
+        if (isChunkLoadError(event.error)) reloadOnce(new URL(event.url, document.baseURI).href);
+      }),
       withViewTransitions({
         skipInitialTransition: true,
         onViewTransitionCreated: onPageTransition,
