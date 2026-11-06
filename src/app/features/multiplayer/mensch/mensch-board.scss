@@ -1,31 +1,12 @@
-// Brett wie eine Edel-Edition: im dunklen Schema Ebenholz mit gravierten Goldringen, im hellen
-// Elfenbein-Lack im Nussbaumrahmen mit dunklen Ringen. Das Kreuz als Bahn, Felder in
-// Edelsteinfarben, Figuren aus Dreieck und Kreis. Quadratisch so groß wie möglich.
+// Brett wie eine Edel-Edition: Elfenbein-Lack im Nussbaumrahmen mit gravierten dunklen Ringen
+// (in beiden Schemas, wie der Kniffelblock). Das Kreuz als Bahn, Felder in Edelsteinfarben,
+// Figuren aus Dreieck und Kreis. Quadratisch so groß wie möglich.
 // Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer: Spieler und Bedienfeld als Leiste
 // rechts, zusammen mit dem Brett mittig.
 // Felder, Figuren und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
 :host {
   --die: 64px;
   // Lack, Rahmen, Feldgrund, Ringe, Bahn des Kreuzes und Ring der ziehbaren Figuren
-  --wood: #241e19;
-  --wood-edge: #14100c;
-  --frame: #0b0907;
-  --well: #110d0a;
-  --brass: #d1ab4c;
-  --lane: rgba(255, 220, 150, 0.06);
-  --turn-ring: #f4e7cf;
-  // Lichter und Schatten auf der Platte
-  --plate-line: rgba(209, 171, 76, 0.4);
-  --plate-glow: rgba(0, 0, 0, 0.35);
-  --path-line: rgba(209, 171, 76, 0.3);
-  --well-shade: rgba(0, 0, 0, 0.55);
-  --well-lip: rgba(255, 220, 150, 0.08);
-  --deep-shadow: rgba(0, 0, 0, 0.5);
-  display: grid;
-  min-height: 0;
-}
-
-:host-context([data-theme='light']) {
   --wood: #f7f3ea;
   --wood-edge: #e8e0cf;
   --frame: #4a2f1d;
@@ -33,12 +14,15 @@
   --brass: #3a281b;
   --lane: #e6dece;
   --turn-ring: #2a1a10;
+  // Lichter und Schatten auf der Platte
   --plate-line: rgba(255, 255, 255, 0.7);
   --plate-glow: rgba(120, 85, 40, 0.18);
   --path-line: rgba(70, 45, 25, 0.28);
   --well-shade: rgba(70, 45, 25, 0.28);
   --well-lip: transparent;
   --deep-shadow: rgba(70, 45, 25, 0.3);
+  display: grid;
+  min-height: 0;
 }
 
 .board {
