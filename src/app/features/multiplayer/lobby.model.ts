@@ -78,6 +78,13 @@ export interface LobbyMessage {
   created_at: string;
 }
 
+// Lesebestätigung: bis zu welcher Nachricht jemand den Chat gelesen hat und wann
+export interface LobbyChatRead {
+  user_id: string;
+  last_read_id: number;
+  read_at: string;
+}
+
 // So viele Nachrichten lädt der Chat (die Datenbank hält je Lobby 200)
 export const LOBBY_CHAT_LIMIT = 100;
 

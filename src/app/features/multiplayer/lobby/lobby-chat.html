@@ -45,8 +45,55 @@
       } @else {
         <p class="bubble">{{ row.body }}</p>
       }
-      @if (row.last) {
-        <time class="time" [attr.datetime]="row.message.created_at">{{ row.time }}</time>
+      <!-- Uhrzeit und Gelesen in einer Zeile unter der Blase (eigene: Avatare links der Uhrzeit) -->
+      @if (row.last || row.readers.length) {
+        <div class="meta">
+          @if (row.readers.length) {
+            <button
+              type="button"
+              class="reads"
+              [attr.aria-expanded]="openReads() === row.message.id"
+              [attr.aria-label]="
+                'Gelesen von ' +
+                row.readLabel +
+                (row.moreReaders ? ' und ' + row.moreReaders + ' weiteren' : '')
+              "
+              (click)="toggleReads(row.message)"
+            >
+              <span class="reads-avatars" aria-hidden="true">
+                @for (reader of row.readers; track reader.userId) {
+                  <span class="reads-avatar" [style.--avatar]="reader.seed | avatarColor">{{
+                    (reader.name | initials).charAt(0)
+                  }}</span>
+                }
+              </span>
+              @if (row.moreReaders) {
+                <span class="reads-more" aria-hidden="true">+{{ row.moreReaders }}</span>
+              }
+              @if (row.latestRead) {
+                <span class="reads-label" aria-hidden="true">Gelesen</span>
+              }
+            </button>
+          }
+          @if (row.last) {
+            <time class="time" [attr.datetime]="row.message.created_at">{{ row.time }}</time>
+          }
+        </div>
+      }
+      @if (openReads() === row.message.id) {
+        <div class="reads-list" role="list" aria-label="Gelesen von">
+          @for (person of readList(); track person.userId) {
+            <div class="reads-person" role="listitem">
+              <span
+                class="reads-avatar reads-avatar--big"
+                [style.--avatar]="person.seed | avatarColor"
+                >{{ person.name | initials }}</span
+              >
+              <span class="reads-name">{{ person.name }}</span>
+              <span class="reads-time">{{ person.time }}</span>
+            </div>
+          }
+        </div>
       }
     </div>
   }

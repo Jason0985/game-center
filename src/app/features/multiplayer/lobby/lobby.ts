@@ -220,6 +220,14 @@ export class Lobby {
           ...names,
           ...Object.fromEntries(members.map((member) => [member.user_id, member.name])),
         }));
+        this.chat.usernames.update((usernames) => ({
+          ...usernames,
+          ...Object.fromEntries(
+            members.flatMap((member) =>
+              member.profile?.username ? [[member.user_id, member.profile.username]] : [],
+            ),
+          ),
+        }));
         this.chat.canAdopt.set(canAdopt);
       });
     });
