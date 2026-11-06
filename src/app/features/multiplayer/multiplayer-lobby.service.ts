@@ -8,6 +8,7 @@ import {
   LobbyDetail,
   LobbyGameSettings,
   LOBBY_CHAT_LIMIT,
+  LobbyChatRead,
   LobbyMember,
   LobbyMessage,
   LobbyProfile,
@@ -277,6 +278,37 @@ export class MultiplayerLobbyService {
     return watchTables(
       'lobby-chat',
       [{ table: 'lobby_messages', filter: `lobby_id=eq.${lobbyId}` }],
+      onChange,
+    );
+  }
+
+  // Lesebestätigungen der Lobby; null = Laden fehlgeschlagen
+  async loadChatReads(lobbyId: string): Promise<LobbyChatRead[] | null> {
+    const { data, error } = await supabase
+      .from('lobby_chat_reads')
+      .select('user_id, last_read_id, read_at')
+      .eq('lobby_id', lobbyId);
+    if (error) {
+      console.warn('Lesebestätigungen konnten nicht geladen werden.', error);
+      return null;
+    }
+    return data as LobbyChatRead[];
+  }
+
+  // Bis messageId gelesen; Fehler sind nicht schlimm (dann sieht man es beim nächsten Mal)
+  async markChatRead(lobbyId: string, messageId: number): Promise<boolean> {
+    const { error } = await supabase.rpc('lobby_mark_read', {
+      p_lobby_id: lobbyId,
+      p_message_id: messageId,
+    });
+    if (error) console.warn('Lesebestätigung nicht gespeichert.', error);
+    return !error;
+  }
+
+  subscribeToChatReads(lobbyId: string, onChange: () => void): () => void {
+    return watchTables(
+      'lobby-chat-reads',
+      [{ table: 'lobby_chat_reads', filter: `lobby_id=eq.${lobbyId}` }],
       onChange,
     );
   }

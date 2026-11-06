@@ -121,7 +121,120 @@
   font-variant-numeric: tabular-nums;
 }
 
-// Vorschlag: kleine Spielkarte mit dem Kachelsymbol aus der Spielwahl
+// Gelesen: überlappende Avatare derer, die bis hier gelesen haben (wie in der PS-App), an der
+// neuesten Stelle mit „Gelesen“; antippen öffnet die Liste darunter
+.reads {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  margin: 4px 6px 0;
+  padding: 2px 8px 2px 2px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reads:hover,
+.reads[aria-expanded='true'] {
+  background: var(--color-fill);
+}
+
+.reads:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.reads-avatars {
+  display: flex;
+}
+
+.reads-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--chat-bg, var(--color-surface));
+  border-radius: 50%;
+  background: var(--avatar);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.reads-avatars .reads-avatar + .reads-avatar {
+  margin-left: -6px;
+}
+
+.reads-more,
+.reads-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 200px;
+  margin: 4px 0 2px;
+  padding: 6px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  background: var(--color-surface-raised);
+  animation: reads-in 160ms ease-out;
+}
+
+.reads-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+}
+
+.reads-avatar--big {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  font-size: 11px;
+}
+
+.reads-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reads-time {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes reads-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reads-list {
+    animation: none;
+  }
+}
+
 .suggestion {
   display: flex;
   align-items: center;

@@ -69,6 +69,9 @@ describe('Lobby', () => {
     loadMessages: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     subscribeToMessages: ReturnType<typeof vi.fn>;
+    loadChatReads: ReturnType<typeof vi.fn>;
+    markChatRead: ReturnType<typeof vi.fn>;
+    subscribeToChatReads: ReturnType<typeof vi.fn>;
   };
   let flip7: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
   let skipbo: { load: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
@@ -118,6 +121,9 @@ describe('Lobby', () => {
         onChange();
         return () => {};
       }),
+      loadChatReads: vi.fn().mockResolvedValue([]),
+      markChatRead: vi.fn().mockResolvedValue(true),
+      subscribeToChatReads: vi.fn().mockReturnValue(() => {}),
     };
     flip7 = {
       load: vi.fn().mockResolvedValue({ ok: true, value: null }),

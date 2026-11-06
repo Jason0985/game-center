@@ -1,6 +1,6 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { AppErrorService } from '../../../services/app-error.service';
-import { LobbyMessage } from '../lobby.model';
+import { LobbyChatRead, LobbyMessage } from '../lobby.model';
 import { censor } from './chat-filter';
 import { MultiplayerLobbyService } from '../multiplayer-lobby.service';
 
@@ -19,8 +19,12 @@ export class LobbyChatStore {
   readonly messages = signal<LobbyMessage[]>([]);
   readonly loaded = signal(false);
   readonly sending = signal(false);
-  // Anzeigenamen je user_id (auch von Leuten, die die Lobby schon verlassen haben)
+  // Anzeigenamen je user_id (auch von Leuten, die die Lobby schon verlassen haben) und der
+  // Benutzername, nach dem der Avatar eingefärbt wird (wie in der Mitgliederliste)
   readonly names = signal<Record<string, string>>({});
+  readonly usernames = signal<Record<string, string>>({});
+  // Lesebestätigungen aller in der Lobby (live)
+  readonly reads = signal<LobbyChatRead[]>([]);
   // Host in der Warte-Lobby: Vorschläge lassen sich übernehmen
   readonly canAdopt = signal(false);
   adopt: (gameKey: string) => void = () => undefined;
@@ -35,10 +39,16 @@ export class LobbyChatStore {
   );
 
   private stop: (() => void) | null = null;
+  private stopReads: (() => void) | null = null;
   private loadSequence = 0;
+  // Bis wohin der eigene Lesestand schon an den Server ging
+  private sentReadId = 0;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.stop?.());
+    inject(DestroyRef).onDestroy(() => {
+      this.stop?.();
+      this.stopReads?.();
+    });
   }
 
   start(lobbyId: string, userId: string | null): void {
@@ -47,12 +57,16 @@ export class LobbyChatStore {
       return;
     }
     this.stop?.();
+    this.stopReads?.();
     this.lobbyId.set(lobbyId);
     this.userId.set(userId);
     this.messages.set([]);
+    this.reads.set([]);
     this.loaded.set(false);
+    this.sentReadId = 0;
     this.seenId.set(this.readSeen(lobbyId));
     this.stop = this.lobbyService.subscribeToMessages(lobbyId, () => void this.load());
+    this.stopReads = this.lobbyService.subscribeToChatReads(lobbyId, () => void this.loadReads());
   }
 
   async load(): Promise<void> {
@@ -63,6 +77,13 @@ export class LobbyChatStore {
     if (sequence !== this.loadSequence || lobbyId !== this.lobbyId() || !messages) return;
     this.messages.set(messages);
     this.loaded.set(true);
+  }
+
+  async loadReads(): Promise<void> {
+    const lobbyId = this.lobbyId();
+    if (!lobbyId) return;
+    const reads = await this.lobbyService.loadChatReads(lobbyId);
+    if (reads && lobbyId === this.lobbyId()) this.reads.set(reads);
   }
 
   // true = gesendet; Schimpfwörter gehen schon verschleiert raus
@@ -81,9 +102,16 @@ export class LobbyChatStore {
     return true;
   }
 
+  // Chat ist offen: gesehen (Zahl am Chat-Knopf) und für die anderen als gelesen markiert
   markSeen(): void {
     const last = this.messages().at(-1)?.id ?? 0;
     const lobbyId = this.lobbyId();
+    if (lobbyId && last > this.sentReadId) {
+      this.sentReadId = last;
+      void this.lobbyService.markChatRead(lobbyId, last).then((ok) => {
+        if (!ok && this.sentReadId === last) this.sentReadId = 0;
+      });
+    }
     if (!lobbyId || last <= this.seenId()) return;
     this.seenId.set(last);
     try {
@@ -95,6 +123,11 @@ export class LobbyChatStore {
 
   nameOf(userId: string): string {
     return this.names()[userId] ?? 'Ehemaliger Spieler';
+  }
+
+  // Woran der Avatar eingefärbt wird (Benutzername, sonst Anzeigename)
+  avatarSeedOf(userId: string): string {
+    return this.usernames()[userId] ?? this.nameOf(userId);
   }
 
   private readSeen(lobbyId: string): number {
