@@ -43,12 +43,13 @@ export const MENSCH_TRIES = 3;
 // Erst nach so langem Warten kann der Host überspringen (die Datenbank lässt 25 s zu)
 export const MENSCH_SKIP_AFTER_S = 30;
 
-// Je Farbe Name und Töne (Figur, dunkler Rand, helles Feld)
+// Je Farbe Name und Töne wie die Skyjo-Karten: Spielstein (piece), Glanz oben (light) und
+// Kante unten (dark), aus der die Dicke des Steins entsteht
 export const MENSCH_COLORS = [
-  { name: 'Rot', piece: '#e0393e', dark: '#8f1519', field: '#f6c5c3' },
-  { name: 'Blau', piece: '#2f6fdf', dark: '#163c85', field: '#c4d6f6' },
-  { name: 'Grün', piece: '#25a25a', dark: '#0f5c30', field: '#bfe6cc' },
-  { name: 'Gelb', piece: '#f2bd1d', dark: '#8a6500', field: '#fbe7a6' },
+  { name: 'Rot', piece: '#ff6b78', light: '#ffa3ab', dark: '#b8303f' },
+  { name: 'Blau', piece: '#4cc3ef', light: '#93ddf7', dark: '#1d7fa8' },
+  { name: 'Grün', piece: '#4fbf68', light: '#8fdc9f', dark: '#22813a' },
+  { name: 'Gelb', piece: '#f5cf3a', light: '#fae38a', dark: '#b58f0a' },
 ] as const;
 
 export const MENSCH_RULES = [
