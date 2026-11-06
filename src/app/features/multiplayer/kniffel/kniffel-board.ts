@@ -600,18 +600,47 @@ export class KniffelBoard {
     const { cup, els } = parts;
     const { slots, rest, area } = this.geometry;
     const moving = this.gatherMoving;
-    const thrown = { x: area.left + area.width / 2, y: area.top + area.height * 0.72 };
-
-    const animations = [
-      cup.animate(
-        [
+    // Quer steht der Block links neben der Leiste: Der Becher holt kurz nach rechts aus, kippt mit
+    // der Öffnung nach links, und die Würfel fliegen im Bogen auf den Block. Hochkant fliegt der
+    // Becher hinauf über den Block und wird dort ausgeschüttet.
+    const side = area.right <= rest.x;
+    const thrown = side
+      ? { x: rest.x - 36, y: rest.y - 8 }
+      : { x: area.left + area.width / 2, y: area.top + area.height * 0.72 };
+    const cupFrames: Keyframe[] = side
+      ? [
+          { offset: 0, opacity: 1, transform: still(), easing: 'ease-out' },
+          {
+            offset: APPEAR * 0.5,
+            opacity: 1,
+            transform: move(rest, { x: rest.x + 10, y: rest.y + 2 }, { rotate: 14 }),
+            easing: 'ease-in',
+          },
+          {
+            offset: APPEAR,
+            opacity: 1,
+            transform: move(rest, { x: rest.x - 18, y: rest.y - 4 }, { rotate: -105 }),
+          },
+          {
+            offset: 0.22,
+            opacity: 0,
+            transform: move(rest, { x: rest.x - 26, y: rest.y - 4 }, { rotate: -115 }),
+          },
+          {
+            offset: 1,
+            opacity: 0,
+            transform: move(rest, { x: rest.x - 26, y: rest.y - 4 }, { rotate: -115 }),
+          },
+        ]
+      : [
           { offset: 0, opacity: 1, transform: still(), easing: 'ease-in' },
           { offset: APPEAR, opacity: 1, transform: move(rest, thrown, { dy: 40, rotate: 150 }) },
           { offset: 0.2, opacity: 0, transform: move(rest, thrown, { dy: 50, rotate: 160 }) },
           { offset: 1, opacity: 0, transform: move(rest, thrown, { dy: 50, rotate: 160 }) },
-        ],
-        { duration: THROW_MS, fill: 'forwards' },
-      ),
+        ];
+
+    const animations = [
+      cup.animate(cupFrames, { duration: THROW_MS, fill: 'forwards' }),
       ...moving.map((i, k) => {
         const slot = slots[i];
         const spread = moving.length === 1 ? 0.5 : k / (moving.length - 1);
@@ -631,7 +660,10 @@ export class KniffelBoard {
               transform: move(slot, thrown, { rotate: -540, scale: 0.6 }),
               easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)',
             },
-            { offset: 0.25, transform: move(slot, middle, { dy: -50, rotate: -200, scale: 1.2 }) },
+            {
+              offset: 0.25,
+              transform: move(slot, middle, { dy: side ? -80 : -50, rotate: -200, scale: 1.2 }),
+            },
             { offset: LAND, transform: move(slot, bounce, { rotate: tilt - 25 }) },
             { offset: LANDED, transform: move(slot, land, { rotate: tilt }) },
             {
