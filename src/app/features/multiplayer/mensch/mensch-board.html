@@ -3,10 +3,36 @@
   <div class="arena">
     <div class="plate" [style.--cells]="size">
       <svg class="path" [attr.viewBox]="'0 0 ' + size + ' ' + size" aria-hidden="true">
-        <polygon [attr.points]="path()" />
+        <!-- Das Kreuz als Fläche (symmetrisch, dreht sich nicht mit) -->
+        <rect class="lane" x="3.94" y="0.06" width="3.12" height="10.88" rx="0.55" />
+        <rect class="lane" x="0.06" y="3.94" width="10.88" height="3.12" rx="0.55" />
+        @for (lane of goalLanes(); track lane.color) {
+          <line
+            class="goal-lane"
+            [attr.x1]="lane.x1"
+            [attr.y1]="lane.y1"
+            [attr.x2]="lane.x2"
+            [attr.y2]="lane.y2"
+            [style.--c]="colors[lane.color].piece"
+          />
+        }
+        <polygon class="line" [attr.points]="path()" />
       </svg>
 
-      <span class="center" [style.background]="centerGradient()" aria-hidden="true"></span>
+      @for (dock of docks(); track dock.color) {
+        <span
+          class="dock"
+          [class.turn]="dock.turn"
+          [style.--x]="dock.x"
+          [style.--y]="dock.y"
+          [style.--c]="colors[dock.color].piece"
+          aria-hidden="true"
+        ></span>
+      }
+
+      <span class="center" aria-hidden="true">
+        <span class="diamond" [style.background]="centerGradient()"></span>
+      </span>
 
       @for (field of fields(); track $index) {
         <span
@@ -14,7 +40,7 @@
           [style.--x]="field.x"
           [style.--y]="field.y"
           [style.--c]="field.color === null ? null : colors[field.color].piece"
-          [style.--f]="field.color === null ? null : colors[field.color].field"
+          [style.--step]="field.step ?? null"
           aria-hidden="true"
         ></span>
       }
@@ -50,7 +76,6 @@
           [style.--x]="piece.x"
           [style.--y]="piece.y"
           [style.--c]="colors[piece.color].piece"
-          [style.--d]="colors[piece.color].dark"
           [disabled]="!(piece.movable && canMove())"
           [attr.aria-label]="piece.label + (piece.movable && canMove() ? ', ziehen' : '')"
           (click)="pick(piece.index, piece.mine)"
@@ -59,13 +84,11 @@
           (focus)="piece.movable && aimed.set(piece.index)"
           (blur)="aimed.set(null)"
         >
-          <svg viewBox="0 0 40 40" aria-hidden="true">
-            <ellipse class="shadow" cx="20" cy="35" rx="12" ry="3.5" />
-            <path
-              class="body"
-              d="M11 34c0-6 3.5-10 6.2-12.4a8.4 8.4 0 1 1 5.6 0C25.5 24 29 28 29 34c0 1.4-4 2.4-9 2.4s-9-1-9-2.4z"
-            />
-            <ellipse class="shine" cx="16.6" cy="11" rx="2.4" ry="3.2" />
+          <svg class="pawn" viewBox="0 0 40 40" aria-hidden="true">
+            <path class="fill round" d="M12.5 32.5 20 16.5l7.5 16z" />
+            <path class="side round" d="M20 16.5l7.5 16H20z" />
+            <circle class="fill" cx="20" cy="11.2" r="5.2" />
+            <path class="side" d="M20 6a5.2 5.2 0 0 1 0 10.4z" />
           </svg>
         </button>
       }

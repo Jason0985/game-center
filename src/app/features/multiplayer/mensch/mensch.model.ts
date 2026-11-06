@@ -43,12 +43,13 @@ export const MENSCH_TRIES = 3;
 // Erst nach so langem Warten kann der Host überspringen (die Datenbank lässt 25 s zu)
 export const MENSCH_SKIP_AFTER_S = 30;
 
-// Je Farbe Name und Töne (Figur, dunkler Rand, helles Feld)
+// Je Farbe Name und Ton: Edelsteinfarben (Rubin, Saphir, Smaragd, Bernstein), satt genug für
+// Ebenholz und Elfenbein
 export const MENSCH_COLORS = [
-  { name: 'Rot', piece: '#e0393e', dark: '#8f1519', field: '#f6c5c3' },
-  { name: 'Blau', piece: '#2f6fdf', dark: '#163c85', field: '#c4d6f6' },
-  { name: 'Grün', piece: '#25a25a', dark: '#0f5c30', field: '#bfe6cc' },
-  { name: 'Gelb', piece: '#f2bd1d', dark: '#8a6500', field: '#fbe7a6' },
+  { name: 'Rot', piece: '#e5484d' },
+  { name: 'Blau', piece: '#3e7bfa' },
+  { name: 'Grün', piece: '#2fb67c' },
+  { name: 'Gelb', piece: '#f2b807' },
 ] as const;
 
 export const MENSCH_RULES = [

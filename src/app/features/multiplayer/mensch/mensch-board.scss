@@ -1,13 +1,26 @@
-// Holzbrett (in beiden Schemas hell wie ein echtes Brett), quadratisch so groß wie möglich.
-// Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer (iPad quer, Laptop, Handy quer):
-// Spieler und Bedienfeld als Leiste rechts, zusammen mit dem Brett mittig.
+// Brett wie eine Edel-Edition: Elfenbein-Lack im Nussbaumrahmen mit gravierten dunklen Ringen
+// (in beiden Schemas, wie der Kniffelblock). Das Kreuz als Bahn, Felder in Edelsteinfarben,
+// Figuren aus Dreieck und Kreis. Quadratisch so groß wie möglich.
+// Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer: Spieler und Bedienfeld als Leiste
+// rechts, zusammen mit dem Brett mittig.
 // Felder, Figuren und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
 :host {
-  --wood-light: #f6e7bf;
-  --wood: #e9cf92;
-  --wood-edge: #9a6a35;
-  --ink: #4a3317;
   --die: 64px;
+  // Lack, Rahmen, Feldgrund, Ringe, Bahn des Kreuzes und Ring der ziehbaren Figuren
+  --wood: #f7f3ea;
+  --wood-edge: #e8e0cf;
+  --frame: #4a2f1d;
+  --well: #fbf8f1;
+  --brass: #3a281b;
+  --lane: #e6dece;
+  --turn-ring: #2a1a10;
+  // Lichter und Schatten auf der Platte
+  --plate-line: rgba(255, 255, 255, 0.7);
+  --plate-glow: rgba(120, 85, 40, 0.18);
+  --path-line: rgba(70, 45, 25, 0.28);
+  --well-shade: rgba(70, 45, 25, 0.28);
+  --well-lip: transparent;
+  --deep-shadow: rgba(70, 45, 25, 0.3);
   display: grid;
   min-height: 0;
 }
@@ -36,18 +49,21 @@
   container-type: size;
 }
 
+// Platte: Nussbaumrahmen, darin der Lack mit leichtem Schimmer zur Mitte
 .plate {
+  --table-turn: var(--turn-ring);
   position: relative;
   width: min(100cqw, 100cqh);
   aspect-ratio: 1;
   box-sizing: border-box;
-  border: clamp(4px, 1.4cqmin, 10px) solid var(--wood-edge);
-  border-radius: 4%;
-  background: radial-gradient(circle at 50% 50%, var(--wood-light), var(--wood) 75%), var(--wood);
+  border: clamp(5px, 1.6cqmin, 12px) solid var(--frame);
+  border-radius: 5%;
+  background: radial-gradient(circle at 50% 40%, var(--wood), var(--wood-edge) 88%);
   box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.35),
-    inset 0 0 30px rgba(120, 70, 20, 0.25),
-    0 12px 32px rgba(0, 0, 0, 0.4);
+    inset 0 0 0 1px var(--plate-line),
+    inset 0 0 40px var(--plate-glow),
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 18px 44px rgba(0, 0, 0, 0.5);
 }
 
 // Gemeinsames Raster
@@ -55,7 +71,8 @@
 .piece,
 .marker,
 .arrow,
-.center {
+.center,
+.dock {
   position: absolute;
   left: calc(var(--x) * 100% / var(--cells));
   top: calc(var(--y) * 100% / var(--cells));
@@ -63,7 +80,7 @@
   height: calc(100% / var(--cells));
 }
 
-// Figuren laufen per transform (GPU) statt left/top: ein Feld ist genau eine Figur breit
+// Kegel laufen per transform (GPU) statt left/top: ein Feld ist genau ein Kegel breit
 .piece {
   left: 0;
   top: 0;
@@ -77,61 +94,108 @@
   height: 100%;
 }
 
-.path polygon {
+// Bahnen: das Kreuz als Fläche (lane) unter den Feldern, Zielbahnen in Farbe, dazu eine
+// feine Linie entlang des Wegs; Breiten in Feldern
+.path polygon,
+.path line {
   fill: none;
-  stroke: var(--ink);
+  stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 0.07;
-  opacity: 0.55;
 }
 
+.path .lane {
+  fill: var(--lane);
+}
+
+.path .goal-lane {
+  stroke: color-mix(in srgb, var(--c) 28%, transparent);
+  stroke-width: 0.86;
+}
+
+.path .line {
+  stroke: var(--path-line);
+  stroke-width: 0.03;
+}
+
+// Ablage unter den vier Hausfeldern; wer dran ist, dessen Ablage leuchtet in seiner Farbe
+.dock {
+  width: calc(200% / var(--cells));
+  height: calc(200% / var(--cells));
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  border-radius: 24%;
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+  scale: 0.96;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.dock.turn {
+  border-color: var(--c);
+  box-shadow:
+    0 0 0 max(2px, 0.5cqmin) color-mix(in srgb, var(--c) 25%, transparent),
+    0 0 max(14px, 3cqmin) color-mix(in srgb, var(--c) 35%, transparent);
+}
+
+// Mitte: Raute wie auf den Karten, vier Facetten in den Zielfarben, feiner Innenrahmen
 .center {
   --x: 5;
   --y: 5;
-  scale: 0.62;
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 2px var(--ink),
-    0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.diamond {
+  position: absolute;
+  inset: 15%;
+  border-radius: 16%;
+  box-shadow:
+    0 0 0 max(1.5px, 0.35cqmin) var(--brass),
+    0 3px 10px var(--deep-shadow);
+  rotate: 45deg;
+}
+
+.diamond::after {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12%;
+}
+
+// Felder: Mulde mit graviertem Ring
 .field::after {
   content: '';
   position: absolute;
-  inset: 11%;
-  box-sizing: border-box;
-  border: max(1.5px, 0.35cqmin) solid var(--ink);
+  inset: 15%;
   border-radius: 50%;
-  background: #fffdf6;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  background: var(--well);
+  box-shadow:
+    inset 0 max(1.5px, 0.35cqmin) max(3px, 0.7cqmin) var(--well-shade),
+    inset 0 0 0 max(1.5px, 0.35cqmin) var(--brass),
+    0 1px 0 var(--well-lip);
 }
 
 .field.start::after {
-  border-color: var(--c);
   background: var(--c);
-  box-shadow:
-    inset 0 0 0 max(2px, 0.5cqmin) rgba(255, 255, 255, 0.6),
-    0 0 0 max(1px, 0.25cqmin) var(--ink);
 }
 
-.field.goal::after,
-.field.house::after {
-  border-color: var(--c);
-  background: var(--f);
+// Ziel: zur Mitte hin kräftiger (Stufe 1–4); in OKLab gemischt, sonst wird die Farbe mit dem
+// Feldgrund grau statt satt
+.field.goal::after {
+  background: color-mix(in oklab, var(--c) calc(30% + var(--step) * 17%), var(--well));
 }
 
 .field.house::after {
-  inset: 9%;
-  border-width: max(2px, 0.5cqmin);
+  inset: 13%;
+  background: color-mix(in oklab, var(--c) 30%, var(--well));
 }
 
-// Haus einer Farbe ohne Spieler
+// Haus einer Farbe ohne Spieler: nur angedeutet
 .field.house.empty::after {
-  border-color: rgba(74, 51, 23, 0.25);
-  background: rgba(255, 255, 255, 0.2);
+  opacity: 0.4;
 }
 
-// Pfeil in Laufrichtung auf dem Startfeld
+// Laufrichtung auf dem Startfeld: schmaler Winkel
 .arrow {
   rotate: var(--a);
   pointer-events: none;
@@ -140,12 +204,13 @@
 .arrow::after {
   content: '';
   position: absolute;
-  inset: 34% 30% 34% 38%;
-  background: rgba(255, 255, 255, 0.9);
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  inset: 36% 34% 36% 40%;
+  background: #ffffff;
+  opacity: 0.9;
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%);
 }
 
-// Zielfeld einer ziehbaren Figur
+// Zielfeld eines ziehbaren Steins
 .marker {
   z-index: 2;
   pointer-events: none;
@@ -154,25 +219,27 @@
 .marker::after {
   content: '';
   position: absolute;
-  inset: 4%;
-  border: max(2px, 0.55cqmin) dashed var(--c);
+  inset: 8%;
+  border: max(2px, 0.45cqmin) solid color-mix(in srgb, var(--c) 85%, transparent);
   border-radius: 50%;
-  // Ein paar Runden, dann steht der Ring (Akku: keine Endlos-Animation im Leerlauf)
-  animation: marker 1.6s linear 3;
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  // Ein paar Atemzüge, dann steht der Ring (Akku: keine Endlos-Animation im Leerlauf)
+  animation: marker 1.2s ease-in-out 3;
 }
 
 .marker.aimed::after {
-  border-style: solid;
-  background: color-mix(in srgb, var(--c) 35%, transparent);
+  background: color-mix(in srgb, var(--c) 38%, transparent);
 }
 
 @keyframes marker {
-  to {
-    rotate: 360deg;
+  50% {
+    scale: 0.84;
+    opacity: 0.6;
   }
 }
 
-// Figur: Kegel mit Kopf, von schräg oben
+// Figuren: Dreieck mit Kreis in der Spielerfarbe, die rechte Hälfte leicht abgedunkelt, dazu
+// ein kleiner Schatten
 .piece {
   z-index: 3;
   display: block;
@@ -184,29 +251,36 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.piece svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+.pawn {
+  position: absolute;
+  inset: -24% -14% 2%;
   overflow: visible;
-  translate: 0 -12%;
+  filter: drop-shadow(0 max(1px, 0.3cqmin) max(1px, 0.25cqmin) rgba(0, 0, 0, 0.6));
   transition:
-    translate 0.15s,
-    scale 0.15s;
+    translate 0.18s cubic-bezier(0.3, 0.7, 0.4, 1),
+    scale 0.18s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-.piece .shadow {
-  fill: rgba(0, 0, 0, 0.3);
-}
-
-.piece .body {
+.pawn .fill {
   fill: var(--c);
-  stroke: var(--d);
-  stroke-width: 1.6;
 }
 
-.piece .shine {
-  fill: rgba(255, 255, 255, 0.55);
+.pawn .round {
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.pawn .side {
+  fill: rgba(0, 0, 0, 0.16);
+}
+
+.pawn .round.fill {
+  color: var(--c);
+}
+
+.pawn .round.side {
+  color: transparent;
 }
 
 .piece.flying {
@@ -214,19 +288,29 @@
   transition: transform 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2);
 }
 
+// Ziehbar: die Figur hebt sich ab und bekommt einen Ring am Fuß
 .piece.movable {
   z-index: 5;
   cursor: pointer;
 }
 
-.piece.movable svg {
-  animation: hop 0.9s ease-in-out 4;
-  filter: drop-shadow(0 0 max(3px, 0.8cqmin) #ffffff);
+.piece.movable::before {
+  content: '';
+  position: absolute;
+  inset: 62% 12% 6%;
+  border: max(2px, 0.45cqmin) solid var(--table-turn);
+  border-radius: 50%;
+  opacity: 0.85;
 }
 
-.piece.movable:hover svg,
-.piece.movable:focus-visible svg {
-  scale: 1.12;
+.piece.movable .pawn {
+  translate: 0 -14%;
+  animation: lift 1.1s ease-in-out 3;
+}
+
+.piece.movable:hover .pawn,
+.piece.movable:focus-visible .pawn {
+  scale: 1.08;
 }
 
 .piece:focus-visible {
@@ -235,9 +319,9 @@
   border-radius: 50%;
 }
 
-@keyframes hop {
+@keyframes lift {
   50% {
-    translate: 0 -24%;
+    translate: 0 -6%;
   }
 }
 
@@ -246,19 +330,33 @@
   top: 50%;
   left: 50%;
   z-index: 6;
-  max-width: 80%;
-  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 82%;
+  padding: 10px 18px 10px 12px;
   border-radius: 999px;
-  background: var(--c);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  color: #ffffff;
-  font-size: clamp(14px, 3.4cqmin, 20px);
-  font-weight: 800;
-  text-align: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  background: var(--color-surface-raised);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 0.5px var(--color-border);
+  color: var(--color-text);
+  font-size: clamp(14px, 3.2cqmin, 18px);
+  font-weight: 700;
   translate: -50% -50%;
   animation: banner 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
   pointer-events: none;
+}
+
+// Stein in der Farbe dessen, der rausgeworfen hat
+.banner::before {
+  content: '';
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.45);
 }
 
 @keyframes banner {
@@ -654,7 +752,7 @@
     transition: none;
   }
 
-  .piece.movable svg,
+  .piece.movable .pawn,
   .die.ready,
   .marker::after {
     animation: none;

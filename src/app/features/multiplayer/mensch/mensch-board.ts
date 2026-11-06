@@ -53,6 +53,8 @@ type Field = {
   y: number;
   kind: 'track' | 'start' | 'goal' | 'house';
   color: number | null;
+  // Zielfeld 1–4 von außen nach innen (die Farbe wird zur Mitte hin kräftiger)
+  step?: number;
 };
 
 // Spielansicht: quadratisches Brett (eigene Farbe unten links) und Bedienfeld mit Würfel und
@@ -109,7 +111,7 @@ export class MenschBoard {
         color: i % 10 === 0 ? i / 10 : null,
       })),
       ...GOALS.flatMap((goal, color) =>
-        goal.map((cell) => ({ ...this.place(cell), kind: 'goal' as const, color })),
+        goal.map((cell, k) => ({ ...this.place(cell), kind: 'goal' as const, color, step: k + 1 })),
       ),
       ...HOUSES.flatMap((house, color) =>
         house.map((cell) => ({
@@ -121,6 +123,22 @@ export class MenschBoard {
     ];
   });
 
+  // Ablage unter den vier Hausfeldern je Farbe im Spiel (2 × 2 Felder); leuchtet, wer dran ist
+  readonly docks = computed(() => {
+    const game = this.game();
+    return game.players
+      .filter((player) => player.state !== 'left')
+      .map((player) => {
+        const cells = HOUSES[player.color].map((cell) => this.place(cell));
+        return {
+          color: player.color,
+          x: Math.min(...cells.map((c) => c.x)),
+          y: Math.min(...cells.map((c) => c.y)),
+          turn: !this.finished() && player.seat === game.turn_seat,
+        };
+      });
+  });
+
   // Weg der Laufbahn als Linie hinter den Feldern (Mittelpunkte in Feldern)
   readonly path = computed(() =>
     TRACK.map((cell) => {
@@ -129,11 +147,20 @@ export class MenschBoard {
     }).join(' '),
   );
 
-  // Mitte des Bretts: die vier Farben, jede zu ihrem Ziel gedreht (Ziele liegen ungedreht
-  // links Rot, oben Blau, rechts Grün, unten Gelb)
+  // Zielbahnen als Linie vom ersten bis zum letzten Zielfeld je Farbe
+  readonly goalLanes = computed(() =>
+    GOALS.map((goal, color) => {
+      const [a, b] = [goal[0], goal[3]].map((cell) => this.place(cell));
+      return { color, x1: a.x + 0.5, y1: a.y + 0.5, x2: b.x + 0.5, y2: b.y + 0.5 };
+    }),
+  );
+
+  // Mitte des Bretts: Raute wie auf den Karten, je Spitze die Farbe ihres Ziels (Ziele liegen
+  // ungedreht links Rot, oben Blau, rechts Grün, unten Gelb). Die Raute ist ein um 45° gedrehtes
+  // Quadrat, daher 90° statt 45° zurück
   readonly centerGradient = computed(() => {
     const [red, blue, green, yellow] = MENSCH_COLORS.map((color) => color.piece);
-    const from = this.turns() * 90 - 45;
+    const from = this.turns() * 90 - 90;
     return `conic-gradient(from ${from}deg, ${blue} 0 25%, ${green} 0 50%, ${yellow} 0 75%, ${red} 0)`;
   });
 
