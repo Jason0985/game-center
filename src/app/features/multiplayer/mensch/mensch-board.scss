@@ -1,19 +1,45 @@
-// Brett wie eine Edel-Edition: heller Elfenbein-Lack im Nussbaumrahmen (in beiden Schemas, wie
-// der Kniffelblock), das Kreuz als leicht dunklere Bahn, Felder mit gravierten Ringen und
-// Emaille-Farben der Skyjo-Karten, Kegel als Figuren. Quadratisch so groß wie möglich.
+// Brett wie eine Edel-Edition: im dunklen Schema Nussbaum im Ebenholzrahmen mit gravierten
+// Messingringen, im hellen Elfenbein-Lack im Nussbaumrahmen mit dunklen Ringen. Das Kreuz als
+// Bahn, Felder in den Emaille-Farben der Skyjo-Karten, Figuren aus Dreieck und Kreis.
+// Quadratisch so groß wie möglich.
 // Hochkant: Spieler oben, Brett, Bedienfeld unten. Quer: Spieler und Bedienfeld als Leiste
 // rechts, zusammen mit dem Brett mittig.
 // Felder, Kegel und Marker sitzen absolut im 11 × 11-Raster (--x, --y, --cells).
 :host {
   --die: 64px;
-  --ivory: #f7f3ea;
-  --ivory-edge: #e8e0cf;
-  --enamel: #fbf8f1;
-  --walnut: #4a2f1d;
-  --ink: #3a281b;
-  --lane: #e6dece;
+  // Lack, Rahmen, Feldgrund, Ringe, Bahn des Kreuzes und Ring der ziehbaren Figuren
+  --wood: #3d2b20;
+  --wood-edge: #261a13;
+  --frame: #150e09;
+  --well: #1e1510;
+  --brass: #c9a468;
+  --lane: rgba(255, 228, 185, 0.07);
+  --turn-ring: #f4e7cf;
+  // Lichter und Schatten auf der Platte
+  --plate-line: rgba(201, 164, 104, 0.35);
+  --plate-glow: rgba(0, 0, 0, 0.35);
+  --path-line: rgba(201, 164, 104, 0.3);
+  --well-shade: rgba(0, 0, 0, 0.55);
+  --well-lip: rgba(255, 228, 185, 0.08);
+  --deep-shadow: rgba(0, 0, 0, 0.5);
   display: grid;
   min-height: 0;
+}
+
+:host-context([data-theme='light']) {
+  --wood: #f7f3ea;
+  --wood-edge: #e8e0cf;
+  --frame: #4a2f1d;
+  --well: #fbf8f1;
+  --brass: #3a281b;
+  --lane: #e6dece;
+  --turn-ring: #2a1a10;
+  --plate-line: rgba(255, 255, 255, 0.7);
+  --plate-glow: rgba(120, 85, 40, 0.18);
+  --path-line: rgba(70, 45, 25, 0.28);
+  --well-shade: rgba(70, 45, 25, 0.28);
+  --well-lip: transparent;
+  --deep-shadow: rgba(70, 45, 25, 0.3);
 }
 
 .board {
@@ -42,18 +68,17 @@
 
 // Platte: Nussbaumrahmen, darin der Lack mit leichtem Schimmer zur Mitte
 .plate {
-  // Ring der ziehbaren Kegel: dunkel auf dem hellen Lack
-  --table-turn: #2a1a10;
+  --table-turn: var(--turn-ring);
   position: relative;
   width: min(100cqw, 100cqh);
   aspect-ratio: 1;
   box-sizing: border-box;
-  border: clamp(5px, 1.6cqmin, 12px) solid var(--walnut);
+  border: clamp(5px, 1.6cqmin, 12px) solid var(--frame);
   border-radius: 5%;
-  background: radial-gradient(circle at 50% 40%, var(--ivory), var(--ivory-edge) 85%);
+  background: radial-gradient(circle at 50% 40%, var(--wood), var(--wood-edge) 88%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
-    inset 0 0 40px rgba(120, 85, 40, 0.18),
+    inset 0 0 0 1px var(--plate-line),
+    inset 0 0 40px var(--plate-glow),
     0 0 0 1px rgba(0, 0, 0, 0.35),
     0 18px 44px rgba(0, 0, 0, 0.5);
 }
@@ -105,7 +130,7 @@
 }
 
 .path .line {
-  stroke: rgba(70, 45, 25, 0.28);
+  stroke: var(--path-line);
   stroke-width: 0.03;
 }
 
@@ -141,8 +166,8 @@
   inset: 15%;
   border-radius: 16%;
   box-shadow:
-    0 0 0 max(1.5px, 0.35cqmin) var(--ink),
-    0 3px 8px rgba(70, 45, 25, 0.3);
+    0 0 0 max(1.5px, 0.35cqmin) var(--brass),
+    0 3px 10px var(--deep-shadow);
   rotate: 45deg;
 }
 
@@ -154,16 +179,17 @@
   border-radius: 12%;
 }
 
-// Felder: Emaille mit graviertem Ring und leichtem Innenschatten
+// Felder: Mulde mit graviertem Ring
 .field::after {
   content: '';
   position: absolute;
   inset: 15%;
   border-radius: 50%;
-  background: var(--enamel);
+  background: var(--well);
   box-shadow:
-    inset 0 1px 2px rgba(70, 45, 25, 0.28),
-    inset 0 0 0 max(1.5px, 0.35cqmin) var(--ink);
+    inset 0 max(1.5px, 0.35cqmin) max(3px, 0.7cqmin) var(--well-shade),
+    inset 0 0 0 max(1.5px, 0.35cqmin) var(--brass),
+    0 1px 0 var(--well-lip);
 }
 
 .field.start::after {
@@ -172,12 +198,12 @@
 
 // Ziel: zur Mitte hin kräftiger (Stufe 1–4)
 .field.goal::after {
-  background: color-mix(in srgb, var(--c) calc(35% + var(--step) * 16%), var(--enamel));
+  background: color-mix(in srgb, var(--c) calc(30% + var(--step) * 17%), var(--well));
 }
 
 .field.house::after {
   inset: 13%;
-  background: color-mix(in srgb, var(--c) 32%, var(--enamel));
+  background: color-mix(in srgb, var(--c) 30%, var(--well));
 }
 
 // Haus einer Farbe ohne Spieler: nur angedeutet
@@ -228,8 +254,8 @@
   }
 }
 
-// Kegel: Fuß, schlanker Körper mit Kragen und Kugelkopf; Licht von links oben (Glanz), rechts
-// die Schattenseite, darunter ein weicher Schlagschatten
+// Figuren: Dreieck mit Kreis in der Spielerfarbe, die rechte Hälfte leicht abgedunkelt, dazu
+// ein kleiner Schatten
 .piece {
   z-index: 3;
   display: block;
@@ -243,39 +269,34 @@
 
 .pawn {
   position: absolute;
-  inset: -14% -2% 8%;
+  inset: -24% -14% 2%;
   overflow: visible;
+  filter: drop-shadow(0 max(1px, 0.3cqmin) max(1px, 0.25cqmin) rgba(0, 0, 0, 0.6));
   transition:
     translate 0.18s cubic-bezier(0.3, 0.7, 0.4, 1),
     scale 0.18s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-.pawn .shadow {
-  fill: rgba(0, 0, 0, 0.35);
-  transition: opacity 0.18s ease;
-}
-
-.pawn .foot,
-.pawn .collar {
-  fill: var(--d);
-}
-
-.pawn .body,
-.pawn .head {
+.pawn .fill {
   fill: var(--c);
 }
 
-.pawn .shade,
-.pawn .head-shade {
-  fill: rgba(0, 0, 0, 0.18);
+.pawn .round {
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
 }
 
-.pawn .gloss {
-  fill: rgba(255, 255, 255, 0.38);
+.pawn .side {
+  fill: rgba(0, 0, 0, 0.16);
 }
 
-.pawn .shine {
-  fill: rgba(255, 255, 255, 0.75);
+.pawn .round.fill {
+  color: var(--c);
+}
+
+.pawn .round.side {
+  color: transparent;
 }
 
 .piece.flying {
@@ -283,7 +304,7 @@
   transition: transform 0.6s cubic-bezier(0.5, -0.3, 0.4, 1.2);
 }
 
-// Ziehbar: der Kegel hebt sich ab (Schatten bleibt unten) und bekommt einen Ring am Fuß
+// Ziehbar: die Figur hebt sich ab und bekommt einen Ring am Fuß
 .piece.movable {
   z-index: 5;
   cursor: pointer;
@@ -301,10 +322,6 @@
 .piece.movable .pawn {
   translate: 0 -14%;
   animation: lift 1.1s ease-in-out 3;
-}
-
-.piece.movable .pawn .shadow {
-  opacity: 0.5;
 }
 
 .piece.movable:hover .pawn,

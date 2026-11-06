@@ -43,12 +43,12 @@ export const MENSCH_TRIES = 3;
 // Erst nach so langem Warten kann der Host überspringen (die Datenbank lässt 25 s zu)
 export const MENSCH_SKIP_AFTER_S = 30;
 
-// Je Farbe Name und Töne wie die Skyjo-Karten: Kegel (piece), Fuß und Kragen (dark)
+// Je Farbe Name und Ton wie die Skyjo-Karten
 export const MENSCH_COLORS = [
-  { name: 'Rot', piece: '#ff6b78', dark: '#b8303f' },
-  { name: 'Blau', piece: '#4cc3ef', dark: '#1d7fa8' },
-  { name: 'Grün', piece: '#4fbf68', dark: '#22813a' },
-  { name: 'Gelb', piece: '#f5cf3a', dark: '#b58f0a' },
+  { name: 'Rot', piece: '#ff6b78' },
+  { name: 'Blau', piece: '#4cc3ef' },
+  { name: 'Grün', piece: '#4fbf68' },
+  { name: 'Gelb', piece: '#f5cf3a' },
 ] as const;
 
 export const MENSCH_RULES = [
