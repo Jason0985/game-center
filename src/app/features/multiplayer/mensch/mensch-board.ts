@@ -147,6 +147,14 @@ export class MenschBoard {
     }).join(' '),
   );
 
+  // Zielbahnen als Linie vom ersten bis zum letzten Zielfeld je Farbe
+  readonly goalLanes = computed(() =>
+    GOALS.map((goal, color) => {
+      const [a, b] = [goal[0], goal[3]].map((cell) => this.place(cell));
+      return { color, x1: a.x + 0.5, y1: a.y + 0.5, x2: b.x + 0.5, y2: b.y + 0.5 };
+    }),
+  );
+
   // Mitte des Bretts: Raute wie auf den Karten, je Spitze die Farbe ihres Ziels (Ziele liegen
   // ungedreht links Rot, oben Blau, rechts Grün, unten Gelb). Die Raute ist ein um 45° gedrehtes
   // Quadrat, daher 90° statt 45° zurück
