@@ -25,7 +25,7 @@ const LOAD_RETRY_MS = 1500;
 // Sicherheitsnetz, falls ein Realtime-Event verloren geht: ohne neues Laden so lange
 // sichtbar am Tisch, wird einmal nachgeladen (sonst wartet der Tisch ewig auf jemanden,
 // dessen App den Zug nie mitbekommen hat)
-const STALE_RELOAD_MS = 15_000;
+const STALE_RELOAD_MS = 30_000;
 
 // Bestätigung beim Abbruch eines Spiels mit eigenem Ende (Option abort)
 export const ABORT_MESSAGE =

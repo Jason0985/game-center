@@ -77,8 +77,9 @@
   from {
     opacity: 1;
   }
+  // Nur die Deckkraft: das Glühen (box-shadow) bleibt fest, sonst würde jede Birne in jedem
+  // Bild neu gezeichnet
   to {
     opacity: 0.45;
-    box-shadow: 0 0 2px 0 var(--bulb);
   }
 }

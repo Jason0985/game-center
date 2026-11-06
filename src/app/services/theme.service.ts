@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 
 /** dark = Grau-Dunkel (einziger Dunkelmodus), system folgt dem Gerät. */
 export type Theme = 'light' | 'dark' | 'system';
@@ -39,6 +40,12 @@ const THEME_COLORS: Record<'light' | 'dark', string> = {
   light: '#f2f2f8',
 };
 
+// Akku: Bewegte Deko (Schnee, Fledermäuse, Funkeln, Nebel …) läuft nach jedem Seitenwechsel
+// so lange, dann blendet sie aus bzw. steht still (html[data-decor-calm], 'fading' → 'on').
+// Sonst zeichnet das Display ununterbrochen mit voller Bildrate.
+const DECOR_AWAKE_MS = 20_000;
+const DECOR_FADE_MS = 2_000;
+
 function isDecor(value: unknown): value is Decor {
   return value === 'none' || value === 'christmas' || value === 'halloween';
 }
@@ -57,6 +64,7 @@ export class ThemeService {
   private readonly prefersLight =
     typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: light)') : null;
   private readonly systemLight = signal(this.prefersLight?.matches ?? false);
+  private calmTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor() {
     const onChange = (event: MediaQueryListEvent) => this.systemLight.set(event.matches);
@@ -74,6 +82,26 @@ export class ThemeService {
       if (decor === 'none') document.documentElement.removeAttribute('data-decor');
       else document.documentElement.setAttribute('data-decor', decor);
     });
+
+    this.wakeDecor();
+    const navigation = inject(Router, { optional: true })?.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) this.wakeDecor();
+    });
+    inject(DestroyRef).onDestroy(() => {
+      navigation?.unsubscribe();
+      this.calmTimers.forEach(clearTimeout);
+    });
+  }
+
+  /** Bewegte Deko wieder anwerfen; nach DECOR_AWAKE_MS kommt sie zur Ruhe. */
+  wakeDecor(): void {
+    this.calmTimers.forEach(clearTimeout);
+    const root = document.documentElement;
+    root.removeAttribute('data-decor-calm');
+    this.calmTimers = [
+      setTimeout(() => root.setAttribute('data-decor-calm', 'fading'), DECOR_AWAKE_MS),
+      setTimeout(() => root.setAttribute('data-decor-calm', 'on'), DECOR_AWAKE_MS + DECOR_FADE_MS),
+    ];
   }
 
   setTheme(theme: Theme): void {
@@ -87,6 +115,7 @@ export class ThemeService {
 
   setDecor(decor: Decor): void {
     this.decor.set(decor);
+    this.wakeDecor();
     try {
       localStorage.setItem(DECOR_KEY, decor);
     } catch {

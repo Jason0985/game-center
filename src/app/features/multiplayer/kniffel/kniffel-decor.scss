@@ -109,3 +109,8 @@
     animation: none;
   }
 }
+
+// Akku: nach einer Weile bleibt die Spinne sitzen (ThemeService, html[data-decor-calm])
+:host-context(html[data-decor-calm]) .spider {
+  animation-play-state: paused;
+}
