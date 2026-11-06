@@ -43,6 +43,9 @@ const PIPS: Record<number, string[]> = {
 const ROLL_MS = 750;
 // Kommt der Wurf so lange nicht, hört der Würfel auf zu taumeln
 const ROLL_TIMEOUT_MS = 10_000;
+// Ist die eigene Aktion fertig, ohne dass der Wurf da ist, kommt er oft noch per Realtime:
+// so lange taumelt der Würfel weiter, bevor er aufgibt
+const RESULT_GRACE_MS = 1500;
 const STEP_MS = 170;
 const BANNER_MS = 2600;
 
@@ -268,6 +271,7 @@ export class MenschBoard {
   private rollSeq: number | null = null;
   // Eine eigene Aktion lief (busy war an); geht busy aus, ohne dass der Wurf kam, zurück
   private sawBusy = false;
+  private graceTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     let seq: number | null = null;
@@ -291,9 +295,15 @@ export class MenschBoard {
           this.sawBusy = true;
         } else if (this.sawBusy) {
           this.sawBusy = false;
-          if (this.rollSeq !== null && this.rollSeq === this.game().roll_seq) {
-            this.stopRoll();
-            this.face.set(this.game().die);
+          const seq = this.rollSeq;
+          if (seq !== null && seq === this.game().roll_seq) {
+            clearTimeout(this.graceTimer);
+            this.graceTimer = setTimeout(() => {
+              if (this.rollSeq === seq && this.game().roll_seq === seq) {
+                this.stopRoll();
+                this.face.set(this.game().die);
+              }
+            }, RESULT_GRACE_MS);
           }
         }
       });
@@ -454,6 +464,7 @@ export class MenschBoard {
   private stopRoll(): void {
     clearInterval(this.shuffle);
     clearTimeout(this.rollTimer);
+    clearTimeout(this.graceTimer);
     this.rollSeq = null;
     this.rolling.set(false);
   }

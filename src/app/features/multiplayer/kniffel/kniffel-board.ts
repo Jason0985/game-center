@@ -60,6 +60,9 @@ const LANDED = 0.48;
 const BACK = 0.76;
 // Kommt der Wurf so lange nicht, hört der Becher auf zu schütteln
 const GATHER_TIMEOUT_MS = 10_000;
+// Ist die eigene Aktion fertig, ohne dass der Wurf da ist, kommt er oft noch per Realtime:
+// so lange schüttelt der Becher weiter, bevor er aufgibt
+const RESULT_GRACE_MS = 1500;
 
 interface Point {
   x: number;
@@ -313,6 +316,8 @@ export class KniffelBoard {
   private gatherMoving: number[] = [];
   private geometry: { slots: Point[]; rest: Point; area: DOMRect } | null = null;
   private cupShake: Animation | null = null;
+  // Sicherheitsnetz des laufenden Sammelns; muss mit dem Wurf weg, sonst trifft es einen späteren
+  private gatherTimer: ReturnType<typeof setTimeout> | undefined;
   // Eine eigene Aktion lief (busy war an); geht busy aus, ohne dass sie ankam, wird zurückgesetzt
   private sawBusy = false;
   private tallyTimers: ReturnType<typeof setTimeout>[] = [];
@@ -364,8 +369,16 @@ export class KniffelBoard {
         this.sawBusy = false;
         if (this.entering()?.key === this.rollKey()) this.entering.set(null);
         if (this.phase === 'gathering' && this.game().roll_seq === this.gatherSeq) {
-          this.stop();
-          this.show(this.game().dice);
+          const run = this.run;
+          const seq = this.gatherSeq;
+          this.timers.push(
+            setTimeout(() => {
+              if (run === this.run && this.phase === 'gathering' && this.game().roll_seq === seq) {
+                this.stop();
+                this.show(this.game().dice);
+              }
+            }, RESULT_GRACE_MS),
+          );
         }
       });
     });
@@ -500,6 +513,7 @@ export class KniffelBoard {
     this.run++;
     this.phase = 'idle';
     this.cupShake = null;
+    clearTimeout(this.gatherTimer);
     this.timers.forEach(clearTimeout);
     this.timers = [];
     for (const el of [this.cup(), ...this.dice()]) {
@@ -571,15 +585,13 @@ export class KniffelBoard {
       );
     }
 
-    const run = this.run;
-    this.timers.push(
-      setTimeout(() => {
-        if (run === this.run && this.phase === 'gathering') {
-          this.stop();
-          this.show(this.game().dice);
-        }
-      }, GATHER_TIMEOUT_MS),
-    );
+    clearTimeout(this.gatherTimer);
+    this.gatherTimer = setTimeout(() => {
+      if (this.phase === 'gathering') {
+        this.stop();
+        this.show(this.game().dice);
+      }
+    }, GATHER_TIMEOUT_MS);
     return true;
   }
 
@@ -596,6 +608,7 @@ export class KniffelBoard {
     const parts = this.elements();
     if (run !== this.run || !parts || !this.geometry) return;
     this.phase = 'throwing';
+    clearTimeout(this.gatherTimer);
 
     const { cup, els } = parts;
     const { slots, rest, area } = this.geometry;
