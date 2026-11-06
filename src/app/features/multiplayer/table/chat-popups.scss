@@ -1,0 +1,193 @@
+// Nachrichten unter dem Kopf: am Handy über die ganze Breite, ab 768 px als Karte rechts neben
+// dem Spielfeld. --head-bottom und --icon-right setzt die Komponente (Kopfunterkante, Abstand
+// des Chat-Knopfs vom rechten Rand); daraus Zipfel und Ursprung der Animation.
+:host {
+  --edge: 8px;
+  // Vom rechten Rand der Karte bis unter die Mitte des Chat-Knopfs
+  --to-icon: calc(var(--icon-right) - var(--edge));
+  position: fixed;
+  top: calc(var(--head-bottom) + 10px);
+  right: max(var(--edge), env(safe-area-inset-right, 0px));
+  left: max(var(--edge), env(safe-area-inset-left, 0px));
+  // Unter der Reaktionsleiste (18/19), über dem Spiel
+  z-index: 17;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  :host {
+    --edge: 12px;
+    left: auto;
+    width: 320px;
+  }
+}
+
+.pop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 14px 12px 10px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--color-surface-raised);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.45),
+    0 0 0 0.5px var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  // Wächst aus dem Chat-Knopf über der Karte
+  transform-origin: calc(100% - var(--to-icon)) -20px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pop:focus-visible {
+  outline: 3px solid #f27ba5;
+  outline-offset: 2px;
+}
+
+.pop:active {
+  scale: 0.98;
+}
+
+// Zipfel zum Chat-Knopf (nur an der obersten Nachricht)
+.pop--first::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: calc(var(--to-icon) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-surface-raised);
+  box-shadow: -0.5px -0.5px 0 var(--color-border);
+  rotate: 45deg;
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+// Wie lange die Nachricht noch steht
+.timer {
+  position: absolute;
+  right: 16px;
+  bottom: 5px;
+  left: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-primary);
+  opacity: 0.6;
+  transform-origin: left;
+  animation: timer 4.5s linear forwards;
+}
+
+@keyframes timer {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+// Herauswachsen mit kleinem Überschwingen; Avatar und Text kommen kurz danach
+.pop-in {
+  animation: pop-in 460ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.pop-in .avatar {
+  animation: avatar-in 420ms 120ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.pop-in .text {
+  animation: text-in 320ms 160ms ease-out both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.12);
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes avatar-in {
+  from {
+    transform: scale(0) rotate(-30deg);
+  }
+}
+
+@keyframes text-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+// Zurück in den Chat-Knopf
+.pop-out {
+  animation: pop-out 280ms cubic-bezier(0.5, 0, 0.8, 0.4) both;
+}
+
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop-in,
+  .pop-in .avatar,
+  .pop-in .text,
+  .pop-out {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+
+  .timer {
+    display: none;
+  }
+}

@@ -64,8 +64,10 @@
     }
     @if (chat) {
       <button
+        #chatButton
         type="button"
         class="icon-button chat-button"
+        [class.ping]="chatPing()"
         [attr.aria-label]="chat.unread() ? 'Lobby-Chat, ' + chat.unread() + ' neu' : 'Lobby-Chat'"
         (click)="openChat()"
       >
@@ -79,6 +81,14 @@
       <span class="material-symbols-rounded" aria-hidden="true">more_vert</span>
     </button>
   </header>
+  @if (chat && chatButton(); as anchor) {
+    <app-chat-popups
+      [anchor]="anchor.nativeElement"
+      [paused]="chatOpen()"
+      (open)="openChat()"
+      (arrived)="pingChat()"
+    />
+  }
   @if (pickerOpen()) {
     <button
       type="button"

@@ -173,6 +173,36 @@
   position: relative;
 }
 
+// Neue Nachricht: die Sprechblase wackelt, die Zahl springt auf
+.chat-button.ping > .material-symbols-rounded {
+  animation: chat-wiggle 700ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.chat-button.ping .chat-badge {
+  animation: chat-badge 500ms cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+@keyframes chat-wiggle {
+  15% {
+    transform: scale(1.25) rotate(-14deg);
+  }
+  35% {
+    transform: scale(1.2) rotate(12deg);
+  }
+  55% {
+    transform: scale(1.1) rotate(-8deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(4deg);
+  }
+}
+
+@keyframes chat-badge {
+  from {
+    transform: scale(0.2);
+  }
+}
+
 // Ungelesene Nachrichten wie die Mitteilungs-Glocke der App (gegen .icon-button span)
 .icon-button .chat-badge {
   position: absolute;
@@ -263,7 +293,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .picker {
+  .picker,
+  .chat-button.ping > .material-symbols-rounded,
+  .chat-button.ping .chat-badge {
     animation: none;
   }
 }
