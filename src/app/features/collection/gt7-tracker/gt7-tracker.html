@@ -1,0 +1,156 @@
+<div class="ui-page-root">
+  <div class="ui-page gt7-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Sammlung
+      </a>
+      <h1 class="ui-large-title">GT7-Tracker</h1>
+      <p class="ui-page-lead">
+        Legend Cars Dealer aus Gran Turismo 7. Autos auf deiner Merkliste melden sich per
+        Mitteilung, sobald sie zu kaufen sind.
+      </p>
+      <div class="gt7-actions">
+        <button
+          type="button"
+          class="ui-pill-btn ui-pill-btn--filled"
+          [disabled]="running() !== null"
+          (click)="run(false)"
+        >
+          <mat-icon aria-hidden="true">refresh</mat-icon>
+          {{ running() === 'check' ? 'Prüft …' : 'Jetzt prüfen' }}
+        </button>
+        <button
+          type="button"
+          class="ui-pill-btn ui-pill-btn--neutral"
+          [disabled]="running() !== null"
+          (click)="run(true)"
+        >
+          <mat-icon aria-hidden="true">notifications_active</mat-icon>
+          {{ running() === 'test' ? 'Schickt …' : 'Test-Benachrichtigung' }}
+        </button>
+      </div>
+      <p class="gt7-status" [class.gt7-status--error]="status() && !status()!.ok">
+        {{ statusText() }}
+      </p>
+    </header>
+
+    @if (loading() && !dealer().length && !watchlist().length) {
+      <div class="ui-group"><app-skeleton-rows [count]="4" /></div>
+    } @else if (error()) {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">cloud_off</mat-icon>
+        <h2>Nicht geladen</h2>
+        <p>{{ error() }}</p>
+        <button type="button" class="ui-btn ui-btn--secondary" (click)="load()">
+          Erneut versuchen
+        </button>
+      </div>
+    } @else {
+      <section class="ui-section" aria-labelledby="gt7-watch">
+        <h2 id="gt7-watch" class="ui-section-title">Merkliste</h2>
+        <div class="ui-group">
+          @for (row of watchlist(); track row.watch.car_id) {
+            <div class="ui-row gt7-watch-row">
+              <span class="gt7-dot" [attr.data-state]="row.state" aria-hidden="true"></span>
+              <span class="ui-row-text">
+                <span class="ui-row-title">{{ row.title }}</span>
+                <span class="ui-row-sub">{{ row.detail }}</span>
+              </span>
+              <button
+                type="button"
+                class="ui-icon-button"
+                [attr.aria-label]="row.title + ' von der Merkliste entfernen'"
+                (click)="remove(row.watch)"
+              >
+                <mat-icon aria-hidden="true">close</mat-icon>
+              </button>
+            </div>
+          } @empty {
+            <p class="gt7-empty">Noch nichts gemerkt. Tippe unten bei einem Auto auf den Stern.</p>
+          }
+          <form class="gt7-add" (submit)="add($event)">
+            <input
+              class="gt7-add-input"
+              type="text"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="gtdb-Link, z. B. gtdb.io/gt7/car/xj13-66/"
+              aria-label="Auto per gtdb-Link oder ID hinzufügen"
+              [value]="draft()"
+              (input)="draft.set($any($event.target).value)"
+            />
+            <button
+              type="submit"
+              class="ui-pill-btn ui-pill-btn--neutral"
+              [disabled]="!draft().trim()"
+            >
+              Hinzufügen
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section class="ui-section" aria-labelledby="gt7-dealer">
+        <h2 id="gt7-dealer" class="ui-section-title">
+          Beim Händler
+          @if (dealer().length) {
+            ({{ dealer().length }})
+          }
+        </h2>
+        @if (!dealer().length) {
+          <div class="ui-group ui-empty">
+            <mat-icon aria-hidden="true">directions_car</mat-icon>
+            <h2>Noch keine Liste</h2>
+            <p>Tippe auf „Jetzt prüfen“, um den Händler einzulesen.</p>
+          </div>
+        } @else {
+          <div class="ui-group gt7-list">
+            @for (row of dealer(); track row.car.car_id) {
+              <div class="ui-row gt7-car" [class.gt7-car--sold]="row.car.sold_out">
+                @if (row.car.image_url) {
+                  <img class="gt7-thumb" [src]="row.car.image_url" alt="" loading="lazy" />
+                } @else {
+                  <span class="gt7-thumb gt7-thumb--empty" aria-hidden="true">
+                    <mat-icon>directions_car</mat-icon>
+                  </span>
+                }
+                <span class="ui-row-text">
+                  <span class="ui-row-title">{{ row.title }}</span>
+                  <span class="ui-row-sub">{{ row.price }}</span>
+                  @if (row.car.sold_out || row.car.limited_stock) {
+                    <span class="gt7-badges">
+                      @if (row.car.sold_out) {
+                        <span class="gt7-badge gt7-badge--sold">Ausverkauft</span>
+                      }
+                      @if (row.car.limited_stock) {
+                        <span class="gt7-badge gt7-badge--limited">Wenige auf Lager</span>
+                      }
+                    </span>
+                  }
+                </span>
+                <button
+                  type="button"
+                  class="ui-icon-button gt7-star"
+                  [class.gt7-star--on]="row.watched"
+                  [attr.aria-pressed]="row.watched"
+                  [attr.aria-label]="
+                    row.watched ? row.title + ' von der Merkliste nehmen' : row.title + ' merken'
+                  "
+                  (click)="toggle(row.car)"
+                >
+                  <mat-icon aria-hidden="true">{{ row.watched ? 'star' : 'star_border' }}</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+          <p class="gt7-source">
+            Daten von
+            <a href="https://gtdb.io/gt7/legend-cars-dealer/" target="_blank" rel="noopener"
+              >gtdb.io</a
+            >, Bilder dort gehostet.
+          </p>
+        }
+      </section>
+    }
+  </div>
+</div>

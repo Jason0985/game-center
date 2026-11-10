@@ -105,6 +105,16 @@ export class Collection {
       path: '/collection/bauplaner',
     },
     {
+      title: 'GT7-Tracker',
+      tile: 'var(--tile-red)',
+      group: 'Werkzeuge',
+      category: 'Gran Turismo 7',
+      description: 'Legend Cars Dealer im Blick, Mitteilung sobald ein gemerktes Auto da ist.',
+      icon: 'directions_car',
+      path: '/collection/gt7-tracker',
+      roles: ['admin'],
+    },
+    {
       title: 'F1 Strategie',
       tile: 'var(--tile-pink)',
       group: 'Racing',
