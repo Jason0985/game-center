@@ -15,6 +15,8 @@ const LOCAL_ID_PREFIX = 'local-';
 const MAX_LOCAL_NOTIFICATIONS = 20;
 // Toter Kanal (Fehler, Zeitüberschreitung, vom Server geschlossen): nach kurzer Pause neu
 const RESUBSCRIBE_MS = 2000;
+// So lange lässt sich Löschen rückgängig machen, erst dann wird wirklich gelöscht
+export const UNDO_WINDOW_MS = 5000;
 
 // Kanalnamen eindeutig halten: supabase.channel() gibt sonst den noch nicht ganz
 // entfernten alten Kanal zurück, und das neue Abo bleibt stumm
@@ -43,6 +45,11 @@ export class NotificationsService {
   private loadedUserId: string | null = null;
   private channel: RealtimeChannel | null = null;
   private retry: ReturnType<typeof setTimeout> | undefined;
+  // Ausgeblendet, aber noch nicht gelöscht (Rückgängig möglich)
+  private readonly pendingDeletes = new Map<
+    string,
+    { item: NotificationItem; timer: ReturnType<typeof setTimeout> }
+  >();
 
   // Anzahl für das Badge im Header
   readonly unreadCount = computed(
@@ -57,6 +64,7 @@ export class NotificationsService {
       const userId = this.session.user()?.id ?? null;
       if (userId === this.loadedUserId) return;
 
+      this.cancelPendingDeletes();
       this.loadedUserId = userId;
       this.loadedFor.set(null);
       this.remote.set([]);
@@ -75,6 +83,9 @@ export class NotificationsService {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') void this.reload();
     });
+
+    // App wird geschlossen: vorgemerktes Löschen nicht verlieren
+    window.addEventListener('pagehide', () => this.flushPendingDeletes());
   }
 
   // Hintergrund-Abgleich: bei Fehler (z. B. Netz nach dem Aufwachen noch weg) still die
@@ -159,6 +170,71 @@ export class NotificationsService {
     return { ok: true };
   }
 
+  // Löschen mit Rückgängig: sofort ausblenden, nach UNDO_WINDOW_MS endgültig löschen
+  dismissWithUndo(ids: string[]): void {
+    const items = this.notifications().filter(
+      (item) => ids.includes(item.id) && !this.pendingDeletes.has(item.id),
+    );
+    if (!items.length) return;
+
+    const hidden = new Set(items.map((item) => item.id));
+    this.local.update((list) => list.filter((item) => !hidden.has(item.id)));
+    this.remote.update((list) => list.filter((item) => !hidden.has(item.id)));
+
+    const timer = setTimeout(() => void this.commitDeletes([...hidden]), UNDO_WINDOW_MS);
+    for (const item of items) this.pendingDeletes.set(item.id, { item, timer });
+  }
+
+  // Rückgängig: noch nicht gelöschte wieder einblenden
+  undoDismiss(ids: string[]): void {
+    const restored: NotificationItem[] = [];
+    for (const id of ids) {
+      const pending = this.pendingDeletes.get(id);
+      if (!pending) continue;
+      this.pendingDeletes.delete(id);
+      restored.push(pending.item);
+    }
+    // Der Timer darf weiterlaufen: commitDeletes überspringt zurückgeholte
+    if (!restored.length) return;
+
+    this.local.update((list) => [...list, ...restored.filter((item) => this.isLocal(item.id))]);
+    this.remote.update((list) => [...list, ...restored.filter((item) => !this.isLocal(item.id))]);
+  }
+
+  private async commitDeletes(ids: string[]): Promise<void> {
+    const due = ids.filter((id) => this.pendingDeletes.has(id));
+    if (!due.length) return;
+
+    const items = due.map((id) => this.pendingDeletes.get(id)!.item);
+    for (const id of due) this.pendingDeletes.delete(id);
+
+    if (due.some((id) => this.isLocal(id))) this.persistLocal();
+
+    const remoteIds = due.filter((id) => !this.isLocal(id));
+    if (!remoteIds.length) return;
+
+    const userId = this.loadedUserId;
+    const { error } = await supabase.from('notifications').delete().in('id', remoteIds);
+    if (!error || this.loadedUserId !== userId) return;
+
+    // Fehlgeschlagen: wieder anzeigen, damit nichts scheinbar gelöscht ist
+    this.remote.update((list) => [...list, ...items.filter((item) => !this.isLocal(item.id))]);
+    this.injector
+      .get(AppErrorService)
+      .report(describeSupabaseError(error), { title: 'Nicht gelöscht' });
+  }
+
+  private flushPendingDeletes(): void {
+    const ids = [...this.pendingDeletes.keys()];
+    for (const { timer } of this.pendingDeletes.values()) clearTimeout(timer);
+    void this.commitDeletes(ids);
+  }
+
+  private cancelPendingDeletes(): void {
+    for (const { timer } of this.pendingDeletes.values()) clearTimeout(timer);
+    this.pendingDeletes.clear();
+  }
+
   // Annehmen setzt den Status, Ablehnen löscht die Anfrage (dann kann erneut
   // angefragt werden). Die DB räumt die Anfrage-Benachrichtigung selbst auf.
   async respondToFriendRequest(
@@ -240,7 +316,9 @@ export class NotificationsService {
         .report(describeSupabaseError(error), { title: 'Benachrichtigungen nicht geladen' });
     }
 
-    this.remote.set((data as NotificationItem[] | null) ?? []);
+    // Zum Löschen vorgemerkte nicht wieder auftauchen lassen
+    const rows = (data as NotificationItem[] | null) ?? [];
+    this.remote.set(rows.filter((item) => !this.pendingDeletes.has(item.id)));
     this.loading.set(false);
     this.loadedFor.set(userId);
   }

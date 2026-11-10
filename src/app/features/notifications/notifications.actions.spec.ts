@@ -38,12 +38,14 @@ describe('Notifications actions', () => {
     } = {},
   ) {
     const respondToFriendRequest = vi.fn().mockResolvedValue(respondResult);
-    const toast = { success: vi.fn(), error: vi.fn() };
+    const toast = { success: vi.fn(), error: vi.fn(), show: vi.fn() };
     const appErrors = { report: vi.fn() };
     const dialog = { open: vi.fn().mockReturnValue({ afterClosed: () => of(confirmDecline) }) };
     const lobbyService = { acceptInvite: vi.fn().mockResolvedValue(acceptInviteResult) };
     const dismiss = vi.fn().mockResolvedValue({ ok: true });
     const reload = vi.fn();
+    const dismissWithUndo = vi.fn();
+    const undoDismiss = vi.fn();
 
     await TestBed.configureTestingModule({
       imports: [Notifications],
@@ -59,6 +61,8 @@ describe('Notifications actions', () => {
             markRead: vi.fn(),
             reload,
             dismiss,
+            dismissWithUndo,
+            undoDismiss,
           },
         },
         {
@@ -81,9 +85,13 @@ describe('Notifications actions', () => {
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(Notifications);
     await fixture.whenStable();
-    const buttons = (): HTMLButtonElement[] => [...fixture.nativeElement.querySelectorAll('button')];
+    const buttons = (): HTMLButtonElement[] => [
+      ...fixture.nativeElement.querySelectorAll('button'),
+    ];
     const click = async (label: string) => {
-      buttons().find((button) => button.textContent?.trim() === label)!.click();
+      buttons()
+        .find((button) => button.textContent?.trim() === label)!
+        .click();
       await fixture.whenStable();
     };
     return {
@@ -96,6 +104,8 @@ describe('Notifications actions', () => {
       click,
       lobbyService,
       dismiss,
+      dismissWithUndo,
+      undoDismiss,
       reload,
       router,
     };
@@ -136,13 +146,41 @@ describe('Notifications actions', () => {
     const { fixture } = await render([notification({})]);
     const card = fixture.nativeElement.querySelector('article') as HTMLElement;
 
-    // Ein verhindertes touchstart/touchend unterdrückt auf Touch-Geräten den Klick
-    for (const type of ['touchstart', 'touchend']) {
+    // Ein verhindertes pointerdown/pointerup unterdrückt auf Touch-Geräten den Klick
+    for (const type of ['pointerdown', 'pointerup']) {
       const event = new Event(type, { bubbles: true, cancelable: true });
-      Object.assign(event, { touches: [], changedTouches: [{ clientX: 10 }] });
+      Object.assign(event, { pointerId: 1, isPrimary: true, clientX: 10, clientY: 10 });
       card.dispatchEvent(event);
       expect(event.defaultPrevented, type).toBe(false);
     }
+  });
+
+  it('deletes with the close button and offers undo', async () => {
+    const alert = notification({ id: 's1', type: 'system_alert', related_id: null });
+    const { fixture, dismissWithUndo, undoDismiss, toast } = await render([alert]);
+
+    (
+      fixture.nativeElement.querySelector('[aria-label="Mitteilung löschen"]') as HTMLButtonElement
+    ).click();
+
+    expect(dismissWithUndo).toHaveBeenCalledWith(['s1']);
+    const shown = toast.show.mock.calls[0][0];
+    expect(shown.title).toBe('Mitteilung gelöscht');
+    shown.action.run();
+    expect(undoDismiss).toHaveBeenCalledWith(['s1']);
+  });
+
+  it('deletes all except open friend requests', async () => {
+    const { dismissWithUndo, toast, click } = await render([
+      notification({ id: 'f1' }),
+      notification({ id: 's1', type: 'system_alert', related_id: null }),
+      notification({ id: 's2', type: 'system_alert', related_id: null }),
+    ]);
+
+    await click('Alle löschen');
+
+    expect(dismissWithUndo).toHaveBeenCalledWith(['s1', 's2']);
+    expect(toast.show.mock.calls[0][0].title).toBe('2 Mitteilungen gelöscht');
   });
 
   it('offers no actions on system notifications', async () => {

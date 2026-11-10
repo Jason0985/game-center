@@ -105,12 +105,35 @@
   font-size: 18px;
 }
 
+.toast-action {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: 4px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--tone-soft);
+  color: var(--tone);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 340ms var(--ease-spring);
+}
+
+.toast-action:active {
+  scale: 0.94;
+  transition-duration: 90ms;
+}
+
 .toast-body:focus,
+.toast-action:focus,
 .toast-close:focus {
   outline: none;
 }
 
 .toast-body:focus-visible,
+.toast-action:focus-visible,
 .toast-close:focus-visible {
   outline: 2px solid var(--tone);
   outline-offset: -2px;
