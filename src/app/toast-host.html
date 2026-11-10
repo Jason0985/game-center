@@ -23,6 +23,11 @@
           }
         </span>
       </button>
+      @if (toast.action) {
+        <button type="button" class="toast-action" (click)="toastService.runAction(toast)">
+          {{ toast.action.label }}
+        </button>
+      }
       <button
         type="button"
         class="toast-close"

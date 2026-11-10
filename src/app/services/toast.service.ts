@@ -11,6 +11,8 @@ export interface Toast {
   message?: string;
   // Route, die beim Antippen geöffnet wird
   link?: string;
+  // Knopf im Toast, z. B. Rückgängig; schließt den Toast danach
+  action?: { label: string; run: () => void };
 }
 
 export type ToastInput = Omit<Toast, 'id'>;
@@ -46,6 +48,11 @@ export class ToastService {
   // Fehler bleiben etwas länger stehen
   error(message: string, title = 'Das hat nicht geklappt'): number {
     return this.show({ tone: 'error', icon: 'error', title, message }, 6000);
+  }
+
+  runAction(toast: Toast): void {
+    this.dismiss(toast.id);
+    toast.action?.run();
   }
 
   isVisible(key: string): boolean {

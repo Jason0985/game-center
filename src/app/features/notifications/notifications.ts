@@ -1,10 +1,10 @@
-import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink } from '@angular/router';
-import { NotificationsService } from '../../services/notifications.service';
+import { NotificationsService, UNDO_WINDOW_MS } from '../../services/notifications.service';
 import { SessionService } from '../../services/session.service';
 import { ToastService } from '../../services/toast.service';
 import { AppErrorService } from '../../services/app-error.service';
@@ -17,6 +17,23 @@ import { MultiplayerLobbyService } from '../multiplayer/multiplayer-lobby.servic
 import { SkeletonRows } from '../../ui/skeleton-rows';
 
 const MARK_SEEN_DELAY_MS = 2000;
+const UNDO_TOAST_KEY = 'notification-undo';
+const DRAG_SLOP_PX = 8;
+// Ab diesem Anteil der Breite löscht Loslassen
+const COMMIT_FRACTION = 0.38;
+// px/ms; schnelles Wischen löscht auch unter der Schwelle
+const FLICK_VELOCITY = 0.6;
+const FLY_OUT_MS = 240;
+
+interface DragState {
+  id: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  width: number;
+  locked: boolean;
+  samples: { x: number; t: number }[];
+}
 
 @Component({
   selector: 'app-notifications',
@@ -35,12 +52,19 @@ export class Notifications {
   readonly typeConfig = notificationTypeConfig;
   readonly notifications = this.notificationsService.notifications;
   readonly loading = this.notificationsService.loading;
-  readonly swipeOffsets = signal<Record<string, number>>({});
-  readonly swipeDirections = signal<Record<string, 'left' | 'right'>>({});
   readonly respondingIds = signal<Set<string>>(new Set());
-  private activeSwipeId: string | null = null;
-  private touchStartX: number | null = null;
-  private readonly swipeThreshold = 84;
+  readonly swipeableCount = computed(
+    () => this.notifications().filter((item) => this.isSwipeable(item)).length,
+  );
+  // Gezogene Karte, ihr Versatz und ob Loslassen löschen würde
+  readonly dragId = signal<string | null>(null);
+  readonly dragX = signal(0);
+  readonly armed = signal(false);
+  // Karten, die gerade aus dem Bild fliegen
+  readonly exiting = signal<Map<string, 'left' | 'right'>>(new Map());
+  // Erst nach dem ersten Laden neue/zurückgeholte Zeilen einblenden, nicht beim Seitenaufbau
+  readonly animateRows = signal(false);
+  private drag: DragState | null = null;
   private markSeenTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
@@ -55,15 +79,36 @@ export class Notifications {
       );
     });
 
+    effect(() => {
+      if (this.loading() || this.animateRows()) return;
+      setTimeout(() => this.animateRows.set(true), 100);
+    });
+
     inject(DestroyRef).onDestroy(() => clearTimeout(this.markSeenTimer));
   }
 
-  async removeNotification(notificationId: string): Promise<void> {
-    this.clearSwipeState(notificationId);
-    const result = await this.notificationsService.dismiss(notificationId);
-    if (!result.ok) {
-      this.appErrors.report(result.message);
-    }
+  // Löschen ohne Rückfrage, dafür mit Rückgängig im Toast
+  remove(ids: string[]): void {
+    if (!ids.length) return;
+    this.notificationsService.dismissWithUndo(ids);
+    this.toastService.show(
+      {
+        key: UNDO_TOAST_KEY,
+        tone: 'info',
+        icon: 'delete',
+        title: ids.length === 1 ? 'Mitteilung gelöscht' : `${ids.length} Mitteilungen gelöscht`,
+        action: { label: 'Rückgängig', run: () => this.notificationsService.undoDismiss(ids) },
+      },
+      UNDO_WINDOW_MS,
+    );
+  }
+
+  removeAll(): void {
+    this.remove(
+      this.notifications()
+        .filter((item) => this.isSwipeable(item))
+        .map((item) => item.id),
+    );
   }
 
   async respondToFriendRequest(notification: NotificationItem, accept: boolean): Promise<void> {
@@ -105,7 +150,8 @@ export class Notifications {
   async respondToGameInvite(notification: NotificationItem, accept: boolean): Promise<void> {
     if (this.respondingIds().has(notification.id)) return;
     if (!accept) {
-      await this.removeNotification(notification.id);
+      const result = await this.notificationsService.dismiss(notification.id);
+      if (!result.ok) this.appErrors.report(result.message);
       return;
     }
 
@@ -155,90 +201,130 @@ export class Notifications {
       });
   }
 
-  // Anfragen müssen beantwortet werden und lassen sich nicht wegwischen.
-  // Wichtig: Touch-Handler dürfen nie false zurückgeben, sonst ruft Angular
-  // preventDefault() auf und Buttons in der Karte bekommen auf Touch-Geräten keinen Klick.
+  // Anfragen müssen beantwortet werden und lassen sich nicht wegwischen
   isSwipeable(notification: NotificationItem): boolean {
     return this.typeConfig(notification.type).actions !== 'friend-request';
   }
 
-  startSwipe(event: TouchEvent, notification: NotificationItem): void {
-    if (!this.isSwipeable(notification)) return;
+  // Wischen wie in iOS-Listen: erst nach ein paar Pixeln seitwärts greift die Karte,
+  // senkrecht bleibt es normales Scrollen (touch-action: pan-y, der Browser meldet dann
+  // pointercancel). Handler geben nie false zurück, sonst verhindert Angular den Klick.
+  startDrag(event: PointerEvent, notification: NotificationItem): void {
+    if (!this.isSwipeable(notification) || this.drag || !event.isPrimary) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (this.exiting().has(notification.id)) return;
 
-    const notificationId = notification.id;
-    this.activeSwipeId = notificationId;
-    this.touchStartX = event.changedTouches[0]?.clientX ?? null;
-    this.swipeDirections.update((directions) => {
-      const nextDirections = { ...directions };
-      delete nextDirections[notificationId];
-      return nextDirections;
-    });
+    this.drag = {
+      id: notification.id,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      width: (event.currentTarget as HTMLElement).offsetWidth || window.innerWidth,
+      locked: false,
+      samples: [{ x: event.clientX, t: event.timeStamp }],
+    };
   }
 
-  moveSwipe(event: TouchEvent, notification: NotificationItem): void {
-    const notificationId = notification.id;
-    if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
-      return;
+  moveDrag(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.locked) {
+      if (Math.abs(dx) < DRAG_SLOP_PX && Math.abs(dy) < DRAG_SLOP_PX) return;
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        this.drag = null; // senkrecht: der Nutzer scrollt
+        return;
+      }
+      drag.locked = true;
+      drag.startX = event.clientX; // ohne Sprung um die Schwelle
+      // Klicks gehen ab jetzt an die Karte, nicht an Knöpfe darunter
+      (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+      this.dragId.set(drag.id);
     }
 
-    const currentX = event.touches[0]?.clientX ?? this.touchStartX;
-    const offset = currentX - this.touchStartX;
-    const limitedOffset = Math.sign(offset) * Math.min(Math.abs(offset), 180);
-    this.swipeOffsets.update((offsets) => ({ ...offsets, [notificationId]: limitedOffset }));
-  }
+    drag.samples.push({ x: event.clientX, t: event.timeStamp });
+    if (drag.samples.length > 5) drag.samples.shift();
 
-  finishSwipe(event: TouchEvent, notification: NotificationItem): void {
-    const notificationId = notification.id;
-    if (this.touchStartX === null || this.activeSwipeId !== notificationId) {
-      return;
+    const offset = event.clientX - drag.startX;
+    this.dragX.set(offset);
+    const armed = Math.abs(offset) >= drag.width * COMMIT_FRACTION;
+    if (armed !== this.armed()) {
+      this.armed.set(armed);
+      navigator.vibrate?.(8);
     }
+  }
 
-    const touchEndX = event.changedTouches[0]?.clientX ?? this.touchStartX;
-    const offset = touchEndX - this.touchStartX;
-    if (Math.abs(offset) >= this.swipeThreshold) {
-      const direction = offset < 0 ? 'left' : 'right';
-      this.swipeDirections.update((directions) => ({ ...directions, [notificationId]: direction }));
-      this.swipeOffsets.update((offsets) => ({
-        ...offsets,
-        [notificationId]: direction === 'left' ? -window.innerWidth : window.innerWidth,
-      }));
-      window.setTimeout(() => void this.removeNotification(notificationId), 220);
-    } else {
-      this.resetSwipeOffset(notificationId);
+  endDrag(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    this.drag = null;
+    if (!drag.locked) return;
+
+    const offset = this.dragX();
+    const velocity = this.velocity(drag.samples); // px/ms, Vorzeichen = Richtung
+    const flick =
+      Math.abs(velocity) > FLICK_VELOCITY &&
+      Math.sign(velocity) === Math.sign(offset) &&
+      Math.abs(offset) > DRAG_SLOP_PX * 3;
+
+    if (event.type !== 'pointercancel' && (this.armed() || flick)) {
+      this.flyOut(drag.id, offset < 0 ? 'left' : 'right');
     }
-
-    this.touchStartX = null;
-    this.activeSwipeId = null;
+    this.resetDrag();
   }
 
-  getSwipeOffset(notificationId: string): number {
-    return this.swipeOffsets()[notificationId] ?? 0;
+  // Schnell am Ende der Bewegung: auch kurzes Wischen löscht
+  private velocity(samples: { x: number; t: number }[]): number {
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = last.t - first.t;
+    return dt > 0 ? (last.x - first.x) / dt : 0;
   }
 
-  isSwipeReady(notificationId: string): boolean {
-    return Math.abs(this.getSwipeOffset(notificationId)) >= this.swipeThreshold;
+  private flyOut(id: string, direction: 'left' | 'right'): void {
+    this.exiting.update((map) => new Map(map).set(id, direction));
+    setTimeout(() => {
+      this.exiting.update((map) => {
+        const next = new Map(map);
+        next.delete(id);
+        return next;
+      });
+      this.remove([id]);
+    }, FLY_OUT_MS);
   }
 
-  isSwipeRemoving(notificationId: string): boolean {
-    return this.swipeDirections()[notificationId] !== undefined;
+  private resetDrag(): void {
+    this.dragId.set(null);
+    this.dragX.set(0);
+    this.armed.set(false);
   }
 
-  private resetSwipeOffset(notificationId: string): void {
-    this.swipeOffsets.update((offsets) => ({ ...offsets, [notificationId]: 0 }));
-    this.activeSwipeId = null;
+  cardTransform(id: string): string | null {
+    const direction = this.exiting().get(id);
+    if (direction) return `translate3d(${direction === 'left' ? -110 : 110}%, 0, 0)`;
+    if (this.dragId() !== id) return null;
+    return `translate3d(${this.dragX()}px, 0, 0)`;
   }
 
-  private clearSwipeState(notificationId: string): void {
-    this.swipeOffsets.update((offsets) => {
-      const nextOffsets = { ...offsets };
-      delete nextOffsets[notificationId];
-      return nextOffsets;
-    });
-    this.swipeDirections.update((directions) => {
-      const nextDirections = { ...directions };
-      delete nextDirections[notificationId];
-      return nextDirections;
-    });
+  // Auf welcher Seite die rote Fläche frei wird
+  revealSide(id: string): 'left' | 'right' | null {
+    const direction = this.exiting().get(id);
+    if (direction) return direction === 'left' ? 'right' : 'left';
+    if (this.dragId() !== id || !this.dragX()) return null;
+    return this.dragX() < 0 ? 'right' : 'left';
+  }
+
+  revealWidth(id: string): number {
+    return this.dragId() === id ? Math.abs(this.dragX()) : 0;
+  }
+
+  // 0–1: das Symbol blendet mit dem freigelegten Weg ein
+  revealProgress(id: string): number {
+    if (this.exiting().has(id)) return 1;
+    if (this.dragId() !== id) return 0;
+    return Math.min(1, Math.max(0, (Math.abs(this.dragX()) - 12) / 48));
   }
 
   formatTime(createdAt: string): string {

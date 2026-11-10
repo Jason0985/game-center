@@ -3,14 +3,14 @@
   flex-direction: column;
 }
 
-// Jede Mitteilung ist eine Zeile der Gruppe; die Hülle trägt die Wisch-Aktionen
-.notification-swipe-shell {
-  position: relative;
-  overflow: hidden;
-  background: var(--color-surface);
+// Jede Mitteilung ist eine Zeile der Gruppe. Die Zeile klappt beim Löschen über
+// grid-template-rows weich zu (auch in Safari), die Hülle trägt die rote Wisch-Fläche.
+.notification-row {
+  display: grid;
+  grid-template-rows: 1fr;
 }
 
-.notification-swipe-shell + .notification-swipe-shell::before {
+.notification-row + .notification-row .notification-swipe-shell::before {
   position: absolute;
   top: 0;
   right: 0;
@@ -23,13 +23,69 @@
   transform-origin: top;
 }
 
+.notification-swipe-shell {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.notification-row--leaving {
+  animation: notification-collapse 320ms var(--ease-ios) both;
+  pointer-events: none;
+}
+
+.notification-row--entering {
+  animation: notification-collapse 380ms var(--ease-ios) reverse both;
+}
+
+@keyframes notification-collapse {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+// Löschen ohne Wischen (Kreuz, Alle löschen): Karte gleitet beim Zuklappen leicht weg
+.notification-row--leaving .notification-card:not(.notification-card--exiting) {
+  animation: notification-fade-out 260ms var(--ease-ios) both;
+}
+
+@keyframes notification-fade-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
 .notification-card {
   position: relative;
   z-index: 2;
   padding: 12px 8px 12px 16px;
   background: var(--color-surface);
+  // Zurückfedern nach dem Loslassen
+  transition: transform 460ms var(--ease-spring);
+  will-change: transform;
+}
+
+.notification-card--swipeable {
   touch-action: pan-y;
-  transition: transform 220ms ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.notification-card--dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.notification-card--exiting {
+  transition: transform 240ms var(--ease-ios);
 }
 
 .notification-card-topline {
@@ -116,45 +172,87 @@
   color: var(--color-text);
 }
 
-.notification-card--dragging {
-  transition: none;
+.notifications-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -16px 0 -20px;
 }
 
-.notification-card--removing {
-  transition: transform 220ms ease;
+.notifications-clear {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary-light);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.notifications-clear:active {
+  opacity: 0.5;
 }
 
 .notifications-hint {
   margin-top: -16px;
 }
 
-.notification-swipe-shell--ready .swipe-delete-action {
-  opacity: 1;
-}
-
+// Rote Fläche hinter der Karte; das Symbol sitzt auf der frei werdenden Seite,
+// blendet mit dem Weg ein und springt beim Überschreiten der Schwelle federnd an
 .swipe-delete-action {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 0;
-  display: flex;
-  width: 84px;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
+  // So breit wie der freigelegte Streifen: das Symbol läuft mittig mit der Karte mit
+  width: max(var(--reveal, 0px), 72px);
+  overflow: hidden;
   background: var(--color-danger-strong);
   color: var(--color-white);
-  opacity: 0.6;
-  transition: opacity var(--transition-fast);
+  opacity: var(--reveal-progress, 0);
 }
 
-.swipe-delete-action--left {
-  left: 0;
+.notification-swipe-shell[data-reveal] {
+  background: var(--color-danger-strong);
 }
 
-.swipe-delete-action--right {
-  right: 0;
+.notification-swipe-shell[data-reveal] .swipe-delete-action {
+  display: flex;
+}
+
+.notification-swipe-shell[data-reveal='left'] .swipe-delete-action {
+  right: auto;
+}
+
+.notification-swipe-shell[data-reveal='right'] .swipe-delete-action {
+  left: auto;
+}
+
+.notification-swipe-shell--exiting .swipe-delete-action {
+  width: 88px;
+  opacity: 1;
+}
+
+.swipe-delete-action mat-icon,
+.swipe-delete-action span {
+  transition:
+    scale 380ms var(--ease-spring),
+    opacity var(--transition-fast);
+}
+
+.notification-swipe-shell--narrow:not(.notification-swipe-shell--exiting)
+  .swipe-delete-action
+  span {
+  opacity: 0;
+}
+
+.notification-swipe-shell--armed .swipe-delete-action mat-icon {
+  scale: 1.2;
 }
 
 .swipe-delete-action mat-icon {
@@ -166,8 +264,4 @@
 .swipe-delete-action span {
   font-size: 11px;
   font-weight: 600;
-}
-
-.swipe-threshold {
-  display: none;
 }
