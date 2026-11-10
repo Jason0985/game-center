@@ -113,7 +113,8 @@ export function matchLine(
   if (path.length < 2 || !coordinates.length) return null;
   const step = Math.max(1, Math.floor(coordinates.length / 12));
   const samples: LatLon[] = [];
-  for (let i = 0; i < coordinates.length; i += step) samples.push([coordinates[i][1], coordinates[i][0]]);
+  for (let i = 0; i < coordinates.length; i += step)
+    samples.push([coordinates[i][1], coordinates[i][0]]);
   const last = coordinates[coordinates.length - 1];
   samples.push([last[1], last[0]]);
 
@@ -206,7 +207,10 @@ export function autobahnIncident(
     source: 'autobahn',
     kind,
     road,
-    title: (item.title ?? road).replace(/\s*\|\s*/, ' ').trim().slice(0, 120),
+    title: (item.title ?? road)
+      .replace(/\s*\|\s*/, ' ')
+      .trim()
+      .slice(0, 120),
     detail: detail.slice(0, 200),
     delayMinutes: Number.isFinite(delay) && delay > 0 ? Math.round(delay) : null,
     position: hit.position,
@@ -291,7 +295,13 @@ export function tomtomIncidents(route: TomTomRoute, reverse: boolean): Incident[
       const delay = Math.round((section.delayInSeconds ?? 0) / 60);
       const speed = section.effectiveSpeedInKmh;
       const label =
-        kind === 'jam' ? 'Stau' : kind === 'closure' ? 'Sperrung' : kind === 'roadworks' ? 'Baustelle' : 'Behinderung';
+        kind === 'jam'
+          ? 'Stau'
+          : kind === 'closure'
+            ? 'Sperrung'
+            : kind === 'roadworks'
+              ? 'Baustelle'
+              : 'Behinderung';
       const detail = [
         MAGNITUDE[section.magnitudeOfDelay ?? 0] ?? '',
         speed && kind !== 'closure' ? `${Math.round(speed)} km/h` : '',
@@ -316,7 +326,11 @@ export function tomtomIncidents(route: TomTomRoute, reverse: boolean): Incident[
 
 // TomTom und Autobahn melden oft denselben Stau: an derselben Stelle und Art nur einmal
 // zeigen, die Autobahn-Meldung (mit Anschlussstellen) gewinnt
-export function mergeIncidents(tomtom: Incident[], autobahn: Incident[], lengthM: number): Incident[] {
+export function mergeIncidents(
+  tomtom: Incident[],
+  autobahn: Incident[],
+  lengthM: number,
+): Incident[] {
   const sameSpot = (a: Incident, b: Incident) =>
     a.kind === b.kind &&
     Math.abs(a.position - b.position) * lengthM < 3000 &&
@@ -344,7 +358,10 @@ export function parseSchedules(value: unknown): Schedule[] | null {
     const time = typeof entry?.time === 'string' ? entry.time : '';
     const days = Array.isArray(entry?.days) ? [...new Set(entry.days as unknown[])] : [];
     if (!TIME.test(time)) return null;
-    if (!days.length || !days.every((d) => Number.isInteger(d) && (d as number) >= 1 && (d as number) <= 7)) {
+    if (
+      !days.length ||
+      !days.every((d) => Number.isInteger(d) && (d as number) >= 1 && (d as number) <= 7)
+    ) {
       return null;
     }
     out.push({ time, days: (days as number[]).sort(), reverse: entry?.reverse === true });
@@ -375,11 +392,11 @@ export function berlinNow(date: Date): LocalNow {
       .formatToParts(date)
       .map((part) => [part.type, part.value]),
   );
-  const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(parts.weekday) + 1;
+  const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(parts['weekday']) + 1;
   return {
     weekday,
-    minutes: Number(parts.hour) * 60 + Number(parts.minute),
-    date: `${parts.year}-${parts.month}-${parts.day}`,
+    minutes: Number(parts['hour']) * 60 + Number(parts['minute']),
+    date: `${parts['year']}-${parts['month']}-${parts['day']}`,
   };
 }
 
@@ -453,15 +470,15 @@ export function departureMessage(
 
   const lines = urgent.slice(0, 3).map(incidentLine);
   if (urgent.length > 3) lines.push(`und ${urgent.length - 3} weitere`);
-  if (works.length) lines.push(`${works.length} Baustelle${works.length === 1 ? '' : 'n'} auf dem Weg`);
+  if (works.length)
+    lines.push(`${works.length} Baustelle${works.length === 1 ? '' : 'n'} auf dem Weg`);
   const message = lines.length ? lines.join(' · ') : 'Keine Staus oder Sperrungen auf der Strecke.';
   return { title: title.slice(0, 100), message: message.slice(0, 500), clear };
 }
 
 /** Sofort-Mitteilung bei neuem Stau oder neuer Sperrung. */
 export function liveMessage(name: string, incident: Incident): { title: string; message: string } {
-  const where =
-    incident.reverse === null ? '' : ` (${directionLabel(incident.reverse)})`;
+  const where = incident.reverse === null ? '' : ` (${directionLabel(incident.reverse)})`;
   return {
     title: `${KIND_LABEL[incident.kind]} auf ${name}${where}`.slice(0, 100),
     message: [incidentLine(incident), incident.detail].filter(Boolean).join(' – ').slice(0, 500),
@@ -469,15 +486,24 @@ export function liveMessage(name: string, incident: Incident): { title: string; 
 }
 
 /** Sofort-Mitteilung, wenn die Fahrzeit laut TomTom deutlich länger wird. */
-export function delayMessage(name: string, result: CheckResult): { title: string; message: string } {
+export function delayMessage(
+  name: string,
+  result: CheckResult,
+): { title: string; message: string } {
   const relevant = forDirection(result.incidents, result.reverse).filter(
     (i) => i.kind === 'jam' || i.kind === 'closure',
   );
-  const time = result.travelMinutes !== null ? `, ${minutesText(result.travelMinutes)} insgesamt` : '';
+  const time =
+    result.travelMinutes !== null ? `, ${minutesText(result.travelMinutes)} insgesamt` : '';
   return {
-    title: `${name} (${directionLabel(result.reverse)}): +${result.delayMinutes} Min.`.slice(0, 100),
+    title: `${name} (${directionLabel(result.reverse)}): +${result.delayMinutes} Min.`.slice(
+      0,
+      100,
+    ),
     message: (
-      (relevant.length ? relevant.slice(0, 3).map(incidentLine).join(' · ') : 'Mehr Verkehr als sonst') + time
+      (relevant.length
+        ? relevant.slice(0, 3).map(incidentLine).join(' · ')
+        : 'Mehr Verkehr als sonst') + time
     ).slice(0, 500),
   };
 }

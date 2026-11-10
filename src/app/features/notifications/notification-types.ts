@@ -52,6 +52,13 @@ export const NOTIFICATION_TYPES: Record<NotificationType, NotificationTypeConfig
     tone: 'alert',
     actions: 'none',
   },
+  route_alert: {
+    category: 'system',
+    label: 'Route',
+    icon: 'traffic',
+    tone: 'alert',
+    actions: 'none',
+  },
   app_error: {
     category: 'system',
     label: 'Fehler',

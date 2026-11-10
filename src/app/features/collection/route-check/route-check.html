@@ -1,0 +1,180 @@
+<div class="ui-page-root">
+  <div class="ui-page route-page">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Sammlung
+      </a>
+      <h1 class="ui-large-title">Routen-Check</h1>
+      <p class="ui-page-lead">
+        Stau, Baustellen und Sperrungen auf deinen Strecken. Zu deinen Check-Zeiten kommt eine Push
+        mit der Lage, neue Staus und Sperrungen meldet sie sofort.
+      </p>
+      @if (session.isLoggedIn() && routes().length < maxRoutes) {
+        <div class="route-head-actions">
+          <a class="ui-pill-btn ui-pill-btn--filled" routerLink="/collection/routen-check/neu">
+            <mat-icon aria-hidden="true">add_road</mat-icon>
+            Neue Route
+          </a>
+        </div>
+      }
+    </header>
+
+    @if (session.initialized() && !session.isLoggedIn()) {
+      <section class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">lock</mat-icon>
+        <h2>Anmelden erforderlich</h2>
+        <p>Melde dich an, um Routen zu speichern und Mitteilungen zu bekommen.</p>
+        <a class="ui-btn" routerLink="/profile/auth">Anmelden</a>
+      </section>
+    } @else if (loading()) {
+      <div class="ui-group"><app-skeleton-rows [count]="3" label="Routen werden geladen" /></div>
+    } @else if (error()) {
+      <div class="ui-group ui-empty">
+        <mat-icon aria-hidden="true">cloud_off</mat-icon>
+        <h2>Nicht geladen</h2>
+        <p>{{ error() }}</p>
+        <button type="button" class="ui-btn ui-btn--secondary" (click)="load()">
+          Erneut versuchen
+        </button>
+      </div>
+    } @else {
+      @for (card of cards(); track card.route.id) {
+        <section class="ui-section route-card" [attr.data-state]="card.state">
+          <div class="route-card-head">
+            <h2 class="ui-section-title">{{ card.route.name }}</h2>
+            <a class="ui-section-link" [routerLink]="['/collection/routen-check', card.route.id]">
+              Bearbeiten
+            </a>
+          </div>
+
+          <div class="ui-group">
+            <div class="route-status">
+              <p class="route-status-line">
+                <span class="route-light" aria-hidden="true"></span>
+                {{ card.status }}
+              </p>
+              @if (card.meta) {
+                <p class="route-status-meta">{{ card.meta }}</p>
+              }
+
+              <!-- Streckenband: Start links, Ziel rechts, Störungen an ihrer Stelle -->
+              <div
+                class="route-band"
+                role="img"
+                [attr.aria-label]="
+                  card.from +
+                  ' nach ' +
+                  card.to +
+                  ': ' +
+                  (card.incidents.length ? card.incidents.length + ' Meldungen' : 'keine Meldungen')
+                "
+              >
+                <span class="route-band-line"></span>
+                @for (mark of card.marks; track mark.incident.id) {
+                  <span
+                    class="route-band-mark"
+                    [attr.data-kind]="mark.incident.kind"
+                    [style.left.%]="mark.left"
+                  ></span>
+                }
+                <span class="route-band-end route-band-end--start"></span>
+                <span class="route-band-end route-band-end--goal"></span>
+              </div>
+              <div class="route-band-labels" aria-hidden="true">
+                <span>{{ card.from }}</span>
+                <span>{{ card.to }}</span>
+              </div>
+            </div>
+
+            @for (incident of card.incidents; track incident.id) {
+              <div class="ui-row route-incident" [attr.data-kind]="incident.kind">
+                <span class="route-incident-icon" aria-hidden="true">
+                  <mat-icon>{{ kind[incident.kind].icon }}</mat-icon>
+                </span>
+                <span class="ui-row-text">
+                  <span class="ui-row-title">{{ incident.title }}</span>
+                  @if (incident.detail) {
+                    <span class="ui-row-sub">{{ incident.detail }}</span>
+                  }
+                </span>
+                @if (incident.delayMinutes) {
+                  <span class="ui-row-value route-delay">+{{ incident.delayMinutes }} Min.</span>
+                }
+              </div>
+            }
+
+            <div class="route-actions">
+              <button
+                type="button"
+                class="ui-pill-btn ui-pill-btn--neutral"
+                [disabled]="checking() !== null"
+                (click)="check(card.route, false)"
+              >
+                <mat-icon aria-hidden="true">east</mat-icon>
+                {{ isChecking(card.route, false) ? 'Prüft …' : 'Hinweg prüfen' }}
+              </button>
+              <button
+                type="button"
+                class="ui-pill-btn ui-pill-btn--neutral"
+                [disabled]="checking() !== null"
+                (click)="check(card.route, true)"
+              >
+                <mat-icon class="route-flip" aria-hidden="true">east</mat-icon>
+                {{ isChecking(card.route, true) ? 'Prüft …' : 'Rückweg prüfen' }}
+              </button>
+            </div>
+
+            <a
+              class="ui-row route-schedules"
+              [routerLink]="['/collection/routen-check', card.route.id]"
+            >
+              <mat-icon class="route-row-icon" aria-hidden="true">schedule</mat-icon>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Check-Zeiten</span>
+                <span class="ui-row-sub">
+                  {{
+                    card.schedules.length
+                      ? card.schedules.join(' · ')
+                      : 'Keine – nur Sofort-Meldungen'
+                  }}
+                </span>
+              </span>
+              <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </a>
+
+            <button
+              type="button"
+              class="ui-row route-switch-row"
+              role="switch"
+              [attr.aria-checked]="card.route.live_alerts"
+              (click)="toggleLive(card.route)"
+            >
+              <mat-icon class="route-row-icon" aria-hidden="true">notifications_active</mat-icon>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Sofort bei Stau melden</span>
+                <span class="ui-row-sub">Rund um die Uhr, je Stau oder Sperrung einmal</span>
+              </span>
+              <span
+                class="ui-switch"
+                [class.ui-switch--on]="card.route.live_alerts"
+                aria-hidden="true"
+              ></span>
+            </button>
+          </div>
+        </section>
+      } @empty {
+        <section class="ui-group ui-empty">
+          <mat-icon aria-hidden="true">add_road</mat-icon>
+          <h2>Noch keine Route</h2>
+          <p>Leg deinen Weg zur Arbeit an. Du bekommst dann jeden Morgen die Lage aufs Handy.</p>
+          <a class="ui-btn" routerLink="/collection/routen-check/neu">Route anlegen</a>
+        </section>
+      }
+
+      <p class="ui-section-footer route-source">
+        Verkehrsdaten von TomTom und der Autobahn GmbH des Bundes (verkehr.autobahn.de). Ohne
+        Gewähr.
+      </p>
+    }
+  </div>
+</div>

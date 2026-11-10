@@ -60,7 +60,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 class UserError extends Error {
-  constructor(message: string, readonly status = 400) {
+  constructor(
+    message: string,
+    readonly status = 400,
+  ) {
     super(message);
   }
 }
@@ -112,7 +115,8 @@ async function getJson<T>(url: string): Promise<T> {
 
 async function searchPlaces(query: string): Promise<Place[]> {
   const key = tomtomKey();
-  if (!key) throw new UserError('Die Ortssuche ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).', 503);
+  if (!key)
+    throw new UserError('Die Ortssuche ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).', 503);
   const url =
     `${TOMTOM}/search/2/search/${encodeURIComponent(query)}.json?` +
     new URLSearchParams({
@@ -246,7 +250,9 @@ async function checkRoute(
   return {
     checkedAt: new Date().toISOString(),
     reverse,
-    travelMinutes: summary?.travelTimeInSeconds ? Math.round(summary.travelTimeInSeconds / 60) : null,
+    travelMinutes: summary?.travelTimeInSeconds
+      ? Math.round(summary.travelTimeInSeconds / 60)
+      : null,
     delayMinutes: summary ? Math.round((summary.trafficDelayInSeconds ?? 0) / 60) : null,
     baseMinutes: summary?.noTrafficTravelTimeInSeconds
       ? Math.round(summary.noTrafficTravelTimeInSeconds / 60)
@@ -259,7 +265,12 @@ async function checkRoute(
   };
 }
 
-async function storeCheck(db: Admin, route: RouteRow, result: CheckResult, extra: Record<string, unknown> = {}) {
+async function storeCheck(
+  db: Admin,
+  route: RouteRow,
+  result: CheckResult,
+  extra: Record<string, unknown> = {},
+) {
   await db
     .from('route_watches')
     .update({ last_check: result, last_checked_at: result.checkedAt, ...extra })
@@ -273,7 +284,10 @@ async function unseen(db: Admin, routeId: string, incidents: Incident[]): Promis
     .from('route_alerts_seen')
     .select('alert_id')
     .eq('route_id', routeId)
-    .in('alert_id', incidents.map((i) => i.id));
+    .in(
+      'alert_id',
+      incidents.map((i) => i.id),
+    );
   const seen = new Set((data ?? []).map((row) => row.alert_id as string));
   return incidents.filter((i) => !seen.has(i.id));
 }
@@ -326,7 +340,12 @@ async function save(db: Admin, userId: string, body: Record<string, unknown>) {
   const id = typeof body.id === 'string' ? body.id : null;
   let existing: RouteRow | null = null;
   if (id) {
-    const { data } = await db.from('route_watches').select('*').eq('id', id).eq('user_id', userId).maybeSingle();
+    const { data } = await db
+      .from('route_watches')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .maybeSingle();
     if (!data) throw new UserError('Diese Route gibt es nicht mehr.', 404);
     existing = data as RouteRow;
   } else {
@@ -348,7 +367,11 @@ async function save(db: Admin, userId: string, body: Record<string, unknown>) {
 
   let planned: Partial<RouteRow> = {};
   if (!samePlaces) {
-    if (!tomtomKey()) throw new UserError('Die Routenplanung ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).', 503);
+    if (!tomtomKey())
+      throw new UserError(
+        'Die Routenplanung ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).',
+        503,
+      );
     const route = await tomtomRoute(origin, dest);
     if (!route) throw new UserError('Zwischen Start und Ziel wurde keine Autoroute gefunden.', 422);
     planned = {
@@ -405,7 +428,12 @@ function parsePlace(value: unknown): Place | null {
 
 async function loadOwn(db: Admin, userId: string, id: unknown): Promise<RouteRow> {
   if (typeof id !== 'string') throw new UserError('Route fehlt.');
-  const { data } = await db.from('route_watches').select('*').eq('id', id).eq('user_id', userId).maybeSingle();
+  const { data } = await db
+    .from('route_watches')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .maybeSingle();
   if (!data) throw new UserError('Diese Route gibt es nicht mehr.', 404);
   return data as RouteRow;
 }
@@ -414,8 +442,14 @@ async function check(db: Admin, userId: string, body: Record<string, unknown>) {
   const route = await loadOwn(db, userId, body.id);
   const reverse = body.reverse === true;
   const result = await checkRoute(route, reverse, { tomtom: true, roadworks: true });
-  if (!result.sources.length) throw new UserError('Die Verkehrsdaten sind gerade nicht erreichbar.', 502);
-  await storeCheck(db, route, result, result.sources.includes('tomtom') ? { last_tomtom_at: result.checkedAt } : {});
+  if (!result.sources.length)
+    throw new UserError('Die Verkehrsdaten sind gerade nicht erreichbar.', 502);
+  await storeCheck(
+    db,
+    route,
+    result,
+    result.sources.includes('tomtom') ? { last_tomtom_at: result.checkedAt } : {},
+  );
   // Was du gerade gesehen hast, kommt nicht noch einmal als Push
   await markSeen(db, route.id, result.incidents.filter(isLive));
   return { result };
@@ -505,7 +539,10 @@ async function cronRoute(
     notified = 0;
   }
   await markSeen(db, route.id, result.incidents.filter(isLive));
-  await storeCheck(db, route, result, { last_tomtom_at: result.checkedAt, live_delay_notified: notified });
+  await storeCheck(db, route, result, {
+    last_tomtom_at: result.checkedAt,
+    live_delay_notified: notified,
+  });
   return sent;
 }
 
@@ -515,7 +552,10 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return jsonResponse({ error: 'Nur POST ist erlaubt.' }, 405);
 
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const db = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
   const body = ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   autobahnCache.clear();
 

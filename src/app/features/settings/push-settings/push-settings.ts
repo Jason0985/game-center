@@ -44,6 +44,12 @@ const PUSH_TYPES: { type: PushType; title: string; sub: string; tile: string }[]
     sub: 'Zum Beispiel Wartungsarbeiten',
     tile: 'var(--tile-orange)',
   },
+  {
+    type: 'route_alert',
+    title: 'Routen-Check',
+    sub: 'Stau, Sperrungen und Lage auf deinen Strecken',
+    tile: 'var(--tile-teal)',
+  },
 ];
 
 @Component({

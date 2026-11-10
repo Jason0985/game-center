@@ -4,6 +4,8 @@ export type NotificationType =
   | 'game_invite'
   | 'system_info'
   | 'system_alert'
+  // Routen-Check: Stau, Sperrung oder Lage zur Check-Zeit
+  | 'route_alert'
   // Nur lokal auf dem Gerät (Fehler beim Benutzen der App), nie in der DB
   | 'app_error';
 
