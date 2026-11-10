@@ -1,0 +1,153 @@
+// GT7-Tracker im Stil der übrigen Werkzeuge: gruppierte Zeilen, Autobild als Vorschaubild,
+// Zustand der Merkliste als farbiger Punkt (grün = zu kaufen)
+.gt7-page {
+  --gt7-accent: var(--tile-red);
+}
+
+.gt7-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gt7-actions .ui-pill-btn mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.gt7-status {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.gt7-status--error {
+  color: var(--color-danger, #ff6961);
+}
+
+.gt7-empty {
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.gt7-watch-row {
+  gap: 12px;
+}
+
+.gt7-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+}
+
+.gt7-dot[data-state='available'] {
+  background: #34c759;
+  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.2);
+}
+
+.gt7-dot[data-state='sold-out'] {
+  background: #ff9f0a;
+}
+
+.gt7-add {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.gt7-add-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.gt7-add-input:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 1px;
+}
+
+.gt7-list {
+  --ui-row-inset: 116px;
+}
+
+.gt7-car {
+  gap: 12px;
+  min-height: 76px;
+  padding-left: 12px;
+}
+
+.gt7-thumb {
+  flex: none;
+  width: 92px;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--color-fill);
+  object-fit: cover;
+}
+
+.gt7-thumb--empty {
+  display: grid;
+  place-items: center;
+  color: var(--color-text-subtle);
+}
+
+.gt7-car--sold .gt7-thumb {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.gt7-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gt7-badge {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gt7-badge--sold {
+  background: color-mix(in srgb, #ff453a 16%, transparent);
+  color: #ff6961;
+}
+
+.gt7-badge--limited {
+  background: color-mix(in srgb, #ff9f0a 18%, transparent);
+  color: #ff9f0a;
+}
+
+.gt7-star {
+  color: var(--color-text-subtle);
+}
+
+.gt7-star--on {
+  color: #ffcc00;
+}
+
+.gt7-source {
+  margin: 8px 4px 0;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.gt7-source a {
+  color: inherit;
+}

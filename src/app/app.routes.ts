@@ -108,6 +108,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'collection/gt7-tracker',
+    canActivate: [roleGuard('admin')],
+    loadComponent: () =>
+      import('./features/collection/gt7-tracker/gt7-tracker').then((module) => module.Gt7Tracker),
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./features/profile/profile').then((module) => module.Profile),
   },
