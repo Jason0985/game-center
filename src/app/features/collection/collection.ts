@@ -105,6 +105,15 @@ export class Collection {
       path: '/collection/bauplaner',
     },
     {
+      title: 'Routen-Check',
+      tile: 'var(--tile-teal)',
+      group: 'Werkzeuge',
+      category: 'Verkehr',
+      description: 'Stau, Baustellen und Sperrungen auf deinen Strecken, mit Push vor der Abfahrt.',
+      icon: 'traffic',
+      path: '/collection/routen-check',
+    },
+    {
       title: 'GT7-Tracker',
       tile: 'var(--tile-red)',
       group: 'Werkzeuge',

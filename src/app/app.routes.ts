@@ -108,6 +108,21 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'collection/routen-check',
+    loadComponent: () =>
+      import('./features/collection/route-check/route-check').then((module) => module.RouteCheck),
+  },
+  {
+    path: 'collection/routen-check/neu',
+    loadComponent: () =>
+      import('./features/collection/route-check/route-editor').then((module) => module.RouteEditor),
+  },
+  {
+    path: 'collection/routen-check/:id',
+    loadComponent: () =>
+      import('./features/collection/route-check/route-editor').then((module) => module.RouteEditor),
+  },
+  {
     path: 'collection/gt7-tracker',
     canActivate: [roleGuard('admin')],
     loadComponent: () =>
