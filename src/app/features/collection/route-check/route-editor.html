@@ -81,9 +81,21 @@
             </button>
           </div>
         </div>
+        @if (editing()) {
+          <div class="ui-group route-course-link">
+            <a class="ui-row" [routerLink]="['/collection/routen-check', id(), 'strecke']">
+              <mat-icon class="route-course-icon" aria-hidden="true">map</mat-icon>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Strecke ansehen und anpassen</span>
+                <span class="ui-row-sub">Karte, Straßenverlauf, Zwischenziele, Alternativen</span>
+              </span>
+              <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </a>
+          </div>
+        }
         <p class="ui-section-footer">
           Der Rückweg ist dieselbe Strecke vom Ziel zum Start. Start und Ziel bitte aus den
-          Vorschlägen wählen.
+          Vorschlägen wählen. Neue Orte setzen eigene Zwischenziele zurück.
         </p>
       </section>
 

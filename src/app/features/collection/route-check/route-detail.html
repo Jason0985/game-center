@@ -1,0 +1,246 @@
+<div class="ui-page-root">
+  <div class="ui-page route-detail">
+    <header class="ui-page-head">
+      <a class="ui-back-link" routerLink="/collection/routen-check">
+        <mat-icon aria-hidden="true">chevron_left</mat-icon>Routen-Check
+      </a>
+      <h1 class="ui-large-title">{{ route()?.name ?? 'Strecke' }}</h1>
+      <p class="ui-page-lead">
+        So fährt der Routen-Check deinen Hinweg. Fährst du anders, setz Zwischenziele oder nimm eine
+        andere Strecke.
+      </p>
+    </header>
+
+    @if (loading()) {
+      <div class="ui-group"><app-skeleton-rows [count]="4" label="Strecke wird geladen" /></div>
+    } @else if (route(); as r) {
+      <div class="route-detail-layout">
+        <div class="route-detail-map ui-group">
+          <app-route-map
+            [lines]="lines()"
+            [markers]="markers()"
+            [label]="'Karte der Strecke ' + r.name"
+            (pick)="pickOnMap($event)"
+            (choose)="chooseLine($event)"
+          />
+          @if (planning()) {
+            <span class="route-detail-map-busy" role="status">
+              <mat-icon aria-hidden="true">sync</mat-icon>Plant …
+            </span>
+          }
+        </div>
+
+        <div class="route-detail-side">
+          @if (current(); as c) {
+            <section class="ui-section" aria-labelledby="route-course">
+              <h2 id="route-course" class="ui-section-title">
+                {{ c.saved ? 'Gespeicherte Strecke' : 'Vorschau' }}
+              </h2>
+              <div class="ui-group">
+                <div class="route-summary">
+                  <span class="route-summary-time">{{
+                    c.minutes !== null ? formatTime(c.minutes) : '–'
+                  }}</span>
+                  <span class="route-summary-meta">
+                    @if (c.km) {
+                      {{ c.km.toLocaleString('de-DE') }} km
+                    }
+                    @if (c.delay > 0) {
+                      · <span class="route-summary-delay">+{{ c.delay }} Min. Verkehr</span>
+                    }
+                    @if (c.saved && r.follow_path) {
+                      · fest gewählt
+                    }
+                  </span>
+                </div>
+
+                <ol class="route-steps" aria-label="Straßenverlauf">
+                  <li class="route-step route-step--end">
+                    <span class="route-step-dot route-step-dot--start" aria-hidden="true"></span>
+                    <span class="route-step-text">{{ r.origin_label }}</span>
+                  </li>
+                  @for (step of c.steps; track $index) {
+                    <li class="route-step">
+                      <span class="route-step-dot" aria-hidden="true"></span>
+                      <span class="route-road" [attr.data-kind]="roadKind(step.road)">{{
+                        step.road
+                      }}</span>
+                      <span class="route-step-km">{{ step.km.toLocaleString('de-DE') }} km</span>
+                    </li>
+                  } @empty {
+                    <li class="route-step route-step--note">
+                      <span class="route-step-dot" aria-hidden="true"></span>
+                      <span class="route-step-text">
+                        @if (c.roads.length) {
+                          Über {{ c.roads.join(', ') }}.
+                        }
+                        Den genauen Verlauf zeigt „Strecken vergleichen“.
+                      </span>
+                    </li>
+                  }
+                  <li class="route-step route-step--end">
+                    <span class="route-step-dot route-step-dot--goal" aria-hidden="true"></span>
+                    <span class="route-step-text">{{ r.dest_label }}</span>
+                  </li>
+                </ol>
+              </div>
+              <p class="ui-section-footer">Der Rückweg nimmt dieselbe Strecke in Gegenrichtung.</p>
+            </section>
+          }
+
+          <section class="ui-section" aria-labelledby="route-vias">
+            <h2 id="route-vias" class="ui-section-title">Zwischenziele</h2>
+            <div class="ui-group">
+              @for (via of vias(); track via.lat + ',' + via.lon; let i = $index) {
+                <div class="ui-row route-via">
+                  <span class="route-via-pin" aria-hidden="true">{{ i + 1 }}</span>
+                  <span class="ui-row-text">
+                    <span class="ui-row-title">{{ via.label }}</span>
+                  </span>
+                  <button
+                    type="button"
+                    class="ui-icon-button"
+                    [attr.aria-label]="via.label + ' entfernen'"
+                    [disabled]="saving()"
+                    (click)="removeVia(i)"
+                  >
+                    <mat-icon aria-hidden="true">remove_circle_outline</mat-icon>
+                  </button>
+                </div>
+              }
+              @if (vias().length < maxVias) {
+                <label class="route-via-search">
+                  <mat-icon aria-hidden="true">add_location_alt</mat-icon>
+                  <input
+                    type="search"
+                    autocomplete="off"
+                    enterkeyhint="search"
+                    placeholder="Über Ort oder Straße …"
+                    aria-label="Zwischenziel suchen"
+                    [value]="query()"
+                    (input)="type($event)"
+                  />
+                </label>
+                @if (suggestions().length || searching() || searchError()) {
+                  <ul class="route-via-suggestions" role="listbox" aria-label="Vorschläge">
+                    @if (searching() && !suggestions().length) {
+                      <li class="route-via-note">Sucht …</li>
+                    } @else if (searchError()) {
+                      <li class="route-via-note">{{ searchError() }}</li>
+                    }
+                    @for (place of suggestions(); track place.lat + ',' + place.lon) {
+                      <li role="option" aria-selected="false">
+                        <button type="button" (click)="chooseSuggestion(place)">
+                          <mat-icon aria-hidden="true">place</mat-icon>
+                          <span>{{ place.label }}</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            </div>
+            <p class="ui-section-footer">
+              Oder tippe auf der Karte auf die Straße, die du sonst fährst. Bis zu
+              {{ maxVias }} Punkte.
+            </p>
+          </section>
+
+          <section class="ui-section" aria-labelledby="route-options">
+            <h2 id="route-options" class="ui-section-title">Strecken</h2>
+            @if (options()) {
+              <div class="ui-group" role="radiogroup" aria-label="Strecke wählen">
+                @for (card of optionCards(); track card.index) {
+                  <button
+                    type="button"
+                    class="ui-row route-option"
+                    role="radio"
+                    [attr.aria-checked]="card.index === selected()"
+                    (click)="select(card.index)"
+                  >
+                    <span class="route-option-mark" aria-hidden="true"></span>
+                    <span class="ui-row-text">
+                      <span class="ui-row-title">{{ card.title }}</span>
+                      <span class="ui-row-sub">{{ card.km }} {{ card.via }}</span>
+                    </span>
+                    <span class="route-option-time">
+                      <span>{{ card.time }}</span>
+                      @if (card.note) {
+                        <span class="route-option-note">{{ card.note }}</span>
+                      }
+                    </span>
+                  </button>
+                }
+              </div>
+              @if (vias().length) {
+                <p class="ui-section-footer">
+                  Mit Zwischenzielen gibt es keine Alternativen.
+                  <button type="button" class="route-link" (click)="fastest()">
+                    Ohne Zwischenziele vergleichen
+                  </button>
+                </p>
+              }
+            } @else {
+              <div class="ui-group">
+                <button
+                  type="button"
+                  class="ui-row route-compare"
+                  [disabled]="planning()"
+                  (click)="plan()"
+                >
+                  <mat-icon class="route-row-icon" aria-hidden="true">alt_route</mat-icon>
+                  <span class="ui-row-text">
+                    <span class="ui-row-title">{{
+                      planning() ? 'Plant …' : 'Strecken vergleichen'
+                    }}</span>
+                    <span class="ui-row-sub"
+                      >Schnellste und bis zu zwei Alternativen mit Verkehr</span
+                    >
+                  </span>
+                  <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+                </button>
+                @if (r.follow_path || r.vias.length) {
+                  <button
+                    type="button"
+                    class="ui-row route-compare"
+                    [disabled]="planning()"
+                    (click)="fastest()"
+                  >
+                    <mat-icon class="route-row-icon" aria-hidden="true">bolt</mat-icon>
+                    <span class="ui-row-text">
+                      <span class="ui-row-title">Zurück zur schnellsten Strecke</span>
+                      <span class="ui-row-sub">Ohne Zwischenziele, wie TomTom sie wählt</span>
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+            @if (planError()) {
+              <p class="ui-section-footer route-error" role="alert">{{ planError() }}</p>
+            }
+          </section>
+
+          @if (dirty() || options()) {
+            <div class="route-detail-save">
+              <button
+                type="button"
+                class="ui-btn route-detail-save-btn"
+                [disabled]="!dirty() || saving() || planning()"
+                (click)="save()"
+              >
+                {{ saving() ? 'Speichert …' : 'Diese Strecke verwenden' }}
+              </button>
+              <button type="button" class="route-link" [disabled]="saving()" (click)="discard()">
+                Verwerfen
+              </button>
+            </div>
+          }
+
+          <p class="ui-section-footer route-detail-source">
+            Karte © OpenStreetMap-Mitwirkende, Strecken und Verkehr von TomTom.
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

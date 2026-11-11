@@ -507,3 +507,140 @@ export function delayMessage(
     ).slice(0, 500),
   };
 }
+
+// ---------------------------------------------------------------- Eigene Strecke
+
+// Zwischenziel, über das die Strecke führen soll
+export interface Via {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
+export const MAX_VIAS = 3;
+
+// Straßenverlauf für die Anzeige: Straße (Nummer oder Name) und Kilometer darauf
+export interface RouteStep {
+  road: string;
+  km: number;
+}
+
+export function parseVias(value: unknown): Via[] | null {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > MAX_VIAS) return null;
+  const out: Via[] = [];
+  for (const entry of value) {
+    const label = typeof entry?.label === 'string' ? entry.label.trim().slice(0, 160) : '';
+    const lat = Number(entry?.lat);
+    const lon = Number(entry?.lon);
+    if (!label || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    out.push({ label, lat, lon });
+  }
+  return out;
+}
+
+// Vom Gerät geschickte Strecke ([[lat, lon], …]); null, wenn kaputt
+export function parsePath(value: unknown, maxPoints = 4000): LatLon[] | null {
+  if (!Array.isArray(value) || value.length < 2 || value.length > maxPoints) return null;
+  const out: LatLon[] = [];
+  for (const point of value) {
+    const lat = Number(Array.isArray(point) ? point[0] : NaN);
+    const lon = Number(Array.isArray(point) ? point[1] : NaN);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    out.push([lat, lon]);
+  }
+  return out;
+}
+
+/**
+ * Stützpunkte, an denen TomTom die gespeicherte Strecke nachbaut (statt die schnellste zu
+ * suchen). Höchstens max Punkte, für den Rückweg in umgekehrter Reihenfolge.
+ */
+export function supportingPoints(
+  path: LatLon[],
+  reverse: boolean,
+  max = 150,
+): { latitude: number; longitude: number }[] {
+  const step = Math.max(300, pathLengthM(path) / max);
+  const points = simplifyPath(path, step);
+  return (reverse ? [...points].reverse() : points).map(([latitude, longitude]) => ({
+    latitude,
+    longitude,
+  }));
+}
+
+// Liegt der Punkt höchstens maxM von der Strecke entfernt?
+export const nearPath = (point: LatLon, path: LatLon[], maxM: number) =>
+  nearestOnPath(point, path).distance <= maxM;
+
+/**
+ * Zwischenziele in Fahrtrichtung sortieren (wie sie entlang der Strecke liegen), damit ein
+ * nachträglich gesetzter Punkt keinen Umweg zurück erzwingt.
+ */
+export function orderVias<T extends { lat: number; lon: number }>(vias: T[], path: LatLon[]): T[] {
+  if (path.length < 2) return vias;
+  return vias
+    .map((via) => ({ via, at: nearestOnPath([via.lat, via.lon], path).index }))
+    .sort((a, b) => a.at - b.at)
+    .map(({ via }) => via);
+}
+
+/**
+ * Straßenverlauf aus den TomTom-Anweisungen: je Straße die gefahrenen Kilometer, gleiche
+ * Straßen hintereinander zusammengefasst, kurze Stücke (Auffahrten, Kreisel) weggelassen.
+ */
+export function routeSteps(route: TomTomRoute, maxSteps = 14): RouteStep[] {
+  const points = tomtomPoints(route);
+  if (points.length < 2) return [];
+  const along: number[] = [0];
+  for (let i = 1; i < points.length; i++)
+    along.push(along[i - 1] + distanceM(points[i - 1], points[i]));
+  const total = along[along.length - 1];
+  const at = (index: number) => along[Math.max(0, Math.min(points.length - 1, index))];
+
+  const raw: { road: string; m: number }[] = [];
+  const instructions = (route.guidance?.instructions ?? []).filter(
+    (i) => typeof i.pointIndex === 'number',
+  );
+  instructions.forEach((instruction, n) => {
+    const start = at(instruction.pointIndex!);
+    const end = n + 1 < instructions.length ? at(instructions[n + 1].pointIndex!) : total;
+    const road = roadLabel(instruction);
+    if (end - start <= 0) return;
+    if (!road) {
+      // Ohne Namen: zählt zum Stück davor
+      if (raw.length) raw[raw.length - 1].m += end - start;
+      return;
+    }
+    raw.push({ road, m: end - start });
+  });
+
+  const merge = (list: { road: string; m: number }[]) =>
+    list.reduce<{ road: string; m: number }[]>((out, step) => {
+      const last = out[out.length - 1];
+      if (last && last.road === step.road) last.m += step.m;
+      else out.push({ ...step });
+      return out;
+    }, []);
+
+  let steps = merge(raw);
+  // Kurze Stücke fallen weg, solange es zu viele sind (ab 400 m, dann größer)
+  for (let minM = 400; steps.length > 1; minM *= 2) {
+    steps = merge(steps.filter((s, i) => s.m >= minM || i === 0 || i === steps.length - 1));
+    if (steps.length <= maxSteps || minM > total) break;
+  }
+  return steps
+    .slice(0, maxSteps)
+    .map((s) => ({ road: s.road.slice(0, 60), km: Math.round(s.m / 100) / 10 }));
+}
+
+// "A5" vor "Mainzer Landstraße"; "E35/A5" -> "A5"
+function roadLabel(instruction: { roadNumbers?: string[]; street?: string }): string {
+  const numbers = (instruction.roadNumbers ?? []).flatMap((n) => n.split('/')).map((n) => n.trim());
+  const national =
+    numbers.find((n) => /^[ABLKS]\s?\d/i.test(n)) ?? numbers.find((n) => !/^E\s?\d/i.test(n));
+  const road = national ?? numbers[0] ?? instruction.street ?? '';
+  return road.replace(/^([A-Z])\s(\d)/, '$1$2').trim();
+}

@@ -8,7 +8,12 @@ import {
   type LatLon,
   matchLine,
   mergeIncidents,
+  orderVias,
+  parsePath,
   parseSchedules,
+  parseVias,
+  routeSteps,
+  supportingPoints,
   simplifyPath,
   tomtomIncidents,
   type CheckResult,
@@ -182,5 +187,74 @@ describe('Routen-Check: Zeitplan und Texte', () => {
     expect(routeState(result([], 2), [])).toBe('clear');
     expect(routeState(result([jam], 6), [jam])).toBe('slow');
     expect(routeState(result([], 20), [])).toBe('blocked');
+  });
+});
+
+describe('eigene Strecke', () => {
+  const path: [number, number][] = [
+    [50.0, 8.0],
+    [50.05, 8.0],
+    [50.1, 8.0],
+    [50.15, 8.0],
+  ];
+
+  it('sortiert Zwischenziele entlang der Strecke', () => {
+    const vias = [
+      { label: 'spät', lat: 50.14, lon: 8.001 },
+      { label: 'früh', lat: 50.02, lon: 8.001 },
+    ];
+    expect(orderVias(vias, path).map((v) => v.label)).toEqual(['früh', 'spät']);
+  });
+
+  it('prüft Zwischenziele und geschickte Strecken', () => {
+    expect(parseVias(undefined)).toEqual([]);
+    expect(parseVias([{ label: 'A', lat: 1, lon: 2 }])).toEqual([{ label: 'A', lat: 1, lon: 2 }]);
+    expect(parseVias([{ label: '', lat: 1, lon: 2 }])).toBeNull();
+    expect(parseVias(new Array(4).fill({ label: 'A', lat: 1, lon: 2 }))).toBeNull();
+    expect(parsePath([[1, 2]])).toBeNull();
+    expect(
+      parsePath([
+        [1, 2],
+        [3, 'x'],
+      ]),
+    ).toBeNull();
+    expect(
+      parsePath([
+        [1, 2],
+        [3, 4],
+      ]),
+    ).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
+  });
+
+  it('baut Stützpunkte, für den Rückweg umgekehrt', () => {
+    const points = supportingPoints(path, false);
+    expect(points[0]).toEqual({ latitude: 50.0, longitude: 8.0 });
+    expect(supportingPoints(path, true)[0]).toEqual({ latitude: 50.15, longitude: 8.0 });
+    expect(points.length).toBeLessThanOrEqual(150);
+  });
+
+  it('liest den Straßenverlauf aus den Anweisungen', () => {
+    const points = Array.from({ length: 101 }, (_, i) => ({
+      latitude: 50 + i * 0.002,
+      longitude: 8,
+    }));
+    const steps = routeSteps({
+      legs: [{ points }],
+      guidance: {
+        instructions: [
+          { pointIndex: 0, street: 'Berger Straße' },
+          { pointIndex: 10, roadNumbers: ['E451', 'A661'] },
+          { pointIndex: 11, street: '' },
+          { pointIndex: 40, roadNumbers: ['E35/A5'] },
+          { pointIndex: 41, roadNumbers: ['A 5'] },
+          { pointIndex: 90, roadNumbers: ['B3'], street: 'Rheinstraße' },
+        ],
+      },
+    });
+    expect(steps.map((s) => s.road)).toEqual(['Berger Straße', 'A661', 'A5', 'B3']);
+    expect(steps[2].km).toBeGreaterThan(10);
   });
 });

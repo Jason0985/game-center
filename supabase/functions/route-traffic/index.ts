@@ -8,6 +8,9 @@
 //   save   { id?, name, origin, dest, schedules, live_alerts, notify_clear }
 //                                       Route planen und speichern (angemeldet, max. 5)
 //   check  { id, reverse }              Jetzt prüfen, Ergebnis zurück (angemeldet)
+//   plan   { origin, dest, vias }       Strecken zum Vergleichen (schnellste + Alternativen)
+//   reroute { id, vias, path? }         Strecke der Route ändern: über Zwischenziele, mit
+//                                       path genau diese Strecke (TomTom folgt ihr)
 //   cron                                pg_cron alle 5 Min. mit x-push-secret: fällige
 //                                       Check-Zeiten melden, neue Staus/Sperrungen sofort
 // Deploy ohne JWT-Prüfung (verify_jwt = false), die Funktion prüft selbst.
@@ -25,14 +28,23 @@ import {
   type Incident,
   type LatLon,
   liveMessage,
+  MAX_VIAS,
   mergeIncidents,
+  nearPath,
+  orderVias,
+  parsePath,
   parseSchedules,
+  parseVias,
   pathLengthM,
+  type RouteStep,
+  routeSteps,
   simplifyPath,
+  supportingPoints,
   type TomTomRoute,
   tomtomIncidents,
   tomtomPoints,
   tomtomRoadNumbers,
+  type Via,
 } from './route-logic.ts';
 
 const TOMTOM = 'https://api.tomtom.com';
@@ -92,6 +104,9 @@ interface RouteRow {
   notify_clear: boolean;
   path: LatLon[];
   roads: string[];
+  vias: Via[];
+  follow_path: boolean;
+  steps: RouteStep[];
   length_m: number | null;
   base_seconds: number | null;
   last_tomtom_at: string | null;
@@ -147,11 +162,27 @@ async function searchPlaces(query: string): Promise<Place[]> {
     }));
 }
 
-async function tomtomRoute(from: Place, to: Place): Promise<TomTomRoute | null> {
+interface RouteOptions {
+  // Zwischenziele in Fahrtrichtung
+  vias?: Via[];
+  // Strecke nachbauen statt die schnellste suchen
+  supporting?: { latitude: number; longitude: number }[];
+  // Zusätzliche Alternativen (nur ohne Zwischenziele und Stützpunkte)
+  alternatives?: number;
+}
+
+async function tomtomRoutes(
+  from: Place,
+  to: Place,
+  options: RouteOptions = {},
+): Promise<TomTomRoute[]> {
   const key = tomtomKey();
-  if (!key) return null;
+  if (!key) return [];
+  const stops = [from, ...(options.vias ?? []), to].map((p) => `${p.lat},${p.lon}`).join(':');
+  const alternatives =
+    !options.vias?.length && !options.supporting?.length ? (options.alternatives ?? 0) : 0;
   const url =
-    `${TOMTOM}/routing/1/calculateRoute/${from.lat},${from.lon}:${to.lat},${to.lon}/json?` +
+    `${TOMTOM}/routing/1/calculateRoute/${stops}/json?` +
     new URLSearchParams({
       key,
       traffic: 'true',
@@ -162,9 +193,48 @@ async function tomtomRoute(from: Place, to: Place): Promise<TomTomRoute | null> 
       sectionType: 'traffic',
       computeTravelTimeFor: 'all',
       departAt: 'now',
+      ...(alternatives ? { maxAlternatives: String(alternatives) } : {}),
     });
-  const data = await getJson<{ routes?: TomTomRoute[] }>(url);
-  return data.routes?.[0] ?? null;
+  const data = options.supporting?.length
+    ? await postJson<{ routes?: TomTomRoute[] }>(url, { supportingPoints: options.supporting })
+    : await getJson<{ routes?: TomTomRoute[] }>(url);
+  return data.routes ?? [];
+}
+
+async function tomtomRoute(from: Place, to: Place, options: RouteOptions = {}) {
+  return (await tomtomRoutes(from, to, options))[0] ?? null;
+}
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`${new URL(url).host} antwortet mit ${response.status}`);
+  return (await response.json()) as T;
+}
+
+// Wie die gespeicherte Route geplant wird: Zwischenziele, auf Wunsch genau ihre Strecke
+function optionsFor(route: RouteRow, reverse: boolean): RouteOptions {
+  // Genau die gespeicherte Strecke: sie führt schon über die Zwischenziele
+  if (route.follow_path && route.path.length > 1) {
+    return { supporting: supportingPoints(route.path, reverse) };
+  }
+  const vias = parseVias(route.vias) ?? [];
+  return { vias: reverse ? [...vias].reverse() : vias };
+}
+
+// Was von einer geplanten Strecke gespeichert wird
+function plannedColumns(route: TomTomRoute) {
+  return {
+    path: simplifyPath(tomtomPoints(route)),
+    roads: autobahnRoads(tomtomRoadNumbers(route)),
+    steps: routeSteps(route),
+    length_m: route.summary?.lengthInMeters ?? null,
+    base_seconds: route.summary?.noTrafficTravelTimeInSeconds ?? null,
+  };
 }
 
 // ---------------------------------------------------------------- Autobahn GmbH
@@ -233,7 +303,7 @@ async function checkRoute(
 
   const [tt, ab] = await Promise.all([
     options.tomtom
-      ? tomtomRoute(from, to).catch((error) => {
+      ? tomtomRoute(from, to, optionsFor(route, reverse)).catch((error) => {
           console.error('Routen-Check: TomTom nicht erreichbar', error);
           return null;
         })
@@ -374,12 +444,8 @@ async function save(db: Admin, userId: string, body: Record<string, unknown>) {
       );
     const route = await tomtomRoute(origin, dest);
     if (!route) throw new UserError('Zwischen Start und Ziel wurde keine Autoroute gefunden.', 422);
-    planned = {
-      path: simplifyPath(tomtomPoints(route)),
-      roads: autobahnRoads(tomtomRoadNumbers(route)),
-      length_m: route.summary?.lengthInMeters ?? null,
-      base_seconds: route.summary?.noTrafficTravelTimeInSeconds ?? null,
-    };
+    // Neue Orte: eigene Zwischenziele und Strecke gelten nicht mehr
+    planned = { ...plannedColumns(route), vias: [], follow_path: false };
   }
 
   const row = {
@@ -453,6 +519,95 @@ async function check(db: Admin, userId: string, body: Record<string, unknown>) {
   // Was du gerade gesehen hast, kommt nicht noch einmal als Push
   await markSeen(db, route.id, result.incidents.filter(isLive));
   return { result };
+}
+
+// Strecken zum Vergleichen: die schnellste (über die Zwischenziele) und ohne Zwischenziele
+// bis zu zwei Alternativen; je Strecke Verlauf, Straßen und Fahrzeit jetzt
+async function plan(body: Record<string, unknown>) {
+  const origin = parsePlace(body.origin);
+  const dest = parsePlace(body.dest);
+  const vias = parseVias(body.vias);
+  if (!origin || !dest) throw new UserError('Start oder Ziel fehlt.');
+  if (!vias) throw new UserError(`Höchstens ${MAX_VIAS} Zwischenziele.`);
+  if (!tomtomKey())
+    throw new UserError(
+      'Die Routenplanung ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).',
+      503,
+    );
+  const routes = await tomtomRoutes(origin, dest, { vias, alternatives: 2 });
+  if (!routes.length) throw new UserError('Über diese Punkte wurde keine Autoroute gefunden.', 422);
+  return {
+    options: routes.map((route) => ({
+      path: simplifyPath(tomtomPoints(route), 80),
+      roads: autobahnRoads(tomtomRoadNumbers(route)),
+      steps: routeSteps(route),
+      lengthM: route.summary?.lengthInMeters ?? null,
+      travelSeconds: route.summary?.travelTimeInSeconds ?? null,
+      delaySeconds: route.summary?.trafficDelayInSeconds ?? null,
+      baseSeconds: route.summary?.noTrafficTravelTimeInSeconds ?? null,
+    })),
+  };
+}
+
+// Höchstens so weit dürfen Anfang und Ende einer geschickten Strecke von Start und Ziel weg sein
+const PATH_END_M = 3000;
+
+async function reroute(db: Admin, userId: string, body: Record<string, unknown>) {
+  const route = await loadOwn(db, userId, body.id);
+  const vias = parseVias(body.vias);
+  if (!vias) throw new UserError(`Höchstens ${MAX_VIAS} Zwischenziele.`);
+  if (!tomtomKey())
+    throw new UserError(
+      'Die Routenplanung ist noch nicht eingerichtet (TomTom-Schlüssel fehlt).',
+      503,
+    );
+  const [origin, dest] = placesOf(route, false);
+
+  // Mit path: genau diese Strecke (eine Alternative); TomTom baut sie aus Stützpunkten nach
+  let follow = false;
+  let supporting: RouteOptions['supporting'];
+  if (body.path !== undefined && body.path !== null) {
+    const path = parsePath(body.path);
+    if (
+      !path ||
+      !nearPath([origin.lat, origin.lon], [path[0], path[1]], PATH_END_M) ||
+      !nearPath([dest.lat, dest.lon], path.slice(-2), PATH_END_M)
+    ) {
+      throw new UserError('Diese Strecke passt nicht zu Start und Ziel.');
+    }
+    follow = true;
+    supporting = supportingPoints(path, false);
+  }
+
+  const ordered = orderVias(vias, route.path);
+  const planned = await tomtomRoute(origin, dest, supporting ? { supporting } : { vias: ordered });
+  if (!planned) throw new UserError('Über diese Punkte wurde keine Autoroute gefunden.', 422);
+
+  const { data, error } = await db
+    .from('route_watches')
+    .update({
+      ...plannedColumns(planned),
+      vias: ordered,
+      follow_path: follow,
+      live_delay_notified: 0,
+    })
+    .eq('id', route.id)
+    .select('*')
+    .single();
+  if (error || !data) throw new Error(`Strecke nicht gespeichert: ${error?.message}`);
+  const saved = data as RouteRow;
+
+  // Gleich die neue Strecke prüfen; was dort jetzt los ist, gilt als bekannt
+  const result = await checkRoute(saved, false, { tomtom: true, roadworks: true });
+  if (!result.sources.length) return { route: saved };
+  await storeCheck(
+    db,
+    saved,
+    result,
+    result.sources.includes('tomtom') ? { last_tomtom_at: result.checkedAt } : {},
+  );
+  await markSeen(db, saved.id, result.incidents.filter(isLive));
+  return { route: { ...saved, last_check: result, last_checked_at: result.checkedAt } };
 }
 
 // ---------------------------------------------------------------- Cron
@@ -583,6 +738,10 @@ Deno.serve(async (request) => {
         return jsonResponse(await save(db, userId, body));
       case 'check':
         return jsonResponse(await check(db, userId, body));
+      case 'plan':
+        return jsonResponse(await plan(body));
+      case 'reroute':
+        return jsonResponse(await reroute(db, userId, body));
       default:
         return jsonResponse({ error: 'Unbekannte Aktion.' }, 400);
     }
