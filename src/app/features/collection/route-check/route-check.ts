@@ -63,6 +63,7 @@ export class RouteCheck {
         from: shortPlace(reverse ? route.dest_label : route.origin_label),
         to: shortPlace(reverse ? route.origin_label : route.dest_label),
         schedules: route.schedules.map(formatSchedule),
+        course: courseText(route),
       };
     }),
   );
@@ -146,4 +147,21 @@ function shortPlace(label: string): string {
     .filter(Boolean);
   const last = parts[parts.length - 1] ?? label;
   return last.replace(/^\d{4,5}\s+/, '') || label;
+}
+
+// "über A5, A661 · 2 Zwischenziele" für die Zeile zur Strecke
+function courseText(route: RouteWatch): string {
+  const roads = route.roads?.length
+    ? route.roads
+    : [...(route.steps ?? [])]
+        .sort((a, b) => b.km - a.km)
+        .slice(0, 3)
+        .map((s) => s.road);
+  const parts = [
+    roads.length ? `über ${roads.slice(0, 4).join(', ')}` : 'Karte und Straßenverlauf',
+  ];
+  const vias = route.vias?.length ?? 0;
+  if (vias) parts.push(`${vias} Zwischenziel${vias === 1 ? '' : 'e'}`);
+  else if (route.follow_path) parts.push('eigene Strecke');
+  return parts.join(' · ');
 }

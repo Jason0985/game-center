@@ -5,10 +5,13 @@ import type {
   CheckResult,
   Incident,
   IncidentKind,
+  LatLon,
+  RouteStep,
   Schedule,
+  Via,
 } from '../../../../../supabase/functions/route-traffic/route-logic';
 
-export type { CheckResult, Incident, IncidentKind, Schedule };
+export type { CheckResult, Incident, IncidentKind, LatLon, RouteStep, Schedule, Via };
 
 export interface Place {
   label: string;
@@ -30,6 +33,11 @@ export interface RouteWatch {
   live_alerts: boolean;
   notify_clear: boolean;
   roads: string[];
+  // Strecke ([[lat, lon], …]), Zwischenziele, ob genau diese Strecke gilt, Straßenverlauf
+  path: LatLon[];
+  vias: Via[];
+  follow_path: boolean;
+  steps: RouteStep[];
   length_m: number | null;
   base_seconds: number | null;
   last_check: CheckResult | null;
@@ -47,13 +55,24 @@ export interface RouteDraft {
   notify_clear: boolean;
 }
 
+// Eine Strecke zum Vergleichen (Aktion plan)
+export interface RouteOption {
+  path: LatLon[];
+  roads: string[];
+  steps: RouteStep[];
+  lengthM: number | null;
+  travelSeconds: number | null;
+  delaySeconds: number | null;
+  baseSeconds: number | null;
+}
+
 export type RouteResult<T> = { ok: true; value: T } | { ok: false; message: string };
 
 export const MAX_ROUTES = 5;
 
 const COLUMNS =
   'id, name, origin_label, origin_lat, origin_lon, dest_label, dest_lat, dest_lon, schedules, ' +
-  'live_alerts, notify_clear, roads, length_m, base_seconds, last_check, last_checked_at, created_at';
+  'live_alerts, notify_clear, roads, path, vias, follow_path, steps, length_m, base_seconds, last_check, last_checked_at, created_at';
 
 /** Routen-Check: eigene Routen laden, ändern, löschen; Planen und Prüfen über route-traffic. */
 @Injectable({ providedIn: 'root' })
@@ -102,6 +121,18 @@ export class RouteCheckService {
 
   async save(draft: RouteDraft): Promise<RouteResult<RouteWatch>> {
     const result = await invoke<{ route: RouteWatch }>({ action: 'save', ...draft });
+    return result.ok ? { ok: true, value: result.value.route } : result;
+  }
+
+  // Strecken zum Vergleichen: die schnellste über die Zwischenziele, ohne sie Alternativen
+  async plan(origin: Place, dest: Place, vias: Via[]): Promise<RouteResult<RouteOption[]>> {
+    const result = await invoke<{ options: RouteOption[] }>({ action: 'plan', origin, dest, vias });
+    return result.ok ? { ok: true, value: result.value.options } : result;
+  }
+
+  // Strecke der Route ändern; mit path genau diese Strecke
+  async reroute(id: string, vias: Via[], path?: LatLon[]): Promise<RouteResult<RouteWatch>> {
+    const result = await invoke<{ route: RouteWatch }>({ action: 'reroute', id, vias, path });
     return result.ok ? { ok: true, value: result.value.route } : result;
   }
 

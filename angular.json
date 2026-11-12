@@ -42,7 +42,8 @@
             "styles": ["src/styles.scss"],
             "security": {
               "allowedHosts": ["localhost", "127.0.0.1"]
-            }
+            },
+            "allowedCommonJsDependencies": ["leaflet"]
           },
           "configurations": {
             "production": {
@@ -61,7 +62,7 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "12kB",
+                  "maximumWarning": "14kB",
                   "maximumError": "16kB"
                 }
               ],

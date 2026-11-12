@@ -118,6 +118,11 @@ export const routes: Routes = [
       import('./features/collection/route-check/route-editor').then((module) => module.RouteEditor),
   },
   {
+    path: 'collection/routen-check/:id/strecke',
+    loadComponent: () =>
+      import('./features/collection/route-check/route-detail').then((module) => module.RouteDetail),
+  },
+  {
     path: 'collection/routen-check/:id',
     loadComponent: () =>
       import('./features/collection/route-check/route-editor').then((module) => module.RouteEditor),

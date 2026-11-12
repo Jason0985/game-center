@@ -86,6 +86,18 @@
               </div>
             </div>
 
+            <a
+              class="ui-row route-schedules"
+              [routerLink]="['/collection/routen-check', card.route.id, 'strecke']"
+            >
+              <mat-icon class="route-row-icon" aria-hidden="true">map</mat-icon>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Strecke ansehen und anpassen</span>
+                <span class="ui-row-sub">{{ card.course }}</span>
+              </span>
+              <mat-icon class="ui-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </a>
+
             @for (incident of card.incidents; track incident.id) {
               <div class="ui-row route-incident" [attr.data-kind]="incident.kind">
                 <span class="route-incident-icon" aria-hidden="true">
