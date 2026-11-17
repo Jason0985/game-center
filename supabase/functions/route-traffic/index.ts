@@ -25,6 +25,7 @@ import {
   delayMessage,
   departureMessage,
   dueSchedules,
+  forDirection,
   type Incident,
   type LatLon,
   liveMessage,
@@ -57,6 +58,8 @@ const SENDER = 'Routen-Check';
 const TOMTOM_DAY_MIN = 30;
 const TOMTOM_NIGHT_MIN = 120;
 const LIVE_DELAY_MIN = 10;
+// Einzelner Stau laut TomTom (auch abseits der Autobahn): Push ab so viel Verzögerung
+const LIVE_JAM_MIN = 5;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -312,7 +315,11 @@ async function checkRoute(
   ]);
 
   const lengthM = route.length_m ?? pathLengthM(route.path);
-  const incidents = mergeIncidents(tt ? tomtomIncidents(tt, reverse) : [], ab.incidents, lengthM);
+  const incidents = mergeIncidents(
+    tt ? tomtomIncidents(tt, reverse, route.path) : [],
+    ab.incidents,
+    lengthM,
+  );
   const sources: CheckResult['sources'] = [];
   if (tt) sources.push('tomtom');
   if (ab.ok) sources.push('autobahn');
@@ -690,8 +697,20 @@ async function cronRoute(
     await notify(db, route, title, message);
     sent++;
     notified = delay;
-  } else if (delay < LIVE_DELAY_MIN / 2) {
-    notified = 0;
+  } else {
+    if (delay < LIVE_DELAY_MIN / 2) notified = 0;
+    // Neue Staus und Sperrungen, die nur TomTom kennt (Landstraße, Stadt), einzeln melden
+    const jams = forDirection(result.incidents, reverse).filter(
+      (i) =>
+        i.source === 'tomtom' &&
+        isLive(i) &&
+        (i.kind === 'closure' || (i.delayMinutes ?? 0) >= LIVE_JAM_MIN),
+    );
+    for (const incident of (await unseen(db, route.id, jams)).slice(0, 2)) {
+      const { title, message } = liveMessage(route.name, incident);
+      await notify(db, route, title, message);
+      sent++;
+    }
   }
   await markSeen(db, route.id, result.incidents.filter(isLive));
   await storeCheck(db, route, result, {

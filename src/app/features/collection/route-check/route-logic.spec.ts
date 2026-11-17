@@ -93,7 +93,12 @@ describe('Routen-Check: Strecke und Abgleich', () => {
     };
     const tt = tomtomIncidents(route, false);
     expect(tt).toHaveLength(1);
-    expect(tt[0]).toMatchObject({ kind: 'jam', title: 'Stau A3', delayMinutes: 10, position: 0.4 });
+    expect(tt[0]).toMatchObject({
+      kind: 'jam',
+      title: 'Stau A3',
+      delayMinutes: 10,
+      position: expect.closeTo(0.4, 5),
+    });
 
     const ab: Incident = {
       ...tt[0],
@@ -105,6 +110,89 @@ describe('Routen-Check: Strecke und Abgleich', () => {
     const merged = mergeIncidents(tt, [ab], 11_000);
     expect(merged).toHaveLength(1);
     expect(merged[0].delayMinutes).toBe(17);
+  });
+
+  it('places reports by distance, not by point number', () => {
+    // Dicht bis 50.01 (1,1 km), dann ein langer Abschnitt bis 50.10 (10 km)
+    const uneven: LatLon[] = [
+      ...Array.from({ length: 11 }, (_, i): LatLon => [50 + i * 0.001, 8.6]),
+      [50.1, 8.6],
+    ];
+    // Meldung bei 50.055: Hälfte der Strecke (nach Punktnummer wären es ~0,9)
+    expect(matchLine(line(50.05, 50.06), uneven)?.position).toBeCloseTo(0.5, 1);
+  });
+
+  it('treats a TomTom slowdown at roadworks as a jam', () => {
+    const route = {
+      legs: [{ points: path.map(([latitude, longitude]) => ({ latitude, longitude })) }],
+      sections: [
+        {
+          sectionType: 'TRAFFIC',
+          startPointIndex: 4,
+          simpleCategory: 'ROAD_WORK',
+          delayInSeconds: 420,
+          magnitudeOfDelay: 2,
+        },
+        { sectionType: 'TRAFFIC', startPointIndex: 12, simpleCategory: 'ROAD_WORK' },
+      ],
+      guidance: { instructions: [{ pointIndex: 0, roadNumbers: ['A3'] }] },
+    };
+    const [slow, works] = tomtomIncidents(route, false, path);
+    expect(slow).toMatchObject({ kind: 'jam', delayMinutes: 7, position: expect.closeTo(0.2, 2) });
+    expect(slow.detail).toContain('an einer Baustelle');
+    expect(works.kind).toBe('roadworks');
+  });
+
+  it('reads Autobahn jams without abnormalTrafficType and skips finished reports', () => {
+    const now = new Date('2026-11-17T12:00:00Z');
+    const base = {
+      title: 'A3 | Limburg-Nord - Diez',
+      subtitle: 'Frankfurt -> Köln',
+      geometry: { type: 'LineString', coordinates: line(50.04, 50.06) },
+    };
+    const stau = autobahnIncident(
+      { ...base, identifier: 'W1', description: ['A3 Frankfurt -> Köln', 'Stau, 3 km'] },
+      'warning',
+      'A3',
+      path,
+      now,
+    );
+    expect(stau?.kind).toBe('jam');
+
+    const over = autobahnIncident(
+      {
+        ...base,
+        identifier: 'R1',
+        description: ['Beginn: 16.11.26 um 20:00 Uhr', 'Ende: 17.11.26 um 05:00 Uhr'],
+      },
+      'roadworks',
+      'A3',
+      path,
+      now,
+    );
+    expect(over).toBeNull();
+
+    const later = autobahnIncident(
+      {
+        ...base,
+        identifier: 'R2',
+        description: ['Beginn: 17.11.26 um 20:00 Uhr', 'Ende: 18.11.26 um 05:00 Uhr'],
+      },
+      'roadworks',
+      'A3',
+      path,
+      now,
+    );
+    expect(later?.future).toBe(true);
+
+    const both = autobahnIncident(
+      { ...base, identifier: 'R3', description: ['A3 Frankfurt <-> Köln'] },
+      'roadworks',
+      'A3',
+      path,
+      now,
+    );
+    expect(both?.reverse).toBeNull();
   });
 });
 

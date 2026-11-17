@@ -76,6 +76,32 @@ export function pathLengthM(path: LatLon[]): number {
   return sum;
 }
 
+// Gefahrene Meter bis zu jedem Punkt der Strecke
+export function cumulativeM(path: LatLon[]): number[] {
+  const along = [0];
+  for (let i = 1; i < path.length; i++) along.push(along[i - 1] + distanceM(path[i - 1], path[i]));
+  return along;
+}
+
+// Meter bis zu einem gebrochenen Abschnittsindex (wie ihn nearestOnPath liefert)
+function metersAt(along: number[], index: number): number {
+  const i = Math.max(0, Math.min(along.length - 1, Math.floor(index)));
+  const next = Math.min(along.length - 1, i + 1);
+  return along[i] + (along[next] - along[i]) * (index - i);
+}
+
+/**
+ * Lage eines Punkts als Anteil der Streckenlänge (0 = Start, 1 = Ziel). Nach Metern, nicht
+ * nach Punktnummer: Die Punkte der Strecke liegen in Kurven dicht und auf Geraden weit
+ * auseinander, nach Punktnummer landeten Meldungen auf der Karte kilometerweit daneben.
+ */
+export function fractionAlong(point: LatLon, path: LatLon[]): number {
+  if (path.length < 2) return 0;
+  const along = cumulativeM(path);
+  const total = along[along.length - 1];
+  return total ? clamp01(metersAt(along, nearestOnPath(point, path).index) / total) : 0;
+}
+
 // Nächster Punkt auf der Strecke: Abstand und Lage als gebrochener Abschnittsindex
 export function nearestOnPath(point: LatLon, path: LatLon[]): { distance: number; index: number } {
   let best = { distance: Infinity, index: 0 };
@@ -124,12 +150,13 @@ export function matchLine(
   // Mehr als die Hälfte der Linie muss an der Strecke liegen (sonst nur Kreuzung/Parallele)
   if (!near.length || near.length * 2 < samples.length) return null;
 
-  const segments = path.length - 1;
-  const first = near[0].index;
-  const end = near[near.length - 1].index;
-  const moved = (end - first) * (pathLengthM(path) / segments);
+  const along = cumulativeM(path);
+  const total = along[along.length - 1] || 1;
+  const first = metersAt(along, near[0].index);
+  const end = metersAt(along, near[near.length - 1].index);
+  const moved = end - first;
   const reverse = Math.abs(moved) < 50 ? null : moved < 0;
-  return { position: clamp01(Math.min(first, end) / segments), reverse };
+  return { position: clamp01(Math.min(first, end) / total), reverse };
 }
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -138,6 +165,7 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
 export interface AutobahnItem {
   identifier?: string;
+  startTimestamp?: string;
   title?: string;
   subtitle?: string;
   description?: string[];
@@ -145,6 +173,7 @@ export interface AutobahnItem {
   abnormalTrafficType?: string | null;
   delayTimeValue?: string | number | null;
   future?: boolean;
+  averageSpeed?: string | number | null;
   coordinate?: { lat: number | string; long: number | string };
   geometry?: { type?: string; coordinates?: unknown };
 }
@@ -178,27 +207,70 @@ function bulletLines(description: string[] = []): string[] {
     .filter((line) => line && !/^Reisezeitverlust/i.test(line));
 }
 
+// "Beginn: 18.03.26 um 08:00 Uhr" -> "2026-03-18 08:00" (Ortszeit, vergleichbar als Text)
+function stampOf(description: string[], label: 'Beginn' | 'Ende'): string | null {
+  for (const line of description) {
+    const m = line.match(
+      new RegExp(
+        `^\\s*${label}:\\s*(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2,4})(?:\\D+(\\d{1,2}):(\\d{2}))?`,
+      ),
+    );
+    if (!m) continue;
+    const year = m[3].length === 2 ? `20${m[3]}` : m[3];
+    const pad = (v: string) => v.padStart(2, '0');
+    return `${year}-${pad(m[2])}-${pad(m[1])} ${pad(m[4] ?? (label === 'Ende' ? '23' : '00'))}:${m[5] ?? (label === 'Ende' ? '59' : '00')}`;
+  }
+  return null;
+}
+
+function localStamp(now: Date): string {
+  const local = berlinNow(now);
+  const hh = String(Math.floor(local.minutes / 60)).padStart(2, '0');
+  const mm = String(local.minutes % 60).padStart(2, '0');
+  return `${local.date} ${hh}:${mm}`;
+}
+
+// Staus kommen nicht immer mit abnormalTrafficType; dann verraten sie Verzögerung oder Text
+const JAM_TEXT = /\bStau\b|stockend|zähflüssig|Stillstand|Verkehrsüberlastung/i;
+
 export function autobahnIncident(
   item: AutobahnItem,
   service: AutobahnService,
   road: string,
   path: LatLon[],
+  now: Date = new Date(),
 ): Incident | null {
   if (!item.identifier) return null;
+  const description = item.description ?? [];
+
+  // Schon vorbei? Dann nicht mehr zeigen (die Liste enthält auch abgelaufene Tagesbaustellen)
+  const current = localStamp(now);
+  const ends = stampOf(description, 'Ende');
+  if (ends && ends < current) return null;
+  const begins = stampOf(description, 'Beginn');
+  const startMs = item.startTimestamp ? Date.parse(item.startTimestamp) : NaN;
+  const notYet =
+    (Number.isFinite(startMs) && startMs > now.getTime()) || (!!begins && begins > current);
+
   const hit = matchLine(lineOf(item), path);
   if (!hit) return null;
 
   const display = item.display_type ?? '';
+  const delay = Number(item.delayTimeValue);
+  const text = [item.title, item.subtitle, ...description].filter(Boolean).join(' ');
+  const jamLike =
+    !!item.abnormalTrafficType || (Number.isFinite(delay) && delay > 0) || JAM_TEXT.test(text);
   const kind: IncidentKind =
     service === 'closure' || display.includes('CLOSURE')
       ? 'closure'
       : service === 'roadworks'
         ? 'roadworks'
-        : item.abnormalTrafficType
+        : jamLike
           ? 'jam'
           : 'warning';
-  const delay = Number(item.delayTimeValue);
   const direction = (item.subtitle ?? '').trim();
+  // "Köln <-> Dortmund": beide Richtungen, egal wie die Linie gezeichnet ist
+  const both = /<->|beide[n]? Richtung/i.test(text);
   const bullets = bulletLines(item.description);
   const detail = [direction, ...bullets.slice(0, 2)].filter(Boolean).join(', ');
 
@@ -214,8 +286,8 @@ export function autobahnIncident(
     detail: detail.slice(0, 200),
     delayMinutes: Number.isFinite(delay) && delay > 0 ? Math.round(delay) : null,
     position: hit.position,
-    reverse: hit.reverse,
-    future: item.future === true,
+    reverse: both ? null : hit.reverse,
+    future: item.future === true || notYet,
   };
 }
 
@@ -284,13 +356,30 @@ function roadAt(route: TomTomRoute, pointIndex: number): string | null {
 
 const MAGNITUDE = ['', 'leicht', 'mäßig', 'stark', 'gesperrt'];
 
-export function tomtomIncidents(route: TomTomRoute, reverse: boolean): Incident[] {
-  const count = Math.max(1, tomtomPoints(route).length - 1);
+// Ab so viel Verzögerung ist ein Abschnitt ein Stau, auch wenn TomTom ihn als Baustelle führt
+const JAM_DELAY_S = 60;
+
+/**
+ * Verkehrsabschnitte einer TomTom-Route. path ist der gespeicherte Hinweg: Lage dort nach
+ * Metern (für Karte und Abgleich mit der Autobahn GmbH); ohne path nach Metern dieser Route.
+ */
+export function tomtomIncidents(
+  route: TomTomRoute,
+  reverse: boolean,
+  path: LatLon[] = [],
+): Incident[] {
+  const points = tomtomPoints(route);
+  const along = cumulativeM(points);
+  const total = along[along.length - 1] || 1;
   return (route.sections ?? [])
     .filter((section) => section.sectionType === 'TRAFFIC')
     .map((section) => {
       const start = section.startPointIndex ?? 0;
-      const kind = TOMTOM_KIND[section.simpleCategory ?? ''] ?? 'warning';
+      const category = TOMTOM_KIND[section.simpleCategory ?? ''] ?? 'warning';
+      // Stau vor einer Baustelle führt TomTom als ROAD_WORK: mit echter Verzögerung ist es Stau
+      const slowed =
+        (section.delayInSeconds ?? 0) >= JAM_DELAY_S || (section.magnitudeOfDelay ?? 0) >= 2;
+      const kind: IncidentKind = category !== 'closure' && slowed ? 'jam' : category;
       const road = roadAt(route, start);
       const delay = Math.round((section.delayInSeconds ?? 0) / 60);
       const speed = section.effectiveSpeedInKmh;
@@ -305,10 +394,19 @@ export function tomtomIncidents(route: TomTomRoute, reverse: boolean): Incident[
       const detail = [
         MAGNITUDE[section.magnitudeOfDelay ?? 0] ?? '',
         speed && kind !== 'closure' ? `${Math.round(speed)} km/h` : '',
+        kind === 'jam' && category === 'roadworks' ? 'an einer Baustelle' : '',
       ]
         .filter(Boolean)
         .join(', ');
-      const along = start / count;
+      const point = points[Math.min(start, points.length - 1)];
+      const position =
+        path.length > 1 && point
+          ? fractionAlong(point, path)
+          : clamp01(
+              reverse
+                ? 1 - along[Math.min(start, along.length - 1)] / total
+                : along[Math.min(start, along.length - 1)] / total,
+            );
       return {
         id: `tt:${section.eventId ?? `${reverse ? 'r' : 'h'}${start}`}`.slice(0, 200),
         source: 'tomtom' as const,
@@ -317,7 +415,7 @@ export function tomtomIncidents(route: TomTomRoute, reverse: boolean): Incident[
         title: road ? `${label} ${road}` : label,
         detail,
         delayMinutes: delay > 0 ? delay : null,
-        position: clamp01(reverse ? 1 - along : along),
+        position,
         reverse,
         future: false,
       };
@@ -455,7 +553,10 @@ export function departureMessage(
   result: CheckResult,
 ): { title: string; message: string; clear: boolean } {
   const relevant = forDirection(result.incidents, result.reverse);
-  const urgent = relevant.filter((i) => i.kind !== 'roadworks' && i.kind !== 'warning');
+  // Staus, Sperrungen und alles andere, das gerade Zeit kostet
+  const urgent = relevant.filter(
+    (i) => i.kind === 'jam' || i.kind === 'closure' || (i.delayMinutes ?? 0) >= 3,
+  );
   const works = relevant.filter((i) => i.kind === 'roadworks');
   const delay = result.delayMinutes ?? 0;
   const clear = !urgent.length && delay < 5;
