@@ -65,7 +65,60 @@
 // ---------------------------------------------------------------- Status
 
 .route-status {
+  display: block;
   padding: 16px 16px 14px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 260ms var(--ease-ios);
+
+  &:hover {
+    background: var(--color-white-04);
+  }
+
+  &:active {
+    background: var(--color-white-08);
+    transition-duration: 0ms;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: -2px;
+  }
+
+  .route-status-chevron {
+    transition: translate 260ms var(--ease-spring);
+  }
+
+  &:active .route-status-chevron {
+    translate: 3px 0;
+  }
+}
+
+// Strecke und Hinweis auf die Karte, unten im Kasten
+.route-status-course {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+
+  mat-icon {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+
+  span {
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .route-status-line {
