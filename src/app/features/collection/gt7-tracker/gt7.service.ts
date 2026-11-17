@@ -12,6 +12,9 @@ export interface Gt7Car {
   sold_out: boolean;
   limited_stock: boolean;
   in_dealer: boolean;
+  is_new: boolean;
+  // Geschätzte Tage, bis das Auto den Händler verlässt (0 = heute letzter Tag)
+  days_left: number | null;
   first_seen_at: string;
   last_seen_at: string;
 }
@@ -57,7 +60,7 @@ export class Gt7Service {
       supabase
         .from('gt7_dealer')
         .select(
-          'car_id, maker, name, price, image_url, sold_out, limited_stock, in_dealer, first_seen_at, last_seen_at',
+          'car_id, maker, name, price, image_url, sold_out, limited_stock, in_dealer, is_new, days_left, first_seen_at, last_seen_at',
         )
         .eq('in_dealer', true)
         .order('price', { ascending: false }),

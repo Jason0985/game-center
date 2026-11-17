@@ -129,6 +129,21 @@
   color: #ff6961;
 }
 
+.gt7-badge--days {
+  background: var(--color-white-08);
+  color: var(--color-text-muted);
+}
+
+.gt7-badge--new {
+  background: color-mix(in srgb, #30d158 18%, transparent);
+  color: #30d158;
+}
+
+.gt7-badge--last {
+  background: color-mix(in srgb, #ff453a 16%, transparent);
+  color: #ff6961;
+}
+
 .gt7-badge--limited {
   background: color-mix(in srgb, #ff9f0a 18%, transparent);
   color: #ff9f0a;

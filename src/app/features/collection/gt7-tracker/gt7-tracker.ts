@@ -12,13 +12,25 @@ const dateTime = new Intl.DateTimeFormat('de-DE', {
   hour: '2-digit',
   minute: '2-digit',
 });
+const dayFormat = new Intl.DateTimeFormat('de-DE', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
 const credits = (price: number | null) =>
   price === null ? '' : `Cr. ${price.toLocaleString('de-DE')}`;
 
+// Wie lange das Auto noch beim Händler steht (Schätzung von GT7 Info)
+export function daysLeftText(days: number | null): string {
+  if (days === null) return '';
+  if (days === 0) return 'Heute letzter Tag';
+  return `Noch ca. ${days} ${days === 1 ? 'Tag' : 'Tage'}`;
+}
+
 /**
  * GT7-Tracker (nur Admins): aktueller Legend Cars Dealer aus Gran Turismo 7 und die eigene
- * Merkliste. Die Edge Function gt7-legend-check prüft zweimal täglich und meldet Autos von der
- * Merkliste per Mitteilung (und Push), sobald sie verfügbar sind.
+ * Merkliste. Die Edge Function gt7-legend-check liest den Händler nach jedem Wechsel (täglich
+ * 00:00 UTC) bei GT7 Info, meldet neue Autos und Autos von der Merkliste per Mitteilung und Push.
  */
 @Component({
   selector: 'app-gt7-tracker',
@@ -46,6 +58,8 @@ export class Gt7Tracker {
       car,
       title: car.maker && !car.name.startsWith(car.maker) ? `${car.maker} ${car.name}` : car.name,
       price: credits(car.price),
+      days: daysLeftText(car.days_left),
+      lastDay: car.days_left === 0 && !car.sold_out,
       watched: this.watched().has(car.car_id),
     })),
   );
@@ -68,7 +82,13 @@ export class Gt7Tracker {
         state,
         detail:
           state === 'available'
-            ? `Beim Händler, ${credits(car!.price)}${car!.limited_stock ? ', wenige auf Lager' : ''}`
+            ? [
+                `Beim Händler, ${credits(car!.price)}`,
+                car!.limited_stock ? 'wenige auf Lager' : '',
+                daysLeftText(car!.days_left).toLowerCase(),
+              ]
+                .filter(Boolean)
+                .join(', ')
             : state === 'sold-out'
               ? 'Beim Händler, aber ausverkauft'
               : 'Gerade nicht beim Händler',
@@ -82,7 +102,7 @@ export class Gt7Tracker {
     const checked = `Zuletzt geprüft ${dateTime.format(new Date(status.checked_at))}`;
     if (!status.ok) return `${checked}: ${status.message ?? 'Fehler.'}`;
     const page = status.page_updated_at
-      ? `, Stand bei gtdb ${dateTime.format(new Date(status.page_updated_at))}`
+      ? `, Händler vom ${dayFormat.format(new Date(status.page_updated_at))}`
       : '';
     return `${checked}${page}.`;
   });

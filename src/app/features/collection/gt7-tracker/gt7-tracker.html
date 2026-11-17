@@ -6,8 +6,8 @@
       </a>
       <h1 class="ui-large-title">GT7-Tracker</h1>
       <p class="ui-page-lead">
-        Legend Cars Dealer aus Gran Turismo 7. Autos auf deiner Merkliste melden sich per
-        Mitteilung, sobald sie zu kaufen sind.
+        Legend Cars Dealer aus Gran Turismo 7. Er wechselt täglich um 01:00 Uhr (00:00 UTC); neue
+        Autos und Autos von deiner Merkliste melden sich per Mitteilung.
       </p>
       <div class="gt7-actions">
         <button
@@ -117,13 +117,23 @@
                 <span class="ui-row-text">
                   <span class="ui-row-title">{{ row.title }}</span>
                   <span class="ui-row-sub">{{ row.price }}</span>
-                  @if (row.car.sold_out || row.car.limited_stock) {
+                  @if (row.car.sold_out || row.car.limited_stock || row.car.is_new || row.days) {
                     <span class="gt7-badges">
+                      @if (row.car.is_new) {
+                        <span class="gt7-badge gt7-badge--new">Neu</span>
+                      }
                       @if (row.car.sold_out) {
                         <span class="gt7-badge gt7-badge--sold">Ausverkauft</span>
                       }
                       @if (row.car.limited_stock) {
                         <span class="gt7-badge gt7-badge--limited">Wenige auf Lager</span>
+                      }
+                      @if (row.days && !row.car.sold_out) {
+                        <span
+                          class="gt7-badge gt7-badge--days"
+                          [class.gt7-badge--last]="row.lastDay"
+                          >{{ row.days }}</span
+                        >
                       }
                     </span>
                   }
@@ -145,9 +155,8 @@
           </div>
           <p class="gt7-source">
             Daten von
-            <a href="https://gtdb.io/gt7/legend-cars-dealer/" target="_blank" rel="noopener"
-              >gtdb.io</a
-            >, Bilder dort gehostet.
+            <a href="https://ddm999.github.io/gt7info/" target="_blank" rel="noopener">GT7 Info</a>,
+            Bilder von gtdb.io. Verbleibende Tage sind geschätzt.
           </p>
         }
       </section>
