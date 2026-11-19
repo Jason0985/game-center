@@ -12,7 +12,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
 
 import { routes } from './app.routes';
-import { onPageTransition } from './page-transitions';
+import { markWebKit, onPageTransition } from './page-transitions';
 import { AppErrorHandler } from './services/app-error.service';
 import { isChunkLoadError, reloadOnce } from './services/stale-app';
 
@@ -24,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       inject(MatIconRegistry).setDefaultFontSetClass('material-icons-outlined');
     }),
+    provideAppInitializer(markWebKit),
     provideRouter(
       routes,
       // Seite einer alten App-Version nicht mehr auf dem Server: direkt zum Ziel neu laden

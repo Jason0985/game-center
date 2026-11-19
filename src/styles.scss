@@ -1560,6 +1560,13 @@ button.ui-row:active {
   animation-fill-mode: both;
 }
 
+// Safari: Leisten ohne eigenen Seitenübergang, sonst stehen sie nach dem Wechsel auf einer
+// gescrollten Seite falsch (Tab-Leiste mitten im Bild); siehe markWebKit in page-transitions.ts
+html.vt-bars-off .top-bar,
+html.vt-bars-off .bottom-nav {
+  view-transition-name: none;
+}
+
 ::view-transition-group(top-bar),
 ::view-transition-group(tab-bar) {
   animation-duration: 260ms;
