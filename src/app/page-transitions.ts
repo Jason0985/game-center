@@ -1,5 +1,23 @@
 import { ActivatedRouteSnapshot, ViewTransitionInfo } from '@angular/router';
 
+/**
+ * Safari (WebKit, auf iPhone/iPad jeder Browser) setzt fixierte und klebende Elemente mit eigenem
+ * view-transition-name nach einem Seitenwechsel auf einer gescrollten Seite falsch hin: Tab-Leiste
+ * mitten im Bild, Kopfzeile weg. Dort laufen die Leisten deshalb ohne eigenen Übergang mit der
+ * Seite mit (html.vt-bars-off, siehe styles.scss).
+ */
+export function isWebKit(nav: Pick<Navigator, 'userAgent'> = navigator): boolean {
+  const ua = nav.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua)) return true;
+  return /AppleWebKit/.test(ua) && !/Chrome\/|Chromium|Edg\/|Android/.test(ua);
+}
+
+export function markWebKit(): void {
+  // iPadOS meldet sich als Mac; Touch verrät das iPad
+  const ipad = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  if (isWebKit() || ipad) document.documentElement.classList.add('vt-bars-off');
+}
+
 // Seitenwechsel wie in iOS: tiefer in eine Seite schiebt von rechts herein (forward),
 // zurück schiebt nach rechts hinaus (back), zwischen Tabs wird überblendet (tab). Die
 // Richtung steht als data-nav auf <html>; die Animation selbst steht in styles.scss.

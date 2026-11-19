@@ -1,16 +1,19 @@
-// GT7-Tracker: liest den Legend Cars Dealer von gtdb.io aus, speichert die Händlerliste in
-// gt7_dealer und meldet Autos von der Merkliste (gt7_watchlist), sobald sie verfügbar sind
-// (beim Händler und nicht ausverkauft), je Verfügbarkeit einmal als "Wichtig"-Mitteilung;
-// die Push kommt über den Trigger auf notifications.
+// GT7-Tracker: liest den Legend Cars Dealer aus den Daten von GT7 Info (ddm999.github.io/gt7info,
+// täglich kurz nach dem Händlerwechsel um 00:00 UTC aktuell), speichert die Händlerliste in
+// gt7_dealer und meldet
+//   - Autos von der Merkliste (gt7_watchlist), sobald sie verfügbar sind (beim Händler und
+//     nicht ausverkauft), je Verfügbarkeit einmal als "Wichtig"-Mitteilung,
+//   - neue Autos beim Händler an alle Admins als "Info"-Mitteilung (je Wechsel einmal).
+// Die Push kommt über den Trigger auf notifications.
 //
 // Aufruf: pg_cron (public._gt7_trigger_check) mit Header x-push-secret = PUSH_WEBHOOK_SECRET,
 // oder ein Admin aus der App mit seinem Login. Body { test: true }: statt zu prüfen eine
 // Test-Mitteilung zu einem gerade verfügbaren Auto (an den Admin, per Cron an alle Admins).
 // Deploy ohne JWT-Prüfung (verify_jwt = false), die Funktion prüft selbst.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { DealerCar, parseDealerPage } from './gt7-parser.ts';
+import { carTitle, DealerCar, dealerUpdateMessage, parseGt7Info } from './gt7-parser.ts';
 
-const DEALER_URL = 'https://gtdb.io/gt7/legend-cars-dealer/';
+const DEALER_URL = 'https://ddm999.github.io/gt7info/data.json';
 const FETCH_TIMEOUT_MS = 20_000;
 const SENDER = 'GT7-Tracker';
 
@@ -30,13 +33,15 @@ function jsonResponse(body: unknown, status = 200): Response {
 const credits = (price: number | null) =>
   price === null ? '' : `für Cr. ${price.toLocaleString('de-DE')} `;
 
-const carTitle = (car: { maker: string; name: string }) =>
-  // gtdb nennt manche Autos schon mit Marke ("Ford Roadster")
-  car.maker && !car.name.startsWith(car.maker) ? `${car.maker} ${car.name}` : car.name;
-
 function availableMessage(car: DealerCar): string {
   const stock = car.limitedStock ? ' Nur noch wenige auf Lager.' : '';
-  return `Gerade ${credits(car.price)}im Legend Cars Dealer.${stock}`.slice(0, 500);
+  const days =
+    car.daysLeft === null
+      ? ''
+      : car.daysLeft === 0
+        ? ' Heute ist der letzte Tag.'
+        : ` Noch ca. ${car.daysLeft} ${car.daysLeft === 1 ? 'Tag' : 'Tage'}.`;
+  return `Gerade ${credits(car.price)}im Legend Cars Dealer.${stock}${days}`.slice(0, 500);
 }
 
 // Ohne generierte Datenbank-Typen
@@ -46,19 +51,20 @@ type Admin = SupabaseClient<any, 'public', any>;
 async function notify(
   db: Admin,
   recipients: string[],
-  car: DealerCar,
+  relatedId: string,
   title: string,
   message: string,
+  type: 'system_alert' | 'system_info' = 'system_alert',
 ): Promise<void> {
   if (!recipients.length) return;
   const { error } = await db.from('notifications').insert(
     recipients.map((recipient) => ({
       recipient_id: recipient,
       sender_name: SENDER,
-      type: 'system_alert',
+      type,
       title: title.slice(0, 100),
       message,
-      related_id: car.carId,
+      related_id: relatedId.slice(0, 64),
     })),
   );
   if (error) throw new Error(`Mitteilung nicht angelegt: ${error.message}`);
@@ -75,23 +81,29 @@ async function setStatus(
     .upsert({ id: 1, checked_at: new Date().toISOString(), ok, message, ...extra });
 }
 
-async function readDealer(): Promise<ReturnType<typeof parseDealerPage>> {
-  const response = await fetch(DEALER_URL, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GameCenterGT7Tracker/1.0)' },
+async function readDealer(): Promise<ReturnType<typeof parseGt7Info>> {
+  const response = await fetch(`${DEALER_URL}?t=${Date.now()}`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'GameCenterGT7Tracker/1.1' },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
-  if (!response.ok) throw new Error(`gtdb antwortet mit ${response.status}`);
-  return parseDealerPage(await response.text());
+  if (!response.ok) throw new Error(`GT7 Info antwortet mit ${response.status}`);
+  return parseGt7Info(await response.json());
 }
 
-// Händlerliste speichern; gibt die Autos zurück, die jetzt verfügbar sind, mit seit wann
-async function saveDealer(db: Admin, cars: DealerCar[]): Promise<Map<string, string>> {
+// Händlerliste speichern; gibt die Autos zurück, die jetzt verfügbar sind (mit seit wann),
+// und die neu beim Händler sind (leer beim allerersten Einlesen)
+async function saveDealer(
+  db: Admin,
+  cars: DealerCar[],
+): Promise<{ available: Map<string, string>; arrived: DealerCar[] }> {
   const now = new Date().toISOString();
   const { data: before, error } = await db
     .from('gt7_dealer')
-    .select('car_id, in_dealer, first_seen_at, available_since');
+    .select('car_id, in_dealer, first_seen_at, available_since, image_url');
   if (error) throw new Error(`Händlerliste nicht gelesen: ${error.message}`);
   const previous = new Map((before ?? []).map((row) => [row.car_id as string, row]));
+  const hadList = (before ?? []).some((row) => row.in_dealer);
+  const arrived = hadList ? cars.filter((car) => !previous.get(car.carId)?.in_dealer) : [];
 
   const available = new Map<string, string>();
   const rows = cars.map((car) => {
@@ -104,9 +116,12 @@ async function saveDealer(db: Admin, cars: DealerCar[]): Promise<Map<string, str
       maker: car.maker,
       name: car.name,
       price: car.price,
-      image_url: car.imageUrl,
+      // GT7 Info hat keine Bilder: das von früher behalten
+      image_url: car.imageUrl ?? old?.image_url ?? null,
       sold_out: car.soldOut,
       limited_stock: car.limitedStock,
+      is_new: car.isNew,
+      days_left: car.daysLeft,
       in_dealer: true,
       first_seen_at: old?.in_dealer ? old.first_seen_at : now,
       last_seen_at: now,
@@ -125,7 +140,7 @@ async function saveDealer(db: Admin, cars: DealerCar[]): Promise<Map<string, str
       .update({ in_dealer: false, available_since: null })
       .in('car_id', gone);
   }
-  return available;
+  return { available, arrived };
 }
 
 // Merkliste: neu verfügbare Autos je Konto einmal melden
@@ -148,7 +163,7 @@ async function notifyWatchers(
     // Zeitpunkte vergleichen, nicht Text (Datenbank: +00:00, JavaScript: Z)
     if (watch.notified_at && Date.parse(watch.notified_at) >= Date.parse(since)) continue;
     const car = cars.find((c) => c.carId === watch.car_id)!;
-    await notify(db, [watch.user_id], car, `${carTitle(car)} ist da`, availableMessage(car));
+    await notify(db, [watch.user_id], car.carId, `${carTitle(car)} ist da`, availableMessage(car));
     await db
       .from('gt7_watchlist')
       .update({ notified_at: new Date().toISOString(), maker: car.maker, name: car.name })
@@ -202,19 +217,19 @@ Deno.serve(async (request) => {
   const body = (await request.json().catch(() => null)) as { test?: unknown } | null;
   const test = body?.test === true;
 
-  let page: ReturnType<typeof parseDealerPage>;
+  let page: ReturnType<typeof parseGt7Info>;
   try {
     page = await readDealer();
   } catch (error) {
-    console.error('GT7-Tracker: gtdb nicht gelesen', error);
-    await setStatus(db, false, 'gtdb.io war nicht erreichbar.');
-    return jsonResponse({ error: 'gtdb.io ist gerade nicht erreichbar.' }, 502);
+    console.error('GT7-Tracker: GT7 Info nicht gelesen', error);
+    await setStatus(db, false, 'GT7 Info war nicht erreichbar.');
+    return jsonResponse({ error: 'GT7 Info ist gerade nicht erreichbar.' }, 502);
   }
   if (!page.cars.length) {
-    // Seite umgebaut: alte Liste lieber stehen lassen als alles als weg zu markieren
+    // Daten umgebaut: alte Liste lieber stehen lassen als alles als weg zu markieren
     console.error('GT7-Tracker: keine Autos erkannt');
-    await setStatus(db, false, 'Auf der gtdb-Seite wurden keine Autos erkannt.');
-    return jsonResponse({ error: 'Auf der gtdb-Seite wurden keine Autos erkannt.' }, 422);
+    await setStatus(db, false, 'In den Daten von GT7 Info wurden keine Autos erkannt.');
+    return jsonResponse({ error: 'In den Daten von GT7 Info wurden keine Autos erkannt.' }, 422);
   }
 
   try {
@@ -222,19 +237,39 @@ Deno.serve(async (request) => {
       // Test: Mitteilung wie im Ernstfall, zu einem Auto, das gerade verfügbar ist
       const car = page.cars.find((c) => !c.soldOut) ?? page.cars[0];
       const recipients = caller ? [caller] : await adminIds(db);
-      await notify(db, recipients, car, `Test: ${carTitle(car)} ist da`, availableMessage(car));
+      await notify(
+        db,
+        recipients,
+        car.carId,
+        `Test: ${carTitle(car)} ist da`,
+        availableMessage(car),
+      );
       return jsonResponse({ test: true, car: car.carId, recipients: recipients.length });
     }
 
-    const available = await saveDealer(db, page.cars);
+    const { available, arrived } = await saveDealer(db, page.cars);
     const notified = await notifyWatchers(db, page.cars, available);
-    await setStatus(
-      db,
-      true,
-      notified ? `${notified} Auto(s) von der Merkliste gemeldet.` : 'Geprüft.',
-      { page_updated_at: page.updatedAt, car_count: page.cars.length },
-    );
-    return jsonResponse({ cars: page.cars.length, notified });
+    // Händler hat gewechselt: neue Autos allen Admins melden (Info, eigene Push-Art)
+    const update = dealerUpdateMessage(arrived);
+    if (update) {
+      await notify(
+        db,
+        await adminIds(db),
+        `gt7-dealer-${page.updatedAt?.slice(0, 10) ?? 'neu'}`,
+        update.title,
+        update.message,
+        'system_info',
+      );
+    }
+    const parts = [
+      arrived.length ? `${arrived.length} neu beim Händler` : '',
+      notified ? `${notified} von der Merkliste gemeldet` : '',
+    ].filter(Boolean);
+    await setStatus(db, true, parts.length ? `${parts.join(', ')}.` : 'Geprüft.', {
+      page_updated_at: page.updatedAt,
+      car_count: page.cars.length,
+    });
+    return jsonResponse({ cars: page.cars.length, notified, arrived: arrived.length });
   } catch (error) {
     console.error('GT7-Tracker:', error);
     await setStatus(db, false, 'Prüfung fehlgeschlagen.');
