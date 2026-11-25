@@ -520,6 +520,17 @@ export function dueSchedules(
     }));
 }
 
+/**
+ * Ist die Route gerade pausiert? paused_until: null = aktiv, 'infinity' = bis man sie wieder
+ * einschaltet, sonst Zeitpunkt, ab dem sie wieder läuft.
+ */
+export function isPaused(pausedUntil: string | null | undefined, now: Date): boolean {
+  if (!pausedUntil) return false;
+  if (pausedUntil === 'infinity') return true;
+  const until = Date.parse(pausedUntil);
+  return Number.isFinite(until) && until > now.getTime();
+}
+
 // ---------------------------------------------------------------- Texte
 
 const KIND_LABEL: Record<IncidentKind, string> = {

@@ -5,6 +5,7 @@ import {
   departureMessage,
   dueSchedules,
   forDirection,
+  isPaused,
   type LatLon,
   matchLine,
   mergeIncidents,
@@ -19,7 +20,7 @@ import {
   type CheckResult,
   type Incident,
 } from '../../../../../supabase/functions/route-traffic/route-logic';
-import { formatDays, routeState } from './route-format';
+import { formatDays, pauseText, pauseUntil, routeState } from './route-format';
 
 // Gerade Strecke nach Norden, ca. 11 km (Breite 50.00 -> 50.10 bei Länge 8.60)
 const path: LatLon[] = Array.from({ length: 21 }, (_, i) => [50 + i * 0.005, 8.6]);
@@ -344,5 +345,30 @@ describe('eigene Strecke', () => {
     });
     expect(steps.map((s) => s.road)).toEqual(['Berger Straße', 'A661', 'A5', 'B3']);
     expect(steps[2].km).toBeGreaterThan(10);
+  });
+});
+
+describe('Route pausieren', () => {
+  const now = new Date(2026, 10, 25, 9, 30);
+
+  it('knows whether a route is paused', () => {
+    expect(isPaused(null, now)).toBe(false);
+    expect(isPaused('infinity', now)).toBe(true);
+    expect(isPaused(new Date(2026, 10, 25, 10).toISOString(), now)).toBe(true);
+    expect(isPaused(new Date(2026, 10, 25, 9).toISOString(), now)).toBe(false);
+  });
+
+  it('pauses for whole days or for good', () => {
+    expect(pauseUntil(null, now)).toBe('infinity');
+    expect(new Date(pauseUntil(2, now))).toEqual(new Date(2026, 10, 27, 9, 30));
+  });
+
+  it('says until when the route is paused', () => {
+    expect(pauseText('infinity', now)).toBe('Pausiert, bis du sie wieder einschaltest');
+    expect(pauseText(new Date(2026, 10, 25, 18, 0).toISOString(), now)).toBe(
+      'Pausiert bis heute, 18:00',
+    );
+    expect(pauseText(pauseUntil(1, now), now)).toBe('Pausiert bis morgen, 09:30');
+    expect(pauseText(pauseUntil(7, now), now)).toBe('Pausiert bis Mi., 2. Dez, 09:30');
   });
 });

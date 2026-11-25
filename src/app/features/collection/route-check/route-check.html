@@ -39,7 +39,11 @@
       </div>
     } @else {
       @for (card of cards(); track card.route.id) {
-        <section class="ui-section route-card" [attr.data-state]="card.state">
+        <section
+          class="ui-section route-card"
+          [attr.data-state]="card.paused ? 'paused' : card.state"
+          [class.route-card--paused]="card.paused"
+        >
           <div class="route-card-head">
             <h2 class="ui-section-title">{{ card.route.name }}</h2>
             <a class="ui-section-link" [routerLink]="['/collection/routen-check', card.route.id]">
@@ -56,6 +60,12 @@
                 card.route.name + ': ' + card.status + '. Karte und Strecke öffnen'
               "
             >
+              @if (card.paused) {
+                <p class="route-paused-note">
+                  <mat-icon aria-hidden="true">pause_circle</mat-icon>
+                  {{ card.pauseText }}
+                </p>
+              }
               <p class="route-status-line">
                 <span class="route-light" aria-hidden="true"></span>
                 {{ card.status }}
@@ -172,6 +182,113 @@
                 aria-hidden="true"
               ></span>
             </button>
+
+            <!-- Route aktiv: aus = pausieren (Dauer wählen), an = Pause sofort beenden -->
+            <button
+              type="button"
+              class="ui-row route-switch-row"
+              role="switch"
+              [attr.aria-checked]="!card.paused && pauseOpen() !== card.route.id"
+              [attr.aria-expanded]="card.paused ? null : pauseOpen() === card.route.id"
+              [attr.aria-controls]="'route-pause-' + card.route.id"
+              [disabled]="pauseSaving()"
+              (click)="toggleActive(card.route)"
+            >
+              <mat-icon class="route-row-icon" aria-hidden="true">{{
+                card.paused ? 'pause_circle' : 'play_circle'
+              }}</mat-icon>
+              <span class="ui-row-text">
+                <span class="ui-row-title">Route aktiv</span>
+                <span class="ui-row-sub">
+                  {{
+                    card.paused
+                      ? 'Einschalten, um wieder zu prüfen und zu melden'
+                      : 'Ausschalten pausiert Check-Zeiten und Meldungen'
+                  }}
+                </span>
+              </span>
+              <span
+                class="ui-switch"
+                [class.ui-switch--on]="!card.paused && pauseOpen() !== card.route.id"
+                aria-hidden="true"
+              ></span>
+            </button>
+
+            @if (pauseOpen() === card.route.id && !card.paused) {
+              <div
+                class="route-pause"
+                [id]="'route-pause-' + card.route.id"
+                role="group"
+                [attr.aria-label]="'Pause für ' + card.route.name"
+              >
+                <p class="route-pause-title">Wie lange pausieren?</p>
+                <div class="ui-segmented route-pause-presets" role="group" aria-label="Dauer">
+                  @for (preset of pausePresets; track preset.label) {
+                    <button
+                      type="button"
+                      [attr.aria-pressed]="pauseDays() === preset.days"
+                      (click)="choosePause(preset.days)"
+                    >
+                      {{ preset.label }}
+                    </button>
+                  }
+                </div>
+
+                <div
+                  class="route-pause-stepper"
+                  [class.route-pause-stepper--off]="pauseDays() === null"
+                >
+                  <span class="route-pause-stepper-label">Eigene Dauer</span>
+                  <div class="route-stepper">
+                    <button
+                      type="button"
+                      aria-label="Einen Tag weniger"
+                      [disabled]="pauseDays() !== null && pauseDays()! <= 1"
+                      (click)="stepPause(-1)"
+                    >
+                      <mat-icon aria-hidden="true">remove</mat-icon>
+                    </button>
+                    <output class="route-stepper-value" aria-live="polite">
+                      {{ pauseDays() === null ? 'dauerhaft' : daysLabel(pauseDays()!) }}
+                    </output>
+                    <button
+                      type="button"
+                      aria-label="Einen Tag mehr"
+                      [disabled]="pauseDays() !== null && pauseDays()! >= maxPauseDays"
+                      (click)="stepPause(1)"
+                    >
+                      <mat-icon aria-hidden="true">add</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <p class="route-pause-hint">
+                  Keine Check-Zeiten und keine Sofort-Meldungen. Prüfen von Hand geht weiter.
+                </p>
+
+                <div class="route-pause-actions">
+                  <button
+                    type="button"
+                    class="ui-pill-btn ui-pill-btn--neutral"
+                    (click)="pauseOpen.set(null)"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    type="button"
+                    class="ui-pill-btn ui-pill-btn--filled"
+                    [disabled]="pauseSaving()"
+                    (click)="confirmPause(card.route)"
+                  >
+                    {{
+                      pauseDays() === null
+                        ? 'Dauerhaft pausieren'
+                        : daysLabel(pauseDays()!) + ' pausieren'
+                    }}
+                  </button>
+                </div>
+              </div>
+            }
           </div>
         </section>
       } @empty {

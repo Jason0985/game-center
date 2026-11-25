@@ -42,6 +42,8 @@ export interface RouteWatch {
   base_seconds: number | null;
   last_check: CheckResult | null;
   last_checked_at: string | null;
+  // Pausiert bis (null = aktiv, 'infinity' = bis man sie wieder einschaltet)
+  paused_until: string | null;
   created_at: string;
 }
 
@@ -72,7 +74,7 @@ export const MAX_ROUTES = 5;
 
 const COLUMNS =
   'id, name, origin_label, origin_lat, origin_lon, dest_label, dest_lat, dest_lon, schedules, ' +
-  'live_alerts, notify_clear, roads, path, vias, follow_path, steps, length_m, base_seconds, last_check, last_checked_at, created_at';
+  'live_alerts, notify_clear, roads, path, vias, follow_path, steps, length_m, base_seconds, last_check, last_checked_at, paused_until, created_at';
 
 /** Routen-Check: eigene Routen laden, ändern, löschen; Planen und Prüfen über route-traffic. */
 @Injectable({ providedIn: 'root' })
@@ -99,7 +101,9 @@ export class RouteCheckService {
   // Schalter direkt an der Route (ohne neu zu planen)
   async update(
     id: string,
-    patch: Partial<Pick<RouteWatch, 'live_alerts' | 'notify_clear' | 'schedules' | 'name'>>,
+    patch: Partial<
+      Pick<RouteWatch, 'live_alerts' | 'notify_clear' | 'schedules' | 'name' | 'paused_until'>
+    >,
   ): Promise<RouteResult<void>> {
     const { error } = await supabase.from('route_watches').update(patch).eq('id', id);
     return error
