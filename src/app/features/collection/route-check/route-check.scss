@@ -325,7 +325,186 @@
   margin-top: -12px;
 }
 
+// ---------------------------------------------------------------- Pause
+
+// Pausiert: Ampel grau, Lage und Band treten zurück, der Hinweis oben bleibt klar lesbar
+.route-card[data-state='paused'] {
+  --route-state: var(--route-unknown);
+}
+
+.route-card--paused .route-status-line,
+.route-card--paused .route-status-meta,
+.route-card--paused .route-band,
+.route-card--paused .route-band-labels,
+.route-card--paused .route-incident {
+  opacity: 0.45;
+  transition: opacity 300ms var(--ease-ios);
+}
+
+.route-paused-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-paused-note mat-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  font-size: 18px;
+}
+
+.route-switch-row:disabled {
+  cursor: default;
+}
+
+// Auswahl der Dauer, klappt unter dem Schalter auf
+.route-pause {
+  display: grid;
+  gap: 14px;
+  padding: 4px 16px 16px 52px;
+  animation: route-pause-in 360ms var(--ease-spring) both;
+}
+
+@keyframes route-pause-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.route-pause-title {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-pause-presets button {
+  padding: 0 6px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.route-pause-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: opacity 240ms var(--ease-ios);
+}
+
+// Bei "Dauerhaft" tritt die eigene Dauer zurück, bleibt aber bedienbar (Tippen wählt Tage)
+.route-pause-stepper--off {
+  opacity: 0.55;
+}
+
+.route-pause-stepper-label {
+  font-size: 15px;
+}
+
+// Stepper wie bei iOS: zwei Tasten in einer Kapsel, der Wert daneben in der Mitte
+.route-stepper {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+}
+
+.route-stepper button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 200ms var(--ease-ios),
+    scale 300ms var(--ease-spring);
+}
+
+.route-stepper button:active:not(:disabled) {
+  background: var(--color-white-08);
+  scale: 0.92;
+}
+
+.route-stepper button:disabled {
+  color: var(--color-text-subtle);
+  cursor: default;
+}
+
+.route-stepper button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.route-stepper mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.route-stepper-value {
+  min-width: 76px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  text-align: center;
+}
+
+.route-pause-hint {
+  margin: -4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.route-pause-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.route-pause-actions .ui-pill-btn {
+  gap: 6px;
+}
+
+.route-pause-actions mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+@media (max-width: 420px) {
+  .route-pause {
+    padding-left: 16px;
+  }
+
+  .route-pause-actions .ui-pill-btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .route-pause {
+    animation: none;
+  }
+
   .route-band-mark {
     animation: none;
   }

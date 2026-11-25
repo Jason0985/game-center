@@ -1,12 +1,26 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '../../../services/session.service';
 import { ToastService } from '../../../services/toast.service';
 import { SkeletonRows } from '../../../ui/skeleton-rows';
-import { forDirection } from '../../../../../supabase/functions/route-traffic/route-logic';
+import {
+  forDirection,
+  isPaused,
+} from '../../../../../supabase/functions/route-traffic/route-logic';
 import { CheckResult, MAX_ROUTES, RouteCheckService, RouteWatch } from './route-check.service';
-import { formatMinutes, formatSchedule, KIND, routeState, stateText } from './route-format';
+import {
+  daysLabel,
+  formatMinutes,
+  formatSchedule,
+  KIND,
+  MAX_PAUSE_DAYS,
+  PAUSE_PRESETS,
+  pauseText,
+  pauseUntil,
+  routeState,
+  stateText,
+} from './route-format';
 
 const clock = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
 const dayClock = new Intl.DateTimeFormat('de-DE', {
@@ -39,17 +53,30 @@ export class RouteCheck {
   // Route-ID + Richtung, die gerade geprüft wird
   readonly checking = signal<string | null>(null);
 
+  // Pausieren: Route, deren Auswahl offen ist, und die gewählte Dauer (null = dauerhaft)
+  readonly pausePresets = PAUSE_PRESETS;
+  readonly maxPauseDays = MAX_PAUSE_DAYS;
+  readonly daysLabel = daysLabel;
+  readonly pauseOpen = signal<string | null>(null);
+  readonly pauseDays = signal<number | null>(1);
+  readonly pauseSaving = signal(false);
+  // Damit "bis morgen, 14:30" und abgelaufene Pausen stimmen, auch wenn die Seite offen bleibt
+  private readonly now = signal(new Date());
+
   readonly cards = computed(() =>
     this.routes().map((route) => {
       const result = route.last_check;
       const reverse = result?.reverse ?? false;
       const incidents = result ? forDirection(result.incidents, reverse) : [];
       const state = routeState(result, incidents);
+      const paused = isPaused(route.paused_until, this.now());
       return {
         route,
         result,
         reverse,
         state,
+        paused,
+        pauseText: paused ? pauseText(route.paused_until!, this.now()) : '',
         status: stateText(result, state),
         meta: this.meta(route, result),
         incidents: [...incidents].sort(
@@ -73,6 +100,8 @@ export class RouteCheck {
       if (this.session.initialized() && this.session.user()) void this.load();
       else if (this.session.initialized()) this.loading.set(false);
     });
+    const tick = setInterval(() => this.now.set(new Date()), 60_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(tick));
   }
 
   async load(): Promise<void> {
@@ -114,6 +143,61 @@ export class RouteCheck {
       this.patch(route.id, { live_alerts: !live });
       this.toast.error(result.message);
     }
+  }
+
+  // Schalter "Route aktiv": an = Pause sofort beenden, aus = Dauer wählen lassen
+  async toggleActive(route: RouteWatch): Promise<void> {
+    if (isPaused(route.paused_until, this.now())) {
+      await this.setPause(route, null);
+      return;
+    }
+    if (this.pauseOpen() === route.id) {
+      this.pauseOpen.set(null);
+      return;
+    }
+    this.pauseDays.set(1);
+    this.pauseOpen.set(route.id);
+  }
+
+  choosePause(days: number | null): void {
+    this.pauseDays.set(days);
+  }
+
+  // Eigene Dauer: von der Schnellwahl aus in Tagen weiter; von "Dauerhaft" aus ab einer Woche
+  stepPause(delta: number): void {
+    const days = this.pauseDays();
+    if (days === null) {
+      this.pauseDays.set(7);
+      return;
+    }
+    this.pauseDays.set(Math.min(MAX_PAUSE_DAYS, Math.max(1, days + delta)));
+  }
+
+  async confirmPause(route: RouteWatch): Promise<void> {
+    this.now.set(new Date());
+    const saved = await this.setPause(route, pauseUntil(this.pauseDays(), this.now()));
+    if (saved) this.pauseOpen.set(null);
+  }
+
+  private async setPause(route: RouteWatch, pausedUntil: string | null): Promise<boolean> {
+    if (this.pauseSaving()) return false;
+    const previous = route.paused_until;
+    this.pauseSaving.set(true);
+    this.patch(route.id, { paused_until: pausedUntil });
+    const result = await this.service.update(route.id, { paused_until: pausedUntil });
+    this.pauseSaving.set(false);
+    if (!result.ok) {
+      this.patch(route.id, { paused_until: previous });
+      this.toast.error(result.message);
+      return false;
+    }
+    this.toast.success(
+      pausedUntil ? 'Route pausiert' : 'Route wieder aktiv',
+      pausedUntil
+        ? pauseText(pausedUntil, this.now())
+        : 'Check-Zeiten und Sofort-Meldungen laufen.',
+    );
+    return true;
   }
 
   private patch(id: string, patch: Partial<RouteWatch>): void {

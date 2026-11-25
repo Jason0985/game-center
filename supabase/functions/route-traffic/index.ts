@@ -13,6 +13,7 @@
 //                                       path genau diese Strecke (TomTom folgt ihr)
 //   cron                                pg_cron alle 5 Min. mit x-push-secret: fällige
 //                                       Check-Zeiten melden, neue Staus/Sperrungen sofort
+//                                       (pausierte Routen, paused_until, bleiben still)
 // Deploy ohne JWT-Prüfung (verify_jwt = false), die Funktion prüft selbst.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import {
@@ -26,6 +27,7 @@ import {
   departureMessage,
   dueSchedules,
   forDirection,
+  isPaused,
   type Incident,
   type LatLon,
   liveMessage,
@@ -116,6 +118,8 @@ interface RouteRow {
   last_slot: string | null;
   live_delay_notified: number;
   last_check: { reverse?: boolean } | null;
+  // Pausiert bis (null = aktiv, 'infinity' = bis auf Weiteres)
+  paused_until: string | null;
 }
 
 const tomtomKey = () => Deno.env.get('TOMTOM_API_KEY')?.trim() || null;
@@ -648,6 +652,8 @@ async function cronRoute(
   night: boolean,
 ): Promise<number> {
   let sent = 0;
+  // Pausiert: keine Check-Zeiten, keine Sofort-Meldungen (Prüfen von Hand geht weiter)
+  if (isPaused(route.paused_until, now)) return 0;
   const schedules = parseSchedules(route.schedules) ?? [];
 
   // 1. Check-Zeiten: Fahrzeit und Lage melden (auch "frei", wenn gewünscht)
